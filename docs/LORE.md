@@ -95,6 +95,25 @@ See `src/data/lore.ts` for the full registry.
 
 ---
 
+## ADOM → Extraction Window
+
+What classic ADOM did well, and how EW translates it (in-run only):
+
+| ADOM strength | EW translation |
+|---------------|----------------|
+| Hunger / clocks | Dual clocks: **ion window** + **EPS power** |
+| Corruption | **EM contamination** from tricorder tools / nests; tax + wider fauna aggro; flush with coolant/sealant/stabilize |
+| Unidentified items | **Unknown Salvage** crates — scan with `u` (risk of backlash) |
+| Distinct dungeons | Biome gen + **scrub blocks sight**; brine hazard tax; vault loot-wake |
+| Talent identity | **Skill forks** at L3/L5/L7 — pick 1 of 2 |
+| Lore that matters | **PADD pages** grant lasting run mods (FOV, filter, quiet vault, DEF, window) |
+| Side content | Room quests / POIs with storm + kit payoffs |
+| Dense keyboard log | Mission log + sticky causal milestones |
+
+Out of scope (by design): towns/shops, alignment, meta unlocks, overland world map.
+
+---
+
 ## Legal Objective Order
 
 1. Enter Crash Wreck Belt → acquire Isolinear Key (`LOG-GOT-KEY`)

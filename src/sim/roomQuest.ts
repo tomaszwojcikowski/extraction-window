@@ -33,9 +33,44 @@ export function grantCodex(state: GameState): void {
   state.codexPages += 1;
   const page = CODEX_BY_SECTOR[state.sectorId] ?? 'CODEX-GENERIC';
   if (!state.codexLog.includes(page)) state.codexLog.push(page);
+  applyPaddModifier(state, page);
   pushLog(state, 'LOG-CODEX');
   pushLog(state, page);
   gainXp(state, XP_ROOM_QUEST, 'quest');
+}
+
+/** PADD pages change the run (ADOM lore that matters). */
+function applyPaddModifier(state: GameState, page: LoreId): void {
+  switch (page) {
+    case 'CODEX-SPIRE':
+      state.paddMods.fovBonus = Math.max(state.paddMods.fovBonus, 1);
+      pushLog(state, 'LOG-PADD-MOD', '+FOV');
+      break;
+    case 'CODEX-BRINE':
+      state.paddMods.filterBonus = Math.max(state.paddMods.filterBonus, 15);
+      state.paddMods.brineSeal = true;
+      pushLog(state, 'LOG-PADD-MOD', 'filter+/seal');
+      break;
+    case 'CODEX-VAULT':
+      state.paddMods.quietVault = true;
+      pushLog(state, 'LOG-PADD-MOD', 'quiet vault');
+      break;
+    case 'CODEX-TRENCH':
+      state.stormTurns += 15;
+      pushLog(state, 'LOG-PADD-MOD', '+15 window');
+      break;
+    case 'CODEX-FISSURE':
+      state.player.def += 1;
+      pushLog(state, 'LOG-PADD-MOD', '+1 DEF');
+      break;
+    default:
+      purgeEmViaPadd(state);
+      break;
+  }
+}
+
+function purgeEmViaPadd(state: GameState): void {
+  state.emStress = Math.max(0, state.emStress - 10);
 }
 
 /** Storm refund / temporary systems charge / unique consumable — changes the run. */
@@ -217,7 +252,9 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
   rq.done = true;
   state.player.armor = state.player.maxArmor;
   state.player.stabilizeTurns = Math.max(state.player.stabilizeTurns, 30);
+  state.emStress = Math.max(0, state.emStress - 35);
   pushLog(state, 'LOG-RQ-STABILIZE');
+  pushLog(state, 'LOG-EM-PURGE', '-35');
   grantQuestPayoff(state, 'good');
   grantCodex(state);
   clearQuestTile(state);

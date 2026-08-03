@@ -3,7 +3,7 @@ import type { ItemKind } from './items';
 
 /** Weighted drop tables per enemy kind. Never includes quest items. */
 export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: number }>> = {
-  mite: [{ kind: 'ration', weight: 2 }],
+  mite: [{ kind: 'ration', weight: 2 }, { kind: 'salvage', weight: 1 }],
   spore: [
     { kind: 'energy', weight: 2 },
     { kind: 'filter', weight: 1 },
@@ -23,6 +23,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
   crawler: [
     { kind: 'plate', weight: 2 },
     { kind: 'ration', weight: 1 },
+    { kind: 'salvage', weight: 2 },
   ],
   sentinel: [
     { kind: 'plate', weight: 2 },

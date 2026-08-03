@@ -20,7 +20,8 @@ export type ItemKind =
   | 'battery'
   | 'patch'
   | 'lens'
-  | 'mapper';
+  | 'mapper'
+  | 'salvage';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -168,6 +169,13 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'mapper',
     loreName: 'ITEM-MAPPER',
     loreDesc: 'ITEM-MAPPER-DESC',
+    quest: false,
+    stackable: true,
+  },
+  salvage: {
+    kind: 'salvage',
+    loreName: 'ITEM-SALVAGE',
+    loreDesc: 'ITEM-SALVAGE-DESC',
     quest: false,
     stackable: true,
   },

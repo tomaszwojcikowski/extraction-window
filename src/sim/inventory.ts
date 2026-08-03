@@ -1,11 +1,13 @@
+import { lore } from '../data/lore';
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import { pushLog, recordLoreEvent, playerAttack, killEnemy } from './combat';
 import { addStatus } from './status';
-import { randInt } from './rng';
+import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
-import { gainXp } from './progression';
+import { gainXp, hasSkill } from './progression';
+import { addEmStress, purgeEmStress } from './emStress';
 
 const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
@@ -137,6 +139,36 @@ function equipArmor(state: GameState, kind: ItemKind): void {
   pushLog(state, 'LOG-USE-HARNESS');
 }
 
+/** ADOM unidentified loot — scan unknown salvage into a known kit item (or backlash). */
+function identifySalvage(state: GameState): void {
+  if (!removeOne(state, 'salvage')) {
+    pushLog(state, 'LOG-USE-FAIL');
+    return;
+  }
+  const roll = state.rng();
+  const scav = hasSkill(state, 'scavenger');
+  const failChance = scav ? 0.08 : 0.18;
+  if (roll < failChance) {
+    addEmStress(state, 15, 'unstable salvage');
+    addStatus(state.player, 'ion_burn', 2);
+    state.lootTakenThisSector = true;
+    for (const en of state.enemies) {
+      if (!en.alive) continue;
+      if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 5) {
+        en.alerted = true;
+      }
+    }
+    pushLog(state, 'LOG-SALVAGE-BAD');
+    return;
+  }
+  const table: ItemKind[] = scav
+    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim']
+    : ['energy', 'med', 'ration', 'dart', 'sealant', 'patch', 'flare', 'plate'];
+  const kind = pick(state.rng, table);
+  addItem(state, kind);
+  pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[kind].loreName));
+}
+
 export function useSelected(state: GameState): boolean {
   if (state.inventory.length === 0) {
     pushLog(state, 'LOG-USE-FAIL');
@@ -167,6 +199,7 @@ export function useSelected(state: GameState): boolean {
       capActiveSystems(state, 'probeTurns');
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
+      addEmStress(state, 4, 'tricorder');
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
@@ -186,7 +219,8 @@ export function useSelected(state: GameState): boolean {
         break;
       }
       capActiveSystems(state, 'filterTurns');
-      state.player.filterTurns = Math.max(state.player.filterTurns, 50);
+      const filterDur = 50 + state.paddMods.filterBonus;
+      state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-FILTER');
       break;
@@ -194,12 +228,14 @@ export function useSelected(state: GameState): boolean {
     case 'coolant':
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
+      purgeEmStress(state, 12);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'battery':
       // Alias of coolant (legacy stacks)
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
+      purgeEmStress(state, 12);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'patch':
@@ -212,6 +248,7 @@ export function useSelected(state: GameState): boolean {
       capActiveSystems(state, 'lensTurns');
       state.player.lensTurns = Math.max(state.player.lensTurns, 25);
       removeOne(state, kind);
+      addEmStress(state, 3, 'lens');
       pushLog(state, 'LOG-USE-LENS');
       break;
     case 'mapper':
@@ -245,8 +282,13 @@ export function useSelected(state: GameState): boolean {
       capActiveSystems(state, 'jammerTurns');
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
+      addEmStress(state, 5, 'scrambler');
       pushLog(state, 'LOG-USE-JAMMER');
       break;
+    case 'salvage': {
+      identifySalvage(state);
+      break;
+    }
     case 'sealant': {
       if (tryStabilizeQuest(state, 'sealant')) {
         removeOne(state, kind);
@@ -260,9 +302,13 @@ export function useSelected(state: GameState): boolean {
           transparent: true,
         };
         removeOne(state, kind);
+        purgeEmStress(state, state.paddMods.brineSeal ? 18 : 8);
         pushLog(state, 'LOG-USE-SEALANT');
       } else {
-        pushLog(state, 'LOG-SEALANT-FAIL');
+        // Flush EM without sealing terrain
+        removeOne(state, kind);
+        purgeEmStress(state, 20);
+        pushLog(state, 'LOG-EM-PURGE', 'sealant flush');
       }
       break;
     }

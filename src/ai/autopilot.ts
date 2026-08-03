@@ -41,6 +41,15 @@ function nearestDartTarget(state: GameState) {
 export function chooseAction(state: GameState): Action | null {
   if (state.status !== 'playing') return null;
 
+  // Talent fork — prefer survival skills for suite stability
+  if (state.skillPick && state.skillPick.length > 0) {
+    const prefer = ['triage', 'ion_skin', 'deep_reserve'] as const;
+    for (const id of prefer) {
+      if (state.skillPick.includes(id)) return { type: 'pick_skill', id };
+    }
+    return { type: 'pick_skill', id: state.skillPick[0]! };
+  }
+
   // Finish dart aim if already aiming
   if (state.ui.aimingDart) {
     const target = nearestDartTarget(state);
@@ -76,6 +85,21 @@ export function chooseAction(state: GameState): Action | null {
     const pIdx = state.inventory.findIndex((s) => s.kind === 'patch');
     if (pIdx >= 0) {
       state.ui.selectedSlot = pIdx;
+      return { type: 'use' };
+    }
+  }
+  if (state.emStress >= 65) {
+    const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
+    if (coolIdx >= 0) {
+      state.ui.selectedSlot = coolIdx;
+      return { type: 'use' };
+    }
+  }
+  // Identify unknown salvage when kit has space and not in combat crisis
+  if (state.player.hp > state.player.maxHp * 0.55 && state.emStress < 50) {
+    const sIdx = state.inventory.findIndex((s) => s.kind === 'salvage');
+    if (sIdx >= 0 && state.inventory.length < INVENTORY_SLOTS - 1) {
+      state.ui.selectedSlot = sIdx;
       return { type: 'use' };
     }
   }

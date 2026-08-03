@@ -149,6 +149,17 @@ export interface GameState {
   codexPages: number;
   /** Collected CODEX-* lore ids for this run (Pages panel). */
   codexLog: LoreId[];
+  /** EM contamination 0–100 (ADOM corruption-lite). */
+  emStress: number;
+  /** In-run PADD modifiers from recovered pages. */
+  paddMods: {
+    filterBonus: number;
+    fovBonus: number;
+    quietVault: boolean;
+    brineSeal: boolean;
+  };
+  /** Pending skill fork choice (ADOM talent pick). */
+  skillPick: SkillId[] | null;
   /** In-run surveyor proficiency (resets each seed) */
   level: number;
   xp: number;
@@ -177,4 +188,5 @@ export type Action =
   | { type: 'use' }
   | { type: 'aim'; dx: number; dy: number }
   | { type: 'exit' }
-  | { type: 'close_ui' };
+  | { type: 'close_ui' }
+  | { type: 'pick_skill'; id: SkillId };

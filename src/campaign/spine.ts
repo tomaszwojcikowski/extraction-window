@@ -4,7 +4,7 @@ import type { LoreId } from '../data/lore';
 export const CAMPAIGN_LENGTH = SECTORS.length;
 
 /** Starting storm window — tight enough that the closing window matters. */
-export const STORM_TURNS = 500;
+export const STORM_TURNS = 540;
 
 export const PLAYER_BASE = {
   hp: 48,

@@ -56,7 +56,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   scavenger: {
     id: 'scavenger',
-    unlockLevel: 4,
+    unlockLevel: 3,
     loreName: 'SKILL-SCAVENGER-NAME',
     loreDesc: 'SKILL-SCAVENGER-DESC',
   },
@@ -68,7 +68,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   ion_skin: {
     id: 'ion_skin',
-    unlockLevel: 6,
+    unlockLevel: 5,
     loreName: 'SKILL-ION-SKIN-NAME',
     loreDesc: 'SKILL-ION-SKIN-DESC',
   },
@@ -80,7 +80,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   last_window: {
     id: 'last_window',
-    unlockLevel: 8,
+    unlockLevel: 7,
     loreName: 'SKILL-LAST-WINDOW-NAME',
     loreDesc: 'SKILL-LAST-WINDOW-DESC',
   },

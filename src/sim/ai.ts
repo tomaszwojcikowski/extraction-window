@@ -3,6 +3,7 @@ import { applyPlayerDamage, enemyAttack, pushLog } from './combat';
 import { bfsPath } from './fov';
 import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
+import { emAggroBonus } from './emStress';
 import type { Enemy, GameState, Pos } from './types';
 
 function enemyAt(state: GameState, x: number, y: number, skipId?: number): Enemy | undefined {
@@ -11,6 +12,18 @@ function enemyAt(state: GameState, x: number, y: number, skipId?: number): Enemy
 
 function manhattan(ax: number, ay: number, bx: number, by: number): number {
   return Math.abs(ax - bx) + Math.abs(ay - by);
+}
+
+function effectiveAggro(state: GameState, enemy: Enemy): number {
+  const def = ENEMIES[enemy.kind];
+  let r = def.aggroRange;
+  if (enemy.kind === 'mite' || enemy.kind === 'wasp' || enemy.kind === 'mastling') {
+    r += emAggroBonus(state);
+  }
+  if (state.sectorId === 'vault' && state.lootTakenThisSector && !state.paddMods.quietVault) {
+    if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
+  }
+  return r;
 }
 
 function stepToward(
@@ -154,6 +167,7 @@ export function moveEnemies(state: GameState): void {
     const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
     const inFov = state.visible[enemy.y]?.[enemy.x] ?? false;
     const quiet = silenced(state, enemy);
+    const aggro = effectiveAggro(state, enemy);
 
     switch (def.behavior) {
       case 'wander': {
@@ -161,7 +175,7 @@ export function moveEnemies(state: GameState): void {
           randomStep(state, enemy);
           break;
         }
-        if (dist <= def.aggroRange) {
+        if (dist <= aggro) {
           if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
         } else {
           randomStep(state, enemy);
@@ -169,7 +183,7 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'swell': {
-        if (dist <= def.aggroRange) {
+        if (dist <= aggro) {
           enemy.swellTurns += 1;
           if (enemy.swellTurns === 2) {
             pushLog(state, 'LOG-TELE-SWELL');
@@ -195,7 +209,7 @@ export function moveEnemies(state: GameState): void {
           randomStep(state, enemy);
           break;
         }
-        if (dist > def.aggroRange) break;
+        if (dist > aggro) break;
         if (enemy.skirmishRetreat) {
           stepAway(state, enemy);
           enemy.skirmishRetreat = false;
@@ -215,18 +229,18 @@ export function moveEnemies(state: GameState): void {
             break;
           }
         }
-        tryPouncePattern(state, enemy, def.aggroRange);
+        tryPouncePattern(state, enemy, aggro);
         break;
       }
       case 'drain': {
-        if (dist > def.aggroRange) break;
+        if (dist > aggro) break;
         if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
         break;
       }
       case 'guard': {
-        const aggro =
-          state.lootTakenThisSector || dist <= 2 || (enemy.alerted && dist <= def.aggroRange);
-        if (aggro) {
+        const engage =
+          state.lootTakenThisSector || dist <= 2 || (enemy.alerted && dist <= aggro);
+        if (engage) {
           enemy.alerted = true;
           if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
         } else {
@@ -237,7 +251,7 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'sentinel': {
-        if (dist <= def.aggroRange) {
+        if (dist <= aggro) {
           if (dist === 1) tryMelee(state, enemy);
           else if (dist <= 3) stepToward(state, enemy, state.player.x, state.player.y);
         } else {
@@ -247,7 +261,7 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'hunter': {
-        tryPouncePattern(state, enemy, def.aggroRange);
+        tryPouncePattern(state, enemy, aggro);
         break;
       }
     }

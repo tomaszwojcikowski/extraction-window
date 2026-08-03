@@ -8,6 +8,7 @@ import { fovDistance, playerFovRadius } from '../sim/fov';
 import { statusHud } from '../sim/status';
 import { toolAtkBonus } from '../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../campaign/spine';
+import { SKILLS } from '../data/progression';
 import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
 import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
 import { createScanRetrace } from './atmosphere';
@@ -474,6 +475,20 @@ export class GameScene extends Phaser.Scene {
       if (e.key === 'Escape' || e.key === '?' || e.key === 'Enter') {
         this.toggleHelp(false);
         sfx.play('ui');
+      }
+      return;
+    }
+
+    if (this.state.skillPick) {
+      if (e.key === '1' || e.key === '2') {
+        const idx = parseInt(e.key, 10) - 1;
+        const id = this.state.skillPick[idx];
+        if (id) {
+          applyAction(this.state, { type: 'pick_skill', id });
+          sfx.play('ui');
+          this.redrawTilesAndHud();
+        }
+        return;
       }
       return;
     }
@@ -1111,7 +1126,8 @@ export class GameScene extends Phaser.Scene {
   private redrawTilesAndHud(): void {
     const st = this.state;
     const tint = BIOME_FLOOR_TINT[st.sectorId];
-    const radius = playerFovRadius(st.player.probeTurns, st.player.lensTurns);
+    const radius =
+      playerFovRadius(st.player.probeTurns, st.player.lensTurns) + st.paddMods.fovBonus;
     const px = st.player.x;
     const py = st.player.y;
 
@@ -1171,7 +1187,7 @@ export class GameScene extends Phaser.Scene {
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
     this.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${systems}${tool}${armorEq}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-EM')} ${st.emStress}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${systems}${tool}${armorEq}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -1200,7 +1216,11 @@ export class GameScene extends Phaser.Scene {
         : st.stormTurns <= 200
           ? `\n${lore('LOG-STORM-WARN')}  (${st.stormTurns})`
           : '';
-    this.objText.setText(`${localLine}\n${campaignLine}${stormBit}`);
+    const skillBit = st.skillPick
+      ? `\n${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`
+      : '';
+    const emBit = st.emStress >= 35 ? `\n${lore('UI-EM')} ${st.emStress}` : '';
+    this.objText.setText(`${localLine}\n${campaignLine}${stormBit}${skillBit}${emBit}`);
 
     const sticky = stickyMilestone(st.loreEvents);
     this.milestoneText.setText(sticky ? lore(sticky) : '');

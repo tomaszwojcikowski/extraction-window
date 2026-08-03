@@ -9,6 +9,13 @@ import { lore } from '../data/lore';
 import { pushLog } from './combat';
 import type { GameState } from './types';
 
+/** ADOM-style talent forks — pick 1 of 2 at milestone levels. */
+export const SKILL_FORKS: Partial<Record<number, [SkillId, SkillId]>> = {
+  3: ['triage', 'scavenger'],
+  5: ['overcharge', 'ion_skin'],
+  7: ['deep_reserve', 'last_window'],
+};
+
 export function hasSkill(state: GameState, id: SkillId): boolean {
   return state.skills.includes(id);
 }
@@ -33,21 +40,34 @@ function applyLevelBump(state: GameState, level: number): void {
   }
 }
 
-function unlockSkillsForLevel(state: GameState, level: number): void {
-  for (const skill of Object.values(SKILLS)) {
-    if (skill.unlockLevel !== level) continue;
-    if (state.skills.includes(skill.id)) continue;
-    state.skills.push(skill.id);
-    pushLog(state, 'LOG-SKILL', lore(skill.loreName));
+function offerSkillFork(state: GameState, level: number): void {
+  const fork = SKILL_FORKS[level];
+  if (!fork) return;
+  const options = fork.filter((id) => !state.skills.includes(id));
+  if (options.length === 0) return;
+  if (options.length === 1) {
+    pickSkill(state, options[0]!);
+    return;
   }
+  state.skillPick = options as SkillId[];
+  pushLog(state, 'LOG-SKILL-PICK', `${lore(SKILLS[options[0]!].loreName)} / ${lore(SKILLS[options[1]!].loreName)}`);
 }
 
-/** Award XP; auto level-up with stat bumps and milestone skills. */
+export function pickSkill(state: GameState, id: SkillId): boolean {
+  if (!state.skillPick || !state.skillPick.includes(id)) return false;
+  if (state.skills.includes(id)) {
+    state.skillPick = null;
+    return false;
+  }
+  state.skills.push(id);
+  state.skillPick = null;
+  pushLog(state, 'LOG-SKILL', lore(SKILLS[id].loreName));
+  return true;
+}
+
+/** Award XP; auto level-up with stat bumps and milestone skill forks. */
 export function gainXp(state: GameState, amount: number, detail?: string): void {
   if (amount <= 0 || state.level >= MAX_LEVEL) {
-    if (amount > 0 && state.level >= MAX_LEVEL) {
-      // Cap: ignore further XP at max
-    }
     return;
   }
 
@@ -58,7 +78,7 @@ export function gainXp(state: GameState, amount: number, detail?: string): void 
     state.xp -= state.xpToNext;
     state.level += 1;
     applyLevelBump(state, state.level);
-    unlockSkillsForLevel(state, state.level);
+    offerSkillFork(state, state.level);
     state.xpToNext = xpToNextForLevel(state.level);
     pushLog(state, 'LOG-LEVEL', `LVL ${state.level}`);
   }

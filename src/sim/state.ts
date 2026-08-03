@@ -97,6 +97,14 @@ export function createGame(seed: number): GameState {
     roomQuest: map.roomQuest,
     codexPages: 0,
     codexLog: [],
+    emStress: 0,
+    paddMods: {
+      filterBonus: 0,
+      fovBonus: 0,
+      quietVault: false,
+      brineSeal: false,
+    },
+    skillPick: null,
     level: 1,
     xp: 0,
     xpToNext: xpToNextForLevel(1),
@@ -120,7 +128,7 @@ export function createGame(seed: number): GameState {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns),
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus,
   );
   pushLog(state, 'LOG-DROP');
   syncObjectiveFlags(state);
@@ -174,7 +182,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns),
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus,
   );
   if (sectorIndex > 0 && hasSkill(state, 'triage')) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);

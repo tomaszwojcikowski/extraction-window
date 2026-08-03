@@ -15,7 +15,8 @@ import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from 
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
 import { tryRoomQuest } from './roomQuest';
-import { gainXp } from './progression';
+import { gainXp, pickSkill } from './progression';
+import { addEmStress } from './emStress';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -82,6 +83,7 @@ function tryPoi(state: GameState): boolean {
   } else if (kind === 'nest') {
     pushLog(state, 'LOG-POI-NEST');
     addStatus(state.player, 'ion_burn', 3);
+    addEmStress(state, 12, 'nest');
     // Wake / spawn pressure: alert nearby enemies
     for (const en of state.enemies) {
       if (!en.alive) continue;
@@ -92,9 +94,9 @@ function tryPoi(state: GameState): boolean {
     state.lootTakenThisSector = true;
   } else {
     pushLog(state, 'LOG-POI-CACHE');
-    const loot: IK[] = ['med', 'coolant', 'sealant', 'plate', 'flare'];
+    const loot: IK[] = ['med', 'coolant', 'sealant', 'plate', 'flare', 'salvage'];
     addItem(state, pick(state.rng, loot));
-    addItem(state, pick(state.rng, loot));
+    addItem(state, pick(state.rng, ['salvage', 'energy', 'patch'] as IK[]));
     pushLog(state, 'LOG-PICKUP');
   }
   // Convert POI to floor after use
@@ -196,7 +198,27 @@ function tryExit(state: GameState): void {
 export function applyAction(state: GameState, action: Action): GameState {
   if (state.status !== 'playing') return state;
 
+  // ADOM talent fork — must choose before continuing
+  if (state.skillPick) {
+    if (action.type === 'pick_skill') {
+      pickSkill(state, action.id);
+      return state;
+    }
+    if (action.type === 'select_slot' && state.skillPick[action.index]) {
+      pickSkill(state, state.skillPick[action.index]!);
+      return state;
+    }
+    if (action.type === 'close_ui' || action.type === 'toggle_inventory') {
+      return state;
+    }
+    pushLog(state, 'LOG-SKILL-NEED');
+    return state;
+  }
+
   switch (action.type) {
+    case 'pick_skill':
+      return state;
+
     case 'close_ui':
       state.ui.inventoryOpen = false;
       state.ui.aimingDart = false;

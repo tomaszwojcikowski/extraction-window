@@ -9,10 +9,13 @@ import { moveEnemies } from './ai';
 import { addStatus, tickPlayerStatusEffects } from './status';
 import { tickRoomQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
+import { addEmStress, emEnergyTax } from './emStress';
 import type { GameState } from './types';
 
 function fovR(state: GameState): number {
-  return playerFovRadius(state.player.probeTurns, state.player.lensTurns);
+  return (
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus
+  );
 }
 
 export function checkLose(state: GameState): void {
@@ -71,16 +74,19 @@ function tickEnvironment(state: GameState): void {
       state.player.energy -= filter ? 0 : 1;
     }
   }
+  state.player.energy -= emEnergyTax(state);
   const drain = filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
   state.player.energy -= drain;
 
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind === 'hazard') {
-    state.player.energy -= filter ? 1 : 2;
+    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
+    state.player.energy -= (filter ? 1 : 2) + brineExtra;
     addStatus(state.player, 'ion_burn', 1);
     pushLog(state, 'LOG-HAZARD');
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter ? 0 : 1;
+    if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
   }
   // scrub is a sight-blocker only — no energy tax
 

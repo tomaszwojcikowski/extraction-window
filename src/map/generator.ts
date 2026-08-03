@@ -41,8 +41,9 @@ function floor(): Tile {
 function hazard(): Tile {
   return { kind: 'hazard', walkable: true, transparent: true };
 }
-function scrub(): Tile {
-  return { kind: 'scrub', walkable: true, transparent: true };
+function scrub(blocksSight = false): Tile {
+  // Sight-blocker in canopy/spire — ADOM scrub/fog feel without global FOV collapse
+  return { kind: 'scrub', walkable: true, transparent: !blocksSight };
 }
 function rubble(): Tile {
   return { kind: 'rubble', walkable: true, transparent: true };
@@ -138,6 +139,8 @@ function dressBiomeTerrain(
   const height = tiles.length;
   const width = tiles[0]!.length;
 
+  const blockScrub = id === 'canopy' || id === 'spire';
+
   // Base sparse dressing
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
@@ -146,7 +149,7 @@ function dressBiomeTerrain(
       if (roll < sector.hazardChance) tiles[y]![x] = hazard();
       else if (roll < sector.hazardChance + sector.ventChance) tiles[y]![x] = vent();
       else if (roll < sector.hazardChance + sector.ventChance + sector.scrubChance) {
-        tiles[y]![x] = scrub();
+        tiles[y]![x] = scrub(blockScrub);
       } else if (
         roll <
         sector.hazardChance + sector.ventChance + sector.scrubChance + sector.rubbleChance
@@ -173,9 +176,9 @@ function dressBiomeTerrain(
     // Longer scrub sight-blockers along room edges
     for (const room of rooms) {
       for (let x = room.x; x < room.x + room.w; x++) {
-        if (tiles[room.y]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[room.y]![x] = scrub();
+        if (tiles[room.y]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[room.y]![x] = scrub(true);
         const by = room.y + room.h - 1;
-        if (tiles[by]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[by]![x] = scrub();
+        if (tiles[by]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[by]![x] = scrub(true);
       }
     }
   }
