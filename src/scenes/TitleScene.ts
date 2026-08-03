@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { FONT } from './textures';
-import { sfx } from '../audio/sfx';
+import { ambient, music, sfx } from '../audio';
 
 export class TitleScene extends Phaser.Scene {
   private seed = (Date.now() % 90000) + 1000;
@@ -129,6 +129,10 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
+    this.events.once('shutdown', () => {
+      ambient.stop();
+      music.stop();
+    });
   }
 
   private muteLabel(): string {
@@ -139,13 +143,26 @@ export class TitleScene extends Phaser.Scene {
     return `${lore('UI-SEED')}  ${this.seed}`;
   }
 
+  private ensureBeds(): void {
+    if (sfx.isMuted()) return;
+    ambient.startTitle();
+    music.setMood('title');
+  }
+
   private onKey(e: KeyboardEvent): void {
     sfx.unlock();
     if (e.key === 'm' || e.key === 'M') {
       sfx.toggleMute();
       this.muteText.setText(this.muteLabel());
+      if (sfx.isMuted()) {
+        ambient.stop();
+        music.stop();
+      } else {
+        this.ensureBeds();
+      }
       return;
     }
+    this.ensureBeds();
     if (e.key === 'ArrowLeft') {
       this.seed = (this.seed - 1 + 100000) % 100000;
       this.seedText.setText(this.seedLabel());

@@ -62,6 +62,10 @@ Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate
 
 Statuses (shared): stun, bleed, ion_burn, expose — tick on turns; HUD glyphs beside vitals.
 
+## Field audio (synthesized)
+
+Survey gear listens to local RF / ion stress. Ambient beds shift by biome (dry plains hum, flood drip, ash grit, vault carrier). Sparse music densifies as the storm window closes. `m` mutes all buses (SFX, ambient, music). No authored soundtrack files — procedural Web Audio only.
+
 ---
 
 ## Player Strings (IDs)

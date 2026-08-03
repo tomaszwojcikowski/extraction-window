@@ -1,4 +1,6 @@
-/** Tiny synthesized SFX via Web Audio — no asset files. */
+/** Tiny synthesized one-shot SFX via Web Audio — no asset files. */
+
+import { audioBus } from './bus';
 
 export type SfxId =
   | 'ui'
@@ -26,59 +28,30 @@ type Tone = {
   delay?: number;
 };
 
-const MUTE_KEY = 'extraction-window-mute';
+const COMBAT: SfxId[] = ['hit', 'kill', 'hurt', 'warn'];
 
 class SfxBus {
-  private ctx: AudioContext | null = null;
-  private muted = false;
-  private master = 0.22;
-
-  constructor() {
-    try {
-      this.muted = localStorage.getItem(MUTE_KEY) === '1';
-    } catch {
-      this.muted = false;
-    }
-  }
-
   isMuted(): boolean {
-    return this.muted;
+    return audioBus.isMuted();
   }
 
   toggleMute(): boolean {
-    this.muted = !this.muted;
-    try {
-      localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-    if (!this.muted) this.play('ui');
-    return this.muted;
+    return audioBus.toggleMute();
   }
 
-  /** Call from a user gesture so AudioContext can start. */
   unlock(): void {
-    const ctx = this.ensure();
-    if (ctx.state === 'suspended') void ctx.resume();
+    audioBus.unlock();
   }
 
   play(id: SfxId): void {
-    if (this.muted) return;
-    const ctx = this.ensure();
+    if (audioBus.isMuted()) return;
+    const ctx = audioBus.ensure();
     if (ctx.state === 'suspended') void ctx.resume();
+
+    if (COMBAT.includes(id)) audioBus.duckAmbient();
 
     const seq = this.sequence(id);
     for (const tone of seq) this.beep(ctx, tone);
-  }
-
-  private ensure(): AudioContext {
-    if (!this.ctx) {
-      const AC =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AC();
-    }
-    return this.ctx;
   }
 
   private sequence(id: SfxId): Tone[] {
@@ -168,12 +141,12 @@ class SfxBus {
     if (tone.slide) {
       osc.frequency.linearRampToValueAtTime(tone.freq + tone.slide, t0 + tone.dur);
     }
-    const vol = (tone.vol ?? 0.12) * this.master;
+    const vol = tone.vol ?? 0.12;
     gain.gain.setValueAtTime(0.0001, t0);
     gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + tone.dur);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(audioBus.channel('sfx'));
     osc.start(t0);
     osc.stop(t0 + tone.dur + 0.02);
   }

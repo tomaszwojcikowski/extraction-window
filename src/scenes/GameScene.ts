@@ -15,6 +15,7 @@ import {
   enemyTextureKey,
 } from './textures';
 import { sfx } from '../audio/sfx';
+import { ambient, music } from '../audio';
 
 const TOP = 76;
 const BOTTOM = 112;
@@ -198,6 +199,23 @@ export class GameScene extends Phaser.Scene {
     this.syncActors(true);
     this.redrawTilesAndHud();
     this.updateCamera(true);
+    this.syncFieldAudio(true);
+    this.events.once('shutdown', () => {
+      ambient.stop();
+      music.stop();
+    });
+  }
+
+  private syncFieldAudio(force = false): void {
+    if (sfx.isMuted()) {
+      ambient.stop();
+      music.stop();
+      return;
+    }
+    sfx.unlock();
+    ambient.startSector(this.state.sectorId);
+    if (force) music.syncStorm(this.state.stormTurns);
+    else music.syncStorm(this.state.stormTurns);
   }
 
   update(): void {
@@ -301,6 +319,7 @@ export class GameScene extends Phaser.Scene {
 
     if (e.key === 'm' || e.key === 'M') {
       sfx.toggleMute();
+      this.syncFieldAudio(true);
       this.hintText.setVisible(true);
       this.hintText.setText(sfx.isMuted() ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
       this.time.delayedCall(900, () => {
@@ -399,10 +418,13 @@ export class GameScene extends Phaser.Scene {
       this.syncActors(true);
       this.redrawTilesAndHud();
       this.updateCamera(true);
+      this.syncFieldAudio(true);
       if (this.state.player.hp < prevHp) this.flashHit();
       this.maybeEnd();
       return;
     }
+
+    music.syncStorm(this.state.stormTurns);
 
     if (this.state.player.hp < prevHp) this.flashHit();
 
@@ -484,7 +506,10 @@ export class GameScene extends Phaser.Scene {
       has('LOG-USE-FLARE') ||
       has('LOG-USE-FILTER') ||
       has('LOG-USE-COOLANT') ||
-      has('LOG-USE-BLADE')
+      has('LOG-USE-BLADE') ||
+      has('LOG-USE-DART') ||
+      has('LOG-USE-JAMMER') ||
+      has('LOG-USE-SEALANT')
     ) {
       sfx.play('use');
       return;
