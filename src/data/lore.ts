@@ -22,8 +22,10 @@ export const LORE = {
   'UI-OBJECTIVE': 'Objective',
   'UI-HELP': 'Field manual',
   'UI-HELP-BODY':
-    'MOVE  WASD / arrows\nWAIT  . (period)\nGET   g  — recover ground material\nKIT   i  — open inventory\nUSE   u  — use selected kit item\nSLOT  1–9 / ↑↓ while kit open\nEXIT  > or =  — door / beacon / shuttle\nHELP  ?  — this manual\nESC   close panels',
-  'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · > exit · ? help',
+    'MOVE  WASD / arrows\nWAIT  . (period)\nGET   g  — recover ground material\nKIT   i  — open inventory\nUSE   u  — use selected kit item\nSLOT  1–9 / ↑↓ while kit open\nEXIT  > or =  — door / beacon / shuttle\nHELP  ?  — this manual\nMUTE  m  — toggle sound\nESC   close panels',
+  'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · > exit · ? help · m mute',
+  'UI-MUTE-ON': 'Audio muted',
+  'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'Stand on exit — press > to advance',
   'UI-HINT-BEACON': 'Beacon node — press > with Relay Key',
   'UI-HINT-SHUTTLE': 'Shuttle pad — press > with Nav Core',

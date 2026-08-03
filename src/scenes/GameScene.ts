@@ -12,6 +12,7 @@ import {
   TILE_DRAW,
   enemyTextureKey,
 } from './textures';
+import { sfx } from '../audio/sfx';
 
 const TOP = 76;
 const BOTTOM = 112;
@@ -286,6 +287,22 @@ export class GameScene extends Phaser.Scene {
 
   private onKey(e: KeyboardEvent): void {
     if (this.animating) return;
+    sfx.unlock();
+
+    if (e.key === 'm' || e.key === 'M') {
+      sfx.toggleMute();
+      this.hintText.setVisible(true);
+      this.hintText.setText(sfx.isMuted() ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
+      this.time.delayedCall(900, () => {
+        const hint = this.contextHint();
+        if (hint && !this.state.ui.inventoryOpen && !this.helpOpen) {
+          this.hintText.setText(lore(hint));
+        } else {
+          this.hintText.setVisible(false);
+        }
+      });
+      return;
+    }
 
     if (this.state.status !== 'playing') {
       this.scene.start('End', {
@@ -299,10 +316,14 @@ export class GameScene extends Phaser.Scene {
 
     if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
       this.toggleHelp();
+      sfx.play('ui');
       return;
     }
     if (this.helpOpen) {
-      if (e.key === 'Escape' || e.key === '?' || e.key === 'Enter') this.toggleHelp(false);
+      if (e.key === 'Escape' || e.key === '?' || e.key === 'Enter') {
+        this.toggleHelp(false);
+        sfx.play('ui');
+      }
       return;
     }
 
@@ -310,6 +331,7 @@ export class GameScene extends Phaser.Scene {
       const idx = parseInt(e.key, 10) - 1;
       applyAction(this.state, { type: 'select_slot', index: idx });
       if (!this.state.ui.inventoryOpen) applyAction(this.state, { type: 'toggle_inventory' });
+      sfx.play('ui');
       this.redrawTilesAndHud();
       this.syncItems();
       return;
@@ -321,6 +343,7 @@ export class GameScene extends Phaser.Scene {
       if (this.state.ui.inventoryOpen) action = { type: 'close_ui' };
       else {
         this.toggleHelp(true);
+        sfx.play('ui');
         return;
       }
     } else if (k === 'i' || k === 'I') action = { type: 'toggle_inventory' };
@@ -336,18 +359,29 @@ export class GameScene extends Phaser.Scene {
 
     if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
       applyAction(this.state, action);
+      sfx.play('ui');
       this.redrawTilesAndHud();
       return;
     }
 
     const prevSector = this.state.sectorIndex;
     const prevHp = this.state.player.hp;
+    const prevLogLen = this.state.log.length;
+    const prevAlive = this.state.enemies.filter((en) => en.alive).length;
     const fromPlayer = { x: this.state.player.x, y: this.state.player.y };
     const fromEnemies = new Map(
       this.state.enemies.filter((en) => en.alive).map((en) => [en.id, { x: en.x, y: en.y }]),
     );
 
     applyAction(this.state, action);
+    this.playActionSfx({
+      action,
+      prevSector,
+      prevHp,
+      prevLogLen,
+      prevAlive,
+      fromPlayer,
+    });
 
     if (this.state.sectorIndex !== prevSector) {
       this.buildMapSprites();
@@ -376,13 +410,86 @@ export class GameScene extends Phaser.Scene {
     if (playerMoved || enemyMoved) {
       this.playMoveAnims(fromPlayer, fromEnemies);
     } else if (action.type === 'move') {
-      // Bump into wall/enemy — quick nudge
       this.bumpAttack(action.dx, action.dy);
       this.syncActors(true);
       this.maybeEnd();
     } else {
       this.syncActors(true);
       this.maybeEnd();
+    }
+  }
+
+  private playActionSfx(prev: {
+    action: Action;
+    prevSector: number;
+    prevHp: number;
+    prevLogLen: number;
+    prevAlive: number;
+    fromPlayer: { x: number; y: number };
+  }): void {
+    const st = this.state;
+    const newLogs = st.log.slice(prev.prevLogLen).map((l) => l.loreId);
+    const has = (id: LoreId) => newLogs.includes(id);
+
+    if (st.status === 'won') {
+      // End scene plays win fanfare
+      return;
+    }
+    if (st.status === 'lost') return;
+
+    if (st.sectorIndex !== prev.prevSector) {
+      sfx.play('sector');
+      return;
+    }
+    if (has('LOG-USED-KEY')) {
+      sfx.play('beacon');
+      return;
+    }
+    if (has('LOG-GOT-KEY') || has('LOG-GOT-CORE')) {
+      sfx.play('quest');
+      return;
+    }
+    if (has('LOG-STORM-WARN')) {
+      sfx.play('warn');
+    }
+    if (st.player.hp < prev.prevHp || has('LOG-HURT')) {
+      sfx.play('hurt');
+    }
+    const alive = st.enemies.filter((en) => en.alive).length;
+    if (alive < prev.prevAlive || has('LOG-KILL')) {
+      sfx.play('kill');
+      return;
+    }
+    if (has('LOG-HIT')) {
+      sfx.play('hit');
+      return;
+    }
+    if (
+      has('LOG-USE-MED') ||
+      has('LOG-USE-ENERGY') ||
+      has('LOG-USE-RATION') ||
+      has('LOG-USE-PROBE')
+    ) {
+      sfx.play('use');
+      return;
+    }
+    if (has('LOG-PICKUP')) {
+      sfx.play('pickup');
+      return;
+    }
+    if (has('LOG-MOVE-BLOCKED') || has('LOG-EXIT-BLOCKED') || has('LOG-NEED-KEY') || has('LOG-NEED-CORE')) {
+      sfx.play('blocked');
+      return;
+    }
+    if (
+      prev.action.type === 'move' &&
+      (prev.fromPlayer.x !== st.player.x || prev.fromPlayer.y !== st.player.y)
+    ) {
+      sfx.play('move');
+      return;
+    }
+    if (prev.action.type === 'wait') {
+      sfx.play('ui');
     }
   }
 

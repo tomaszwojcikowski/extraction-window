@@ -26,5 +26,6 @@ npm run playtest     # full seed suite → playtest-report.json
 | `1`–`9` | Select kit slot |
 | `>` / `=` | Exit / beacon / shuttle |
 | `?` | Field manual |
+| `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
 | Title: `←` `→` seed, `R` random, `Enter` start |

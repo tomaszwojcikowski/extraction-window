@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
 import { FONT } from './textures';
+import { sfx } from '../audio/sfx';
 
 export class EndScene extends Phaser.Scene {
   private status: 'won' | 'lost' = 'lost';
@@ -121,10 +122,20 @@ export class EndScene extends Phaser.Scene {
       repeat: -1,
     });
 
+    sfx.unlock();
+    sfx.play(won ? 'win' : 'lose');
+
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
+      sfx.unlock();
+      if (e.key === 'm' || e.key === 'M') {
+        sfx.toggleMute();
+        return;
+      }
       if (e.key === 'Enter') {
+        sfx.play('start');
         this.scene.start('Game', { seed: (this.seed + 1) % 100000 });
       } else if (e.key === 'Escape') {
+        sfx.play('ui');
         this.scene.start('Title');
       }
     });

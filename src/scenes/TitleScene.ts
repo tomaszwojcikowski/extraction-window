@@ -1,11 +1,13 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { FONT } from './textures';
+import { sfx } from '../audio/sfx';
 
 export class TitleScene extends Phaser.Scene {
   private seed = (Date.now() % 90000) + 1000;
   private pulse!: Phaser.GameObjects.Text;
   private seedText!: Phaser.GameObjects.Text;
+  private muteText!: Phaser.GameObjects.Text;
 
   constructor() {
     super('Title');
@@ -118,7 +120,19 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    this.muteText = this.add
+      .text(width / 2, height * 0.92, this.muteLabel(), {
+        fontFamily: FONT,
+        fontSize: '10px',
+        color: '#4a5a6a',
+      })
+      .setOrigin(0.5);
+
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
+  }
+
+  private muteLabel(): string {
+    return sfx.isMuted() ? `m — ${lore('UI-MUTE-ON')}` : `m — ${lore('UI-MUTE-OFF')}`;
   }
 
   private seedLabel(): string {
@@ -126,16 +140,26 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private onKey(e: KeyboardEvent): void {
+    sfx.unlock();
+    if (e.key === 'm' || e.key === 'M') {
+      sfx.toggleMute();
+      this.muteText.setText(this.muteLabel());
+      return;
+    }
     if (e.key === 'ArrowLeft') {
       this.seed = (this.seed - 1 + 100000) % 100000;
       this.seedText.setText(this.seedLabel());
+      sfx.play('ui');
     } else if (e.key === 'ArrowRight') {
       this.seed = (this.seed + 1) % 100000;
       this.seedText.setText(this.seedLabel());
+      sfx.play('ui');
     } else if (e.key === 'r' || e.key === 'R') {
       this.seed = Math.floor(Math.random() * 100000);
       this.seedText.setText(this.seedLabel());
+      sfx.play('ui');
     } else if (e.key === 'Enter') {
+      sfx.play('start');
       this.scene.start('Game', { seed: this.seed });
     }
   }
