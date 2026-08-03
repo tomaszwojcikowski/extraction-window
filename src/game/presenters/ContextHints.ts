@@ -11,6 +11,14 @@ export function contextHint(st: GameState): LoreId | null {
   const fromMechanic = mechanicsContextHint(st);
   if (fromMechanic) return fromMechanic;
 
+  const telegraphed = st.enemies.some(
+    (e) =>
+      e.alive &&
+      e.windup > 0 &&
+      (st.visible[e.y]?.[e.x] ?? false),
+  );
+  if (telegraphed) return 'UI-HINT-TELE';
+
   const tile = st.tiles[st.player.y]![st.player.x]!;
   if (tile.kind === 'exit') return 'UI-HINT-EXIT';
   if (tile.kind === 'beacon') return 'UI-HINT-BEACON';

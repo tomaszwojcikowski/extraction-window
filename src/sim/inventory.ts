@@ -174,7 +174,7 @@ function identifySalvage(state: GameState): void {
 export function useSelected(state: GameState): boolean {
   if (state.inventory.length === 0) {
     pushLog(state, 'LOG-USE-FAIL');
-    return true;
+    return false;
   }
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
   const slot = state.inventory[idx]!;
@@ -331,7 +331,7 @@ export function useSelected(state: GameState): boolean {
     case 'relay_key':
     case 'nav_core':
       pushLog(state, 'LOG-USE-FAIL');
-      break;
+      return false;
   }
   syncObjectiveFlags(state);
   return true;
@@ -378,15 +378,16 @@ export function syncObjectiveFlags(state: GameState): void {
   state.objectives.hasNavCore = hasItem(state, 'nav_core');
 }
 
-export function tryPickup(state: GameState): void {
+/** @returns true when something was recovered (costs a turn). */
+export function tryPickup(state: GameState): boolean {
   const item = state.items.find(
     (i) => i.x === state.player.x && i.y === state.player.y,
   );
   if (!item) {
     pushLog(state, 'LOG-NO-PICKUP');
-    return;
+    return false;
   }
-  if (!addItem(state, item.kind)) return;
+  if (!addItem(state, item.kind)) return false;
   state.items = state.items.filter((i) => i.id !== item.id);
   state.lootTakenThisSector = true;
   pushLog(state, 'LOG-PICKUP');
@@ -402,4 +403,5 @@ export function tryPickup(state: GameState): void {
     onNavCoreAcquired(state);
   }
   syncObjectiveFlags(state);
+  return true;
 }

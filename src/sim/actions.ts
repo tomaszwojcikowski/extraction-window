@@ -212,8 +212,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       return state;
 
     case 'get':
-      tryPickup(state);
-      endPlayerTurn(state);
+      if (tryPickup(state)) endPlayerTurn(state);
       return state;
 
     case 'wait':

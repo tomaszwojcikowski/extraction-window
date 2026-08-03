@@ -62,6 +62,7 @@ export const LORE = {
   'UI-HINT-USE-ENERGY': 'EPS low — open kit (i) and use Power Cell / Coolant (u)',
   'UI-HINT-USE-ARMOR': 'Shields thin — use Shield Charge plate (u)',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
+  'UI-HINT-TELE': 'Hostile windup — step back or strike before the pounce',
   'UI-HINT-QUEST': 'Away procedure underfoot — press >',
   'UI-QUEST-TRACK': 'QUEST',
   'UI-RQ-SALVAGE': 'Salvage console — press >',

@@ -49,6 +49,8 @@ export class GameScene extends Phaser.Scene {
   private playerSprite!: Phaser.GameObjects.Image;
   private enemyViews = new Map<number, EnemyView>();
   private animating = false;
+  /** One-deep input buffer while move tweens run — latest wins. */
+  private queuedAction: Action | null = null;
   private atmo: Phaser.GameObjects.Rectangle | null = null;
   private animFrame = 0;
   private animAccum = 0;
@@ -553,8 +555,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onKey(e: KeyboardEvent): void {
-    if (this.animating) return;
     sfx.unlock();
+
+    // While tweens run, accept mute + one-deep gameplay queue — drop other input.
+    if (this.animating) {
+      const chrome = chromeFromKey(e);
+      if (chrome?.kind === 'mute') {
+        sfx.toggleMute();
+        this.syncFieldAudio(true);
+        return;
+      }
+      const queued = actionFromKey(e);
+      if (queued && this.isQueueableAction(queued)) this.queuedAction = queued;
+      return;
+    }
 
     const chrome = chromeFromKey(e);
     if (chrome?.kind === 'mute') {
@@ -661,6 +675,28 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.commitTurnAction(action);
+  }
+
+  private isQueueableAction(action: Action): boolean {
+    return (
+      action.type === 'move' ||
+      action.type === 'wait' ||
+      action.type === 'get' ||
+      action.type === 'use' ||
+      action.type === 'exit' ||
+      action.type === 'aim'
+    );
+  }
+
+  private flushQueuedAction(): void {
+    const next = this.queuedAction;
+    this.queuedAction = null;
+    if (!next || this.state.status !== 'playing' || this.animating) return;
+    this.commitTurnAction(next);
+  }
+
+  private commitTurnAction(action: Action): void {
     const prevSector = this.state.sectorIndex;
     const prevHp = this.state.player.hp;
     const prevLogLen = this.state.log.length;
@@ -719,6 +755,7 @@ export class GameScene extends Phaser.Scene {
       this.syncFieldAudio(true);
       if (this.state.player.hp < prevHp) this.flashHit();
       this.maybeEnd();
+      this.flushQueuedAction();
       return;
     }
 
@@ -755,19 +792,29 @@ export class GameScene extends Phaser.Scene {
       return !prev || prev.x !== en.x || prev.y !== en.y;
     });
 
-    this.redrawTilesAndHud();
+    // Defer FOV/HUD redraw until after move tweens so vision doesn't pop early.
     this.syncItems();
 
+    const afterPresent = () => {
+      this.redrawTilesAndHud();
+      this.syncActors(true);
+      this.maybeEnd();
+      this.flushQueuedAction();
+    };
+
     if (playerMoved || enemyMoved) {
-      this.playMoveAnims(fromPlayer, fromEnemies);
-    } else if (action.type === 'move') {
-      this.bumpAttack(action.dx, action.dy);
-      this.syncActors(true);
-      this.maybeEnd();
-    } else {
-      this.syncActors(true);
-      this.maybeEnd();
+      this.playMoveAnims(fromPlayer, fromEnemies, afterPresent);
+      return;
     }
+
+    if (action.type === 'move') {
+      this.bumpAttack(action.dx, action.dy);
+    }
+    // Enemy melee bump when they struck without relocating
+    if (this.state.player.hp < prevHp) {
+      this.bumpMeleeAttackers(fromEnemies);
+    }
+    afterPresent();
   }
 
   private playActionSfx(prev: {
@@ -882,20 +929,50 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Nudge adjacent enemies that struck the player without moving. */
+  private bumpMeleeAttackers(fromEnemies: Map<number, { x: number; y: number }>): void {
+    const px = this.state.player.x;
+    const py = this.state.player.y;
+    for (const en of this.state.enemies) {
+      if (!en.alive) continue;
+      const prev = fromEnemies.get(en.id);
+      if (!prev || prev.x !== en.x || prev.y !== en.y) continue;
+      if (Math.abs(en.x - px) + Math.abs(en.y - py) !== 1) continue;
+      const view = this.enemyViews.get(en.id);
+      if (!view?.img.visible) continue;
+      const base = this.worldXY(en.x, en.y);
+      const dx = Math.sign(px - en.x);
+      const dy = Math.sign(py - en.y);
+      view.img.setPosition(base.x, base.y);
+      this.tweens.add({
+        targets: view.img,
+        x: base.x + dx * 5,
+        y: base.y + dy * 5,
+        duration: 45,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+        onUpdate: () => {
+          if (view.label.active) view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        },
+      });
+    }
+  }
+
+  /**
+   * Stage player move, then enemy moves, then invoke onDone (FOV/HUD redraw + queue flush).
+   */
   private playMoveAnims(
     fromPlayer: { x: number; y: number },
     fromEnemies: Map<number, { x: number; y: number }>,
+    onDone: () => void,
   ): void {
     this.animating = true;
-    let pending = 0;
     let finished = false;
-    const finish = () => {
-      pending -= 1;
-      if (pending > 0 || finished) return;
+    const complete = () => {
+      if (finished) return;
       finished = true;
       this.animating = false;
-      this.syncActors(true);
-      this.maybeEnd();
+      onDone();
     };
 
     const tweenActor = (
@@ -903,12 +980,12 @@ export class GameScene extends Phaser.Scene {
       label: Phaser.GameObjects.Text | null,
       from: { x: number; y: number },
       to: { x: number; y: number },
+      done: () => void,
     ) => {
       const a = this.worldXY(from.x, from.y);
       const b = this.worldXY(to.x, to.y);
       img.setPosition(a.x, a.y);
       if (label) label.setPosition(a.x - 6, a.y - 10);
-      pending += 1;
       this.tweens.add({
         targets: img,
         x: b.x,
@@ -919,12 +996,8 @@ export class GameScene extends Phaser.Scene {
           if (label && label.active) label.setPosition(img.x - 6, img.y - 10);
         },
         onComplete: () => {
-          if (!img.active) {
-            finish();
-            return;
-          }
-          img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-          finish();
+          if (img.active) img.setDisplaySize(TILE_DRAW, TILE_DRAW);
+          done();
         },
       });
     };
@@ -933,35 +1006,54 @@ export class GameScene extends Phaser.Scene {
 
     const px = this.state.player.x;
     const py = this.state.player.y;
-    if (fromPlayer.x !== px || fromPlayer.y !== py) {
-      tweenActor(this.playerSprite, null, fromPlayer, { x: px, y: py });
+    const playerMoved = fromPlayer.x !== px || fromPlayer.y !== py;
+
+    const runEnemyPhase = () => {
+      let pending = 0;
+      let phaseDone = false;
+      const finishEnemy = () => {
+        pending -= 1;
+        if (pending > 0 || phaseDone) return;
+        phaseDone = true;
+        complete();
+      };
+
+      for (const en of this.state.enemies) {
+        if (!en.alive) continue;
+        const view = this.enemyViews.get(en.id);
+        if (!view) continue;
+        const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
+        if (prev.x !== en.x || prev.y !== en.y) {
+          pending += 1;
+          tweenActor(view.img, view.label, prev, { x: en.x, y: en.y }, finishEnemy);
+          view.gx = en.x;
+          view.gy = en.y;
+        }
+      }
+
+      if (pending === 0) {
+        complete();
+        return;
+      }
+
+      this.time.delayedCall(MOVE_MS + 120, () => {
+        if (!phaseDone) {
+          phaseDone = true;
+          complete();
+        }
+      });
+    };
+
+    if (playerMoved) {
+      tweenActor(this.playerSprite, null, fromPlayer, { x: px, y: py }, runEnemyPhase);
+      this.time.delayedCall(MOVE_MS * 2 + 160, () => {
+        if (!finished) complete();
+      });
     } else {
       this.snapImg(this.playerSprite, px, py);
-    }
-
-    for (const en of this.state.enemies) {
-      if (!en.alive) continue;
-      const view = this.enemyViews.get(en.id);
-      if (!view) continue;
-      const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
-      if (prev.x !== en.x || prev.y !== en.y) {
-        tweenActor(view.img, view.label, prev, { x: en.x, y: en.y });
-        view.gx = en.x;
-        view.gy = en.y;
-      }
-    }
-
-    if (pending === 0) {
-      this.animating = false;
-      this.maybeEnd();
-    } else {
-      // Failsafe if a tween is killed mid-move (sector rebuild, etc.)
+      runEnemyPhase();
       this.time.delayedCall(MOVE_MS + 120, () => {
-        if (!this.animating || finished) return;
-        finished = true;
-        this.animating = false;
-        this.syncActors(true);
-        this.maybeEnd();
+        if (!finished) complete();
       });
     }
   }

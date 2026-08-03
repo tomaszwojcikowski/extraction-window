@@ -127,10 +127,10 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
     if (dist === 1) {
       tryMelee(state, enemy, 3);
     } else {
+      // One lunge step — no double-step pounce (keeps telegraph readable).
       stepToward(state, enemy, state.player.x, state.player.y);
       const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
       if (d2 === 1) tryMelee(state, enemy, 3);
-      else if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
     }
     return;
   }
@@ -141,8 +141,6 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
   }
   if (!tryMelee(state, enemy)) {
     stepToward(state, enemy, state.player.x, state.player.y);
-    const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-    if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
   }
 }
 

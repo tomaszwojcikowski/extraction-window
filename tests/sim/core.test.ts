@@ -205,3 +205,61 @@ describe('expansion phase 2 mechanics', () => {
     expect(st.status).toBe('won');
   });
 });
+
+describe('turn economy', () => {
+  it('failed get does not spend a turn', () => {
+    const st = createGame(42);
+    st.items = st.items.filter((i) => i.x !== st.player.x || i.y !== st.player.y);
+    const turn = st.turn;
+    applyAction(st, { type: 'get' });
+    expect(st.turn).toBe(turn);
+  });
+
+  it('empty kit use does not spend a turn', () => {
+    const st = createGame(42);
+    st.inventory = [];
+    st.ui.inventoryOpen = true;
+    const turn = st.turn;
+    applyAction(st, { type: 'use' });
+    expect(st.turn).toBe(turn);
+  });
+
+  it('using a quest item does not spend a turn', () => {
+    const st = createGame(42);
+    st.inventory = [{ kind: 'relay_key', count: 1 }];
+    st.ui.selectedSlot = 0;
+    st.ui.inventoryOpen = true;
+    const turn = st.turn;
+    applyAction(st, { type: 'use' });
+    expect(st.turn).toBe(turn);
+  });
+
+  it('contextHint surfaces visible windup telegraph', () => {
+    const st = createGame(42);
+    st.enemies.push({
+      id: 9999,
+      kind: 'stalker',
+      x: st.player.x,
+      y: st.player.y,
+      hp: 10,
+      maxHp: 10,
+      atk: 4,
+      def: 1,
+      alive: true,
+      windup: 1,
+      swellTurns: 0,
+      alerted: true,
+      skirmishRetreat: false,
+      homeX: st.player.x,
+      homeY: st.player.y,
+      statuses: {},
+    });
+    // Place on a walkable neighbor and mark visible
+    const nx = Math.min(st.width - 2, st.player.x + 1);
+    const en = st.enemies[st.enemies.length - 1]!;
+    en.x = nx;
+    en.y = st.player.y;
+    st.visible[en.y]![en.x] = true;
+    expect(contextHint(st)).toBe('UI-HINT-TELE');
+  });
+});

@@ -109,7 +109,17 @@ export function endPlayerTurn(state: GameState): void {
   if (state.status !== 'playing') return;
   state.turn += 1;
   tickEnvironment(state);
+  // FOV from the player's new tile before AI so ambush/FOV checks see current vision.
+  computeFov(
+    state.tiles,
+    state.explored,
+    state.visible,
+    state.player.x,
+    state.player.y,
+    fovR(state),
+  );
   moveEnemies(state);
+  // Recompute after enemy moves so presentation matches final visibility.
   computeFov(
     state.tiles,
     state.explored,
