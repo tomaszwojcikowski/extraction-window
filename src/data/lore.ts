@@ -48,10 +48,10 @@ export const LORE = {
 
   // Mission
   'LOC-VIRE7': 'Vire-7',
-  'OBJ-NAVCORE': 'Recover Nav Core and extract before the ion window closes.',
-  'OBJ-RELAYKEY': 'Secure Relay Key from Ruin Belt caches.',
+  'OBJ-NAVCORE': 'Recover spare Nav Core from inland Cache Vault (Helix depot).',
+  'OBJ-RELAYKEY': 'Secure Relay Key from Ruin Belt — prior Helix survey wreckage.',
   'OBJ-BEACON': 'Authorize Beacon Relay with Relay Key to open inland path.',
-  'OBJ-SHUTTLE': 'Reach shuttle pad with Nav Core.',
+  'OBJ-SHUTTLE': 'Reach Ridge Approaches shuttle pad with Nav Core.',
   'HAZ-STORM': 'Ion storm turn budget remaining.',
 
   // Sectors
@@ -104,12 +104,22 @@ export const LORE = {
   'LOG-USE-RATION': 'Ration consumed.',
   'LOG-USE-PROBE': 'Survey probe active — ATK up.',
   'LOG-USE-FAIL': 'No usable item selected.',
-  'LOG-GOT-KEY': 'Relay Key acquired. Proceed to Beacon Relay.',
-  'LOG-USED-KEY': 'Beacon authorized. Inland path open.',
+  'LOG-GOT-KEY': 'Relay Key acquired from Ruin Belt cache. Proceed to Beacon Relay.',
+  'LOG-USED-KEY':
+    'Beacon authorized. Inland corridor open — Cache Vault holds spare Nav Core.',
   'LOG-NEED-KEY': 'Beacon sealed. Relay Key required.',
-  'LOG-GOT-CORE': 'Nav Core secured. Return to shuttle pad.',
+  'LOG-GOT-CORE': 'Nav Core secured from Helix depot. Return to Ridge Approaches pad.',
   'LOG-NEED-CORE': 'Shuttle refuses lock — Nav Core missing.',
   'LOG-SECTOR': 'Sector boundary crossed.',
+  'LOG-SEC-FLOOD': 'Flood Basin. Standing ion-water — watch energy.',
+  'LOG-SEC-CANOPY': 'Canopy Reach. Dense RF scatter — stalkers likely.',
+  'LOG-SEC-RUIN':
+    'Ruin Belt. Prior Helix survey site — collapsed stacks; Relay Key in local caches.',
+  'LOG-SEC-BEACON': 'Beacon Relay hub. Authorize with Relay Key to unseal inland path.',
+  'LOG-SEC-ASH': 'Ash Wastes. Baseline radiation — life support drain elevated.',
+  'LOG-SEC-VAULT':
+    'Cache Vault. Helix depot. Sentinels are site defense — RF-corrupted, still hostile.',
+  'LOG-SEC-RIDGE': 'Ridge Approaches. Shuttle pad ahead — Nav Core required for lock.',
   'LOG-EXIT-BLOCKED': 'Exit sealed.',
   'LOG-HAZARD': 'Ion hazard — energy drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',

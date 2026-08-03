@@ -32,14 +32,18 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 
 | ID | Name | Notes |
 |----|------|-------|
-| SEC-PLAINS | Survey Plains | Drop zone; low threat; exit south-east |
+| SEC-PLAINS | Survey Plains | Drop zone; low threat |
 | SEC-FLOOD | Flood Basin | Standing ion-water; elevated hazard tiles |
-| SEC-CANOPY | Canopy Reach | Dense cover; stalkers |
-| SEC-RUIN | Ruin Belt | Relay Key guaranteed, reachable |
-| SEC-BEACON | Beacon Relay | Spend Relay Key to open inland path |
+| SEC-CANOPY | Canopy Reach | Dense RF scatter; stalkers |
+| SEC-RUIN | Ruin Belt | Prior Helix survey wreckage; Relay Key in caches (guaranteed) |
+| SEC-BEACON | Beacon Relay | Spend Relay Key to open inland path to Cache Vault |
 | SEC-ASH | Ash Wastes | Baseline radiation energy drain; crawlers |
-| SEC-VAULT | Cache Vault | Nav Core guaranteed, reachable |
-| SEC-RIDGE | Ridge Approaches | Shuttle pad here; win with Core before storm = 0 |
+| SEC-VAULT | Cache Vault | Helix depot; spare Nav Core; Vault Sentinels = RF-corrupted site defense |
+| SEC-RIDGE | Ridge Approaches | Shuttle pad; win with Core before storm = 0 |
+
+**Ruin Belt** — Remains of an earlier Helix ground survey that lost orbital lock and was abandoned. Contingency caches still hold Relay Keys for Beacon authorization.
+
+**Vault Sentinels** — Automated Helix depot security. Signal ecology RF corruption flipped friend-or-foe; they treat active survey gear as hostile.
 
 ---
 

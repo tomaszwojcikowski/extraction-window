@@ -1,11 +1,22 @@
-import { getSector } from '../data/encounters';
+import { getSector, type SectorId } from '../data/encounters';
 import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
+import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
 import { computeFov } from './fov';
 import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
+
+const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
+  flood: 'LOG-SEC-FLOOD',
+  canopy: 'LOG-SEC-CANOPY',
+  ruin: 'LOG-SEC-RUIN',
+  beacon: 'LOG-SEC-BEACON',
+  ash: 'LOG-SEC-ASH',
+  vault: 'LOG-SEC-VAULT',
+  ridge: 'LOG-SEC-RIDGE',
+};
 
 export function createGame(seed: number): GameState {
   const rng = mulberry32(seed >>> 0);
@@ -110,4 +121,6 @@ export function loadSector(state: GameState, sectorIndex: number): void {
 
   computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
   pushLog(state, 'LOG-SECTOR');
+  const entry = SECTOR_ENTRY_LOG[sector.id];
+  if (entry) pushLog(state, entry);
 }
