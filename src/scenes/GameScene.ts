@@ -5,18 +5,37 @@ import { ITEMS } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { applyAction, createGame, type Action, type GameState } from '../sim';
 import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
-import { BIOME_FLOOR_TINT, FONT, TILE } from './textures';
+import {
+  BIOME_FLOOR_TINT,
+  FONT,
+  TILE,
+  TILE_DRAW,
+  enemyTextureKey,
+} from './textures';
 
-const TOP = 72;
-const BOTTOM = 108;
+const TOP = 76;
+const BOTTOM = 112;
+const MOVE_MS = 100;
+
+type EnemyView = {
+  img: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  gx: number;
+  gy: number;
+};
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
   private mapLayer!: Phaser.GameObjects.Container;
+  private itemLayer!: Phaser.GameObjects.Container;
   private entityLayer!: Phaser.GameObjects.Container;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
   private camX = 0;
   private camY = 0;
+
+  private playerSprite!: Phaser.GameObjects.Image;
+  private enemyViews = new Map<number, EnemyView>();
+  private animating = false;
 
   private topPanel!: Phaser.GameObjects.Graphics;
   private bottomPanel!: Phaser.GameObjects.Graphics;
@@ -38,8 +57,6 @@ export class GameScene extends Phaser.Scene {
   private helpOpen = false;
 
   private flash!: Phaser.GameObjects.Rectangle;
-  private lastHp = 0;
-  private lastEnergy = 0;
 
   constructor() {
     super('Game');
@@ -48,12 +65,20 @@ export class GameScene extends Phaser.Scene {
   init(data: { seed?: number }): void {
     this.state = createGame(data.seed ?? 42);
     this.helpOpen = false;
+    this.animating = false;
+    this.enemyViews.clear();
   }
 
   create(): void {
     this.cameras.main.setBackgroundColor(0x07090e);
     this.mapLayer = this.add.container(0, 0);
+    this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
+
+    this.playerSprite = this.add.image(0, 0, 't_player');
+    this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
+    this.entityLayer.add(this.playerSprite);
+
     this.buildMapSprites();
 
     this.topPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
@@ -61,16 +86,16 @@ export class GameScene extends Phaser.Scene {
     this.barsGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
 
     this.hudMeta = this.add
-      .text(12, 8, '', { fontFamily: FONT, fontSize: '12px', color: '#c8d0dc' })
+      .text(12, 8, '', { fontFamily: FONT, fontSize: '12px', color: '#d0dae8' })
       .setScrollFactor(0)
       .setDepth(92);
 
     this.objText = this.add
-      .text(12, 48, '', {
+      .text(12, 50, '', {
         fontFamily: FONT,
-        fontSize: '11px',
-        color: '#e0c040',
-        wordWrap: { width: this.scale.width - 200 },
+        fontSize: '12px',
+        color: '#f0d060',
+        wordWrap: { width: this.scale.width - 220 },
       })
       .setScrollFactor(0)
       .setDepth(92);
@@ -78,8 +103,8 @@ export class GameScene extends Phaser.Scene {
     this.questText = this.add
       .text(this.scale.width - 12, 10, '', {
         fontFamily: FONT,
-        fontSize: '11px',
-        color: '#ff80d0',
+        fontSize: '12px',
+        color: '#ff80e0',
         align: 'right',
       })
       .setOrigin(1, 0)
@@ -87,10 +112,10 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.sectorText = this.add
-      .text(this.scale.width - 12, 28, '', {
+      .text(this.scale.width - 12, 30, '', {
         fontFamily: FONT,
         fontSize: '11px',
-        color: '#8a9bb0',
+        color: '#a0b0c0',
         align: 'right',
       })
       .setOrigin(1, 0)
@@ -100,48 +125,45 @@ export class GameScene extends Phaser.Scene {
     this.logText = this.add
       .text(12, this.scale.height - BOTTOM + 10, '', {
         fontFamily: FONT,
-        fontSize: '11px',
-        color: '#9aacbe',
+        fontSize: '12px',
+        color: '#b0c0d0',
         wordWrap: { width: this.scale.width - 24 },
       })
       .setScrollFactor(0)
       .setDepth(92);
 
     this.hintText = this.add
-      .text(this.scale.width / 2, this.scale.height - BOTTOM - 14, '', {
+      .text(this.scale.width / 2, this.scale.height - BOTTOM - 16, '', {
         fontFamily: FONT,
-        fontSize: '12px',
-        color: '#5ec8ff',
-        backgroundColor: '#0a1018cc',
-        padding: { x: 8, y: 4 },
+        fontSize: '13px',
+        color: '#60e0ff',
+        backgroundColor: '#0a1018ee',
+        padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(93)
       .setVisible(false);
 
-    // Inventory modal
     this.invBg = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(100)
-      .setVisible(false)
-      .setInteractive();
+      .setVisible(false);
 
     this.invPanel = this.add.graphics().setScrollFactor(0).setDepth(101).setVisible(false);
     this.invText = this.add
       .text(0, 0, '', {
         fontFamily: FONT,
         fontSize: '13px',
-        color: '#d0dae8',
+        color: '#e0e8f0',
         lineSpacing: 4,
       })
       .setScrollFactor(0)
       .setDepth(102)
       .setVisible(false);
 
-    // Help modal
     this.helpBg = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
       .setOrigin(0)
@@ -154,7 +176,7 @@ export class GameScene extends Phaser.Scene {
       .text(0, 0, '', {
         fontFamily: FONT,
         fontSize: '13px',
-        color: '#c8d0dc',
+        color: '#d0dae8',
         lineSpacing: 6,
       })
       .setScrollFactor(0)
@@ -167,36 +189,63 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(120);
 
-    this.lastHp = this.state.player.hp;
-    this.lastEnergy = this.state.player.energy;
-
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
-    this.redraw(true);
+    this.syncItems();
+    this.syncActors(true);
+    this.redrawTilesAndHud();
+    this.updateCamera(true);
+  }
+
+  update(): void {
+    this.updateCamera(false);
+  }
+
+  private worldXY(tx: number, ty: number): { x: number; y: number } {
+    return { x: tx * TILE_DRAW + TILE_DRAW / 2, y: ty * TILE_DRAW + TILE_DRAW / 2 };
+  }
+
+  private snapImg(img: Phaser.GameObjects.Image, tx: number, ty: number): void {
+    const p = this.worldXY(tx, ty);
+    img.setPosition(p.x, p.y);
   }
 
   private drawChrome(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-
     this.topPanel.clear();
-    this.topPanel.fillStyle(0x0a1018, 0.96);
+    this.topPanel.fillStyle(0x0a1018, 0.97);
     this.topPanel.fillRect(0, 0, w, TOP);
-    this.topPanel.lineStyle(1, 0x2a3a4a, 1);
-    this.topPanel.lineBetween(0, TOP - 0.5, w, TOP - 0.5);
-    this.topPanel.lineStyle(1, 0x5ec8ff, 0.25);
-    this.topPanel.lineBetween(0, TOP - 1.5, w, TOP - 1.5);
+    this.topPanel.lineStyle(2, 0x3a90c0, 0.5);
+    this.topPanel.lineBetween(0, TOP - 1, w, TOP - 1);
 
     this.bottomPanel.clear();
-    this.bottomPanel.fillStyle(0x0a1018, 0.96);
+    this.bottomPanel.fillStyle(0x0a1018, 0.97);
     this.bottomPanel.fillRect(0, h - BOTTOM, w, BOTTOM);
-    this.bottomPanel.lineStyle(1, 0x2a3a4a, 1);
-    this.bottomPanel.lineBetween(0, h - BOTTOM + 0.5, w, h - BOTTOM + 0.5);
+    this.bottomPanel.lineStyle(2, 0x3a90c0, 0.5);
+    this.bottomPanel.lineBetween(0, h - BOTTOM + 1, w, h - BOTTOM + 1);
   }
 
   private buildMapSprites(): void {
+    this.tweens.killAll();
+    this.animating = false;
     this.mapLayer.removeAll(true);
-    this.entityLayer.removeAll(true);
+    this.itemLayer.removeAll(true);
+    for (const v of this.enemyViews.values()) {
+      v.img.destroy();
+      v.label.destroy();
+    }
+    this.enemyViews.clear();
+
+    // Keep player sprite in entity layer
+    if (!this.playerSprite.active) {
+      this.playerSprite = this.add.image(0, 0, 't_player');
+      this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
+      this.entityLayer.add(this.playerSprite);
+    } else if (this.playerSprite.parentContainer !== this.entityLayer) {
+      this.entityLayer.add(this.playerSprite);
+    }
+
     this.tileSprites = [];
     const tint = BIOME_FLOOR_TINT[this.state.sectorId];
     const { width, height, tiles } = this.state;
@@ -204,14 +253,18 @@ export class GameScene extends Phaser.Scene {
       this.tileSprites[y] = [];
       for (let x = 0; x < width; x++) {
         const kind = tiles[y]![x]!.kind;
-        const key = this.tileKey(kind);
-        const img = this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, key);
-        img.setDisplaySize(TILE, TILE);
+        const img = this.add.image(
+          x * TILE_DRAW + TILE_DRAW / 2,
+          y * TILE_DRAW + TILE_DRAW / 2,
+          this.tileKey(kind),
+        );
+        img.setDisplaySize(TILE_DRAW, TILE_DRAW);
         if (kind === 'floor') img.setTint(tint);
         this.mapLayer.add(img);
         this.tileSprites[y]![x] = img;
       }
     }
+    this.snapImg(this.playerSprite, this.state.player.x, this.state.player.y);
   }
 
   private tileKey(kind: string): string {
@@ -232,6 +285,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onKey(e: KeyboardEvent): void {
+    if (this.animating) return;
+
     if (this.state.status !== 'playing') {
       this.scene.start('End', {
         status: this.state.status,
@@ -246,26 +301,22 @@ export class GameScene extends Phaser.Scene {
       this.toggleHelp();
       return;
     }
-
     if (this.helpOpen) {
       if (e.key === 'Escape' || e.key === '?' || e.key === 'Enter') this.toggleHelp(false);
       return;
     }
 
-    // Number keys select inventory slot
     if (e.key >= '1' && e.key <= '9') {
       const idx = parseInt(e.key, 10) - 1;
       applyAction(this.state, { type: 'select_slot', index: idx });
-      if (!this.state.ui.inventoryOpen) {
-        applyAction(this.state, { type: 'toggle_inventory' });
-      }
-      this.redraw();
+      if (!this.state.ui.inventoryOpen) applyAction(this.state, { type: 'toggle_inventory' });
+      this.redrawTilesAndHud();
+      this.syncItems();
       return;
     }
 
     let action: Action | null = null;
     const k = e.key;
-
     if (k === 'Escape') {
       if (this.state.ui.inventoryOpen) action = { type: 'close_ui' };
       else {
@@ -276,36 +327,259 @@ export class GameScene extends Phaser.Scene {
     else if (k === 'u' || k === 'U') action = { type: 'use' };
     else if (k === 'g' || k === 'G') action = { type: 'get' };
     else if (k === '.' && !e.shiftKey) action = { type: 'wait' };
-    else if (k === '>' || k === '=' || (e.code === 'Period' && e.shiftKey)) {
-      action = { type: 'exit' };
-    } else if (k === 'ArrowUp' || k === 'w' || k === 'W') action = { type: 'move', dx: 0, dy: -1 };
+    else if (k === '>' || k === '=' || (e.code === 'Period' && e.shiftKey)) action = { type: 'exit' };
+    else if (k === 'ArrowUp' || k === 'w' || k === 'W') action = { type: 'move', dx: 0, dy: -1 };
     else if (k === 'ArrowDown' || k === 's' || k === 'S') action = { type: 'move', dx: 0, dy: 1 };
     else if (k === 'ArrowLeft' || k === 'a' || k === 'A') action = { type: 'move', dx: -1, dy: 0 };
     else if (k === 'ArrowRight' || k === 'd' || k === 'D') action = { type: 'move', dx: 1, dy: 0 };
-
     if (!action) return;
+
+    if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
+      applyAction(this.state, action);
+      this.redrawTilesAndHud();
+      return;
+    }
 
     const prevSector = this.state.sectorIndex;
     const prevHp = this.state.player.hp;
+    const fromPlayer = { x: this.state.player.x, y: this.state.player.y };
+    const fromEnemies = new Map(
+      this.state.enemies.filter((en) => en.alive).map((en) => [en.id, { x: en.x, y: en.y }]),
+    );
+
     applyAction(this.state, action);
+
     if (this.state.sectorIndex !== prevSector) {
       this.buildMapSprites();
+      this.syncItems();
+      this.syncActors(true);
+      this.redrawTilesAndHud();
+      this.updateCamera(true);
+      if (this.state.player.hp < prevHp) this.flashHit();
+      this.maybeEnd();
+      return;
     }
-    if (this.state.player.hp < prevHp) {
-      this.flashHit();
-    }
-    this.redraw();
 
-    if (this.state.status !== 'playing') {
-      this.time.delayedCall(500, () => {
-        this.scene.start('End', {
-          status: this.state.status,
-          loseReason: this.state.loseReason,
-          seed: this.state.seed,
-          turn: this.state.turn,
-        });
-      });
+    if (this.state.player.hp < prevHp) this.flashHit();
+
+    const playerMoved =
+      fromPlayer.x !== this.state.player.x || fromPlayer.y !== this.state.player.y;
+    const enemyMoved = this.state.enemies.some((en) => {
+      if (!en.alive) return false;
+      const prev = fromEnemies.get(en.id);
+      return !prev || prev.x !== en.x || prev.y !== en.y;
+    });
+
+    this.redrawTilesAndHud();
+    this.syncItems();
+
+    if (playerMoved || enemyMoved) {
+      this.playMoveAnims(fromPlayer, fromEnemies);
+    } else if (action.type === 'move') {
+      // Bump into wall/enemy — quick nudge
+      this.bumpAttack(action.dx, action.dy);
+      this.syncActors(true);
+      this.maybeEnd();
+    } else {
+      this.syncActors(true);
+      this.maybeEnd();
     }
+  }
+
+  private bumpAttack(dx: number, dy: number): void {
+    const base = this.worldXY(this.state.player.x, this.state.player.y);
+    this.playerSprite.setPosition(base.x, base.y);
+    this.tweens.add({
+      targets: this.playerSprite,
+      x: base.x + dx * 6,
+      y: base.y + dy * 6,
+      duration: 50,
+      yoyo: true,
+      ease: 'Quad.easeOut',
+    });
+  }
+
+  private playMoveAnims(
+    fromPlayer: { x: number; y: number },
+    fromEnemies: Map<number, { x: number; y: number }>,
+  ): void {
+    this.animating = true;
+    let pending = 0;
+    const finish = () => {
+      pending -= 1;
+      if (pending > 0) return;
+      this.animating = false;
+      this.syncActors(true);
+      this.maybeEnd();
+    };
+
+    const tweenActor = (
+      img: Phaser.GameObjects.Image,
+      label: Phaser.GameObjects.Text | null,
+      from: { x: number; y: number },
+      to: { x: number; y: number },
+    ) => {
+      const a = this.worldXY(from.x, from.y);
+      const b = this.worldXY(to.x, to.y);
+      img.setPosition(a.x, a.y);
+      if (label) label.setPosition(a.x - 6, a.y - 10);
+      pending += 1;
+      this.tweens.add({
+        targets: img,
+        x: b.x,
+        y: b.y,
+        duration: MOVE_MS,
+        ease: 'Cubic.easeOut',
+        onUpdate: () => {
+          if (label) label.setPosition(img.x - 6, img.y - 10);
+        },
+        onComplete: () => {
+          this.tweens.add({
+            targets: img,
+            displayWidth: TILE_DRAW + 2,
+            displayHeight: TILE_DRAW - 3,
+            duration: 35,
+            yoyo: true,
+            onComplete: finish,
+          });
+        },
+      });
+    };
+
+    this.syncActors(false);
+
+    const px = this.state.player.x;
+    const py = this.state.player.y;
+    if (fromPlayer.x !== px || fromPlayer.y !== py) {
+      tweenActor(this.playerSprite, null, fromPlayer, { x: px, y: py });
+    } else {
+      this.snapImg(this.playerSprite, px, py);
+    }
+
+    for (const en of this.state.enemies) {
+      if (!en.alive) continue;
+      const view = this.enemyViews.get(en.id);
+      if (!view) continue;
+      const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
+      if (prev.x !== en.x || prev.y !== en.y) {
+        tweenActor(view.img, view.label, prev, { x: en.x, y: en.y });
+        view.gx = en.x;
+        view.gy = en.y;
+      }
+    }
+
+    if (pending === 0) {
+      this.animating = false;
+      this.maybeEnd();
+    }
+  }
+
+  private maybeEnd(): void {
+    if (this.state.status === 'playing') return;
+    this.time.delayedCall(450, () => {
+      this.scene.start('End', {
+        status: this.state.status,
+        loseReason: this.state.loseReason,
+        seed: this.state.seed,
+        turn: this.state.turn,
+      });
+    });
+  }
+
+  private syncItems(): void {
+    this.itemLayer.removeAll(true);
+    const st = this.state;
+    for (const item of st.items) {
+      if (!st.explored[item.y]![item.x]) continue;
+      const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
+      const spr = this.add.image(
+        item.x * TILE_DRAW + TILE_DRAW / 2,
+        item.y * TILE_DRAW + TILE_DRAW / 2,
+        quest ? 't_quest' : 't_item',
+      );
+      spr.setDisplaySize(TILE_DRAW - 4, TILE_DRAW - 4);
+      spr.setAlpha(st.visible[item.y]![item.x] ? 1 : 0.4);
+      this.itemLayer.add(spr);
+      if (quest && st.visible[item.y]![item.x]) {
+        this.tweens.add({
+          targets: spr,
+          alpha: 0.55,
+          duration: 500,
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+    }
+  }
+
+  private syncActors(snapPositions: boolean): void {
+    const st = this.state;
+    const aliveIds = new Set<number>();
+
+    for (const en of st.enemies) {
+      if (!en.alive) continue;
+      aliveIds.add(en.id);
+      const visible = st.visible[en.y]![en.x];
+      let view = this.enemyViews.get(en.id);
+      if (!view) {
+        const img = this.add.image(0, 0, enemyTextureKey(en.kind));
+        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
+        const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
+          fontFamily: FONT,
+          fontSize: '11px',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 3,
+        });
+        this.entityLayer.add(img);
+        this.entityLayer.add(label);
+        view = { img, label, gx: en.x, gy: en.y };
+        this.enemyViews.set(en.id, view);
+        this.snapImg(img, en.x, en.y);
+        label.setPosition(img.x - 6, img.y - 10);
+      }
+      view.img.setVisible(visible);
+      view.label.setVisible(visible);
+      view.img.setTexture(enemyTextureKey(en.kind));
+      if (snapPositions) {
+        this.snapImg(view.img, en.x, en.y);
+        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.gx = en.x;
+        view.gy = en.y;
+      }
+    }
+
+    for (const [id, view] of this.enemyViews) {
+      if (!aliveIds.has(id)) {
+        view.img.destroy();
+        view.label.destroy();
+        this.enemyViews.delete(id);
+      }
+    }
+
+    this.playerSprite.setVisible(true);
+    if (snapPositions) this.snapImg(this.playerSprite, st.player.x, st.player.y);
+    // Keep player on top
+    this.entityLayer.bringToTop(this.playerSprite);
+  }
+
+  private updateCamera(snap: boolean): void {
+    const viewW = this.scale.width;
+    const viewH = this.scale.height - TOP - BOTTOM;
+    const targetX = this.playerSprite.x - viewW / 2;
+    const targetY = this.playerSprite.y - viewH / 2;
+    if (snap) {
+      this.camX = targetX;
+      this.camY = targetY;
+    } else {
+      this.camX += (targetX - this.camX) * 0.2;
+      this.camY += (targetY - this.camY) * 0.2;
+    }
+    const ox = -this.camX;
+    const oy = -this.camY + TOP;
+    this.mapLayer.setPosition(ox, oy);
+    this.itemLayer.setPosition(ox, oy);
+    this.entityLayer.setPosition(ox, oy);
   }
 
   private toggleHelp(force?: boolean): void {
@@ -314,14 +588,14 @@ export class GameScene extends Phaser.Scene {
     this.helpPanel.setVisible(this.helpOpen);
     this.helpText.setVisible(this.helpOpen);
     if (this.helpOpen) {
-      const w = 420;
-      const h = 280;
+      const w = 440;
+      const h = 300;
       const x = (this.scale.width - w) / 2;
       const y = (this.scale.height - h) / 2;
       this.helpPanel.clear();
       this.helpPanel.fillStyle(0x101820, 0.98);
       this.helpPanel.fillRoundedRect(x, y, w, h, 4);
-      this.helpPanel.lineStyle(1, 0x5ec8ff, 0.6);
+      this.helpPanel.lineStyle(2, 0x5ec8ff, 0.7);
       this.helpPanel.strokeRoundedRect(x, y, w, h, 4);
       this.helpText.setPosition(x + 24, y + 20);
       this.helpText.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC / ? close`);
@@ -330,12 +604,8 @@ export class GameScene extends Phaser.Scene {
 
   private flashHit(): void {
     this.flash.setFillStyle(0xe05050, 1);
-    this.flash.setAlpha(0.28);
-    this.tweens.add({
-      targets: this.flash,
-      alpha: 0,
-      duration: 220,
-    });
+    this.flash.setAlpha(0.3);
+    this.tweens.add({ targets: this.flash, alpha: 0, duration: 220 });
   }
 
   private drawBar(
@@ -348,11 +618,11 @@ export class GameScene extends Phaser.Scene {
     low: number,
   ): void {
     const r = Phaser.Math.Clamp(ratio, 0, 1);
-    this.barsGfx.fillStyle(0x1a222e, 1);
+    this.barsGfx.fillStyle(0x15202c, 1);
     this.barsGfx.fillRect(x, y, w, h);
     this.barsGfx.fillStyle(r <= 0.3 ? low : fill, 1);
     this.barsGfx.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
-    this.barsGfx.lineStyle(1, 0x3a4a5a, 1);
+    this.barsGfx.lineStyle(1, 0x5a7088, 1);
     this.barsGfx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   }
 
@@ -366,7 +636,7 @@ export class GameScene extends Phaser.Scene {
     return null;
   }
 
-  private redraw(snapCam = false): void {
+  private redrawTilesAndHud(): void {
     const st = this.state;
     const tint = BIOME_FLOOR_TINT[st.sectorId];
 
@@ -382,70 +652,16 @@ export class GameScene extends Phaser.Scene {
           img.setTexture(this.tileKey(kind));
           if (kind === 'floor') img.setTint(tint);
           else img.clearTint();
-          img.setAlpha(st.visible[y]![x] ? 1 : 0.32);
+          // Explored-but-not-visible stays more readable
+          img.setAlpha(st.visible[y]![x] ? 1 : 0.45);
         }
       }
     }
 
-    this.entityLayer.removeAll(true);
-
-    for (const item of st.items) {
-      if (!st.explored[item.y]![item.x]) continue;
-      const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
-      const spr = this.add.image(
-        item.x * TILE + TILE / 2,
-        item.y * TILE + TILE / 2,
-        quest ? 't_quest' : 't_item',
-      );
-      spr.setDisplaySize(TILE - 2, TILE - 2);
-      spr.setAlpha(st.visible[item.y]![item.x] ? 1 : 0.35);
-      this.entityLayer.add(spr);
-    }
-
-    for (const en of st.enemies) {
-      if (!en.alive || !st.visible[en.y]![en.x]) continue;
-      const spr = this.add.image(en.x * TILE + TILE / 2, en.y * TILE + TILE / 2, 't_enemy');
-      spr.setDisplaySize(TILE - 1, TILE - 1);
-      this.entityLayer.add(spr);
-      const label = this.add
-        .text(en.x * TILE + 3, en.y * TILE + 2, ENEMIES[en.kind].glyph, {
-          fontFamily: FONT,
-          fontSize: '9px',
-          color: '#fff',
-        })
-        .setDepth(2);
-      this.entityLayer.add(label);
-    }
-
-    const player = this.add.image(
-      st.player.x * TILE + TILE / 2,
-      st.player.y * TILE + TILE / 2,
-      't_player',
-    );
-    player.setDisplaySize(TILE, TILE);
-    this.entityLayer.add(player);
-
-    // Camera — keep player in playfield between chrome
-    const viewW = this.scale.width;
-    const viewH = this.scale.height - TOP - BOTTOM;
-    const targetX = st.player.x * TILE - viewW / 2 + TILE / 2;
-    const targetY = st.player.y * TILE - viewH / 2;
-    if (snapCam) {
-      this.camX = targetX;
-      this.camY = targetY;
-    } else {
-      this.camX += (targetX - this.camX) * 0.35;
-      this.camY += (targetY - this.camY) * 0.35;
-    }
-    this.mapLayer.setPosition(-this.camX, -this.camY + TOP);
-    this.entityLayer.setPosition(-this.camX, -this.camY + TOP);
-
-    // Bars
     this.barsGfx.clear();
-    this.drawBar(12, 28, 140, 8, st.player.hp / st.player.maxHp, 0x40c878, 0xe05050);
-    this.drawBar(168, 28, 140, 8, st.player.energy / st.player.maxEnergy, 0x5ec8ff, 0xe09040);
-    const stormRatio = Math.min(1, st.stormTurns / STORM_TURNS);
-    this.drawBar(324, 28, 160, 8, stormRatio, 0xe0c040, 0xe05050);
+    this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, 0x40e878, 0xff4040);
+    this.drawBar(176, 30, 150, 10, st.player.energy / st.player.maxEnergy, 0x40c8ff, 0xffa040);
+    this.drawBar(340, 30, 170, 10, st.stormTurns / STORM_TURNS, 0xf0d040, 0xff5050);
 
     const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
     this.hudMeta.setText(
@@ -474,9 +690,7 @@ export class GameScene extends Phaser.Scene {
         sectorId: st.sectorId,
       }),
     )}`;
-    this.objText.setText(
-      st.stormTurns <= 50 ? `${objLine}\n${lore('HAZ-STORM')}` : objLine,
-    );
+    this.objText.setText(st.stormTurns <= 50 ? `${objLine}\n${lore('HAZ-STORM')}` : objLine);
 
     const logs = st.log.slice(-5).map((l) => {
       const base = lore(l.loreId);
@@ -492,22 +706,20 @@ export class GameScene extends Phaser.Scene {
       this.hintText.setVisible(false);
     }
 
-    // Inventory
     const invOpen = st.ui.inventoryOpen;
     this.invBg.setVisible(invOpen);
     this.invPanel.setVisible(invOpen);
     this.invText.setVisible(invOpen);
     if (invOpen) {
-      const pw = 360;
+      const pw = 380;
       const ph = Math.max(180, 70 + st.inventory.length * 22);
       const px = (this.scale.width - pw) / 2;
       const py = (this.scale.height - ph) / 2;
       this.invPanel.clear();
       this.invPanel.fillStyle(0x101820, 0.98);
       this.invPanel.fillRoundedRect(px, py, pw, ph, 4);
-      this.invPanel.lineStyle(1, 0xe0c040, 0.55);
+      this.invPanel.lineStyle(2, 0xe0c040, 0.7);
       this.invPanel.strokeRoundedRect(px, py, pw, ph, 4);
-
       const lines =
         st.inventory.length === 0
           ? [lore('UI-EMPTY-INV')]
@@ -522,8 +734,5 @@ export class GameScene extends Phaser.Scene {
       this.invText.setPosition(px + 18, py + 16);
       this.invText.setText(`${lore('UI-INV')}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`);
     }
-
-    this.lastHp = st.player.hp;
-    this.lastEnergy = st.player.energy;
   }
 }
