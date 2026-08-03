@@ -9,7 +9,7 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game',
   width: 960,
   height: 640,
-  backgroundColor: '#12140e',
+  backgroundColor: '#06060c',
   pixelArt: true,
   scene: [BootScene, TitleScene, GameScene, EndScene],
   scale: {

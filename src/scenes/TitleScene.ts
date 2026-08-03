@@ -127,7 +127,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private seedLabel(): string {
-    return `SHEET  ${this.seed}  ·  ${lore('UI-SEED')}`;
+    return `MISSION  ${this.seed}  ·  ${lore('UI-SEED')}`;
   }
 
   private ensureBeds(): void {

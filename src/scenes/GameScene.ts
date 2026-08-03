@@ -1161,9 +1161,9 @@ export class GameScene extends Phaser.Scene {
     const activeSys = `${probe}${stim}${filter}${jam}${lens}${map}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
     const tool =
-      st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:blade` : '';
+      st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:knife` : '';
     const armorEq =
-      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:harness` : '';
+      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:eva` : '';
     const statuses = statusHud(st.player.statuses);
     const statusLine = statuses ? `  ${statuses}` : '';
     const atkBonus =
@@ -1250,7 +1250,7 @@ export class GameScene extends Phaser.Scene {
               return `${mark} ${num}  ${name} ×${slot.count}${sel}`;
             });
       this.invText.setPosition(px + 18, py + 16);
-      const equipLine = `${lore('UI-TOOL')}: ${st.player.equip.tool ?? '—'}   ${lore('UI-EQUIP-ARMOR')}: ${st.player.equip.armor ?? '—'}`;
+      const equipLine = `${lore('UI-TOOL')}: ${st.player.equip.tool === 'blade' ? 'knife' : (st.player.equip.tool ?? '—')}   ${lore('UI-EQUIP-ARMOR')}: ${st.player.equip.armor === 'harness' ? 'eva' : (st.player.equip.armor ?? '—')}`;
       this.invText.setText(
         `${lore('UI-INV')}\n${equipLine}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`,
       );

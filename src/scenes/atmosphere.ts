@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { Theme } from './theme';
 
-/** Survey cover sheet chrome — ruled margins + registration marks, not cyber glow. */
+/** LCARS-style menu chrome — black field, orange rules, elbow accents. */
 export function drawMenuChrome(
   _scene: Phaser.Scene,
   g: Phaser.GameObjects.Graphics,
@@ -13,38 +13,33 @@ export function drawMenuChrome(
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, width, height);
 
-  // Margin field
+  // Main panel
   g.fillStyle(Theme.ground, 1);
-  g.fillRect(36, 40, width - 72, height - 80);
+  g.fillRect(40, 44, width - 80, height - 88);
 
-  // Hard outer rule
-  g.lineStyle(1, Theme.panelEdge, 1);
-  g.strokeRect(36.5, 40.5, width - 73, height - 81);
+  // Outer LCARS frame
+  g.lineStyle(2, accent, 0.85);
+  g.strokeRect(40.5, 44.5, width - 81, height - 89);
 
-  // Inner rule
-  g.lineStyle(1, accent, 0.55);
-  g.strokeRect(48.5, 52.5, width - 97, height - 105);
+  // Top elbow bar
+  g.fillStyle(accent, 1);
+  g.fillRect(48, 52, width - 140, 10);
+  g.fillRect(width - 100, 52, 44, 10);
+  g.fillRect(width - 64, 52, 10, 28);
 
-  // Registration marks (corners)
-  const mark = (x: number, y: number) => {
-    g.lineStyle(1, accent, 0.9);
-    g.lineBetween(x - 6, y, x + 6, y);
-    g.lineBetween(x, y - 6, x, y + 6);
-  };
-  mark(48, 52);
-  mark(width - 49, 52);
-  mark(48, height - 53);
-  mark(width - 49, height - 53);
+  // Bottom elbow bar
+  g.fillStyle(Theme.quest, 0.9);
+  g.fillRect(48, height - 62, 10, 10);
+  g.fillRect(48, height - 62, width - 140, 8);
+  g.fillRect(width - 100, height - 62, 44, 8);
 
-  // Horizontal ruling (plotter paper)
-  for (let y = 68; y < height - 68; y += 8) {
-    g.lineStyle(1, Theme.phosphorMute, 0.12);
-    g.lineBetween(56, y, width - 56, y);
-  }
+  // Side rail
+  g.fillStyle(Theme.phosphorMute, 0.55);
+  g.fillRect(48, 70, 8, height - 140);
 }
 
 /**
- * Single horizontal scan-retrace — replaces particle dust clouds.
+ * Single horizontal scan-retrace — LCARS sensor sweep.
  * Returns the line so the caller can tween/destroy it.
  */
 export function createScanRetrace(
@@ -53,7 +48,7 @@ export function createScanRetrace(
 ): Phaser.GameObjects.Rectangle {
   const { width, height } = scene.scale;
   const line = scene.add
-    .rectangle(0, 80, width, 1, Theme.phosphorDim, 0.2)
+    .rectangle(0, 80, width, 1, Theme.phosphorDim, 0.22)
     .setOrigin(0, 0.5)
     .setScrollFactor(0)
     .setDepth(depth);
@@ -64,11 +59,6 @@ export function createScanRetrace(
     duration: 5200,
     ease: 'Linear',
     repeat: -1,
-    yoyo: false,
-    onYoyo: undefined,
-    onRepeat: () => {
-      line.setAlpha(0.22);
-    },
   });
   scene.tweens.add({
     targets: line,

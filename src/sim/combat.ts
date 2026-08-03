@@ -45,7 +45,7 @@ export function applyPlayerDamage(
 
   if (state.player.armor > 0) {
     let absorbCap = dmg;
-    // Exposed surveyors bleed through ablative plating
+    // Exposed away officers bleed through personal shields
     if (hasStatus(state.player, 'expose')) {
       absorbCap = Math.max(0, Math.ceil(dmg * 0.55));
     }

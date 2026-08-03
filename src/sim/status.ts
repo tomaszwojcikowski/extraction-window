@@ -63,7 +63,7 @@ export function statusHud(statuses: StatusMap): string {
   const parts: string[] = [];
   if ((statuses.stun ?? 0) > 0) parts.push(`STN${statuses.stun}`);
   if ((statuses.bleed ?? 0) > 0) parts.push(`BLD${statuses.bleed}`);
-  if ((statuses.ion_burn ?? 0) > 0) parts.push(`ION${statuses.ion_burn}`);
-  if ((statuses.expose ?? 0) > 0) parts.push(`EXP${statuses.expose}`);
+  if ((statuses.ion_burn ?? 0) > 0) parts.push(`PLS${statuses.ion_burn}`);
+  if ((statuses.expose ?? 0) > 0) parts.push(`XPS${statuses.expose}`);
   return parts.join(' ');
 }

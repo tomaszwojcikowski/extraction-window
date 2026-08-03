@@ -19,7 +19,7 @@ function ink(g: G, color: number, alpha = 1): void {
   g.fillStyle(color, alpha);
 }
 
-/** Cartographic plotter tile grammar — hatches & stamps, not beveled cyber panels. */
+/** Cartographic / LCARS tile grammar — hatches & stamps for Delta survey ops. */
 export function registerTextures(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   const T = TILE;
@@ -214,13 +214,12 @@ export function registerTextures(scene: Phaser.Scene): void {
   ventStamp(2);
   bake('t_vent_2');
 
-  // Hazard — warning chevron (sickly green-white, not magenta)
+  // Hazard — plasma / ion warning chevron
   const hazardStamp = (weight: number) => {
     clearGround();
     ink(g, Theme.ionHazardDeep);
     g.fillRect(1, 1, T - 2, T - 2);
     ink(g, Theme.ionHazard);
-    // Chevron
     g.fillRect(11, 4 + weight, 2, 10);
     g.fillRect(7, 8 + weight, 10, 2);
     g.fillRect(9, 6 + weight, 2, 2);
@@ -316,20 +315,21 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(0, 0, T, T);
   bake('t_memory');
 
-  // Player — surveyor helmet + pack
+  // Player — Starfleet away officer (commbadge + EVA silhouette)
   g.clear();
   g.fillStyle(0x000000, 0);
   g.fillRect(0, 0, T, T);
-  ink(g, Theme.groundDeep);
-  g.fillRect(6, 5, 12, 14);
+  ink(g, 0x1a2840);
+  g.fillRect(7, 6, 10, 13);
+  ink(g, 0x2a5080);
+  g.fillRect(8, 4, 8, 5); // torso / jacket
   ink(g, Theme.phosphor);
-  g.fillRect(7, 4, 10, 5);
-  g.fillRect(6, 9, 12, 7);
-  g.fillRect(8, 16, 8, 4);
+  g.fillRect(9, 5, 3, 2); // commbadge
   ink(g, Theme.phosphorBright);
-  g.fillRect(9, 10, 6, 4);
-  ink(g, Theme.phosphorDim);
-  g.fillRect(16, 10, 3, 6); // pack
+  g.fillRect(10, 10, 4, 3); // visor gleam
+  ink(g, 0x3a3a50);
+  g.fillRect(6, 14, 3, 5); // pack left
+  g.fillRect(15, 14, 3, 5);
   bake('t_player');
 
   // Item crate

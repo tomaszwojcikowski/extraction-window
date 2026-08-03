@@ -1,6 +1,6 @@
 # Extraction Window
 
-Solo turn-based sci-fi roguelike. Helix Cartographic Authority surveyor on Vire-7 — recover the Nav Core before the ion storm closes the extraction window.
+Solo turn-based sci-fi roguelike. **U.S.S. Voyager** away team on Site Theta-7 (Delta Quadrant) — recover the navigational core before the ion storm collapses the extraction window.
 
 See [PLAN.md](./PLAN.md) and [docs/LORE.md](./docs/LORE.md).
 
@@ -22,11 +22,12 @@ npm run playtest     # full seed suite → playtest-report.json
 | WASD / arrows | Move (or navigate kit) |
 | `.` | Wait |
 | `g` | Get item |
-| `i` | Open kit |
+| `i` | Open away kit |
 | `u` | Use selected item |
 | `1`–`9` | Select kit slot |
-| `>` / `=` | Exit / beacon / shuttle |
-| `?` | Field manual |
+| `p` | Mission PADD pages |
+| `>` / `=` | Hatch / beacon / shuttle |
+| `?` | Away team manual |
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
-| Title: `←` `→` seed, `R` random, `Enter` start |
+| Title: `←` `→` mission ID, `R` random, `Enter` start |

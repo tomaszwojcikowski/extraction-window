@@ -110,7 +110,7 @@ export class EndScene extends Phaser.Scene {
     const summary = [
       this.objective ? `OBJ  ${this.objective}` : null,
       `LVL  ${this.level}${skillNames ? `  ·  ${skillNames}` : ''}`,
-      `SHEET ${this.seed}   ·   turn ${this.turn}`,
+      `MISSION ${this.seed}   ·   turn ${this.turn}`,
     ]
       .filter(Boolean)
       .join('\n');

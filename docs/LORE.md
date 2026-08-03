@@ -1,30 +1,29 @@
-# Extraction Window — Field Lore Bible
+# Extraction Window — Mission Lore Bible
 
-Clinical field-ops logbook for Helix Cartographic Authority contract surveyors.
-Tone: terse, procedural, no fantasy magic. All player-facing copy maps to entry IDs in `src/data/lore.ts`.
+Starfleet away-ops logbook for U.S.S. Voyager Delta Quadrant missions.
+Tone: terse Starfleet procedure, no fantasy magic. All player-facing copy maps to entry IDs in `src/data/lore.ts`.
 
 ---
 
 ## Mission Context
 
-**LOC-VIRE7** — Planetoid Vire-7, outer survey belt.
-Helix Cartographic Authority (HCA) dropped Surveyor Unit for RF ground-truth of orbital maps.
-Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window closes under ion storm.
+**LOC-VIRE7** — Uncharted Class-M world **Site Theta-7**, Delta Quadrant.
+Voyager drops an away team for ground survey after long-range subspace array failure mid-transit. Type-9 shuttle nav stack lost lock. Extraction window closes under an ion storm front.
 
-**OBJ-NAVCORE** — Spare Nav Core stored inland at Cache Vault (Helix depot).
-**OBJ-RELAYKEY** — Beacon Relay inland seal requires Relay Key recovered from Ruin Belt caches.
-**HAZ-STORM** — Ion storm: hard turn budget. Energy is life support under ion stress (slow drip + hazards; Ash Wastes add baseline radiation drain).
+**OBJ-NAVCORE** — Spare navigational core stored inland at Contingency Cache (Starfleet depot).
+**OBJ-RELAYKEY** — Emergency Beacon inland seal requires Isolinear Key recovered from Crash Wreck Belt caches.
+**HAZ-STORM** — Ion storm: hard turn budget. EPS power is life support under ion stress (slow drip + hazards; Radiogenic Ash adds baseline drain).
 
 ---
 
 ## Causal Chain
 
-1. **CAUSE-RF** — Survey RF gear agitates local signal ecology → hostile fauna packs.
-   Player beat: `LOG-DROP` + Signal/Relay-named hostiles + Survey Probe RF ranging.
-2. **CAUSE-RELAY** — Orbital relay down → only inland spare Nav Core can restore shuttle lock.
-3. **CAUSE-SEAL** — Inland path sealed behind Beacon Relay hub → needs Relay Key.
-4. **CAUSE-STORM** — Storm = environmental turn budget; Energy drains under ion stress / hazards.
-5. **CAUSE-ESCAPE** — Escape only with Nav Core present at shuttle pad before window expires.
+1. **CAUSE-EM** — Tricorder / away EM agitates local ecology → hostile fauna packs.
+   Player beat: `LOG-DROP` + EM/Beacon-named hostiles + Tricorder Pulse ranging.
+2. **CAUSE-ARRAY** — Long-range array down → only inland spare Nav Core can restore Type-9 lock.
+3. **CAUSE-SEAL** — Inland path sealed behind Emergency Beacon → needs Isolinear Key.
+4. **CAUSE-STORM** — Ion window = environmental turn budget; EPS drains under ion stress / hazards.
+5. **CAUSE-ESCAPE** — Escape only with Nav Core present at Type-9 pad before window expires.
 
 ---
 
@@ -32,32 +31,32 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 
 | ID | Name | Notes |
 |----|------|-------|
-| SEC-PLAINS | Survey Plains | Drop zone; low threat |
-| SEC-FLOOD | Flood Basin | Standing ion-water; elevated hazard tiles |
-| SEC-CANOPY | Canopy Reach | Dense RF scatter; stalkers |
-| SEC-SPIRE | Spire Reach | Abandoned Helix survey masts; RF scatter intensifies |
-| SEC-RUIN | Ruin Belt | Prior Helix survey wreckage; Relay Key in caches (guaranteed) |
-| SEC-BEACON | Beacon Relay | Spend Relay Key to open inland path to Cache Vault |
-| SEC-TRENCH | Fault Trench | Inland corridor after seal; deep fauna rising |
-| SEC-ASH | Ash Wastes | Baseline radiation energy drain; crawlers |
-| SEC-BRINE | Brine Shelf | Ion-brine pools; hazard density before vault |
-| SEC-VAULT | Cache Vault | Helix depot; spare Nav Core; Vault Sentinels = RF-corrupted site defense |
-| SEC-FISSURE | Fissure March | Storm pressure climb toward the pad |
-| SEC-RIDGE | Ridge Approaches | Shuttle pad; win with Core before storm = 0 |
+| SEC-PLAINS | Drop Zone | Beam-in flats; low threat |
+| SEC-FLOOD | Ion Floodplain | Standing ion-water; elevated hazard tiles |
+| SEC-CANOPY | Canopy Sector | Dense EM scatter; hunters |
+| SEC-SPIRE | Sensor Mast Reach | Abandoned Starfleet arrays; EM intensifies |
+| SEC-RUIN | Crash Wreck Belt | Prior wreckage; Isolinear Key in caches (guaranteed) |
+| SEC-BEACON | Emergency Beacon | Spend Isolinear Key to open inland path |
+| SEC-TRENCH | Fault Corridor | Inland after seal; deep fauna |
+| SEC-ASH | Radiogenic Ash | Baseline radiation EPS drain |
+| SEC-BRINE | Nucleonic Brine | Ion-brine pools before cache |
+| SEC-VAULT | Contingency Cache | Starfleet depot; spare Nav Core; EM-corrupted sentinels |
+| SEC-FISSURE | Gravimetric Fissure | Storm pressure climb toward the pad |
+| SEC-RIDGE | Shuttle Ridge | Type-9 pad; win with Core before window = 0 |
 
-**Ruin Belt** — Remains of an earlier Helix ground survey that lost orbital lock and was abandoned. Contingency caches still hold Relay Keys for Beacon authorization.
+**Crash Wreck Belt** — Remains of an earlier Starfleet ground survey that lost array lock and was abandoned. Contingency caches still hold Isolinear Keys for beacon authorization.
 
-**Vault Sentinels** — Automated Helix depot security. Signal ecology RF corruption flipped friend-or-foe; they treat active survey gear as hostile.
+**Cache Sentinels** — Automated depot security. EM corruption flipped friend-or-foe; they treat active away gear as hostile.
 
 ### One-room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize. Never required for extraction. Completing them can grant expedition **Pages** (in-run codex; reset each seed).
+Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed).
 
-### New hostiles
+### Hostiles
 
-- **Spire Mastling** — RF-fed skirmisher; ion damage
+- **Array Feeder** — EM-fed skirmisher; plasma damage
 - **Fault Skitter** — fast ambush; applies bleed
-- **Fissure Rift** — hunter; ion + expose
+- **Fissure Rift** — hunter; plasma + expose
 
 ### Death drops
 
@@ -65,50 +64,42 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 
 ## Terrain (sparse)
 
-- Floor / rubble / scrub — open ground; scrub costs light energy
-- Vent / hazard — ion stress drains life support (filter halves; sealant can neutralize underfoot)
-- Exit / beacon / shuttle — mission structures
+- Floor / rubble / scrub — open ground; scrub is sight-block only
+- Vent / hazard — ion stress drains EPS (filter halves; sealant can neutralize underfoot)
+- Hatch / beacon / shuttle — mission structures
 - POI (≤1 per sector) — optional anomaly (console / nest / cache scar); never required for win
 
-## Signal ecology behaviors
+## Ecology behaviors
 
-Each biome signature hostile has a readable behavior (wander, swell burst, skirmish, ambush, drain, guard, sentinel hold, hunter chase). RF jammer briefly silences mites/wasps — survey RF is what agitates them.
+Each biome signature hostile has a readable behavior (wander, swell burst, skirmish, ambush, drain, guard, sentinel hold, hunter chase). EM scrambler briefly silences mites/wasps — tricorder EM is what agitates them.
 
-## Field kit
+## Away kit
 
-Capacity 16 slots. Consumables: med, energy, ration, coolant, battery, probe, stim, plate (repairs ablative armor), flare, filter, dart, jammer, sealant, patch, lens, mapper. Equipment (separate from bag): scrap blade (tool +1 ATK), field harness (+6 max armor). Quest: Relay Key, Nav Core.
+Capacity 16 slots. Consumables: hypospray, power cell, ration, EPS coolant, tricorder pulse, stim, shield charge, plasma flare, plasma filter, microdart, EM scrambler, sealant, dermal seal, tricorder lens, nav ping. Equipment: combat knife (+1 ATK), EVA harness (+6 max shields). Quest: Isolinear Key, Nav Core.
 
-**Ablative armor** — hits strike armor pool before vitals. Bleed bypasses armor. Ion damage halved while filter is active. Kinetic vs ion damage types on hostiles.
+**Personal shields** — hits strike shield pool before vitals. Bleed bypasses shields. Plasma damage halved while filter is active. Kinetic vs plasma (ion) damage types on hostiles.
 
-**Surveyor proficiency (in-run)** — kills, sector clears, room quests, and objective beats grant XP. Levels auto-boost stats and unlock passive field skills (triage, scavenger, overcharge, ion skin, deep reserve, last window). Resets each drop; no cross-run meta.
+**Away proficiency (in-run)** — kills, sector clears, room quests, and objective beats grant XP. Levels auto-boost stats and unlock passive field skills. Resets each mission; no cross-run meta.
 
-Statuses (shared): stun, bleed, ion_burn, expose — tick on turns; HUD glyphs beside vitals.
+Statuses: stun, bleed, plasma burn, expose — tick on turns; HUD glyphs beside vitals.
 
 ## Field audio (synthesized)
 
-Survey gear listens to local RF / ion stress. Ambient beds shift by biome (dry plains hum, flood drip, ash grit, vault carrier). Sparse music densifies as the storm window closes. `m` mutes all buses (SFX, ambient, music). No authored soundtrack files — procedural Web Audio only.
+Away gear listens to local EM / ion stress. Ambient beds shift by biome. Sparse music densifies as the ion window closes. `m` mutes all buses. Procedural Web Audio only.
 
 ---
 
 ## Player Strings (IDs)
 
-See `src/data/lore.ts` for the full registry. Groups:
-
-- `UI-*` — titles, HUD labels, end screens, inventory/help chrome, contextual hints
-- `LOG-*` — combat, pickup, sector transition, objective events
-- `ITEM-*` — item names / descriptions (descriptions shown for selected kit slot)
-- `ENEMY-*` — enemy display names (shown in kill log detail)
-- `OBJ-*` — objective prompts
-- `SEC-*` — sector titles
-- `LOC-*` / `HAZ-*` — mission tags; `LOC-VIRE7` on title; `HAZ-STORM` when window ≤ 50
+See `src/data/lore.ts` for the full registry.
 
 ---
 
 ## Legal Objective Order
 
-1. Enter Ruin Belt → acquire Relay Key (`LOG-GOT-KEY`)
-2. Enter Beacon Relay → spend key (`LOG-USED-KEY`) → inland opens
-3. Enter Cache Vault → acquire Nav Core (`LOG-GOT-CORE`)
-4. Reach Shuttle Pad with Core → extract (`LOG-EXTRACT`)
+1. Enter Crash Wreck Belt → acquire Isolinear Key (`LOG-GOT-KEY`)
+2. Enter Emergency Beacon → spend key (`LOG-USED-KEY`) → inland opens
+3. Enter Contingency Cache → acquire Nav Core (`LOG-GOT-CORE`)
+4. Reach Type-9 pad with Core → extract (`LOG-EXTRACT`)
 
 Win without Core is illegal. Key use before acquisition is illegal.
