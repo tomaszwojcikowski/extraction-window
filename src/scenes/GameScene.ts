@@ -42,6 +42,10 @@ export class GameScene extends Phaser.Scene {
   private enemyViews = new Map<number, EnemyView>();
   private animating = false;
   private atmo: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private animFrame = 0;
+  private animAccum = 0;
+  private fovVignette!: Phaser.GameObjects.Graphics;
+  private idleBob = 0;
 
   private topPanel!: Phaser.GameObjects.Graphics;
   private bottomPanel!: Phaser.GameObjects.Graphics;
@@ -195,6 +199,8 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(120);
 
+    this.fovVignette = this.add.graphics().setScrollFactor(0).setDepth(80);
+
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
     this.syncItems();
@@ -205,6 +211,7 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       ambient.stop();
       music.stop();
+      this.atmo?.destroy();
     });
   }
 
@@ -220,8 +227,33 @@ export class GameScene extends Phaser.Scene {
     else music.syncStorm(this.state.stormTurns);
   }
 
-  update(): void {
+  update(_t: number, dt: number): void {
     this.updateCamera(false);
+    this.animAccum += dt;
+    if (this.animAccum >= 420) {
+      this.animAccum = 0;
+      this.animFrame = (this.animFrame + 1) % 3;
+      this.tickAnimatedTiles();
+    }
+    if (!this.animating) {
+      this.idleBob = Math.sin(_t / 380) * 1.2;
+      const p = this.worldXY(this.state.player.x, this.state.player.y);
+      this.playerSprite.setPosition(p.x, p.y + this.idleBob);
+    }
+  }
+
+  private tickAnimatedTiles(): void {
+    const st = this.state;
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        if (!st.explored[y]![x]) continue;
+        const kind = st.tiles[y]![x]!.kind;
+        if (kind !== 'hazard' && kind !== 'vent' && kind !== 'poi' && kind !== 'beacon') continue;
+        const img = this.tileSprites[y]?.[x];
+        if (!img) continue;
+        img.setTexture(this.tileKey(kind, x, y));
+      }
+    }
   }
 
   private worldXY(tx: number, ty: number): { x: number; y: number } {
@@ -303,27 +335,28 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tileKey(kind: string, x = 0, y = 0): string {
+    const f = this.animFrame;
     switch (kind) {
       case 'wall': {
         const v = (x * 3 + y * 7 + this.state.seed) % 2;
         return v === 0 ? 't_wall' : 't_wall_1';
       }
       case 'hazard':
-        return 't_hazard';
+        return f === 0 ? 't_hazard' : f === 1 ? 't_hazard_1' : 't_hazard_2';
       case 'scrub':
         return 't_scrub';
       case 'rubble':
         return 't_rubble';
       case 'vent':
-        return 't_vent';
+        return f === 0 ? 't_vent' : f === 1 ? 't_vent_1' : 't_vent_2';
       case 'exit':
         return 't_exit';
       case 'beacon':
-        return 't_beacon';
+        return f === 0 ? 't_beacon' : f === 1 ? 't_beacon_1' : 't_beacon_2';
       case 'shuttle':
         return 't_shuttle';
       case 'poi':
-        return 't_poi';
+        return f === 0 ? 't_poi' : f === 1 ? 't_poi_1' : 't_poi_2';
       case 'floor': {
         const v = (x + y * 3 + this.state.seed) % 3;
         return `t_floor_${v}`;
@@ -446,7 +479,24 @@ export class GameScene extends Phaser.Scene {
 
     music.syncStorm(this.state.stormTurns);
 
+    const flareOrBurst =
+      this.state.log.slice(prevLogLen).some(
+        (l) => l.loreId === 'LOG-USE-FLARE' || l.loreId === 'LOG-SPORE-BURST',
+      );
+    if (flareOrBurst) this.flashFx(0xa040ff, 0.28);
+
     if (this.state.player.hp < prevHp) this.flashHit();
+
+    // Brief hit flash on visible enemies that took damage this action
+    if (this.state.log.slice(prevLogLen).some((l) => l.loreId === 'LOG-HIT' || l.loreId === 'LOG-KILL')) {
+      for (const view of this.enemyViews.values()) {
+        if (!view.img.visible) continue;
+        view.img.setTint(0xffffff);
+        this.time.delayedCall(80, () => {
+          if (view.img.active) view.img.clearTint();
+        });
+      }
+    }
 
     const playerMoved =
       fromPlayer.x !== this.state.player.x || fromPlayer.y !== this.state.player.y;
@@ -776,8 +826,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private flashHit(): void {
-    this.flash.setFillStyle(0xe05050, 1);
-    this.flash.setAlpha(0.3);
+    this.flashFx(0xe05050, 0.3);
+  }
+
+  private flashFx(color: number, alpha: number): void {
+    this.flash.setFillStyle(color, 1);
+    this.flash.setAlpha(alpha);
     this.tweens.add({ targets: this.flash, alpha: 0, duration: 220 });
   }
 
@@ -797,6 +851,25 @@ export class GameScene extends Phaser.Scene {
     this.barsGfx.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
     this.barsGfx.lineStyle(1, 0x5a7088, 1);
     this.barsGfx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  }
+
+  private drawFovVignette(): void {
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const g = this.fovVignette;
+    g.clear();
+    // Soft darkened frame around the playfield (FOV mood without covering HUD)
+    const top = TOP;
+    const bot = h - BOTTOM;
+    const band = 36;
+    g.fillStyle(0x02060c, 0.45);
+    g.fillRect(0, top, w, band);
+    g.fillRect(0, bot - band, w, band);
+    g.fillRect(0, top, band, bot - top);
+    g.fillRect(w - band, top, band, bot - top);
+    g.fillStyle(0x02060c, 0.22);
+    g.fillRect(band, top + band, w - band * 2, 14);
+    g.fillRect(band, bot - band - 14, w - band * 2, 14);
   }
 
   private contextHint(): LoreId | null {
@@ -836,7 +909,7 @@ export class GameScene extends Phaser.Scene {
           const dist = fovDistance(px, py, x, y);
           const falloff = Math.max(0, 1 - dist / (radius + 0.35));
           // Bright near player, soft edge at vision rim
-          img.setAlpha(0.52 + 0.48 * falloff);
+          img.setAlpha(0.48 + 0.52 * falloff * falloff);
         } else {
           // Memory: desaturated cool silhouette
           img.setTint(0x4a5870);
@@ -844,6 +917,8 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+
+    this.drawFovVignette();
 
     this.barsGfx.clear();
     this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, 0x40e878, 0xff4040);
