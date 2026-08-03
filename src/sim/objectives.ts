@@ -62,11 +62,7 @@ export function describeObjective(state: GameState): ObjectiveDesc {
     : 999;
   const preferRoom =
     step &&
-    state.exitPos &&
-    pos &&
-    pos.x === state.exitPos.x &&
-    pos.y === state.exitPos.y &&
-    (state.explored[step.pos.y]?.[step.pos.x] || questDist <= 6);
+    (state.explored[step.pos.y]?.[step.pos.x] || questDist <= 8);
 
   if (preferRoom && step) {
     return { local: 'OBJ-LOCAL-ROOM', campaign, pos: step.pos };

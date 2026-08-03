@@ -68,6 +68,38 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'coolant', weight: 2 },
     { kind: 'filter', weight: 1 },
   ],
+  elite_skirmisher: [
+    { kind: 'pulse_baton', weight: 2 },
+    { kind: 'stim', weight: 2 },
+    { kind: 'med', weight: 1 },
+  ],
+  elite_ward: [
+    { kind: 'plate', weight: 2 },
+    { kind: 'ablative_vest', weight: 2 },
+    { kind: 'harness', weight: 1 },
+    { kind: 'coolant', weight: 1 },
+  ],
+  elite_apex: [
+    { kind: 'coolant', weight: 2 },
+    { kind: 'sensor_rig', weight: 1 },
+    { kind: 'filter', weight: 2 },
+  ],
+  isolinear_warden: [
+    { kind: 'pulse_baton', weight: 2 },
+    { kind: 'plate', weight: 2 },
+    { kind: 'probe', weight: 1 },
+  ],
+  pattern_custodian: [
+    { kind: 'jammer', weight: 2 },
+    { kind: 'eps_coupler', weight: 2 },
+    { kind: 'lens', weight: 1 },
+  ],
+  shear_sovereign: [
+    { kind: 'filter', weight: 2 },
+    { kind: 'ablative_vest', weight: 1 },
+    { kind: 'sensor_rig', weight: 1 },
+    { kind: 'coolant', weight: 1 },
+  ],
 };
 
 /** Drop chance by sector depth (early softer). */

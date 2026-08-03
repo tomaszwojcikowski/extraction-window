@@ -55,16 +55,21 @@ export const scriptedEventsMechanic: Mechanic = {
       addEmStress(state, 3, 'drop afterglow');
     }
 
+    // Sector-enter pulse for the active quest step room on all biomes
+    if (state.roomQuest && !state.roomQuest.done && once(state, `quest_pulse_${state.sectorIndex}`)) {
+      markQuestOnMap(state);
+      const step = activeQuestStep(state.roomQuest);
+      if (step) revealRoomPulse(state, step.room);
+    }
+
     if ((state.sectorId === 'reef' || state.sectorId === 'ruin') && once(state, `survey_${state.sectorId}`)) {
       pushLog(state, 'LOG-EVT-SURVEY');
-      if (state.roomQuest && !state.roomQuest.done) {
-        markQuestOnMap(state);
-        const step = activeQuestStep(state.roomQuest);
-        if (step) revealRoomPulse(state, step.room);
-      } else if (state.exitPos) {
-        const midY = Math.floor(state.height / 2);
-        const midX = Math.floor(state.width / 2);
-        revealRoomPulse(state, { x: midX - 2, y: midY - 2, w: 5, h: 5 });
+      if (!state.roomQuest || state.roomQuest.done) {
+        if (state.exitPos) {
+          const midY = Math.floor(state.height / 2);
+          const midX = Math.floor(state.width / 2);
+          revealRoomPulse(state, { x: midX - 2, y: midY - 2, w: 5, h: 5 });
+        }
       }
     }
 
@@ -104,6 +109,15 @@ export const scriptedEventsMechanic: Mechanic = {
     ) {
       const step = activeQuestStep(rq);
       if (step) spawnRelayAmbushNearStep(state, step.pos);
+    }
+
+    // Elite contact tell when first seen
+    for (const en of state.enemies) {
+      if (!en.alive || en.tier !== 'elite') continue;
+      if (!state.visible[en.y]?.[en.x]) continue;
+      if (once(state, `elite_contact_${state.sectorIndex}_${en.id}`)) {
+        pushLog(state, 'LOG-ELITE-CONTACT');
+      }
     }
   },
 };

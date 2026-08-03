@@ -46,4 +46,52 @@ describe('map generator', () => {
       expect(checkObjectivesReachable(seed)).toBe(true);
     }
   });
+
+  it('always spawns a room quest when rooms ≥ 3', () => {
+    for (const seed of [1, 42, 99, 777, 12345, 9999]) {
+      for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
+        const sector = getSector(i);
+        const map = generateSectorMap(sector, seed, i);
+        if (map.rooms.length < 3) continue;
+        expect(map.roomQuest, `seed=${seed} sector=${sector.id}`).toBeTruthy();
+        for (const step of map.roomQuest!.steps) {
+          expect(map.tiles[step.pos.y]![step.pos.x]!.kind).toBe('quest');
+        }
+      }
+    }
+  });
+
+  it('places exactly one elite on sector index ≥ 2 when mid-rooms exist', () => {
+    for (const seed of [1, 42, 777]) {
+      for (let i = 2; i < CAMPAIGN_LENGTH; i++) {
+        const sector = getSector(i);
+        const map = generateSectorMap(sector, seed, i);
+        const mid = map.rooms.filter((_, idx) => idx > 0 && idx < map.rooms.length - 1);
+        if (mid.length < 1) continue;
+        const elites = map.enemies.filter((e) => e.tier === 'elite');
+        expect(elites.length, `seed=${seed} ${sector.id}`).toBe(1);
+      }
+    }
+  });
+
+  it('places campaign bosses on ruin, vault, and approach', () => {
+    for (const seed of [1, 42, 777, 12345]) {
+      const ruin = generateSectorMap(getSector(5), seed, 5);
+      expect(ruin.enemies.some((e) => e.kind === 'isolinear_warden' && e.tier === 'boss')).toBe(
+        true,
+      );
+
+      const vault = generateSectorMap(getSector(11), seed, 11);
+      expect(vault.enemies.some((e) => e.kind === 'pattern_custodian' && e.tier === 'boss')).toBe(
+        true,
+      );
+
+      const approachIdx = 13;
+      expect(getSector(approachIdx).id).toBe('approach');
+      const approach = generateSectorMap(getSector(approachIdx), seed, approachIdx);
+      expect(approach.enemies.some((e) => e.kind === 'shear_sovereign' && e.tier === 'boss')).toBe(
+        true,
+      );
+    }
+  });
 });

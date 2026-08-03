@@ -21,7 +21,20 @@ export type TileKind =
   | 'exit'
   | 'beacon'
   | 'shuttle'
-  | 'poi';
+  | 'poi'
+  | 'quest';
+
+export type EnemyTier = 'normal' | 'elite' | 'boss';
+
+/** Room bounds from the sector map generator (survey / quest pulse). */
+export interface MapRoom {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  cx: number;
+  cy: number;
+}
 
 export interface Tile {
   kind: TileKind;
@@ -57,6 +70,8 @@ export interface Enemy {
   skirmishRetreat: boolean;
   /** Turns remaining in telegraph windup (0 = ready) */
   windup: number;
+  /** Combat prize tier — elites/bosses grant storm + kit on kill */
+  tier: EnemyTier;
 }
 
 export interface GroundItem {
@@ -129,6 +144,7 @@ export interface BeaconHandshake {
 export interface EquipSlots {
   tool: ItemKind | null;
   armor: ItemKind | null;
+  utility: ItemKind | null;
 }
 
 export interface GameState {
@@ -176,6 +192,10 @@ export interface GameState {
   poiKind: PoiKind | null;
   poiUsed: boolean;
   roomQuest: RoomQuest | null;
+  /** Sector room layout for survey / pulse (reset each sector). */
+  rooms: MapRoom[];
+  /** Mid-room ids surveyed this sector (cap ~3). */
+  surveyedRoomIds: number[];
   codexPages: number;
   /** Collected CODEX-* lore ids for this run (Pages panel). */
   codexLog: LoreId[];

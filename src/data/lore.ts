@@ -31,7 +31,7 @@ export const LORE = {
     'WAIT    . (period) — hold position, time still passes\n' +
     'GET     g — pick up salvage under your boots\n' +
     'KIT     i — open away kit; ↑↓ or 1–9 to select; esc closes\n' +
-    'USE     u — use the selected kit item\n' +
+    'USE     u — use consumables, or equip/stow tool·suit·utility gear\n' +
     'EXIT    > or = — hatch, beacon, Type-9 pad, or anomaly\n' +
     'PADD    p — mission notes recovered this run\n' +
     'SKILL   1 or 2 — choose a field skill when prompted (move locked until then)\n' +
@@ -40,6 +40,13 @@ export const LORE = {
     'MUTE    m — toggle sound\n' +
     'ESC     close kit / PADD / help (opens help if nothing is open)\n' +
     '\n' +
+    'WHY GATHER\n' +
+    'Kit keeps you alive through the ion window (med / EPS / shields / tactics).\n' +
+    'Isolinear Key + Nav Core are spine objectives — use fails; they unlock extract.\n' +
+    'Away procedures grant XP, PADD mods, and storm refunds. Survey rooms and hatch explore% also refund window.\n' +
+    'Elites and campaign bosses are optional prizes — rare kit, XP, and storm.\n' +
+    'Full kit + salvage converts to ion-window time instead of a dead pickup.\n' +
+    '\n' +
     'HUD READOUT\n' +
     'HP / SHD / EPS / WINDOW / XP — vitals, shields, power, ion window, proficiency\n' +
     'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant)\n' +
@@ -47,6 +54,8 @@ export const LORE = {
     'QUEST — optional away procedure tracker (step text + 1/N); chevron prefers nearby steps\n' +
     'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
+  'UI-KIT-PURPOSE':
+    'Away kit = survive the ion window. Key/Core = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
   'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · p PADD · > exit · ? help · m mute',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
@@ -79,6 +88,8 @@ export const LORE = {
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this away mission.',
   'UI-PAGES-HINT': 'p or esc — close',
+  'UI-PAGES-PURPOSE':
+    'Away kit = survive the ion window. Key/Core = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective / proficiency',
   'UI-QUEST-KEY': 'KEY',
@@ -90,6 +101,7 @@ export const LORE = {
   'UI-ARMOR': 'SHD',
   'UI-TOOL': 'TOOL',
   'UI-EQUIP-ARMOR': 'SUIT',
+  'UI-EQUIP-UTIL': 'UTIL',
   'UI-FILTER': 'FILTER',
   'UI-JAMMER': 'JAM',
   'UI-WIN': 'EXTRACTION COMPLETE',
@@ -104,7 +116,7 @@ export const LORE = {
   'UI-LOSE-STUCK-BODY': 'No viable extraction path remaining.',
   'UI-RETRY': 'ENTER — new away team · ESC — title',
   'UI-EMPTY-INV': 'Away kit empty',
-  'UI-INV-HINT': '↑↓ or 1–9 select · u use · esc close',
+  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · esc close',
 
   // Mission
   'LOC-VIRE7': 'Site Theta-7',
@@ -182,9 +194,17 @@ export const LORE = {
   'ITEM-COOLANT-DESC':
     'Heavy recharge — +35 Power. Also restabilizes Nav Core pattern buffer when desynced.',
   'ITEM-BLADE': 'Combat Knife',
-  'ITEM-BLADE-DESC': 'Equip as tool: +1 ATK while worn.',
+  'ITEM-BLADE-DESC': 'Tool: +1 ATK while worn. Use again to stow.',
+  'ITEM-BATON': 'Pulse Baton',
+  'ITEM-BATON-DESC': 'Tool: +1 ATK; melee stuns 1 turn. Use again to stow.',
   'ITEM-HARNESS': 'EVA Harness',
-  'ITEM-HARNESS-DESC': 'Equip as suit: +6 max shields and refill pool.',
+  'ITEM-HARNESS-DESC': 'Suit: +6 max shields and refill. Use again to stow.',
+  'ITEM-VEST': 'Ablative Vest',
+  'ITEM-VEST-DESC': 'Suit: +4 max shields, +1 DEF while worn. Use again to stow.',
+  'ITEM-SENSOR': 'Sensor Rig',
+  'ITEM-SENSOR-DESC': 'Utility: +1 sight radius while worn. Use again to stow.',
+  'ITEM-COUPLER': 'EPS Coupler',
+  'ITEM-COUPLER-DESC': 'Utility: −1 env EPS drain/turn while worn. Use again to stow.',
   'ITEM-DART': 'Plasma Microdart',
   'ITEM-DART-DESC': 'Aim (u then a direction): hit a visible target within 3 tiles — expose + damage.',
   'ITEM-JAMMER': 'EM Scrambler',
@@ -220,12 +240,20 @@ export const LORE = {
   'ENEMY-REEF-SKITTER': 'Reef Skitter',
   'ENEMY-DUCT-DRONE': 'Duct Drone',
   'ENEMY-SHEAR-WRAITH': 'Shear Wraith',
+  'ENEMY-ELITE-SKIRM': 'Prime Skirmisher',
+  'ENEMY-ELITE-WARD': 'Cache Warden',
+  'ENEMY-ELITE-APEX': 'Apex Hunter',
+  'ENEMY-WARDEN': 'Isolinear Warden',
+  'ENEMY-CUSTODIAN': 'Pattern Custodian',
+  'ENEMY-SOVEREIGN': 'Shear Sovereign',
   'ENEMY-MASTLING-NOTE': 'EM-fed — dashes after a short windup.',
   'ENEMY-SKITTER-NOTE': 'Fast ambush — opens wounds on contact.',
   'ENEMY-RIFT-NOTE': 'Ion shear — exposes shield seams.',
   'ENEMY-REEF-NOTE': 'Crystal-bank ambush — plasma bite.',
   'ENEMY-DUCT-NOTE': 'EPS junction sentinel — holds seal points.',
   'ENEMY-SHEAR-NOTE': 'Storm-shear hunter — desync pressure.',
+  'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and ion-window refund on kill.',
+  'ENEMY-BOSS-NOTE': 'Campaign apex — optional detour, rich storm/XP/kit payoff.',
 
   // Logs
   'LOG-DROP':
@@ -239,6 +267,13 @@ export const LORE = {
   'LOG-PICKUP': 'Salvage secured.',
   'LOG-NO-PICKUP': 'Nothing to recover here.',
   'LOG-INV-FULL': 'Away kit capacity exceeded.',
+  'LOG-SURPLUS-STORM': 'Kit full — salvage bled into ion-window time.',
+  'LOG-SURVEY-ROOM': 'Mid-room surveyed — ion window and proficiency tick up.',
+  'LOG-SURVEY-SECTOR': 'Sector survey complete — hatch explore bonus.',
+  'LOG-ELITE-CONTACT': 'Elite fauna on sensors — strong drop if engaged.',
+  'LOG-BOSS-TELE': 'Apex hostile telegraphs — heavy strike incoming.',
+  'LOG-BOSS-DOWN': 'Campaign apex neutralized — kit and window refunded.',
+  'LOG-ELITE-DOWN': 'Elite down — salvage and ion-window refund.',
   'LOG-USE-MED': 'Hypospray administered.',
   'LOG-USE-ENERGY': 'Power cell slotted into EPS.',
   'LOG-USE-RATION': 'Replicated ration consumed.',
@@ -249,8 +284,12 @@ export const LORE = {
   'LOG-USE-FILTER': 'Plasma filter online — drain and plasma hits reduced.',
   'LOG-USE-COOLANT': 'EPS coolant cycled into life support.',
   'LOG-USE-BLADE': 'Combat knife equipped — ATK up while worn.',
+  'LOG-USE-BATON': 'Pulse baton equipped — ATK up; melee stuns.',
   'LOG-USE-HARNESS': 'EVA harness equipped — shield capacity up.',
-  'LOG-UNEQUIP': 'Gear returned to kit.',
+  'LOG-USE-VEST': 'Ablative vest equipped — shields + DEF.',
+  'LOG-USE-SENSOR': 'Sensor rig equipped — sight radius up.',
+  'LOG-USE-COUPLER': 'EPS coupler equipped — env drain eased.',
+  'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-JAMMER': 'EM scrambler active — local mites/wasps silenced.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',

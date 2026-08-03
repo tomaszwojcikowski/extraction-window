@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { lore } from '../../data/lore';
+import { shortEquipName } from '../../data/items';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import { describeObjective, stickyMilestone, type GameState } from '../../sim';
 import { statusHud } from '../../sim/status';
-import { toolAtkBonus } from '../../sim/combat';
+import { armorDefBonus, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawLcarsBadge } from '../../scenes/atmosphere';
@@ -133,17 +134,24 @@ export class HudView {
     const desync = st.patternDesync > 0 ? ` DS${st.patternDesync}` : '';
     const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
-    const tool = st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:knife` : '';
-    const armorEq =
-      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:eva` : '';
+    const tool = st.player.equip.tool
+      ? `  ${lore('UI-TOOL')}:${shortEquipName(st.player.equip.tool)}`
+      : '';
+    const armorEq = st.player.equip.armor
+      ? `  ${lore('UI-EQUIP-ARMOR')}:${shortEquipName(st.player.equip.armor)}`
+      : '';
+    const utilEq = st.player.equip.utility
+      ? `  ${lore('UI-EQUIP-UTIL')}:${shortEquipName(st.player.equip.utility)}`
+      : '';
     const statuses = statusHud(st.player.statuses);
     const statusLine = statuses ? `  ${statuses}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
+    const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${utilEq}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

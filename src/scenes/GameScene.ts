@@ -111,9 +111,10 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.mapLayer = this.add.container(0, 0);
-    this.lightLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
+    // Bloom above actors so the player lamp isn't buried under the sprite.
+    this.lightLayer = this.add.container(0, 0);
     this.lightView = new LightView(this, this.lightLayer);
 
     this.playerSprite = this.add.image(0, 0, 't_player');
@@ -429,7 +430,14 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < st.width; x++) {
         if (!st.explored[y]![x]) continue;
         const kind = st.tiles[y]![x]!.kind;
-        if (kind !== 'hazard' && kind !== 'vent' && kind !== 'poi' && kind !== 'beacon') continue;
+        if (
+          kind !== 'hazard' &&
+          kind !== 'vent' &&
+          kind !== 'poi' &&
+          kind !== 'quest' &&
+          kind !== 'beacon'
+        )
+          continue;
         const img = this.tileSprites[y]?.[x];
         if (!img) continue;
         img.setTexture(this.tileKey(kind, x, y));
@@ -545,6 +553,8 @@ export class GameScene extends Phaser.Scene {
         return 't_shuttle';
       case 'poi':
         return f === 0 ? 't_poi' : f === 1 ? 't_poi_1' : 't_poi_2';
+      case 'quest':
+        return f === 0 ? 't_quest_tile' : f === 1 ? 't_quest_tile_1' : 't_quest_tile_2';
       case 'floor': {
         const v = (x + y * 3 + this.state.seed) % 3;
         return floorTextureKey(this.state.sectorId, v);
@@ -792,7 +802,9 @@ export class GameScene extends Phaser.Scene {
       return !prev || prev.x !== en.x || prev.y !== en.y;
     });
 
-    // Defer FOV/HUD redraw until after move tweens so vision doesn't pop early.
+    // Light/FOV at the new tile immediately so the lamp isn't left behind the tween.
+    // Full HUD (bars, log, hints) still waits for afterPresent.
+    this.applyFieldLighting();
     this.syncItems();
 
     const afterPresent = () => {
@@ -888,7 +900,12 @@ export class GameScene extends Phaser.Scene {
       has('LOG-USE-FILTER') ||
       has('LOG-USE-COOLANT') ||
       has('LOG-USE-BLADE') ||
+      has('LOG-USE-BATON') ||
       has('LOG-USE-HARNESS') ||
+      has('LOG-USE-VEST') ||
+      has('LOG-USE-SENSOR') ||
+      has('LOG-USE-COUPLER') ||
+      has('LOG-UNEQUIP') ||
       has('LOG-USE-DART') ||
       has('LOG-USE-JAMMER') ||
       has('LOG-USE-SEALANT')

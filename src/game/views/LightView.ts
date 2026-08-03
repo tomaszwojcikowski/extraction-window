@@ -56,7 +56,8 @@ export class LightView {
 
   constructor(scene: Phaser.Scene, parent: Phaser.GameObjects.Container) {
     this.lightsGfx = scene.add.graphics();
-    this.lightsGfx.setDepth(2);
+    // Within lightLayer (already above entities); keep local draw order stable.
+    this.lightsGfx.setDepth(1);
     parent.add(this.lightsGfx);
   }
 
@@ -177,6 +178,17 @@ export class LightView {
           intensity: 0.7,
         });
       }
+    }
+
+    for (const en of st.enemies) {
+      if (!en.alive || en.tier !== 'boss') continue;
+      sources.push({
+        x: en.x,
+        y: en.y,
+        radius: 3.2,
+        color: Theme.danger,
+        intensity: 0.75 * pulse,
+      });
     }
 
     if (st.objectives.hasNavCore) {
@@ -327,6 +339,8 @@ function tileLight(
       return { radius: 2.5, color: 0x66aa88, intensity: 0.7 };
     case 'poi':
       return { radius: 3, color: Theme.quest, intensity: 0.8 * pulse };
+    case 'quest':
+      return { radius: 3.5, color: Theme.storm, intensity: 0.95 * pulse };
     case 'hazard':
     case 'vent':
       return { radius: 2.4, color: Theme.ionHazard, intensity: 0.65 * pulse };

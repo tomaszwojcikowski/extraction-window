@@ -17,7 +17,8 @@ export { applyAction } from './actions';
 export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS } from './fov';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
-export { hasItem, syncObjectiveFlags } from './inventory';
+export { hasItem, syncObjectiveFlags, tryEquipItem } from './inventory';
+export { toolAtkBonus, armorDefBonus } from './combat';
 export {
   mechanicsTryAction,
   mechanicsOnEndTurn,

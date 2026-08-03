@@ -22,5 +22,7 @@ export function drawPaddOverlay(
   const y = (screenH - h) / 2;
   drawLcarsPanel(panel, x, y, w, h, Theme.quest);
   text.setPosition(x + 20, y + 22);
-  text.setText(`${lore('UI-PAGES')}  (${codexPages})\n\n${body}\n\n${lore('UI-PAGES-HINT')}`);
+  text.setText(
+    `${lore('UI-PAGES')}  (${codexPages})\n\n${lore('UI-PAGES-PURPOSE')}\n\n${body}\n\n${lore('UI-PAGES-HINT')}`,
+  );
 }

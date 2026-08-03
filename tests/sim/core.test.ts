@@ -3,10 +3,12 @@ import { STORM_TURNS, PLAYER_BASE, CAMPAIGN_LENGTH } from '../../src/campaign/sp
 import {
   applyAction,
   assertLegalWin,
+  armorDefBonus,
   createGame,
   hasItem,
   loreOrderLegal,
   mechanicsTryAction,
+  toolAtkBonus,
 } from '../../src/sim';
 import { lore } from '../../src/data/lore';
 import { contextHint } from '../../src/game/presenters/ContextHints';
@@ -253,6 +255,7 @@ describe('turn economy', () => {
       homeX: st.player.x,
       homeY: st.player.y,
       statuses: {},
+      tier: 'normal',
     });
     // Place on a walkable neighbor and mark visible
     const nx = Math.min(st.width - 2, st.player.x + 1);
@@ -261,5 +264,94 @@ describe('turn economy', () => {
     en.y = st.player.y;
     st.visible[en.y]![en.x] = true;
     expect(contextHint(st)).toBe('UI-HINT-TELE');
+  });
+});
+
+describe('equipment loadout', () => {
+  it('equips blade without removing it from kit and toggles stow', () => {
+    const st = createGame(42);
+    st.inventory = [{ kind: 'blade', count: 1 }];
+    st.ui.selectedSlot = 0;
+    st.ui.inventoryOpen = true;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.tool).toBe('blade');
+    expect(hasItem(st, 'blade')).toBe(true);
+    expect(toolAtkBonus(st)).toBe(1);
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.tool).toBeNull();
+    expect(hasItem(st, 'blade')).toBe(true);
+  });
+
+  it('swaps armor and adjusts max shields', () => {
+    const st = createGame(42);
+    st.inventory = [
+      { kind: 'harness', count: 1 },
+      { kind: 'ablative_vest', count: 1 },
+    ];
+    const baseMax = st.player.maxArmor;
+    st.ui.selectedSlot = 0;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.armor).toBe('harness');
+    expect(st.player.maxArmor).toBe(baseMax + 6);
+    st.ui.selectedSlot = 1;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.armor).toBe('ablative_vest');
+    expect(st.player.maxArmor).toBe(baseMax + 4);
+    expect(armorDefBonus(st)).toBe(1);
+  });
+
+  it('sensor rig and eps coupler occupy utility', () => {
+    const st = createGame(42);
+    st.inventory = [
+      { kind: 'sensor_rig', count: 1 },
+      { kind: 'eps_coupler', count: 1 },
+    ];
+    st.ui.selectedSlot = 0;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.utility).toBe('sensor_rig');
+    st.ui.selectedSlot = 1;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.utility).toBe('eps_coupler');
+  });
+});
+
+describe('survey and surplus salvage', () => {
+  it('surveys a mid-room once for storm + XP', () => {
+    const st = createGame(42);
+    expect(st.rooms.length).toBeGreaterThanOrEqual(3);
+    const mid = st.rooms[1]!;
+    const storm0 = st.stormTurns;
+    const xp0 = st.xp;
+    st.player.x = mid.cx;
+    st.player.y = mid.cy;
+    applyAction(st, { type: 'wait' });
+    expect(st.surveyedRoomIds.length).toBe(1);
+    expect(st.stormTurns).toBeGreaterThan(storm0 - 2); // wait drains 1; survey adds ≥2
+    expect(st.xp).toBeGreaterThanOrEqual(xp0);
+    const storm1 = st.stormTurns;
+    applyAction(st, { type: 'wait' });
+    expect(st.surveyedRoomIds.length).toBe(1);
+    // Second wait only drains storm — no second survey
+    expect(st.stormTurns).toBeLessThan(storm1);
+  });
+
+  it('converts surplus salvage to storm when kit is full', () => {
+    const st = createGame(42);
+    while (st.inventory.length < 16) {
+      st.inventory.push({ kind: 'ration', count: 1 });
+    }
+    const storm0 = st.stormTurns;
+    st.items.push({
+      id: st.nextEntityId++,
+      kind: 'salvage',
+      x: st.player.x,
+      y: st.player.y,
+    });
+    applyAction(st, { type: 'get' });
+    expect(st.stormTurns).toBeGreaterThan(storm0);
+    expect(st.items.some((i) => i.kind === 'salvage' && i.x === st.player.x && i.y === st.player.y)).toBe(
+      false,
+    );
+    expect(st.log.some((e) => e.loreId === 'LOG-SURPLUS-STORM')).toBe(true);
   });
 });

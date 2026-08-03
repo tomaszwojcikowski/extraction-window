@@ -189,42 +189,55 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  const harnessIdx = state.inventory.findIndex((s) => s.kind === 'harness');
-  if (harnessIdx >= 0 && state.player.equip.armor !== 'harness') {
-    state.ui.selectedSlot = harnessIdx;
+  const batonIdx = state.inventory.findIndex((s) => s.kind === 'pulse_baton');
+  if (batonIdx >= 0 && state.player.equip.tool !== 'pulse_baton') {
+    state.ui.selectedSlot = batonIdx;
     return { type: 'use' };
   }
   const bladeIdx = state.inventory.findIndex((s) => s.kind === 'blade');
-  if (bladeIdx >= 0 && state.player.equip.tool !== 'blade') {
+  if (bladeIdx >= 0 && !state.player.equip.tool) {
     state.ui.selectedSlot = bladeIdx;
+    return { type: 'use' };
+  }
+  const vestIdx = state.inventory.findIndex((s) => s.kind === 'ablative_vest');
+  if (vestIdx >= 0 && state.player.equip.armor !== 'ablative_vest') {
+    // Prefer vest when HP pressure or no harness yet; harness if no vest and armor empty
+    if (
+      state.player.equip.armor !== 'harness' ||
+      state.player.hp < state.player.maxHp * 0.7
+    ) {
+      state.ui.selectedSlot = vestIdx;
+      return { type: 'use' };
+    }
+  }
+  const harnessIdx = state.inventory.findIndex((s) => s.kind === 'harness');
+  if (harnessIdx >= 0 && !state.player.equip.armor) {
+    state.ui.selectedSlot = harnessIdx;
+    return { type: 'use' };
+  }
+  if (state.player.energy <= state.player.maxEnergy * 0.45) {
+    const coupIdx = state.inventory.findIndex((s) => s.kind === 'eps_coupler');
+    if (coupIdx >= 0 && state.player.equip.utility !== 'eps_coupler') {
+      state.ui.selectedSlot = coupIdx;
+      return { type: 'use' };
+    }
+  }
+  const sensIdx = state.inventory.findIndex((s) => s.kind === 'sensor_rig');
+  if (sensIdx >= 0 && !state.player.equip.utility) {
+    state.ui.selectedSlot = sensIdx;
     return { type: 'use' };
   }
 
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
-  // Safe POI / room quests (skip purge unless healthy; skip nest; skip item-gated steps)
-  if (tile.kind === 'poi') {
-    const rq = state.roomQuest;
-    if (rq && !rq.done && x === rq.pos.x && y === rq.pos.y) {
-      if (rq.kind === 'purge' && (rq.stage < 2 || state.player.hp < state.player.maxHp * 0.6)) {
-        // skip incomplete/dangerous purge — walk away below
-      } else if (rq.kind === 'stabilize' || (rq.kind === 'vent_seal' && rq.stepIndex === 0)) {
-        const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant' || s.kind === 'filter');
-        if (sIdx >= 0) {
-          state.ui.selectedSlot = sIdx;
-          return { type: 'use' };
-        }
-        // No sealant — abandon this step; fall through to campaign objective
-      } else {
-        return { type: 'exit' };
-      }
-    } else if (
-      !state.poiUsed &&
-      (state.poiKind === 'console' || state.poiKind === 'cache_scar')
-    ) {
-      return { type: 'exit' };
-    }
+  // Decorative / safe POI only — skip optional room quests (campaign spine for suite WR)
+  if (
+    tile.kind === 'poi' &&
+    !state.poiUsed &&
+    (state.poiKind === 'console' || state.poiKind === 'cache_scar')
+  ) {
+    return { type: 'exit' };
   }
 
   // Mapper when exploring without clear path
@@ -294,7 +307,15 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  const blocked = (_bx: number, _by: number) => false;
+  const blocked = (bx: number, by: number) => {
+    const en = state.enemies.find((e) => e.alive && e.x === bx && e.y === by);
+    if (!en) return false;
+    // Path around optional prizes when hurt; engage when healthy
+    if ((en.tier === 'elite' || en.tier === 'boss') && state.player.hp < state.player.maxHp * 0.75) {
+      return true;
+    }
+    return false;
+  };
 
   const path = bfsPath(state.tiles, { x, y }, goal, blocked);
   if (!path || path.length === 0) {

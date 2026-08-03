@@ -299,6 +299,7 @@ function spawnPurgeHostiles(state: GameState): void {
       homeY: y,
       skirmishRetreat: false,
       windup: 0,
+      tier: 'normal',
     });
     rq.spawnedIds.push(id);
   }
@@ -388,6 +389,7 @@ export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
       homeY: y,
       skirmishRetreat: false,
       windup: 0,
+      tier: 'normal',
     });
   }
   pushLog(state, 'LOG-RQ-RELAY-AMBUSH');
@@ -450,7 +452,7 @@ function clearAllQuestTiles(state: GameState): void {
     if (seen.has(key)) continue;
     seen.add(key);
     const t = state.tiles[step.pos.y]?.[step.pos.x];
-    if (t && t.kind === 'poi') {
+    if (t && (t.kind === 'poi' || t.kind === 'quest')) {
       state.tiles[step.pos.y]![step.pos.x] = {
         kind: 'floor',
         walkable: true,

@@ -1,10 +1,19 @@
 import { ENEMY_DROPS, dropChance } from '../data/drops';
 import { ENEMIES } from '../data/enemies';
-import { XP_KILL_BASE } from '../data/progression';
+import {
+  STORM_BOSS_KILL,
+  STORM_ELITE_KILL,
+  XP_BOSS,
+  XP_ELITE,
+  XP_KILL_BASE,
+} from '../data/progression';
 import { lore, type LoreId } from '../data/lore';
 import { addStatus, hasStatus } from './status';
 import { gainXp, hasSkill } from './progression';
+import { randInt } from './rng';
 import type { DamageType, Enemy, GameState } from './types';
+import type { ItemKind } from '../data/items';
+import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS } from '../data/items';
 
 export function pushLog(state: GameState, loreId: LoreId, detail?: string): void {
   state.log.push({ loreId, detail, turn: state.turn });
@@ -20,7 +29,15 @@ export function meleeDamage(atk: number, def: number, variance: number): number 
 }
 
 export function toolAtkBonus(state: GameState): number {
-  return state.player.equip.tool === 'blade' ? 1 : 0;
+  const tool = state.player.equip.tool;
+  if (!tool) return 0;
+  return TOOL_ATK_BONUS[tool] ?? 0;
+}
+
+export function armorDefBonus(state: GameState): number {
+  const armor = state.player.equip.armor;
+  if (!armor) return 0;
+  return ARMOR_DEF_BONUS[armor] ?? 0;
 }
 
 /**
@@ -62,12 +79,18 @@ export function applyPlayerDamage(
   return { armorLost, hpLost, fullyAbsorbed: hpLost === 0 && armorLost > 0 };
 }
 
-function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
-  let chance = dropChance(state.sectorIndex) + bonusChance;
-  if (hasSkill(state, 'scavenger')) chance = Math.min(0.95, chance + 0.15);
-  if (state.rng() > chance) return;
+function forceDrop(state: GameState, enemy: Enemy, kind: ItemKind): void {
+  state.items.push({
+    id: state.nextEntityId++,
+    kind,
+    x: enemy.x,
+    y: enemy.y,
+  });
+}
+
+function pickFromTable(state: GameState, enemy: Enemy): ItemKind | null {
   const table = ENEMY_DROPS[enemy.kind];
-  if (!table.length) return;
+  if (!table.length) return null;
   const total = table.reduce((s, e) => s + e.weight, 0);
   let roll = state.rng() * total;
   let kind = table[0]!.kind;
@@ -78,12 +101,25 @@ function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
       break;
     }
   }
-  state.items.push({
-    id: state.nextEntityId++,
-    kind,
-    x: enemy.x,
-    y: enemy.y,
-  });
+  return kind;
+}
+
+function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
+  if (enemy.tier === 'elite' || enemy.tier === 'boss') {
+    const count = enemy.tier === 'boss' ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      const kind = pickFromTable(state, enemy);
+      if (kind) forceDrop(state, enemy, kind);
+    }
+    pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
+    return;
+  }
+  let chance = dropChance(state.sectorIndex) + bonusChance;
+  if (hasSkill(state, 'scavenger')) chance = Math.min(0.95, chance + 0.15);
+  if (state.rng() > chance) return;
+  const kind = pickFromTable(state, enemy);
+  if (!kind) return;
+  forceDrop(state, enemy, kind);
   pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
 }
 
@@ -93,8 +129,20 @@ export function killEnemy(state: GameState, enemy: Enemy): void {
   enemy.hp = 0;
   pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
   tryDeathDrop(state, enemy, windupInterrupt ? 0.25 : 0);
-  const xp =
+  let xp =
     XP_KILL_BASE + Math.floor(enemy.maxHp / 2) + (windupInterrupt ? XP_KILL_BASE : 0);
+  if (enemy.tier === 'elite') {
+    xp = Math.max(xp, XP_ELITE);
+    const storm = randInt(state.rng, STORM_ELITE_KILL[0], STORM_ELITE_KILL[1]);
+    state.stormTurns += storm;
+    pushLog(state, 'LOG-ELITE-DOWN', `+${storm}`);
+  } else if (enemy.tier === 'boss') {
+    xp = Math.max(xp, XP_BOSS);
+    const storm = randInt(state.rng, STORM_BOSS_KILL[0], STORM_BOSS_KILL[1]);
+    state.stormTurns += storm;
+    state.scriptedFired[`boss_cleared_${state.sectorId}`] = true;
+    pushLog(state, 'LOG-BOSS-DOWN', `+${storm}`);
+  }
   gainXp(state, xp);
   if (windupInterrupt) pushLog(state, 'LOG-WINDUP-KILL');
 }
@@ -114,6 +162,10 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
   pushLog(state, 'LOG-HIT', rem > 0 ? `-${dmg} · hp${rem}` : `-${dmg}`);
+  if (state.player.equip.tool === 'pulse_baton' && enemy.alive && enemy.hp > 0) {
+    addStatus(enemy, 'stun', 1);
+    enemy.windup = 0;
+  }
   if (enemy.hp <= 0) {
     killEnemy(state, enemy);
   }
@@ -128,6 +180,7 @@ export function enemyAttack(
   const lastWindow = hasSkill(state, 'last_window') && state.stormTurns <= 80 ? 1 : 0;
   const def =
     state.player.def +
+    armorDefBonus(state) +
     (state.player.stabilizeTurns > 0 ? 1 : 0) +
     lastWindow -
     (hasStatus(state.player, 'expose') ? 2 : 0);

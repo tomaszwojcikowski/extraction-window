@@ -288,7 +288,7 @@ function drawWall(g: G, T: number, style: WallStyle, variant: number): void {
 function drawProp(
   g: G,
   T: number,
-  kind: 'scrub' | 'rubble' | 'vent' | 'hazard' | 'exit' | 'beacon' | 'shuttle' | 'poi',
+  kind: 'scrub' | 'rubble' | 'vent' | 'hazard' | 'exit' | 'beacon' | 'shuttle' | 'poi' | 'quest',
   frame = 0,
 ): void {
   clearGround(g, T);
@@ -399,6 +399,24 @@ function drawProp(
       if (frame >= 2) {
         ink(g, Theme.phosphor);
         g.fillRect(13, 13, 5, 5);
+      }
+      break;
+    case 'quest':
+      // Distinct chevron console — not the cosmetic POI asterisk
+      ink(g, Theme.storm);
+      g.fillRect(2, 2, T - 4, T - 4);
+      ink(g, Theme.groundDeep);
+      g.fillRect(5, 5, T - 10, T - 10);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(10, 8 + frame, 12, 3);
+      g.fillRect(12, 12, 8, 3);
+      g.fillRect(14, 16, 4, 6);
+      ink(g, Theme.quest);
+      g.fillRect(7, 7, 3, 3);
+      g.fillRect(T - 10, 7, 3, 3);
+      if (frame >= 1) {
+        ink(g, Theme.phosphor);
+        g.fillRect(15, 10, 2, 10);
       }
       break;
   }
@@ -709,6 +727,71 @@ function drawEnemy(g: G, T: number, kind: EnemyKind): void {
       g.fillRect(6, 8, 2, 8);
       g.fillRect(24, 8, 2, 8);
       break;
+    case 'elite_skirmisher':
+      ink(g, 0xffcc44);
+      g.fillRect(8, 8, 16, 14);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(3, 10, 7, 6);
+      g.fillRect(22, 10, 7, 6);
+      ink(g, Theme.danger);
+      g.fillRect(13, 18, 6, 5);
+      break;
+    case 'elite_ward':
+      ink(g, 0xaa88ff);
+      g.fillRect(4, 3, 24, 26);
+      ink(g, Theme.phosphor);
+      g.fillRect(8, 7, 16, 18);
+      ink(g, Theme.danger);
+      g.fillRect(11, 11, 10, 5);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(14, 20, 4, 4);
+      break;
+    case 'elite_apex':
+      ink(g, 0xff6688);
+      g.fillRect(10, 2, 12, 26);
+      ink(g, Theme.ionHazard);
+      g.fillRect(6, 8, 4, 14);
+      g.fillRect(22, 8, 4, 14);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(13, 10, 6, 6);
+      break;
+    case 'isolinear_warden':
+      ink(g, 0x6677aa);
+      g.fillRect(5, 2, 22, 28);
+      ink(g, 0x99aaff);
+      g.fillRect(8, 5, 16, 22);
+      ink(g, Theme.storm);
+      g.fillRect(11, 8, 10, 4);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(14, 14, 4, 8);
+      ink(g, Theme.ionHazard);
+      g.fillRect(7, 24, 18, 3);
+      break;
+    case 'pattern_custodian':
+      ink(g, 0x664488);
+      g.fillRect(4, 4, 24, 24);
+      ink(g, 0xcc88ff);
+      g.fillRect(8, 8, 16, 16);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(12, 12, 8, 8);
+      ink(g, Theme.danger);
+      g.fillRect(14, 6, 4, 3);
+      g.fillRect(14, 23, 4, 3);
+      break;
+    case 'shear_sovereign':
+      ink(g, 0xc8e4ff);
+      g.fillRect(9, 1, 14, 4);
+      g.fillRect(5, 5, 5, 20);
+      g.fillRect(22, 5, 5, 20);
+      g.fillRect(9, 25, 14, 4);
+      ink(g, Theme.danger);
+      g.fillRect(12, 10, 8, 4);
+      ink(g, Theme.storm);
+      g.fillRect(3, 9, 3, 10);
+      g.fillRect(26, 9, 3, 10);
+      ink(g, Theme.ionHazard);
+      g.fillRect(14, 16, 4, 6);
+      break;
   }
 }
 
@@ -776,6 +859,8 @@ export function registerTextures(scene: Phaser.Scene): void {
     bake(g, f === 0 ? 't_beacon' : `t_beacon_${f}`, T);
     drawProp(g, T, 'poi', f);
     bake(g, f === 0 ? 't_poi' : `t_poi_${f}`, T);
+    drawProp(g, T, 'quest', f);
+    bake(g, f === 0 ? 't_quest_tile' : `t_quest_tile_${f}`, T);
   }
 
   drawProp(g, T, 'exit');
@@ -816,6 +901,12 @@ export function registerTextures(scene: Phaser.Scene): void {
     'reef_skitter',
     'duct_drone',
     'shear_wraith',
+    'elite_skirmisher',
+    'elite_ward',
+    'elite_apex',
+    'isolinear_warden',
+    'pattern_custodian',
+    'shear_sovereign',
   ];
   for (const kind of kinds) {
     drawEnemy(g, T, kind);

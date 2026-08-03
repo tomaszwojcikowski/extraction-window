@@ -18,7 +18,13 @@ export type EnemyKind =
   | 'rift'
   | 'reef_skitter'
   | 'duct_drone'
-  | 'shear_wraith';
+  | 'shear_wraith'
+  | 'elite_skirmisher'
+  | 'elite_ward'
+  | 'elite_apex'
+  | 'isolinear_warden'
+  | 'pattern_custodian'
+  | 'shear_sovereign';
 
 export type EnemyBehavior =
   | 'wander'
@@ -235,6 +241,78 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0xc0e0ff,
     behavior: 'hunter',
     aggroRange: 11,
+    damageType: 'ion',
+  },
+  elite_skirmisher: {
+    kind: 'elite_skirmisher',
+    loreName: 'ENEMY-ELITE-SKIRM',
+    hp: 7,
+    atk: 3,
+    def: 1,
+    glyph: 'W',
+    color: 0xffcc44,
+    behavior: 'skirmish',
+    aggroRange: 6,
+    damageType: 'kinetic',
+  },
+  elite_ward: {
+    kind: 'elite_ward',
+    loreName: 'ENEMY-ELITE-WARD',
+    hp: 9,
+    atk: 4,
+    def: 2,
+    glyph: 'E',
+    color: 0xaa88ff,
+    behavior: 'sentinel',
+    aggroRange: 5,
+    damageType: 'kinetic',
+  },
+  elite_apex: {
+    kind: 'elite_apex',
+    loreName: 'ENEMY-ELITE-APEX',
+    hp: 10,
+    atk: 4,
+    def: 1,
+    glyph: 'A',
+    color: 0xff6688,
+    behavior: 'hunter',
+    aggroRange: 8,
+    damageType: 'ion',
+  },
+  isolinear_warden: {
+    kind: 'isolinear_warden',
+    loreName: 'ENEMY-WARDEN',
+    hp: 12,
+    atk: 5,
+    def: 2,
+    glyph: 'Ω',
+    color: 0x99aaff,
+    behavior: 'sentinel',
+    aggroRange: 6,
+    damageType: 'ion',
+  },
+  pattern_custodian: {
+    kind: 'pattern_custodian',
+    loreName: 'ENEMY-CUSTODIAN',
+    hp: 13,
+    atk: 4,
+    def: 2,
+    glyph: 'Ψ',
+    color: 0xcc88ff,
+    behavior: 'guard',
+    aggroRange: 6,
+    damageType: 'ion',
+  },
+  shear_sovereign: {
+    kind: 'shear_sovereign',
+    loreName: 'ENEMY-SOVEREIGN',
+    hp: 14,
+    atk: 5,
+    def: 1,
+    glyph: 'Ξ',
+    color: 0xe0f0ff,
+    behavior: 'hunter',
+    aggroRange: 8,
     damageType: 'ion',
   },
 };

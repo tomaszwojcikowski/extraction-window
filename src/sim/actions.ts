@@ -14,6 +14,7 @@ import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
+import { grantPoiXp } from './mechanics/survey';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -53,7 +54,11 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   if (ground) {
     if (ground.kind === 'relay_key' || ground.kind === 'nav_core') {
       tryPickup(state);
-    } else if (state.inventory.length < INVENTORY_SLOTS || findSlot(state, ground.kind) >= 0) {
+    } else if (
+      ground.kind === 'salvage' ||
+      state.inventory.length < INVENTORY_SLOTS ||
+      findSlot(state, ground.kind) >= 0
+    ) {
       tryPickup(state);
     }
   }
@@ -73,6 +78,7 @@ function tryPoi(state: GameState): boolean {
     const loot: IK[] = ['energy', 'dart', 'jammer', 'probe'];
     addItem(state, pick(state.rng, loot));
     pushLog(state, 'LOG-PICKUP');
+    grantPoiXp(state);
   } else if (kind === 'nest') {
     pushLog(state, 'LOG-POI-NEST');
     addStatus(state.player, 'ion_burn', 3);
@@ -91,6 +97,7 @@ function tryPoi(state: GameState): boolean {
     addItem(state, pick(state.rng, loot));
     addItem(state, pick(state.rng, ['salvage', 'energy', 'patch'] as IK[]));
     pushLog(state, 'LOG-PICKUP');
+    grantPoiXp(state);
   }
   // Convert POI to floor after use
   state.tiles[state.poiPos.y]![state.poiPos.x] = {

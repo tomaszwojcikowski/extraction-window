@@ -13,7 +13,11 @@ export type ItemKind =
   | 'filter'
   | 'coolant'
   | 'blade'
+  | 'pulse_baton'
   | 'harness'
+  | 'ablative_vest'
+  | 'sensor_rig'
+  | 'eps_coupler'
   | 'dart'
   | 'jammer'
   | 'sealant'
@@ -23,12 +27,16 @@ export type ItemKind =
   | 'mapper'
   | 'salvage';
 
+export type EquipSlotId = 'tool' | 'armor' | 'utility';
+
 export interface ItemDef {
   kind: ItemKind;
   loreName: LoreId;
   loreDesc: LoreId;
   quest: boolean;
   stackable: boolean;
+  /** Worn loadout slot — use toggles equip / stow. */
+  equipSlot?: EquipSlotId;
 }
 
 export const ITEMS: Record<ItemKind, ItemDef> = {
@@ -115,6 +123,15 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     loreDesc: 'ITEM-BLADE-DESC',
     quest: false,
     stackable: false,
+    equipSlot: 'tool',
+  },
+  pulse_baton: {
+    kind: 'pulse_baton',
+    loreName: 'ITEM-BATON',
+    loreDesc: 'ITEM-BATON-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'tool',
   },
   harness: {
     kind: 'harness',
@@ -122,6 +139,31 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     loreDesc: 'ITEM-HARNESS-DESC',
     quest: false,
     stackable: false,
+    equipSlot: 'armor',
+  },
+  ablative_vest: {
+    kind: 'ablative_vest',
+    loreName: 'ITEM-VEST',
+    loreDesc: 'ITEM-VEST-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'armor',
+  },
+  sensor_rig: {
+    kind: 'sensor_rig',
+    loreName: 'ITEM-SENSOR',
+    loreDesc: 'ITEM-SENSOR-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'utility',
+  },
+  eps_coupler: {
+    kind: 'eps_coupler',
+    loreName: 'ITEM-COUPLER',
+    loreDesc: 'ITEM-COUPLER-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'utility',
   },
   dart: {
     kind: 'dart',
@@ -181,4 +223,41 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
   },
 };
 
+/** Max armor granted while this armor piece is worn. */
+export const ARMOR_MAX_BONUS: Partial<Record<ItemKind, number>> = {
+  harness: 6,
+  ablative_vest: 4,
+};
+
+/** Flat DEF while this armor is worn. */
+export const ARMOR_DEF_BONUS: Partial<Record<ItemKind, number>> = {
+  ablative_vest: 1,
+};
+
+/** Flat ATK while this tool is worn. */
+export const TOOL_ATK_BONUS: Partial<Record<ItemKind, number>> = {
+  blade: 1,
+  pulse_baton: 1,
+};
+
 export const INVENTORY_SLOTS = 16;
+
+export function shortEquipName(kind: ItemKind | null): string {
+  if (!kind) return '—';
+  switch (kind) {
+    case 'blade':
+      return 'knife';
+    case 'pulse_baton':
+      return 'baton';
+    case 'harness':
+      return 'eva';
+    case 'ablative_vest':
+      return 'vest';
+    case 'sensor_rig':
+      return 'sensor';
+    case 'eps_coupler':
+      return 'coupler';
+    default:
+      return kind;
+  }
+}

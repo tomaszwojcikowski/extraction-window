@@ -1,6 +1,12 @@
 import { lore } from '../data/lore';
-import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
-import { XP_QUEST_ITEM } from '../data/progression';
+import {
+  ITEMS,
+  INVENTORY_SLOTS,
+  ARMOR_MAX_BONUS,
+  type EquipSlotId,
+  type ItemKind,
+} from '../data/items';
+import { STORM_SURPLUS_SALVAGE, XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import { pushLog, recordLoreEvent, playerAttack, killEnemy } from './combat';
 import { addStatus } from './status';
@@ -11,8 +17,16 @@ import { addEmStress, purgeEmStress } from './emStress';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 
-const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
+
+const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
+  blade: 'LOG-USE-BLADE',
+  pulse_baton: 'LOG-USE-BATON',
+  harness: 'LOG-USE-HARNESS',
+  ablative_vest: 'LOG-USE-VEST',
+  sensor_rig: 'LOG-USE-SENSOR',
+  eps_coupler: 'LOG-USE-COUPLER',
+};
 
 type TimerKey =
   | 'probeTurns'
@@ -65,6 +79,12 @@ export function addItem(state: GameState, kind: ItemKind): boolean {
     }
   }
   if (state.inventory.length >= INVENTORY_SLOTS) {
+    if (kind === 'salvage') {
+      const storm = randInt(state.rng, STORM_SURPLUS_SALVAGE[0], STORM_SURPLUS_SALVAGE[1]);
+      state.stormTurns += storm;
+      pushLog(state, 'LOG-SURPLUS-STORM', `+${storm}`);
+      return true;
+    }
     if (def.quest) {
       const dropIdx = state.inventory.findIndex((s) => !ITEMS[s.kind].quest);
       if (dropIdx >= 0) {
@@ -101,44 +121,46 @@ export function removeOne(state: GameState, kind: ItemKind): boolean {
   return true;
 }
 
-function unequipTool(state: GameState): void {
-  const prev = state.player.equip.tool;
+function clearArmorBonus(state: GameState, kind: ItemKind): void {
+  const bonus = ARMOR_MAX_BONUS[kind] ?? 0;
+  if (bonus <= 0) return;
+  state.player.maxArmor = Math.max(0, state.player.maxArmor - bonus);
+  state.player.armor = Math.min(state.player.armor, state.player.maxArmor);
+}
+
+function applyArmorBonus(state: GameState, kind: ItemKind): void {
+  const bonus = ARMOR_MAX_BONUS[kind] ?? 0;
+  if (bonus <= 0) return;
+  state.player.maxArmor += bonus;
+  state.player.armor = state.player.maxArmor;
+}
+
+/** Stow worn gear for a slot (item stays in the kit bag). */
+function unequipSlot(state: GameState, slot: EquipSlotId): void {
+  const prev = state.player.equip[slot];
   if (!prev) return;
-  state.player.equip.tool = null;
-  addItem(state, prev);
+  if (slot === 'armor') clearArmorBonus(state, prev);
+  state.player.equip[slot] = null;
   pushLog(state, 'LOG-UNEQUIP');
 }
 
-function unequipArmor(state: GameState): void {
-  const prev = state.player.equip.armor;
-  if (!prev) return;
-  if (prev === 'harness') {
-    state.player.maxArmor = Math.max(0, state.player.maxArmor - HARNESS_ARMOR_BONUS);
-    state.player.armor = Math.min(state.player.armor, state.player.maxArmor);
+/**
+ * Toggle or swap worn gear. Equipped pieces stay in inventory (marked [E] in kit).
+ * Use again on the worn piece to stow.
+ */
+export function tryEquipItem(state: GameState, kind: ItemKind): void {
+  const slot = ITEMS[kind].equipSlot;
+  if (!slot) return;
+  if (state.player.equip[slot] === kind) {
+    unequipSlot(state, slot);
+    return;
   }
-  state.player.equip.armor = null;
-  addItem(state, prev);
-  pushLog(state, 'LOG-UNEQUIP');
-}
-
-function equipTool(state: GameState, kind: ItemKind): void {
-  if (state.player.equip.tool === kind) return;
-  unequipTool(state);
-  removeOne(state, kind);
-  state.player.equip.tool = kind;
-  pushLog(state, 'LOG-USE-BLADE');
-}
-
-function equipArmor(state: GameState, kind: ItemKind): void {
-  if (state.player.equip.armor === kind) return;
-  unequipArmor(state);
-  removeOne(state, kind);
-  state.player.equip.armor = kind;
-  if (kind === 'harness') {
-    state.player.maxArmor += HARNESS_ARMOR_BONUS;
-    state.player.armor = state.player.maxArmor;
-  }
-  pushLog(state, 'LOG-USE-HARNESS');
+  unequipSlot(state, slot);
+  state.player.equip[slot] = kind;
+  if (slot === 'armor') applyArmorBonus(state, kind);
+  if (kind === 'eps_coupler') addEmStress(state, 3, 'eps coupler');
+  const logId = EQUIP_LOG[kind];
+  if (logId) pushLog(state, logId);
 }
 
 /** ADOM unidentified loot — scan unknown salvage into a known kit item (or backlash). */
@@ -164,11 +186,11 @@ function identifySalvage(state: GameState): void {
     return;
   }
   const table: ItemKind[] = scav
-    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim']
+    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig']
     : ['energy', 'med', 'ration', 'dart', 'sealant', 'patch', 'flare', 'plate'];
-  const kind = pick(state.rng, table);
-  addItem(state, kind);
-  pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[kind].loreName));
+  const idKind = pick(state.rng, table);
+  addItem(state, idKind);
+  pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[idKind].loreName));
 }
 
 export function useSelected(state: GameState): boolean {
@@ -179,6 +201,13 @@ export function useSelected(state: GameState): boolean {
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
   const slot = state.inventory[idx]!;
   const kind = slot.kind;
+
+  const equipSlot = ITEMS[kind].equipSlot;
+  if (equipSlot) {
+    tryEquipItem(state, kind);
+    syncObjectiveFlags(state);
+    return true;
+  }
 
   switch (kind) {
     case 'med':
@@ -266,12 +295,6 @@ export function useSelected(state: GameState): boolean {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-MAPPER');
-      break;
-    case 'blade':
-      equipTool(state, 'blade');
-      break;
-    case 'harness':
-      equipArmor(state, 'harness');
       break;
     case 'flare': {
       removeOne(state, kind);

@@ -73,7 +73,7 @@ export function createGame(seed: number): GameState {
       mapperTurns: 0,
       stabilizeTurns: 0,
       statuses: {},
-      equip: { tool: null, armor: null },
+      equip: { tool: null, armor: null, utility: null },
     },
     inventory: [
       { kind: 'med', count: 4 },
@@ -99,6 +99,8 @@ export function createGame(seed: number): GameState {
     poiKind: map.poiKind,
     poiUsed: false,
     roomQuest: map.roomQuest,
+    rooms: map.rooms.map((r) => ({ ...r })),
+    surveyedRoomIds: [],
     codexPages: 0,
     codexLog: [],
     emStress: 0,
@@ -136,7 +138,9 @@ export function createGame(seed: number): GameState {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus,
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
+      state.paddMods.fovBonus +
+      (state.player.equip.utility === 'sensor_rig' ? 1 : 0),
   );
   pushLog(state, 'LOG-DROP');
   syncObjectiveFlags(state);
@@ -172,6 +176,8 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.poiKind = map.poiKind;
   state.poiUsed = false;
   state.roomQuest = map.roomQuest;
+  state.rooms = map.rooms.map((r) => ({ ...r }));
+  state.surveyedRoomIds = [];
   state.lootTakenThisSector = false;
   state.handshake = null;
   state.approachShearAcc = 0;
@@ -194,7 +200,9 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus,
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
+      state.paddMods.fovBonus +
+      (state.player.equip.utility === 'sensor_rig' ? 1 : 0),
   );
   if (sectorIndex > 0 && hasSkill(state, 'triage')) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);

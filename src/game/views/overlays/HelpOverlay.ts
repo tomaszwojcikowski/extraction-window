@@ -17,5 +17,7 @@ export function drawHelpOverlay(
   drawLcarsPanel(panel, x, y, w, h, Theme.phosphor);
   text.setWordWrapWidth(w - 48);
   text.setPosition(x + 24, y + 22);
-  text.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC or ? — close`);
+  text.setText(
+    `${lore('UI-HELP')}\n\n${lore('UI-KIT-PURPOSE')}\n\n${lore('UI-HELP-BODY')}\n\nESC or ? — close`,
+  );
 }

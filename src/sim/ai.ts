@@ -144,6 +144,62 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
   }
 }
 
+function tryBossPattern(state: GameState, enemy: Enemy): void {
+  const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+  const aggro = effectiveAggro(state, enemy);
+  if (dist > aggro) {
+    enemy.windup = 0;
+    return;
+  }
+
+  if (enemy.windup > 0) {
+    enemy.windup = 0;
+    if (enemy.kind === 'isolinear_warden') {
+      // Ion sentinel smash
+      if (dist === 1) {
+        tryMelee(state, enemy, 2);
+        applyPlayerDamage(state, 1, 'ion');
+      } else {
+        stepToward(state, enemy, state.player.x, state.player.y);
+        const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+        if (d2 === 1) tryMelee(state, enemy, 2);
+      }
+      return;
+    }
+    if (enemy.kind === 'pattern_custodian') {
+      // Quiet-break / FOV drain pulse
+      state.player.energy -= 2;
+      addStatus(state.player, 'expose', 1);
+      pushLog(state, 'LOG-DRAIN', '-2E');
+      if (dist === 1) tryMelee(state, enemy, 1);
+      else stepToward(state, enemy, state.player.x, state.player.y);
+      return;
+    }
+    // shear_sovereign — hunter pounce + short ion burst
+    if (dist === 1) {
+      tryMelee(state, enemy, 2);
+      applyPlayerDamage(state, 1, 'ion');
+    } else {
+      stepToward(state, enemy, state.player.x, state.player.y);
+      const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+      if (d2 === 1) {
+        tryMelee(state, enemy, 2);
+        applyPlayerDamage(state, 1, 'ion');
+      }
+    }
+    return;
+  }
+
+  if (dist <= 2) {
+    enemy.windup = 1;
+    pushLog(state, 'LOG-BOSS-TELE');
+    return;
+  }
+  if (!tryMelee(state, enemy)) {
+    stepToward(state, enemy, state.player.x, state.player.y);
+  }
+}
+
 function silenced(state: GameState, enemy: Enemy): boolean {
   if (state.player.jammerTurns <= 0) return false;
   const kind = enemy.kind;
@@ -160,6 +216,11 @@ export function moveEnemies(state: GameState): void {
     if (!enemy.alive) continue;
     if (hasStatus(enemy, 'stun')) {
       enemy.windup = 0;
+      continue;
+    }
+
+    if (enemy.tier === 'boss') {
+      tryBossPattern(state, enemy);
       continue;
     }
 

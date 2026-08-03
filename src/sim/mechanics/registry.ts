@@ -6,6 +6,7 @@ import { beaconHandshakeMechanic } from './beaconHandshake';
 import { quietStanceMechanic } from './quietStance';
 import { patternBufferMechanic } from './patternBuffer';
 import { scriptedEventsMechanic } from './scriptedEvents';
+import { surveyMechanic } from './survey';
 
 /**
  * Ordered plug-ins.
@@ -18,6 +19,7 @@ const MECHANICS: Mechanic[] = [
   quietStanceMechanic,
   roomQuestMechanic,
   scriptedEventsMechanic,
+  surveyMechanic,
 ];
 
 export function mechanicsTryAction(state: GameState, action: Action): boolean {

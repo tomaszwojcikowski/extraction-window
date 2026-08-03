@@ -1,7 +1,7 @@
 import type { SectorDef } from '../data/encounters';
-import { ENEMIES } from '../data/enemies';
+import { ENEMIES, type EnemyKind } from '../data/enemies';
 import type { ItemKind } from '../data/items';
-import type { Enemy, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
+import type { Enemy, EnemyTier, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
 import {
@@ -69,6 +69,62 @@ function shuttleTile(): Tile {
 }
 function poiTile(): Tile {
   return { kind: 'poi', walkable: true, transparent: true };
+}
+function questTile(): Tile {
+  return { kind: 'quest', walkable: true, transparent: true };
+}
+
+function makeEnemy(
+  id: number,
+  kind: EnemyKind,
+  p: Pos,
+  sectorIndex: number,
+  tier: EnemyTier = 'normal',
+): Enemy {
+  const def = ENEMIES[kind];
+  const depth = 1 + sectorIndex * 0.035;
+  // Soft elite/boss curve — kill refunds still pay; keep autopilot WR in band
+  const hpMul = tier === 'elite' ? 1.4 : tier === 'boss' ? 2.1 : 1;
+  const hp = Math.ceil(def.hp * depth * hpMul);
+  return {
+    id,
+    kind,
+    x: p.x,
+    y: p.y,
+    hp,
+    maxHp: hp,
+    atk: Math.ceil(def.atk * depth),
+    def: def.def,
+    alive: true,
+    statuses: {},
+    alerted: false,
+    swellTurns: 0,
+    homeX: p.x,
+    homeY: p.y,
+    skirmishRetreat: false,
+    windup: 0,
+    tier,
+  };
+}
+
+function eliteKindForSector(index: number): EnemyKind {
+  if (index < 5) return 'elite_skirmisher';
+  if (index < 10) return 'elite_ward';
+  return 'elite_apex';
+}
+
+function occupiedSet(
+  enemies: Enemy[],
+  items: GroundItem[],
+  start: Pos,
+  specials: Pos[],
+): Set<string> {
+  const s = new Set<string>();
+  s.add(`${start.x},${start.y}`);
+  for (const p of specials) s.add(`${p.x},${p.y}`);
+  for (const e of enemies) s.add(`${e.x},${e.y}`);
+  for (const i of items) s.add(`${i.x},${i.y}`);
+  return s;
 }
 
 function carveRoom(tiles: Tile[][], room: Room): void {
@@ -332,15 +388,6 @@ function floorTiles(tiles: Tile[][]): Pos[] {
   return out;
 }
 
-function occupiedSet(enemies: Enemy[], items: GroundItem[], start: Pos, specials: Pos[]): Set<string> {
-  const s = new Set<string>();
-  s.add(`${start.x},${start.y}`);
-  for (const p of specials) s.add(`${p.x},${p.y}`);
-  for (const e of enemies) s.add(`${e.x},${e.y}`);
-  for (const i of items) s.add(`${i.x},${i.y}`);
-  return s;
-}
-
 /**
  * Generate a connected room-and-corridor map for a sector.
  * Guarantees path from start to exit and to quest items.
@@ -513,9 +560,8 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
-  // Optional room quest — single-site or 2-site multiroom (~55–70%)
-  const questChance = sector.index >= 3 && sector.index <= 12 ? 0.68 : 0.58;
-  if (rooms.length >= 3 && rng() < questChance) {
+  // Always spawn one room quest when the sector has enough rooms
+  if (rooms.length >= 3) {
     const midRooms = rooms.filter((r, i) => i > 0 && i < rooms.length - 1 && r !== startRoom && r !== endRoom);
     const candidates = midRooms.length >= 1 ? midRooms : rooms.slice(1, -1);
     const kind = pickRoomQuestKind(rng);
@@ -558,8 +604,8 @@ export function generateSectorMap(
           }
         }
         const bPos = { x: bRoom.cx, y: bRoom.cy };
-        tiles[aPos.y]![aPos.x] = poiTile();
-        tiles[bPos.y]![bPos.x] = poiTile();
+        tiles[aPos.y]![aPos.x] = questTile();
+        tiles[bPos.y]![bPos.x] = questTile();
         specials.push(aPos, bPos);
         roomQuest = buildMultiRoomQuest(multiKind, [
           { pos: aPos, room: { x: aRoom.x, y: aRoom.y, w: aRoom.w, h: aRoom.h } },
@@ -579,7 +625,7 @@ export function generateSectorMap(
         const singleKind = isMultiSiteKind(kind)
           ? pick(rng, ['salvage', 'purge', 'decode', 'stabilize'] as const)
           : kind;
-        tiles[pos.y]![pos.x] = poiTile();
+        tiles[pos.y]![pos.x] = questTile();
         specials.push(pos);
         roomQuest = buildSingleRoomQuest(singleKind, pos, {
           x: side.x,
@@ -590,6 +636,7 @@ export function generateSectorMap(
       }
     }
   }
+  // Decorative POI only when quest build failed
   if (!roomQuest && rng() < 0.45 && rooms.length >= 2) {
     const poiRoom = rooms[randInt(rng, 1, rooms.length - 1)]!;
     const candidates = [
@@ -637,27 +684,88 @@ export function generateSectorMap(
     if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < 5) continue;
     if (rng() > 0.28) continue;
     const kind = pick(rng, sector.enemyTable);
-    const def = ENEMIES[kind];
-    const scale = 1 + sector.index * 0.035;
-    enemies.push({
-      id: nextEntityId++,
-      kind,
-      x: p.x,
-      y: p.y,
-      hp: Math.ceil(def.hp * scale),
-      maxHp: Math.ceil(def.hp * scale),
-      atk: Math.ceil(def.atk * scale),
-      def: def.def,
-      alive: true,
-      statuses: {},
-      alerted: false,
-      swellTurns: 0,
-      homeX: p.x,
-      homeY: p.y,
-      skirmishRetreat: false,
-      windup: 0,
-    });
+    enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'normal'));
     ePlaced++;
+  }
+
+  // Exactly one elite per sector from index ≥2 when a mid-room exists
+  if (sector.index >= 2) {
+    const midRooms = rooms.filter((r) => r !== startRoom && r !== endRoom);
+    const eliteRooms = shuffle(
+      rng,
+      midRooms.filter((r) => {
+        const d = Math.abs(r.cx - start.x) + Math.abs(r.cy - start.y);
+        return d >= 6;
+      }),
+    );
+    const pool = eliteRooms.length ? eliteRooms : midRooms;
+    for (const room of pool) {
+      const candidates = [
+        { x: room.cx, y: room.cy },
+        { x: room.cx + 1, y: room.cy },
+        { x: room.cx, y: room.cy + 1 },
+        { x: room.cx - 1, y: room.cy },
+        { x: room.cx, y: room.cy - 1 },
+      ].filter((p) => {
+        if (!tiles[p.y]?.[p.x]?.walkable) return false;
+        if (occ().has(`${p.x},${p.y}`)) return false;
+        if (p.x === exit.x && p.y === exit.y) return false;
+        if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) return false;
+        if (shuttlePos && p.x === shuttlePos.x && p.y === shuttlePos.y) return false;
+        if (roomQuest?.steps.some((s) => s.pos.x === p.x && s.pos.y === p.y)) return false;
+        return canReach(tiles, start, p);
+      });
+      if (!candidates.length) continue;
+      const p = candidates[0]!;
+      enemies.push(makeEnemy(nextEntityId++, eliteKindForSector(sector.index), p, sector.index, 'elite'));
+      break;
+    }
+  }
+
+  // Campaign bosses — optional combat prizes on spine sectors (mid-room first so extract stays skippable)
+  const placeBoss = (kind: EnemyKind, prefer: Pos | null, midFallback: boolean) => {
+    const tries: Pos[] = [];
+    if (midFallback) {
+      const mid = rooms.filter((r) => r !== startRoom && r !== endRoom);
+      for (const r of shuffle(rng, mid)) {
+        tries.push({ x: r.cx, y: r.cy });
+        tries.push({ x: r.cx + 1, y: r.cy });
+        tries.push({ x: r.cx, y: r.cy + 1 });
+      }
+    }
+    if (prefer) {
+      tries.push(
+        { x: prefer.x + 2, y: prefer.y },
+        { x: prefer.x - 2, y: prefer.y },
+        { x: prefer.x, y: prefer.y + 2 },
+        { x: prefer.x, y: prefer.y - 2 },
+        { x: prefer.x + 1, y: prefer.y + 1 },
+        { x: prefer.x - 1, y: prefer.y - 1 },
+      );
+    }
+    for (const p of tries) {
+      if (!tiles[p.y]?.[p.x]?.walkable) continue;
+      if (occ().has(`${p.x},${p.y}`)) continue;
+      if (p.x === exit.x && p.y === exit.y) continue;
+      if (p.x === start.x && p.y === start.y) continue;
+      if (prefer && p.x === prefer.x && p.y === prefer.y) continue;
+      if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) continue;
+      if (shuttlePos && p.x === shuttlePos.x && p.y === shuttlePos.y) continue;
+      if (!canReach(tiles, start, p)) continue;
+      enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'boss'));
+      return;
+    }
+  };
+
+  if (sector.id === 'ruin') {
+    const key = items.find((i) => i.kind === 'relay_key');
+    placeBoss('isolinear_warden', key ? { x: key.x, y: key.y } : null, true);
+  } else if (sector.id === 'vault') {
+    const core = items.find((i) => i.kind === 'nav_core');
+    placeBoss('pattern_custodian', core ? { x: core.x, y: core.y } : null, true);
+  } else if (sector.id === 'approach') {
+    const mid = rooms[Math.floor(rooms.length / 2)] ?? endRoom;
+    placeBoss('shear_sovereign', { x: mid.cx, y: mid.cy }, true);
   }
 
   // Final connectivity assert repair
@@ -669,7 +777,7 @@ export function generateSectorMap(
     if (poiPos && poiKind) tiles[poiPos.y]![poiPos.x] = poiTile();
     if (roomQuest) {
       for (const step of roomQuest.steps) {
-        tiles[step.pos.y]![step.pos.x] = poiTile();
+        tiles[step.pos.y]![step.pos.x] = questTile();
       }
     }
   }
