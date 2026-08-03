@@ -1,0 +1,113 @@
+import { getSector } from '../data/encounters';
+import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
+import { generateSectorMap } from '../map/generator';
+import { computeFov } from './fov';
+import { mulberry32 } from './rng';
+import type { GameState } from './types';
+import { pushLog } from './combat';
+import { syncObjectiveFlags } from './inventory';
+
+export function createGame(seed: number): GameState {
+  const rng = mulberry32(seed >>> 0);
+  const sector = getSector(0);
+  const map = generateSectorMap(sector, seed, 0);
+
+  const explored = Array.from({ length: map.height }, () =>
+    Array.from({ length: map.width }, () => false),
+  );
+  const visible = Array.from({ length: map.height }, () =>
+    Array.from({ length: map.width }, () => false),
+  );
+
+  const state: GameState = {
+    seed: seed >>> 0,
+    rng,
+    status: 'playing',
+    loseReason: null,
+    turn: 0,
+    stormTurns: STORM_TURNS,
+    sectorIndex: 0,
+    sectorId: sector.id,
+    width: map.width,
+    height: map.height,
+    tiles: map.tiles,
+    explored,
+    visible,
+    player: {
+      x: map.start.x,
+      y: map.start.y,
+      hp: PLAYER_BASE.hp,
+      maxHp: PLAYER_BASE.maxHp,
+      energy: PLAYER_BASE.energy,
+      maxEnergy: PLAYER_BASE.maxEnergy,
+      atk: PLAYER_BASE.atk,
+      def: PLAYER_BASE.def,
+      probeTurns: 0,
+    },
+    inventory: [
+      { kind: 'med', count: 4 },
+      { kind: 'energy', count: 3 },
+      { kind: 'ration', count: 2 },
+      { kind: 'probe', count: 1 },
+    ],
+    enemies: map.enemies,
+    items: map.items,
+    exitPos: map.exit,
+    shuttlePos: map.shuttlePos,
+    beaconPos: map.beaconPos,
+    objectives: {
+      hasRelayKey: false,
+      usedRelayKey: false,
+      hasNavCore: false,
+      beaconOpen: false,
+    },
+    log: [],
+    ui: { inventoryOpen: false, selectedSlot: 0 },
+    nextEntityId: map.nextEntityId,
+    loreEvents: [],
+  };
+
+  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  pushLog(state, 'LOG-DROP');
+  syncObjectiveFlags(state);
+  return state;
+}
+
+export function loadSector(state: GameState, sectorIndex: number): void {
+  const sector = getSector(sectorIndex);
+  const map = generateSectorMap(sector, state.seed, sectorIndex, {
+    beaconAlreadyOpen: state.objectives.beaconOpen,
+  });
+
+  state.sectorIndex = sectorIndex;
+  state.sectorId = sector.id;
+  state.width = map.width;
+  state.height = map.height;
+  state.tiles = map.tiles;
+  state.explored = Array.from({ length: map.height }, () =>
+    Array.from({ length: map.width }, () => false),
+  );
+  state.visible = Array.from({ length: map.height }, () =>
+    Array.from({ length: map.width }, () => false),
+  );
+  state.player.x = map.start.x;
+  state.player.y = map.start.y;
+  state.enemies = map.enemies;
+  state.items = map.items;
+  state.exitPos = map.exit;
+  state.shuttlePos = map.shuttlePos;
+  state.beaconPos = map.beaconPos;
+  state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
+
+  // If returning somehow to open beacon
+  if (sector.isBeacon && state.objectives.beaconOpen && state.exitPos) {
+    state.tiles[state.exitPos.y]![state.exitPos.x] = {
+      kind: 'exit',
+      walkable: true,
+      transparent: true,
+    };
+  }
+
+  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  pushLog(state, 'LOG-SECTOR');
+}
