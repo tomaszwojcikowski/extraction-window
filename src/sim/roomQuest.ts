@@ -1,7 +1,9 @@
 import type { LoreId } from '../data/lore';
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES } from '../data/enemies';
+import { XP_ROOM_QUEST } from '../data/progression';
 import { pushLog } from './combat';
+import { gainXp } from './progression';
 import { pick, randInt } from './rng';
 import type { GameState, RoomQuest, RoomQuestKind } from './types';
 
@@ -31,6 +33,7 @@ export function grantCodex(state: GameState): void {
   const page = CODEX_BY_SECTOR[state.sectorId] ?? 'CODEX-GENERIC';
   pushLog(state, 'LOG-CODEX');
   pushLog(state, page);
+  gainXp(state, XP_ROOM_QUEST, 'quest');
 }
 
 function inRoom(rq: RoomQuest, x: number, y: number): boolean {

@@ -1047,7 +1047,9 @@ export class GameScene extends Phaser.Scene {
     this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, Theme.ok, Theme.danger);
     this.drawBar(176, 30, 120, 10, st.player.armor / Math.max(1, st.player.maxArmor), Theme.phosphor, Theme.danger);
     this.drawBar(308, 30, 120, 10, st.player.energy / st.player.maxEnergy, Theme.energy, Theme.storm);
-    this.drawBar(440, 30, 140, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
+    this.drawBar(440, 30, 100, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
+    const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
+    this.drawBar(550, 30, 80, 10, xpFrac, Theme.quest, Theme.phosphorMute);
 
     const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `  ${lore('UI-STIM')} ${st.player.stimTurns}` : '';
@@ -1066,7 +1068,7 @@ export class GameScene extends Phaser.Scene {
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
     this.hudMeta.setText(
-      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${probe}${stim}${filter}${jam}${tool}${armorEq}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${probe}${stim}${filter}${jam}${tool}${armorEq}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

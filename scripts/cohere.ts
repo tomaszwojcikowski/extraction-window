@@ -8,6 +8,7 @@ import { ENEMIES, type EnemyKind } from '../src/data/enemies';
 import { ITEMS, type ItemKind } from '../src/data/items';
 import { ENEMY_DROPS } from '../src/data/drops';
 import { LORE, type LoreId } from '../src/data/lore';
+import { SKILLS, type SkillId } from '../src/data/progression';
 
 const errors: string[] = [];
 
@@ -99,6 +100,12 @@ function main(): void {
     for (const entry of ENEMY_DROPS[kind]) {
       if (!(entry.kind in ITEMS)) fail(`drop ${entry.kind} for ${kind} not in ITEMS`);
     }
+  }
+
+  for (const id of Object.keys(SKILLS) as SkillId[]) {
+    const s = SKILLS[id];
+    if (!(s.loreName in LORE)) fail(`skill ${id} missing loreName`);
+    if (!(s.loreDesc in LORE)) fail(`skill ${id} missing loreDesc`);
   }
 
   if (errors.length) {

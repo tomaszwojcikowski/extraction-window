@@ -1,5 +1,6 @@
 import { getSector } from '../data/encounters';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
+import { XP_SECTOR } from '../data/progression';
 import { computeFov, playerFovRadius } from './fov';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
@@ -7,6 +8,7 @@ import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { addStatus, tickPlayerStatusEffects } from './status';
 import { tickRoomQuest } from './roomQuest';
+import { gainXp, hasSkill } from './progression';
 import type { GameState } from './types';
 
 function fovR(state: GameState): number {
@@ -59,7 +61,11 @@ function tickEnvironment(state: GameState): void {
 
   const filter = state.player.filterTurns > 0;
   if (state.turn % 5 === 0) {
-    state.player.energy -= filter ? 0 : 1;
+    const skipDrip =
+      hasSkill(state, 'deep_reserve') && state.turn % 10 === 0;
+    if (!skipDrip) {
+      state.player.energy -= filter ? 0 : 1;
+    }
   }
   const drain = filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
   state.player.energy -= drain;
@@ -106,6 +112,7 @@ export function endPlayerTurn(state: GameState): void {
 
 export function advanceSector(state: GameState): boolean {
   if (state.sectorIndex >= CAMPAIGN_LENGTH - 1) return false;
+  gainXp(state, XP_SECTOR, 'sector');
   loadSector(state, state.sectorIndex + 1);
   return true;
 }

@@ -1,3 +1,4 @@
+import { xpToNextForLevel } from '../data/progression';
 import { getSector, type SectorId } from '../data/encounters';
 import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
 import type { LoreId } from '../data/lore';
@@ -7,6 +8,7 @@ import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
+import { hasSkill } from './progression';
 
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   flood: 'LOG-SEC-FLOOD',
@@ -95,6 +97,10 @@ export function createGame(seed: number): GameState {
     poiUsed: false,
     roomQuest: map.roomQuest,
     codexPages: 0,
+    level: 1,
+    xp: 0,
+    xpToNext: xpToNextForLevel(1),
+    skills: [],
     lootTakenThisSector: false,
     objectives: {
       hasRelayKey: false,
@@ -170,6 +176,9 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     state.player.y,
     playerFovRadius(state.player.probeTurns, state.player.lensTurns),
   );
+  if (sectorIndex > 0 && hasSkill(state, 'triage')) {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);
+  }
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);

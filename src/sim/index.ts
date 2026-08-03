@@ -16,4 +16,5 @@ export { createGame, loadSector } from './state';
 export { applyAction } from './actions';
 export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS } from './fov';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
+export { gainXp, hasSkill } from './progression';
 export { hasItem, syncObjectiveFlags } from './inventory';

@@ -1,0 +1,98 @@
+import type { LoreId } from './lore';
+
+export type SkillId =
+  | 'triage'
+  | 'scavenger'
+  | 'overcharge'
+  | 'ion_skin'
+  | 'deep_reserve'
+  | 'last_window';
+
+export const MAX_LEVEL = 8;
+
+/** XP required to advance FROM (level-1) TO level. Index = target level. */
+export const XP_TO_REACH: Record<number, number> = {
+  2: 40,
+  3: 60,
+  4: 80,
+  5: 100,
+  6: 120,
+  7: 140,
+  8: 160,
+};
+
+export interface LevelBump {
+  maxHp?: number;
+  maxEnergy?: number;
+  atk?: number;
+  def?: number;
+  maxArmor?: number;
+}
+
+/** Stat bumps applied when reaching this level. */
+export const LEVEL_BUMPS: Record<number, LevelBump> = {
+  2: { maxHp: 4, maxEnergy: 2 },
+  3: { atk: 1, maxArmor: 2 },
+  4: { maxHp: 4, maxEnergy: 3 },
+  5: { def: 1 },
+  6: { maxHp: 4, atk: 1 },
+  7: { maxArmor: 2, maxEnergy: 4 },
+  8: { atk: 1, maxHp: 4 },
+};
+
+export interface SkillDef {
+  id: SkillId;
+  unlockLevel: number;
+  loreName: LoreId;
+  loreDesc: LoreId;
+}
+
+export const SKILLS: Record<SkillId, SkillDef> = {
+  triage: {
+    id: 'triage',
+    unlockLevel: 3,
+    loreName: 'SKILL-TRIAGE-NAME',
+    loreDesc: 'SKILL-TRIAGE-DESC',
+  },
+  scavenger: {
+    id: 'scavenger',
+    unlockLevel: 4,
+    loreName: 'SKILL-SCAVENGER-NAME',
+    loreDesc: 'SKILL-SCAVENGER-DESC',
+  },
+  overcharge: {
+    id: 'overcharge',
+    unlockLevel: 5,
+    loreName: 'SKILL-OVERCHARGE-NAME',
+    loreDesc: 'SKILL-OVERCHARGE-DESC',
+  },
+  ion_skin: {
+    id: 'ion_skin',
+    unlockLevel: 6,
+    loreName: 'SKILL-ION-SKIN-NAME',
+    loreDesc: 'SKILL-ION-SKIN-DESC',
+  },
+  deep_reserve: {
+    id: 'deep_reserve',
+    unlockLevel: 7,
+    loreName: 'SKILL-DEEP-RESERVE-NAME',
+    loreDesc: 'SKILL-DEEP-RESERVE-DESC',
+  },
+  last_window: {
+    id: 'last_window',
+    unlockLevel: 8,
+    loreName: 'SKILL-LAST-WINDOW-NAME',
+    loreDesc: 'SKILL-LAST-WINDOW-DESC',
+  },
+};
+
+export const XP_KILL_BASE = 8;
+export const XP_SECTOR = 25;
+export const XP_ROOM_QUEST = 20;
+export const XP_QUEST_ITEM = 30;
+export const XP_BEACON = 20;
+
+export function xpToNextForLevel(level: number): number {
+  if (level >= MAX_LEVEL) return 0;
+  return XP_TO_REACH[level + 1] ?? 0;
+}

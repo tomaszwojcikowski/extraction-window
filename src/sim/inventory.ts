@@ -1,9 +1,11 @@
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
+import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import { pushLog, recordLoreEvent, playerAttack, killEnemy } from './combat';
 import { addStatus } from './status';
 import { randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
+import { gainXp } from './progression';
 
 const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
@@ -294,10 +296,12 @@ export function tryPickup(state: GameState): void {
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');
     recordLoreEvent(state, 'LOG-GOT-KEY');
+    gainXp(state, XP_QUEST_ITEM, 'key');
   }
   if (item.kind === 'nav_core') {
     pushLog(state, 'LOG-GOT-CORE');
     recordLoreEvent(state, 'LOG-GOT-CORE');
+    gainXp(state, XP_QUEST_ITEM, 'core');
   }
   syncObjectiveFlags(state);
 }

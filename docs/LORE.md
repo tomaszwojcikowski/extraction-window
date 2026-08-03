@@ -80,6 +80,8 @@ Capacity 16 slots. Consumables: med, energy, ration, coolant, battery, probe, st
 
 **Ablative armor** — hits strike armor pool before vitals. Bleed bypasses armor. Ion damage halved while filter is active. Kinetic vs ion damage types on hostiles.
 
+**Surveyor proficiency (in-run)** — kills, sector clears, room quests, and objective beats grant XP. Levels auto-boost stats and unlock passive field skills (triage, scavenger, overcharge, ion skin, deep reserve, last window). Resets each drop; no cross-run meta.
+
 Statuses (shared): stun, bleed, ion_burn, expose — tick on turns; HUD glyphs beside vitals.
 
 ## Field audio (synthesized)

@@ -1,8 +1,9 @@
 import { ENEMY_DROPS, dropChance } from '../data/drops';
 import { ENEMIES } from '../data/enemies';
+import { XP_KILL_BASE } from '../data/progression';
 import { lore, type LoreId } from '../data/lore';
-import { pick } from './rng';
 import { addStatus, hasStatus } from './status';
+import { gainXp, hasSkill } from './progression';
 import type { DamageType, Enemy, GameState } from './types';
 
 export function pushLog(state: GameState, loreId: LoreId, detail?: string): void {
@@ -32,7 +33,9 @@ export function applyPlayerDamage(
   type: DamageType,
 ): { armorLost: number; hpLost: number; fullyAbsorbed: boolean } {
   let dmg = Math.max(0, amount);
-  if (type === 'ion' && state.player.filterTurns > 0) {
+  const filterOn = state.player.filterTurns > 0;
+  const ionSkin = hasSkill(state, 'ion_skin');
+  if (filterOn && (type === 'ion' || (ionSkin && type === 'kinetic'))) {
     dmg = Math.max(1, Math.ceil(dmg / 2));
   }
 
@@ -55,7 +58,9 @@ export function applyPlayerDamage(
 }
 
 function tryDeathDrop(state: GameState, enemy: Enemy): void {
-  if (state.rng() > dropChance(state.sectorIndex)) return;
+  let chance = dropChance(state.sectorIndex);
+  if (hasSkill(state, 'scavenger')) chance = Math.min(0.95, chance + 0.15);
+  if (state.rng() > chance) return;
   const table = ENEMY_DROPS[enemy.kind];
   if (!table.length) return;
   const total = table.reduce((s, e) => s + e.weight, 0);
@@ -82,15 +87,19 @@ export function killEnemy(state: GameState, enemy: Enemy): void {
   enemy.hp = 0;
   pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
   tryDeathDrop(state, enemy);
+  gainXp(state, XP_KILL_BASE + Math.floor(enemy.maxHp / 2));
 }
 
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
+  const overcharge =
+    hasSkill(state, 'overcharge') && state.player.hp <= state.player.maxHp * 0.5 ? 1 : 0;
   const atk =
     state.player.atk +
     toolAtkBonus(state) +
     (state.player.probeTurns > 0 ? 2 : 0) +
     (state.player.stimTurns > 0 ? 3 : 0) +
-    (hasStatus(enemy, 'expose') ? 2 : 0);
+    (hasStatus(enemy, 'expose') ? 2 : 0) +
+    overcharge;
   const def = enemy.def - (hasStatus(enemy, 'expose') ? 1 : 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   enemy.hp -= dmg;
@@ -107,9 +116,11 @@ export function enemyAttack(
   variance: number,
   opts?: { bonusAtk?: number },
 ): boolean {
+  const lastWindow = hasSkill(state, 'last_window') && state.stormTurns <= 80 ? 1 : 0;
   const def =
     state.player.def +
-    (state.player.stabilizeTurns > 0 ? 1 : 0) -
+    (state.player.stabilizeTurns > 0 ? 1 : 0) +
+    lastWindow -
     (hasStatus(state.player, 'expose') ? 1 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);

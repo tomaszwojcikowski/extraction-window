@@ -1,4 +1,5 @@
 import { INVENTORY_SLOTS } from '../data/items';
+import { XP_BEACON } from '../data/progression';
 import {
   hasItem,
   removeOne,
@@ -14,6 +15,7 @@ import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from 
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
 import { tryRoomQuest, tickRoomQuest } from './roomQuest';
+import { gainXp } from './progression';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -133,6 +135,7 @@ function tryExit(state: GameState): void {
     syncObjectiveFlags(state);
     pushLog(state, 'LOG-USED-KEY');
     recordLoreEvent(state, 'LOG-USED-KEY');
+    gainXp(state, XP_BEACON, 'beacon');
     if (state.exitPos) {
       state.tiles[state.exitPos.y]![state.exitPos.x] = {
         kind: 'exit',

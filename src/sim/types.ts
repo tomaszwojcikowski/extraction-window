@@ -1,8 +1,9 @@
 import type { EnemyKind, DamageType } from '../data/enemies';
 export type { DamageType };
 import type { ItemKind } from '../data/items';
-import type { LoreId } from '../data/lore';
 import type { SectorId } from '../data/encounters';
+import type { SkillId } from '../data/progression';
+import type { LoreId } from '../data/lore';
 import type { Rng } from './rng';
 
 export interface Pos {
@@ -146,6 +147,11 @@ export interface GameState {
   poiUsed: boolean;
   roomQuest: RoomQuest | null;
   codexPages: number;
+  /** In-run surveyor proficiency (resets each seed) */
+  level: number;
+  xp: number;
+  xpToNext: number;
+  skills: SkillId[];
   /** Loot taken this sector — wakes guard crawlers */
   lootTakenThisSector: boolean;
   objectives: ObjectiveFlags;

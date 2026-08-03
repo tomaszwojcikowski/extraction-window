@@ -238,6 +238,23 @@ export const LORE = {
   'LOG-RQ-STABILIZE': 'Stabilize complete — armor pool refilled.',
   'LOG-CODEX': 'Expedition page filed.',
   'LOG-RQ-NEED': 'Anomaly still active — complete the room procedure.',
+  'LOG-XP': 'Survey proficiency gained.',
+  'LOG-LEVEL': 'Surveyor proficiency advanced.',
+  'LOG-SKILL': 'Field skill unlocked.',
+  'UI-LEVEL': 'LVL',
+  'UI-XP': 'XP',
+  'SKILL-TRIAGE-NAME': 'Field Triage',
+  'SKILL-TRIAGE-DESC': 'On sector entry: restore +6 HP.',
+  'SKILL-SCAVENGER-NAME': 'Scavenger Eye',
+  'SKILL-SCAVENGER-DESC': '+15% chance of salvage drops on kill.',
+  'SKILL-OVERCHARGE-NAME': 'Overcharge Strike',
+  'SKILL-OVERCHARGE-DESC': '+1 melee damage while vitals ≤ 50%.',
+  'SKILL-ION-SKIN-NAME': 'Ion Skin',
+  'SKILL-ION-SKIN-DESC': 'Active filter also halves kinetic hits.',
+  'SKILL-DEEP-RESERVE-NAME': 'Deep Reserve',
+  'SKILL-DEEP-RESERVE-DESC': 'Skip one life-support drip every 10 turns.',
+  'SKILL-LAST-WINDOW-NAME': 'Last Window',
+  'SKILL-LAST-WINDOW-DESC': '+1 DEF while storm window ≤ 80.',
 } as const;
 
 export type LoreId = keyof typeof LORE;
