@@ -13,6 +13,7 @@ export type ItemKind =
   | 'filter'
   | 'coolant'
   | 'blade'
+  | 'harness'
   | 'dart'
   | 'jammer'
   | 'sealant';
@@ -107,6 +108,13 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'blade',
     loreName: 'ITEM-BLADE',
     loreDesc: 'ITEM-BLADE-DESC',
+    quest: false,
+    stackable: false,
+  },
+  harness: {
+    kind: 'harness',
+    loreName: 'ITEM-HARNESS',
+    loreDesc: 'ITEM-HARNESS-DESC',
     quest: false,
     stackable: false,
   },

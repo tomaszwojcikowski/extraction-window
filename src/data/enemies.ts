@@ -1,5 +1,7 @@
 import type { LoreId } from './lore';
 
+export type DamageType = 'kinetic' | 'ion';
+
 export type EnemyKind =
   | 'mite'
   | 'spore'
@@ -8,7 +10,9 @@ export type EnemyKind =
   | 'leech'
   | 'crawler'
   | 'sentinel'
-  | 'serpent';
+  | 'serpent'
+  | 'wraith'
+  | 'drone';
 
 export type EnemyBehavior =
   | 'wander'
@@ -31,6 +35,7 @@ export interface EnemyDef {
   behavior: EnemyBehavior;
   /** Manhattan aggro / interest radius */
   aggroRange: number;
+  damageType: DamageType;
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
@@ -44,6 +49,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0x88aa44,
     behavior: 'wander',
     aggroRange: 2,
+    damageType: 'kinetic',
   },
   spore: {
     kind: 'spore',
@@ -55,6 +61,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0x66ccaa,
     behavior: 'swell',
     aggroRange: 3,
+    damageType: 'ion',
   },
   wasp: {
     kind: 'wasp',
@@ -66,6 +73,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0xccaa22,
     behavior: 'skirmish',
     aggroRange: 6,
+    damageType: 'kinetic',
   },
   stalker: {
     kind: 'stalker',
@@ -77,6 +85,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0x44aa66,
     behavior: 'ambush',
     aggroRange: 8,
+    damageType: 'kinetic',
   },
   leech: {
     kind: 'leech',
@@ -88,6 +97,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0x4488bb,
     behavior: 'drain',
     aggroRange: 5,
+    damageType: 'ion',
   },
   crawler: {
     kind: 'crawler',
@@ -99,6 +109,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0xaa6644,
     behavior: 'guard',
     aggroRange: 7,
+    damageType: 'kinetic',
   },
   sentinel: {
     kind: 'sentinel',
@@ -110,6 +121,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0x8888cc,
     behavior: 'sentinel',
     aggroRange: 5,
+    damageType: 'kinetic',
   },
   serpent: {
     kind: 'serpent',
@@ -121,5 +133,30 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0xcc4488,
     behavior: 'hunter',
     aggroRange: 12,
+    damageType: 'ion',
+  },
+  wraith: {
+    kind: 'wraith',
+    loreName: 'ENEMY-WRAITH',
+    hp: 5,
+    atk: 4,
+    def: 0,
+    glyph: 'W',
+    color: 0xa0d080,
+    behavior: 'hunter',
+    aggroRange: 12,
+    damageType: 'ion',
+  },
+  drone: {
+    kind: 'drone',
+    loreName: 'ENEMY-DRONE',
+    hp: 10,
+    atk: 4,
+    def: 3,
+    glyph: 'D',
+    color: 0x90a0b0,
+    behavior: 'sentinel',
+    aggroRange: 4,
+    damageType: 'kinetic',
   },
 };

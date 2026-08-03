@@ -1,4 +1,5 @@
-import type { EnemyKind } from '../data/enemies';
+import type { EnemyKind, DamageType } from '../data/enemies';
+export type { DamageType };
 import type { ItemKind } from '../data/items';
 import type { LoreId } from '../data/lore';
 import type { SectorId } from '../data/encounters';
@@ -53,6 +54,8 @@ export interface Enemy {
   homeX: number;
   homeY: number;
   skirmishRetreat: boolean;
+  /** Turns remaining in telegraph windup (0 = ready) */
+  windup: number;
 }
 
 export interface GroundItem {
@@ -80,6 +83,11 @@ export interface ObjectiveFlags {
 
 export type PoiKind = 'console' | 'nest' | 'cache_scar';
 
+export interface EquipSlots {
+  tool: ItemKind | null;
+  armor: ItemKind | null;
+}
+
 export interface GameState {
   seed: number;
   rng: Rng;
@@ -103,12 +111,14 @@ export interface GameState {
     maxEnergy: number;
     atk: number;
     def: number;
+    armor: number;
+    maxArmor: number;
     probeTurns: number;
     stimTurns: number;
-    plateTurns: number;
     filterTurns: number;
     jammerTurns: number;
     statuses: StatusMap;
+    equip: EquipSlots;
   };
   inventory: InventorySlot[];
   enemies: Enemy[];

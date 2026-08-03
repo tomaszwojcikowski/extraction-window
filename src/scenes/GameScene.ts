@@ -6,6 +6,7 @@ import { ENEMIES } from '../data/enemies';
 import { applyAction, createGame, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
 import { statusHud } from '../sim/status';
+import { toolAtkBonus } from '../sim/combat';
 import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
 import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
 import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
@@ -557,6 +558,9 @@ export class GameScene extends Phaser.Scene {
     if (has('LOG-STORM-WARN')) {
       sfx.play('warn');
     }
+    if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT')) {
+      sfx.play('armor');
+    }
     if (st.player.hp < prev.prevHp || has('LOG-HURT')) {
       sfx.play('hurt');
     }
@@ -580,6 +584,7 @@ export class GameScene extends Phaser.Scene {
       has('LOG-USE-FILTER') ||
       has('LOG-USE-COOLANT') ||
       has('LOG-USE-BLADE') ||
+      has('LOG-USE-HARNESS') ||
       has('LOG-USE-DART') ||
       has('LOG-USE-JAMMER') ||
       has('LOG-USE-SEALANT')
@@ -938,23 +943,28 @@ export class GameScene extends Phaser.Scene {
 
     this.barsGfx.clear();
     this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, Theme.ok, Theme.danger);
-    this.drawBar(176, 30, 150, 10, st.player.energy / st.player.maxEnergy, Theme.energy, Theme.storm);
-    this.drawBar(340, 30, 170, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
+    this.drawBar(176, 30, 120, 10, st.player.armor / Math.max(1, st.player.maxArmor), Theme.phosphor, Theme.danger);
+    this.drawBar(308, 30, 120, 10, st.player.energy / st.player.maxEnergy, Theme.energy, Theme.storm);
+    this.drawBar(440, 30, 140, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
 
     const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `  ${lore('UI-STIM')} ${st.player.stimTurns}` : '';
-    const plate = st.player.plateTurns > 0 ? `  ${lore('UI-PLATE')} ${st.player.plateTurns}` : '';
     const filter =
       st.player.filterTurns > 0 ? `  ${lore('UI-FILTER')} ${st.player.filterTurns}` : '';
     const jam =
       st.player.jammerTurns > 0 ? `  ${lore('UI-JAMMER')} ${st.player.jammerTurns}` : '';
+    const tool =
+      st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:blade` : '';
+    const armorEq =
+      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:harness` : '';
     const statuses = statusHud(st.player.statuses);
     const statusLine = statuses ? `  ${statuses}` : '';
     const atkBonus =
-      (st.player.probeTurns > 0 ? 2 : 0) + (st.player.stimTurns > 0 ? 3 : 0);
-    const defBonus = st.player.plateTurns > 0 ? 2 : 0;
+      toolAtkBonus(st) +
+      (st.player.probeTurns > 0 ? 2 : 0) +
+      (st.player.stimTurns > 0 ? 3 : 0);
     this.hudMeta.setText(
-      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}    ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}    ${lore('UI-WINDOW')} ${st.stormTurns}    ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${probe}${stim}${plate}${filter}${jam}${statusLine}`,
+      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${probe}${stim}${filter}${jam}${tool}${armorEq}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -1024,7 +1034,10 @@ export class GameScene extends Phaser.Scene {
               return `${mark} ${num}  ${name} ×${slot.count}${sel}`;
             });
       this.invText.setPosition(px + 18, py + 16);
-      this.invText.setText(`${lore('UI-INV')}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`);
+      const equipLine = `${lore('UI-TOOL')}: ${st.player.equip.tool ?? '—'}   ${lore('UI-EQUIP-ARMOR')}: ${st.player.equip.armor ?? '—'}`;
+      this.invText.setText(
+        `${lore('UI-INV')}\n${equipLine}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`,
+      );
     }
   }
 }

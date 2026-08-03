@@ -72,7 +72,6 @@ function tickEnvironment(state: GameState): void {
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
-  if (state.player.plateTurns > 0) state.player.plateTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
   if (state.player.jammerTurns > 0) state.player.jammerTurns -= 1;
 

@@ -13,6 +13,8 @@ export const PLAYER_BASE = {
   maxEnergy: 80,
   atk: 6,
   def: 2,
+  armor: 10,
+  maxArmor: 10,
 };
 
 export function sectorLore(id: SectorId): LoreId {

@@ -6,6 +6,9 @@ import { pushLog, recordLoreEvent, playerAttack } from './combat';
 import { addStatus } from './status';
 import { randInt } from './rng';
 
+const HARNESS_ARMOR_BONUS = 6;
+const PLATE_REPAIR = 10;
+
 export function findSlot(state: GameState, kind: ItemKind): number {
   return state.inventory.findIndex((s) => s.kind === kind);
 }
@@ -60,6 +63,46 @@ export function removeOne(state: GameState, kind: ItemKind): boolean {
   return true;
 }
 
+function unequipTool(state: GameState): void {
+  const prev = state.player.equip.tool;
+  if (!prev) return;
+  state.player.equip.tool = null;
+  addItem(state, prev);
+  pushLog(state, 'LOG-UNEQUIP');
+}
+
+function unequipArmor(state: GameState): void {
+  const prev = state.player.equip.armor;
+  if (!prev) return;
+  if (prev === 'harness') {
+    state.player.maxArmor = Math.max(0, state.player.maxArmor - HARNESS_ARMOR_BONUS);
+    state.player.armor = Math.min(state.player.armor, state.player.maxArmor);
+  }
+  state.player.equip.armor = null;
+  addItem(state, prev);
+  pushLog(state, 'LOG-UNEQUIP');
+}
+
+function equipTool(state: GameState, kind: ItemKind): void {
+  if (state.player.equip.tool === kind) return;
+  unequipTool(state);
+  removeOne(state, kind);
+  state.player.equip.tool = kind;
+  pushLog(state, 'LOG-USE-BLADE');
+}
+
+function equipArmor(state: GameState, kind: ItemKind): void {
+  if (state.player.equip.armor === kind) return;
+  unequipArmor(state);
+  removeOne(state, kind);
+  state.player.equip.armor = kind;
+  if (kind === 'harness') {
+    state.player.maxArmor += HARNESS_ARMOR_BONUS;
+    state.player.armor = state.player.maxArmor;
+  }
+  pushLog(state, 'LOG-USE-HARNESS');
+}
+
 export function useSelected(state: GameState): boolean {
   if (state.inventory.length === 0) {
     pushLog(state, 'LOG-USE-FAIL');
@@ -97,7 +140,7 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-STIM');
       break;
     case 'plate':
-      state.player.plateTurns = Math.max(state.player.plateTurns, 30);
+      state.player.armor = Math.min(state.player.maxArmor, state.player.armor + PLATE_REPAIR);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-PLATE');
       break;
@@ -112,9 +155,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'blade':
-      state.player.atk += 1;
-      removeOne(state, kind);
-      pushLog(state, 'LOG-USE-BLADE');
+      equipTool(state, 'blade');
+      break;
+    case 'harness':
+      equipArmor(state, 'harness');
       break;
     case 'flare': {
       removeOne(state, kind);
@@ -124,6 +168,7 @@ export function useSelected(state: GameState): boolean {
         if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) !== 1) continue;
         en.hp -= 4;
         addStatus(en, 'stun', 2);
+        en.windup = 0;
         hits += 1;
         if (en.hp <= 0) {
           en.alive = false;
@@ -155,11 +200,10 @@ export function useSelected(state: GameState): boolean {
       break;
     }
     case 'dart':
-      // Enter aim mode — does not consume until shot
       state.ui.aimingDart = true;
       state.ui.inventoryOpen = false;
       pushLog(state, 'LOG-AIM-DART');
-      return false; // do not end turn yet
+      return false;
     case 'relay_key':
     case 'nav_core':
       pushLog(state, 'LOG-USE-FAIL');
@@ -180,7 +224,6 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
     pushLog(state, 'LOG-AIM-MISS');
     return;
   }
-  // Normalize to unit step direction, then scan line
   const sx = Math.sign(dx);
   const sy = Math.sign(dy);
   let hit = false;
@@ -201,7 +244,6 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
     }
   }
   if (!hit) {
-    // Still spend dart on miss if we aimed
     removeOne(state, 'dart');
     pushLog(state, 'LOG-AIM-MISS');
   }

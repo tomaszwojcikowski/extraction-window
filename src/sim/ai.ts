@@ -1,5 +1,5 @@
 import { ENEMIES } from '../data/enemies';
-import { enemyAttack, pushLog } from './combat';
+import { applyPlayerDamage, enemyAttack, pushLog } from './combat';
 import { bfsPath } from './fov';
 import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
@@ -93,11 +93,42 @@ function shuffleDirs(state: GameState): Array<[number, number]> {
   return dirs;
 }
 
-function tryMelee(state: GameState, enemy: Enemy): boolean {
+function tryMelee(state: GameState, enemy: Enemy, bonusAtk = 0): boolean {
   const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
   if (dist !== 1) return false;
-  enemyAttack(state, enemy, randInt(state.rng, -1, 1));
+  enemyAttack(state, enemy, randInt(state.rng, -1, 1), { bonusAtk });
   return true;
+}
+
+/** Hunter/ambush/wraith: windup then pounce with bonus damage. */
+function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): void {
+  const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+  if (dist > defAggro) {
+    enemy.windup = 0;
+    return;
+  }
+  if (enemy.windup > 0) {
+    enemy.windup = 0;
+    if (dist === 1) {
+      tryMelee(state, enemy, 1);
+    } else {
+      stepToward(state, enemy, state.player.x, state.player.y);
+      const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+      if (d2 === 1) tryMelee(state, enemy, 1);
+      else if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
+    }
+    return;
+  }
+  if (dist <= 2) {
+    enemy.windup = 1;
+    pushLog(state, 'LOG-TELE-POUNCE');
+    return;
+  }
+  if (!tryMelee(state, enemy)) {
+    stepToward(state, enemy, state.player.x, state.player.y);
+    const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+    if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
+  }
 }
 
 function silenced(state: GameState, enemy: Enemy): boolean {
@@ -114,7 +145,10 @@ export function moveEnemies(state: GameState): void {
     if (!enemy.alive) continue;
     tickEnemyStatusEffects(state, enemy);
     if (!enemy.alive) continue;
-    if (hasStatus(enemy, 'stun')) continue;
+    if (hasStatus(enemy, 'stun')) {
+      enemy.windup = 0;
+      continue;
+    }
 
     const def = ENEMIES[enemy.kind];
     const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
@@ -137,14 +171,15 @@ export function moveEnemies(state: GameState): void {
       case 'swell': {
         if (dist <= def.aggroRange) {
           enemy.swellTurns += 1;
+          if (enemy.swellTurns === 2) {
+            pushLog(state, 'LOG-TELE-SWELL');
+          }
           if (enemy.swellTurns >= 3) {
-            // Burst: AoE energy + ion_burn, spore dies
             pushLog(state, 'LOG-SPORE-BURST');
             if (dist <= 2) {
               state.player.energy -= 4;
-              state.player.hp -= 1;
+              applyPlayerDamage(state, 1, 'ion');
               addStatus(state.player, 'ion_burn', 2);
-              pushLog(state, 'LOG-HURT', '-1');
             }
             enemy.alive = false;
             enemy.hp = 0;
@@ -179,14 +214,7 @@ export function moveEnemies(state: GameState): void {
             break;
           }
         }
-        if (!tryMelee(state, enemy)) {
-          stepToward(state, enemy, state.player.x, state.player.y);
-          // Ambush chase is aggressive: second step attempt if still far
-          const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-          if (d2 > 1 && d2 <= def.aggroRange) {
-            stepToward(state, enemy, state.player.x, state.player.y);
-          }
-        }
+        tryPouncePattern(state, enemy, def.aggroRange);
         break;
       }
       case 'drain': {
@@ -201,7 +229,6 @@ export function moveEnemies(state: GameState): void {
           enemy.alerted = true;
           if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
         } else {
-          // Patrol near home
           const hd = manhattan(enemy.x, enemy.y, enemy.homeX, enemy.homeY);
           if (hd > 3) stepToward(state, enemy, enemy.homeX, enemy.homeY);
           else randomStep(state, enemy);
@@ -209,11 +236,9 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'sentinel': {
-        // Hold ground near home; only engage nearby
         if (dist <= def.aggroRange) {
           if (dist === 1) tryMelee(state, enemy);
           else if (dist <= 3) stepToward(state, enemy, state.player.x, state.player.y);
-          // Slow: otherwise stay
         } else {
           const hd = manhattan(enemy.x, enemy.y, enemy.homeX, enemy.homeY);
           if (hd > 0) stepToward(state, enemy, enemy.homeX, enemy.homeY);
@@ -221,13 +246,7 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'hunter': {
-        if (dist > def.aggroRange) break;
-        if (!tryMelee(state, enemy)) {
-          stepToward(state, enemy, state.player.x, state.player.y);
-          // Hunters push through scrub mentally — already normal walkable
-          const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-          if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
-        }
+        tryPouncePattern(state, enemy, def.aggroRange);
         break;
       }
     }

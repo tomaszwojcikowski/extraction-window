@@ -130,6 +130,15 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
+  // Repair armor when pool is low
+  if (state.player.armor < state.player.maxArmor * 0.65) {
+    const pIdx = state.inventory.findIndex((s) => s.kind === 'plate');
+    if (pIdx >= 0) {
+      state.ui.selectedSlot = pIdx;
+      return { type: 'use' };
+    }
+  }
+
   // Buff before likely fights in late sectors
   if (state.sectorIndex >= 3 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
     const stimIdx = state.inventory.findIndex((s) => s.kind === 'stim');
@@ -140,15 +149,13 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  if (state.sectorIndex >= 4 && state.player.plateTurns <= 0) {
-    const pIdx = state.inventory.findIndex((s) => s.kind === 'plate');
-    if (pIdx >= 0 && state.player.hp > state.player.maxHp * 0.45) {
-      state.ui.selectedSlot = pIdx;
-      return { type: 'use' };
-    }
+  const harnessIdx = state.inventory.findIndex((s) => s.kind === 'harness');
+  if (harnessIdx >= 0 && state.player.equip.armor !== 'harness') {
+    state.ui.selectedSlot = harnessIdx;
+    return { type: 'use' };
   }
   const bladeIdx = state.inventory.findIndex((s) => s.kind === 'blade');
-  if (bladeIdx >= 0) {
+  if (bladeIdx >= 0 && state.player.equip.tool !== 'blade') {
     state.ui.selectedSlot = bladeIdx;
     return { type: 'use' };
   }

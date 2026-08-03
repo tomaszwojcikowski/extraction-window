@@ -377,6 +377,7 @@ export function generateSectorMap(
       homeX: p.x,
       homeY: p.y,
       skirmishRetreat: false,
+      windup: 0,
     });
     ePlaced++;
   }

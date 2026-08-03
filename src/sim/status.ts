@@ -23,6 +23,7 @@ export function tickStatuses(target: { statuses: StatusMap }): void {
 export function tickPlayerStatusEffects(state: GameState): void {
   const p = state.player;
   if (hasStatus(p, 'bleed')) {
+    // Bleed bypasses ablative armor
     p.hp -= 1;
     pushLog(state, 'LOG-STATUS-BLEED');
   }
@@ -36,6 +37,9 @@ export function tickPlayerStatusEffects(state: GameState): void {
 
 export function tickEnemyStatusEffects(state: GameState, enemy: Enemy): void {
   if (!enemy.alive) return;
+  if (hasStatus(enemy, 'stun')) {
+    enemy.windup = 0;
+  }
   if (hasStatus(enemy, 'bleed')) {
     enemy.hp -= 1;
     if (enemy.hp <= 0) {

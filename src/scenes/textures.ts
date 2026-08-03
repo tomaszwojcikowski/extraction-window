@@ -404,5 +404,29 @@ export function registerTextures(scene: Phaser.Scene): void {
     g.fillRect(15, 9, 2, 2);
   });
 
+  paintEnemy('wraith', () => {
+    // Hollow outline — ion ghost
+    ink(g, Theme.ionHazard);
+    g.fillRect(8, 3, 8, 2);
+    g.fillRect(7, 5, 2, 12);
+    g.fillRect(15, 5, 2, 12);
+    g.fillRect(8, 17, 8, 2);
+    ink(g, Theme.phosphorBright);
+    g.fillRect(10, 8, 2, 2);
+    g.fillRect(13, 8, 2, 2);
+  });
+
+  paintEnemy('drone', () => {
+    ink(g, Theme.phosphorMute);
+    g.fillRect(5, 6, 14, 12);
+    ink(g, Theme.phosphor);
+    g.fillRect(7, 8, 10, 8);
+    ink(g, Theme.danger);
+    g.fillRect(10, 10, 4, 2);
+    ink(g, Theme.phosphorBright);
+    g.fillRect(6, 4, 3, 3);
+    g.fillRect(15, 4, 3, 3);
+  });
+
   g.destroy();
 }

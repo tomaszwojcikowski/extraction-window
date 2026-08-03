@@ -58,7 +58,9 @@ Each biome signature hostile has a readable behavior (wander, swell burst, skirm
 
 ## Field kit
 
-Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate, flare (damage+stun), filter, dart (aim expose), jammer, sealant. Upgrades: scrap blade (+1 ATK). Quest: Relay Key, Nav Core.
+Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate (repairs ablative armor), flare, filter, dart, jammer, sealant. Equipment (separate from bag): scrap blade (tool +1 ATK), field harness (+6 max armor). Quest: Relay Key, Nav Core.
+
+**Ablative armor** — hits strike armor pool before vitals. Bleed bypasses armor. Ion damage halved while filter is active. Kinetic vs ion damage types on hostiles.
 
 Statuses (shared): stun, bleed, ion_burn, expose — tick on turns; HUD glyphs beside vitals.
 

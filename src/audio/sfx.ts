@@ -17,7 +17,8 @@ export type SfxId =
   | 'warn'
   | 'win'
   | 'lose'
-  | 'start';
+  | 'start'
+  | 'armor';
 
 type Tone = {
   freq: number;
@@ -28,7 +29,7 @@ type Tone = {
   delay?: number;
 };
 
-const COMBAT: SfxId[] = ['hit', 'kill', 'hurt', 'warn'];
+const COMBAT: SfxId[] = ['hit', 'kill', 'hurt', 'warn', 'armor'];
 
 class SfxBus {
   isMuted(): boolean {
@@ -128,6 +129,11 @@ class SfxBus {
           { freq: 240, dur: 0.08, type: 'triangle', vol: 0.12 },
           { freq: 360, dur: 0.1, type: 'triangle', vol: 0.12, delay: 0.08 },
           { freq: 480, dur: 0.14, type: 'sine', vol: 0.14, delay: 0.18 },
+        ];
+      case 'armor':
+        return [
+          { freq: 160, dur: 0.04, type: 'square', vol: 0.1 },
+          { freq: 110, dur: 0.06, type: 'triangle', vol: 0.08, delay: 0.03, slide: -20 },
         ];
     }
   }
