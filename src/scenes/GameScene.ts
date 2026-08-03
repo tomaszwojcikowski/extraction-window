@@ -706,6 +706,7 @@ export class GameScene extends Phaser.Scene {
       player: { x: this.state.player.x, y: this.state.player.y },
       hitTiles,
       sporeTiles,
+      beaconPos: this.state.beaconPos,
     });
 
     if (this.state.sectorIndex !== prevSector) {

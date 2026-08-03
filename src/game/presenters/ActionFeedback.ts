@@ -13,9 +13,10 @@ export function emitActionLights(
     player: { x: number; y: number };
     hitTiles: { x: number; y: number }[];
     sporeTiles: { x: number; y: number }[];
+    beaconPos?: { x: number; y: number } | null;
   },
 ): void {
-  const { newLogs, player, hitTiles, sporeTiles } = opts;
+  const { newLogs, player, hitTiles, sporeTiles, beaconPos } = opts;
   const has = (id: LoreId) => newLogs.includes(id);
 
   if (has('LOG-USE-FLARE')) {
@@ -78,8 +79,8 @@ export function emitActionLights(
 
   if (has('LOG-HS-START') || has('LOG-HS-TICK')) {
     lights.addFxLight({
-      x: player.x,
-      y: player.y,
+      x: beaconPos?.x ?? player.x,
+      y: beaconPos?.y ?? player.y,
       radius: 4.5,
       color: Theme.storm,
       intensity: 0.85,

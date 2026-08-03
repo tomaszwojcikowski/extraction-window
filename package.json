@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:unit": "vitest run tests/sim tests/map tests/ai",
+    "test:unit": "vitest run tests/sim tests/map tests/ai tests/game",
     "test:balance": "vitest run tests/balance",
     "playtest": "tsx scripts/playtest.ts",
     "playtest:smoke": "tsx scripts/playtest.ts --smoke",

@@ -1,18 +1,18 @@
 import Phaser from 'phaser';
 import type { GameState, TileKind } from '../../sim/types';
-import { fovDistance } from '../../sim/fov';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
+import { accumulateLight, irradiance, toneMap } from './lightPhysics';
 
 export type LightSource = {
   x: number;
   y: number;
-  /** Falloff radius in tiles (Euclidean). */
+  /** Soft clip radius in tiles (Euclidean). */
   radius: number;
-  /** Phaser tint color. */
+  /** Phaser tint color (spectral tint of the emitter). */
   color: number;
-  /** Peak contribution 0–1. */
+  /** Peak luminous intensity (relative). */
   intensity: number;
   /** Turns remaining; omit for permanent world lights. */
   life?: number;
@@ -45,15 +45,8 @@ function blendTowardWhite(base: number, amount: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
-function falloff(dist: number, radius: number): number {
-  if (radius <= 0) return 0;
-  if (dist >= radius) return 0;
-  const t = 1 - dist / radius;
-  return t * t;
-}
-
 /**
- * Field lighting — ambient biome + world/FX sources applied via tint/alpha.
+ * Field lighting — inverse-square + LOS occlusion via tint/alpha.
  * Presentation-only; respects FOV (no light in fog; memory stays dim).
  */
 export class LightView {
@@ -102,7 +95,10 @@ export class LightView {
     this.fx = next;
   }
 
-  /** Soft bloom discs at light positions (scrolls with map layer). */
+  /**
+   * Bloom discs sized by inverse-square core — brighter near the emitter.
+   * Only drawn for visible tiles (no fog reveal).
+   */
   drawBloom(sources: LightSource[], visible: boolean[][]): void {
     this.lightsGfx.clear();
     for (const s of sources) {
@@ -110,27 +106,30 @@ export class LightView {
       if (!row?.[s.x]) continue;
       const wx = s.x * TILE_DRAW + TILE_DRAW / 2;
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
-      const r = Math.max(8, s.radius * TILE_DRAW * 0.55);
-      const a = Math.min(0.22, 0.08 + s.intensity * 0.14);
-      this.lightsGfx.fillStyle(s.color, a);
-      this.lightsGfx.fillCircle(wx, wy, r);
-      this.lightsGfx.fillStyle(s.color, a * 0.45);
-      this.lightsGfx.fillCircle(wx, wy, r * 0.45);
+      // Core radius from near-field strength; outer halo from soft clip radius
+      const core = Math.max(6, TILE_DRAW * 0.55 * Math.sqrt(s.intensity));
+      const halo = Math.max(core + 4, s.radius * TILE_DRAW * 0.4);
+      const aCore = Math.min(0.28, 0.1 + s.intensity * 0.18);
+      const aHalo = aCore * 0.35;
+      this.lightsGfx.fillStyle(s.color, aHalo);
+      this.lightsGfx.fillCircle(wx, wy, halo);
+      this.lightsGfx.fillStyle(s.color, aCore);
+      this.lightsGfx.fillCircle(wx, wy, core);
     }
   }
 
   collectWorldSources(st: GameState, animFrame: number): LightSource[] {
     const sources: LightSource[] = [];
     if (st.status === 'playing') {
-      let radius = 3.5;
-      let intensity = 0.72;
+      let radius = 4.2;
+      let intensity = 1.1;
       if (st.player.probeTurns > 0 || st.player.lensTurns > 0) {
-        radius = 5.5;
-        intensity = 0.85;
+        radius = 6.5;
+        intensity = 1.45;
       }
       if (isQuietStance(st)) {
-        radius = Math.max(2.5, radius - 1);
-        intensity *= 0.85;
+        radius = Math.max(2.8, radius - 1.2);
+        intensity *= 0.75;
       }
       sources.push({
         x: st.player.x,
@@ -143,9 +142,9 @@ export class LightView {
         sources.push({
           x: st.player.x,
           y: st.player.y,
-          radius: 2.2,
+          radius: 2.5,
           color: 0xcc88ff,
-          intensity: 0.35 + (st.patternDesync % 2) * 0.2,
+          intensity: 0.55 + (st.patternDesync % 2) * 0.25,
         });
       }
     }
@@ -165,17 +164,17 @@ export class LightView {
         sources.push({
           x: item.x,
           y: item.y,
-          radius: 2,
+          radius: 2.5,
           color: 0xb088ff,
-          intensity: 0.55,
+          intensity: 0.85,
         });
       } else if (item.kind === 'relay_key') {
         sources.push({
           x: item.x,
           y: item.y,
-          radius: 2,
+          radius: 2.2,
           color: 0x9999ff,
-          intensity: 0.45,
+          intensity: 0.7,
         });
       }
     }
@@ -184,26 +183,27 @@ export class LightView {
       sources.push({
         x: st.player.x,
         y: st.player.y,
-        radius: 2,
+        radius: 2.4,
         color: 0xb088ff,
-        intensity: 0.4,
+        intensity: 0.65,
       });
     }
 
     if (st.handshake?.active) {
+      const hx = st.beaconPos?.x ?? st.player.x;
+      const hy = st.beaconPos?.y ?? st.player.y;
       sources.push({
-        x: st.player.x,
-        y: st.player.y,
-        radius: 4.5,
+        x: hx,
+        y: hy,
+        radius: 5,
         color: Theme.storm,
-        intensity: 0.7 + (st.handshake.progress % 2) * 0.15,
+        intensity: 1.1 + (st.handshake.progress % 2) * 0.2,
       });
     }
 
     return sources;
   }
 
-  /** Cap weakest FX when total exceeds budget (world lights kept). */
   private trimSources(): void {
     if (this.fx.length <= MAX_SOURCES) return;
     this.fx.sort((a, b) => (b.intensity ?? 0) - (a.intensity ?? 0));
@@ -214,11 +214,29 @@ export class LightView {
     const world = this.collectWorldSources(st, animFrame);
     const combined = [...world, ...this.fx];
     if (combined.length <= MAX_SOURCES) return combined;
-    // Prefer player + strong world lights; drop weakest FX first
     const permanent = world;
     const fxSorted = [...this.fx].sort((a, b) => b.intensity - a.intensity);
     const room = Math.max(0, MAX_SOURCES - permanent.length);
     return [...permanent, ...fxSorted.slice(0, room)];
+  }
+
+  private sampleHdr(
+    st: GameState,
+    x: number,
+    y: number,
+    sources: LightSource[],
+  ): { hdr: number; colorAcc: number; colorPull: number } {
+    let hdr = 0;
+    let colorPull = 0;
+    let colorAcc = BIOME_AMBIENT[st.sectorId].tint;
+    for (const s of sources) {
+      const E = accumulateLight(st.tiles, s.x, s.y, x, y, s.radius, s.intensity);
+      if (E <= 0.001) continue;
+      hdr += E;
+      colorPull += E;
+      colorAcc = multiplyTint(colorAcc, s.color, Math.min(1, E * 0.9));
+    }
+    return { hdr, colorAcc, colorPull };
   }
 
   applyTileLighting(
@@ -249,28 +267,19 @@ export class LightView {
           continue;
         }
 
-        let brightness = biome.ambient;
-        let colorPull = 0;
-        let colorAcc = ambientTint;
-        for (const s of sources) {
-          const d = fovDistance(s.x, s.y, x, y);
-          const f = falloff(d, s.radius) * s.intensity;
-          if (f <= 0) continue;
-          brightness += f;
-          colorPull += f;
-          colorAcc = multiplyTint(colorAcc, s.color, Math.min(1, f * 1.2));
-        }
-        brightness = Math.min(1, brightness);
+        const { hdr, colorAcc, colorPull } = this.sampleHdr(st, x, y, sources);
+        // Ambient as base luminous exitance + direct irradiance
+        const brightness = toneMap(biome.ambient * 0.85 + hdr);
 
         const isTerrain = kind === 'floor' || kind === 'scrub' || kind === 'rubble';
         let tint = isTerrain ? floorTint : 0xffffff;
         tint = multiplyTint(tint, ambientTint, 0.35);
-        if (colorPull > 0.05) {
-          tint = multiplyTint(tint, colorAcc, Math.min(0.55, colorPull * 0.5));
+        if (colorPull > 0.04) {
+          tint = multiplyTint(tint, colorAcc, Math.min(0.6, colorPull * 0.45));
         }
-        tint = blendTowardWhite(tint, brightness * 0.22);
+        tint = blendTowardWhite(tint, brightness * 0.28);
         img.setTint(tint);
-        img.setAlpha(0.4 + 0.6 * brightness);
+        img.setAlpha(0.38 + 0.62 * brightness);
       }
     }
   }
@@ -284,11 +293,11 @@ export class LightView {
     const biome = BIOME_AMBIENT[st.sectorId];
     const litAlpha = (x: number, y: number): number => {
       if (!st.visible[y]?.[x]) return 0;
-      let brightness = biome.ambient;
+      let hdr = biome.ambient * 0.85;
       for (const s of sources) {
-        brightness += falloff(fovDistance(s.x, s.y, x, y), s.radius) * s.intensity;
+        hdr += accumulateLight(st.tiles, s.x, s.y, x, y, s.radius, s.intensity);
       }
-      return 0.55 + 0.45 * Math.min(1, brightness);
+      return 0.5 + 0.5 * toneMap(hdr);
     };
 
     playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));
@@ -311,17 +320,20 @@ function tileLight(
 ): Omit<LightSource, 'x' | 'y'> | null {
   switch (kind) {
     case 'beacon':
-      return { radius: 4, color: Theme.storm, intensity: 0.75 * pulse };
+      return { radius: 5, color: Theme.storm, intensity: 1.2 * pulse };
     case 'shuttle':
-      return { radius: 5, color: 0xffcc66, intensity: 0.7 };
+      return { radius: 6, color: 0xffcc66, intensity: 1.15 };
     case 'exit':
-      return { radius: 2, color: 0x66aa88, intensity: 0.45 };
+      return { radius: 2.5, color: 0x66aa88, intensity: 0.7 };
     case 'poi':
-      return { radius: 2.5, color: Theme.quest, intensity: 0.5 * pulse };
+      return { radius: 3, color: Theme.quest, intensity: 0.8 * pulse };
     case 'hazard':
     case 'vent':
-      return { radius: 2, color: Theme.ionHazard, intensity: 0.4 * pulse };
+      return { radius: 2.4, color: Theme.ionHazard, intensity: 0.65 * pulse };
     default:
       return null;
   }
 }
+
+// Re-export for tests / bloom tuning
+export { irradiance };
