@@ -2,9 +2,8 @@ import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import { ENEMIES } from '../data/enemies';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
-import { fovDistance, playerFovRadius } from '../sim/fov';
-import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
-import { BIOME_FLOOR_TINT, FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
+import { TILE_DRAW, enemyTextureKey, wallTextureKey } from './textures';
+import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
 import { createScanRetrace, drawHudStripChrome } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
@@ -17,7 +16,9 @@ import {
   slotIndexFromKey,
 } from '../game/input/Keymap';
 import { contextHint } from '../game/presenters/ContextHints';
+import { emitActionLights } from '../game/presenters/ActionFeedback';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
+import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
@@ -37,8 +38,10 @@ type EnemyView = {
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
   private mapLayer!: Phaser.GameObjects.Container;
+  private lightLayer!: Phaser.GameObjects.Container;
   private itemLayer!: Phaser.GameObjects.Container;
   private entityLayer!: Phaser.GameObjects.Container;
+  private lightView!: LightView;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
   private camX = 0;
   private camY = 0;
@@ -106,8 +109,10 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.mapLayer = this.add.container(0, 0);
+    this.lightLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
+    this.lightView = new LightView(this, this.lightLayer);
 
     this.playerSprite = this.add.image(0, 0, 't_player');
     this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
@@ -368,6 +373,7 @@ export class GameScene extends Phaser.Scene {
       ambient.stop();
       music.stop();
       this.atmo?.destroy();
+      this.lightView?.destroy();
     });
   }
 
@@ -404,6 +410,8 @@ export class GameScene extends Phaser.Scene {
       this.animAccum = 0;
       this.animFrame = (this.animFrame + 1) % 3;
       this.tickAnimatedTiles();
+      // Pulse vent/hazard/beacon bloom with anim frame
+      if (this.state.status === 'playing') this.applyFieldLighting();
     }
     if (!this.animating) {
       // Snappy 1px plotter redraw, not floaty bob
@@ -493,7 +501,6 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.tileSprites = [];
-    const tint = BIOME_FLOOR_TINT[this.state.sectorId];
     const { width, height, tiles } = this.state;
     for (let y = 0; y < height; y++) {
       this.tileSprites[y] = [];
@@ -505,7 +512,6 @@ export class GameScene extends Phaser.Scene {
           this.tileKey(kind, x, y),
         );
         img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-        if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
         this.mapLayer.add(img);
         this.tileSprites[y]![x] = img;
       }
@@ -519,7 +525,7 @@ export class GameScene extends Phaser.Scene {
     switch (kind) {
       case 'wall': {
         const v = (x * 3 + y * 7 + this.state.seed) % 2;
-        return v === 0 ? 't_wall' : 't_wall_1';
+        return wallTextureKey(this.state.sectorId, v);
       }
       case 'hazard':
         return f === 0 ? 't_hazard' : f === 1 ? 't_hazard_1' : 't_hazard_2';
@@ -663,6 +669,14 @@ export class GameScene extends Phaser.Scene {
     const fromEnemies = new Map(
       this.state.enemies.filter((en) => en.alive).map((en) => [en.id, { x: en.x, y: en.y }]),
     );
+    const prevEnemySnap = this.state.enemies.map((en) => ({
+      id: en.id,
+      x: en.x,
+      y: en.y,
+      hp: en.hp,
+      alive: en.alive,
+      kind: en.kind,
+    }));
 
     applyAction(this.state, action);
     this.playActionSfx({
@@ -674,7 +688,28 @@ export class GameScene extends Phaser.Scene {
       fromPlayer,
     });
 
+    const newLogs = this.state.log.slice(prevLogLen).map((l) => l.loreId);
+    const hitTiles: { x: number; y: number }[] = [];
+    const sporeTiles: { x: number; y: number }[] = [];
+    for (const prev of prevEnemySnap) {
+      const cur = this.state.enemies.find((e) => e.id === prev.id);
+      if (!prev.alive || !cur) continue;
+      if (cur.hp < prev.hp || (!cur.alive && prev.alive)) {
+        hitTiles.push({ x: cur.x, y: cur.y });
+      }
+      if (prev.alive && !cur.alive && prev.kind === 'spore') {
+        sporeTiles.push({ x: prev.x, y: prev.y });
+      }
+    }
+    emitActionLights(this.lightView, {
+      newLogs,
+      player: { x: this.state.player.x, y: this.state.player.y },
+      hitTiles,
+      sporeTiles,
+    });
+
     if (this.state.sectorIndex !== prevSector) {
+      this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
       this.syncActors(true);
@@ -959,10 +994,12 @@ export class GameScene extends Phaser.Scene {
       const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
       // Non-quest loot only while in FOV; quest items leave a dim memory ghost
       if (!vis && !quest) continue;
+      const tex =
+        item.kind === 'nav_core' ? 't_nav_core' : item.kind === 'relay_key' ? 't_key' : 't_item';
       const spr = this.add.image(
         item.x * TILE_DRAW + TILE_DRAW / 2,
         item.y * TILE_DRAW + TILE_DRAW / 2,
-        quest ? 't_quest' : 't_item',
+        tex,
       );
       spr.setDisplaySize(TILE_DRAW - 4, TILE_DRAW - 4);
       spr.setAlpha(vis ? 1 : 0.3);
@@ -1049,6 +1086,7 @@ export class GameScene extends Phaser.Scene {
     const ox = -this.camX;
     const oy = -this.camY + TOP;
     this.mapLayer.setPosition(ox, oy);
+    this.lightLayer.setPosition(ox, oy);
     this.itemLayer.setPosition(ox, oy);
     this.entityLayer.setPosition(ox, oy);
     // Keep chevron fresh as camera drifts
@@ -1171,40 +1209,18 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: this.flash, alpha: 0, duration: 120 });
   }
 
+  private applyFieldLighting(): void {
+    const st = this.state;
+    this.lightView.syncTurn(st.turn);
+    const sources = this.lightView.allSources(st, this.animFrame);
+    this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
+    this.lightView.drawBloom(sources, st.visible);
+    this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+  }
+
   private redrawTilesAndHud(): void {
     const st = this.state;
-    const tint = BIOME_FLOOR_TINT[st.sectorId];
-    const radius =
-      playerFovRadius(st.player.probeTurns, st.player.lensTurns) + st.paddMods.fovBonus;
-    const px = st.player.x;
-    const py = st.player.y;
-
-    for (let y = 0; y < st.height; y++) {
-      for (let x = 0; x < st.width; x++) {
-        const img = this.tileSprites[y]![x]!;
-        const kind = st.tiles[y]![x]!.kind;
-        if (!st.explored[y]![x]) {
-          img.setTexture('t_fog');
-          img.clearTint();
-          img.setAlpha(1);
-          continue;
-        }
-
-        img.setTexture(this.tileKey(kind, x, y));
-        if (st.visible[y]![x]) {
-          if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
-          else img.clearTint();
-          const dist = fovDistance(px, py, x, y);
-          const falloff = Math.max(0, 1 - dist / (radius + 0.35));
-          // Bright near player, soft edge at vision rim
-          img.setAlpha(0.55 + 0.45 * falloff * falloff);
-        } else {
-          // Memory: olive plotter ghost
-          img.setTint(Theme.memory);
-          img.setAlpha(0.32);
-        }
-      }
-    }
+    this.applyFieldLighting();
 
     drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, BOTTOM);
 

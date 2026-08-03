@@ -53,18 +53,44 @@ export const BIOME_FLOOR_TINT: Record<SectorId, number> = {
   plains: 0xe8d8b8,
   flood: 0xa8c8e0,
   canopy: 0xb0d0a0,
-  reef: 0xa0d0c8,
+  reef: 0x98d8d0,
   spire: 0xc8c0e0,
   ruin: 0xd0b090,
   beacon: 0xd0c8a0,
   trench: 0xb8a890,
-  duct: 0xa8a0b0,
+  duct: 0x9890a8,
   ash: 0xc8a880,
   brine: 0x90c8d0,
   vault: 0xb0b0d0,
   fissure: 0xd0a090,
-  approach: 0xc8b8a0,
+  approach: 0xc0b098,
   ridge: 0xd8d0b8,
+};
+
+/** Ambient field light (0–1) + cool/warm key tint per sector. */
+export type BiomeAmbient = {
+  /** Base brightness before dynamic sources (duct dark, plains brighter). */
+  ambient: number;
+  /** Soft multiply tint applied to lit tiles (Phaser tint). */
+  tint: number;
+};
+
+export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
+  plains: { ambient: 0.42, tint: 0xfff0d8 },
+  flood: { ambient: 0.34, tint: 0xc8e0f0 },
+  canopy: { ambient: 0.36, tint: 0xd0e8c0 },
+  reef: { ambient: 0.3, tint: 0xb8f0e8 },
+  spire: { ambient: 0.32, tint: 0xe0d8f8 },
+  ruin: { ambient: 0.33, tint: 0xf0d8b8 },
+  beacon: { ambient: 0.38, tint: 0xffe8c0 },
+  trench: { ambient: 0.28, tint: 0xd8c8a8 },
+  duct: { ambient: 0.2, tint: 0xc0b8d0 },
+  ash: { ambient: 0.3, tint: 0xe8c8a0 },
+  brine: { ambient: 0.31, tint: 0xb0e0e8 },
+  vault: { ambient: 0.35, tint: 0xd0d0f0 },
+  fissure: { ambient: 0.29, tint: 0xf0c0a8 },
+  approach: { ambient: 0.24, tint: 0xe0c8a8 },
+  ridge: { ambient: 0.4, tint: 0xf0e8d0 },
 };
 
 export function floorTextureKey(sectorId: SectorId, variant: number): string {
