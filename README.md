@@ -11,6 +11,7 @@ npm install
 npm run dev          # browser UI
 npm run build        # production build
 npm run playtest:smoke
+npm run playtest:cohere  # static spine/lore coherency
 npm run playtest     # full seed suite → playtest-report.json
 ```
 
