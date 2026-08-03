@@ -1,5 +1,6 @@
+import { ENEMIES } from '../data/enemies';
+import { lore, type LoreId } from '../data/lore';
 import type { GameState, Enemy } from './types';
-import type { LoreId } from '../data/lore';
 
 export function pushLog(state: GameState, loreId: LoreId, detail?: string): void {
   state.log.push({ loreId, detail, turn: state.turn });
@@ -23,7 +24,7 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
   if (enemy.hp <= 0) {
     enemy.alive = false;
     enemy.hp = 0;
-    pushLog(state, 'LOG-KILL');
+    pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
   }
 }
 

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { lore } from '../data/lore';
+import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
+import { FONT } from './textures';
 
 export class EndScene extends Phaser.Scene {
   private status: 'won' | 'lost' = 'lost';
@@ -26,52 +27,99 @@ export class EndScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor(0x0a0c10);
+    this.cameras.main.setBackgroundColor(0x07090e);
 
-    let title = lore('UI-WIN');
-    let color = '#5ec8ff';
-    if (this.status === 'lost') {
-      color = '#e05050';
+    const won = this.status === 'won';
+    let titleId: LoreId = 'UI-WIN';
+    let bodyId: LoreId = 'UI-WIN-BODY';
+    let accent = 0x5ec8ff;
+    let titleColor = '#5ec8ff';
+
+    if (!won) {
+      accent = 0xe05050;
+      titleColor = '#e07070';
       switch (this.loseReason) {
         case 'hp':
-          title = lore('UI-LOSE-HP');
+          titleId = 'UI-LOSE-HP';
+          bodyId = 'UI-LOSE-HP-BODY';
           break;
         case 'energy':
-          title = lore('UI-LOSE-ENERGY');
+          titleId = 'UI-LOSE-ENERGY';
+          bodyId = 'UI-LOSE-ENERGY-BODY';
           break;
         case 'storm':
-          title = lore('UI-LOSE-STORM');
+          titleId = 'UI-LOSE-STORM';
+          bodyId = 'UI-LOSE-STORM-BODY';
           break;
         default:
-          title = lore('UI-LOSE-STUCK');
+          titleId = 'UI-LOSE-STUCK';
+          bodyId = 'UI-LOSE-STUCK-BODY';
       }
     }
 
+    const g = this.add.graphics();
+    g.fillStyle(0x0c121c, 1);
+    g.fillRect(0, 0, width, height);
+    g.fillStyle(0x101820, 1);
+    g.fillRect(60, 70, width - 120, height - 140);
+    g.lineStyle(1, accent, 0.55);
+    g.strokeRect(60.5, 70.5, width - 121, height - 141);
+
     this.add
-      .text(width / 2, height * 0.35, title, {
-        fontFamily: 'Courier New, monospace',
-        fontSize: '20px',
-        color,
-        align: 'center',
-        wordWrap: { width: width - 60 },
+      .text(width / 2, height * 0.28, lore('UI-MISSION-STATUS'), {
+        fontFamily: FONT,
+        fontSize: '11px',
+        color: '#5a7a90',
+        letterSpacing: 3,
       })
       .setOrigin(0.5);
 
+    const title = this.add
+      .text(width / 2, height * 0.38, lore(titleId), {
+        fontFamily: FONT,
+        fontSize: '24px',
+        color: titleColor,
+        align: 'center',
+        wordWrap: { width: width - 160 },
+      })
+      .setOrigin(0.5);
+
+    title.setAlpha(0);
+    this.tweens.add({ targets: title, alpha: 1, duration: 400 });
+
     this.add
-      .text(width / 2, height * 0.5, `${lore('UI-SEED')} ${this.seed} · T${this.turn}`, {
-        fontFamily: 'Courier New, monospace',
+      .text(width / 2, height * 0.48, lore(bodyId), {
+        fontFamily: FONT,
         fontSize: '13px',
         color: '#8a9bb0',
+        align: 'center',
+        wordWrap: { width: width - 180 },
       })
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.65, lore('UI-RETRY'), {
-        fontFamily: 'Courier New, monospace',
-        fontSize: '13px',
+      .text(width / 2, height * 0.58, `${lore('UI-SEED')} ${this.seed}   ·   turn ${this.turn}`, {
+        fontFamily: FONT,
+        fontSize: '12px',
+        color: '#5a6a7a',
+      })
+      .setOrigin(0.5);
+
+    const retry = this.add
+      .text(width / 2, height * 0.7, lore('UI-RETRY'), {
+        fontFamily: FONT,
+        fontSize: '14px',
         color: '#e0c040',
       })
       .setOrigin(0.5);
+
+    this.tweens.add({
+      targets: retry,
+      alpha: 0.4,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+    });
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter') {

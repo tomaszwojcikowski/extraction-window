@@ -134,7 +134,7 @@ export const SECTORS: SectorDef[] = [
     lootTable: ['med', 'energy', 'ration'],
     lootCount: [4, 6],
     hazardChance: 0.06,
-    energyDrain: 0,
+    energyDrain: 1,
     hasRelayKey: false,
     hasNavCore: false,
     isBeacon: false,

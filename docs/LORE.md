@@ -11,15 +11,16 @@ Tone: terse, procedural, no fantasy magic. All player-facing copy maps to entry 
 Helix Cartographic Authority (HCA) dropped Surveyor Unit for RF ground-truth of orbital maps.
 Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window closes under ion storm.
 
-**OBJ-NAVCORE** — Spare Nav Core stored inland at Helix Cache Vault.
+**OBJ-NAVCORE** — Spare Nav Core stored inland at Cache Vault (Helix depot).
 **OBJ-RELAYKEY** — Beacon Relay inland seal requires Relay Key recovered from Ruin Belt caches.
-**HAZ-STORM** — Ion storm: hard turn budget. Energy is life support under ion stress.
+**HAZ-STORM** — Ion storm: hard turn budget. Energy is life support under ion stress (slow drip + hazards; Ash Wastes add baseline radiation drain).
 
 ---
 
 ## Causal Chain
 
 1. **CAUSE-RF** — Survey RF gear agitates local signal ecology → hostile fauna packs.
+   Player beat: `LOG-DROP` + Signal/Relay-named hostiles + Survey Probe RF ranging.
 2. **CAUSE-RELAY** — Orbital relay down → only inland spare Nav Core can restore shuttle lock.
 3. **CAUSE-SEAL** — Inland path sealed behind Beacon Relay hub → needs Relay Key.
 4. **CAUSE-STORM** — Storm = environmental turn budget; Energy drains under ion stress / hazards.
@@ -32,13 +33,13 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 | ID | Name | Notes |
 |----|------|-------|
 | SEC-PLAINS | Survey Plains | Drop zone; low threat; exit south-east |
-| SEC-FLOOD | Flood Basin | Standing ion-water; energy hazards |
+| SEC-FLOOD | Flood Basin | Standing ion-water; elevated hazard tiles |
 | SEC-CANOPY | Canopy Reach | Dense cover; stalkers |
 | SEC-RUIN | Ruin Belt | Relay Key guaranteed, reachable |
 | SEC-BEACON | Beacon Relay | Spend Relay Key to open inland path |
-| SEC-ASH | Ash Wastes | High radiation drain; crawlers |
+| SEC-ASH | Ash Wastes | Baseline radiation energy drain; crawlers |
 | SEC-VAULT | Cache Vault | Nav Core guaranteed, reachable |
-| SEC-RIDGE | Ridge Approaches / Shuttle Pad | Win with Core before storm = 0 |
+| SEC-RIDGE | Ridge Approaches | Shuttle pad here; win with Core before storm = 0 |
 
 ---
 
@@ -46,12 +47,13 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 
 See `src/data/lore.ts` for the full registry. Groups:
 
-- `UI-*` — titles, HUD labels, end screens
+- `UI-*` — titles, HUD labels, end screens, inventory/help chrome, contextual hints
 - `LOG-*` — combat, pickup, sector transition, objective events
-- `ITEM-*` — item names / descriptions
-- `ENEMY-*` — enemy display names
+- `ITEM-*` — item names / descriptions (descriptions shown for selected kit slot)
+- `ENEMY-*` — enemy display names (shown in kill log detail)
 - `OBJ-*` — objective prompts
 - `SEC-*` — sector titles
+- `LOC-*` / `HAZ-*` — mission tags; `LOC-VIRE7` on title; `HAZ-STORM` when window ≤ 50
 
 ---
 

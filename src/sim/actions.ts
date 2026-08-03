@@ -1,7 +1,6 @@
 import { hasItem, removeOne, tryPickup, useSelected, syncObjectiveFlags, findSlot } from './inventory';
 import { playerAttack, pushLog, recordLoreEvent } from './combat';
-import { endPlayerTurn, advanceSector } from './turn';
-import { computeFov } from './fov';
+import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { randInt } from './rng';
 import type { Action, Enemy, GameState } from './types';
 
@@ -105,14 +104,14 @@ function tryExit(state: GameState): void {
       endPlayerTurn(state);
       return;
     }
+    // Do not advance while already dead / window closed (desync guard)
+    checkLose(state);
+    if (state.status !== 'playing') return;
     if (!advanceSector(state)) {
       pushLog(state, 'LOG-EXIT-BLOCKED');
       return;
     }
-    // Sector load already logged; spend a turn
-    state.turn += 1;
-    state.stormTurns -= 1;
-    computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+    finishSectorTransition(state);
     return;
   }
 

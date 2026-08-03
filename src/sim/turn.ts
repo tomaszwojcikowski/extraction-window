@@ -12,7 +12,7 @@ function enemyAt(state: GameState, x: number, y: number): Enemy | undefined {
   return state.enemies.find((e) => e.alive && e.x === x && e.y === y);
 }
 
-function checkLose(state: GameState): void {
+export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
   if (state.player.hp <= 0) {
     state.status = 'lost';
@@ -28,6 +28,18 @@ function checkLose(state: GameState): void {
     state.status = 'lost';
     state.loseReason = 'storm';
   }
+}
+
+/** Storm tick + FOV after a sector load (no enemy moves / energy drip). */
+export function finishSectorTransition(state: GameState): void {
+  state.turn += 1;
+  state.stormTurns -= 1;
+  if (state.stormTurns === 50 || state.stormTurns === 20) {
+    pushLog(state, 'LOG-STORM-WARN');
+  }
+  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  syncObjectiveFlags(state);
+  checkLose(state);
 }
 
 function tickEnvironment(state: GameState): void {

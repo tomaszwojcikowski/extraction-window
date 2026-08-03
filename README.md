@@ -16,4 +16,15 @@ npm run playtest     # full seed suite → playtest-report.json
 
 ## Controls
 
-WASD / arrows move · `.` wait · `g` get · `i` inventory · `u` use · `>` (Shift+.) exit/interact · Esc close
+| Key | Action |
+|-----|--------|
+| WASD / arrows | Move (or navigate kit) |
+| `.` | Wait |
+| `g` | Get item |
+| `i` | Open kit |
+| `u` | Use selected item |
+| `1`–`9` | Select kit slot |
+| `>` / `=` | Exit / beacon / shuttle |
+| `?` | Field manual |
+| `Esc` | Close panel / open help |
+| Title: `←` `→` seed, `R` random, `Enter` start |

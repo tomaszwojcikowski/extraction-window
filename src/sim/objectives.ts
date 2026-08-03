@@ -38,7 +38,12 @@ export function currentObjectivePos(state: GameState): Pos | null {
 }
 
 export function assertLegalWin(state: GameState): boolean {
-  return state.status === 'won' && hasItem(state, 'nav_core');
+  return (
+    state.status === 'won' &&
+    hasItem(state, 'nav_core') &&
+    state.objectives.usedRelayKey &&
+    state.objectives.beaconOpen
+  );
 }
 
 export function loreOrderLegal(events: LoreId[]): boolean {

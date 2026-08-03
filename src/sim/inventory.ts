@@ -24,7 +24,18 @@ export function addItem(state: GameState, kind: ItemKind): boolean {
       // Evict a non-quest stack to make room for mission-critical gear
       const dropIdx = state.inventory.findIndex((s) => !ITEMS[s.kind].quest);
       if (dropIdx >= 0) {
+        const dropped = state.inventory[dropIdx]!;
         state.inventory.splice(dropIdx, 1);
+        // Drop onto the ground underfoot so kit items are not voided
+        for (let n = 0; n < dropped.count; n++) {
+          state.items.push({
+            id: state.nextEntityId++,
+            kind: dropped.kind,
+            x: state.player.x,
+            y: state.player.y,
+          });
+        }
+        pushLog(state, 'LOG-INV-FULL');
       } else {
         pushLog(state, 'LOG-INV-FULL');
         return false;
