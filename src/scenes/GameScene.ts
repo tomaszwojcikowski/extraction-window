@@ -1,23 +1,31 @@
 import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
-import { getSector } from '../data/encounters';
-import { ITEMS } from '../data/items';
 import { ENEMIES } from '../data/enemies';
-import { applyAction, createGame, describeObjective, stickyMilestone, type Action, type GameState } from '../sim';
+import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
-import { statusHud } from '../sim/status';
-import { toolAtkBonus } from '../sim/combat';
-import { CAMPAIGN_LENGTH, STORM_TURNS } from '../campaign/spine';
-import { SKILLS } from '../data/progression';
 import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
-import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
-import { createScanRetrace } from './atmosphere';
+import { BIOME_FLOOR_TINT, FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
+import { createScanRetrace, drawHudStripChrome } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
+import { HUD_BOTTOM, HUD_TOP, MOVE_MS } from '../game/GameHost';
+import {
+  actionFromKey,
+  chromeFromKey,
+  isHelpDismissKey,
+  isPagesDismissKey,
+  slotIndexFromKey,
+} from '../game/input/Keymap';
+import { contextHint } from '../game/presenters/ContextHints';
+import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
+import { drawFovVignette } from '../game/views/MapView';
+import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
+import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 
-const TOP = 92;
-const BOTTOM = 112;
-const MOVE_MS = 100;
+const TOP = HUD_TOP;
+const BOTTOM = HUD_BOTTOM;
+const BAR_SLOTS = HUD_BAR_SLOTS;
+const BADGE_SLOTS = HUD_BADGE_SLOTS;
 
 type EnemyView = {
   img: Phaser.GameObjects.Image;
@@ -47,13 +55,21 @@ export class GameScene extends Phaser.Scene {
   private topPanel!: Phaser.GameObjects.Graphics;
   private bottomPanel!: Phaser.GameObjects.Graphics;
   private barsGfx!: Phaser.GameObjects.Graphics;
+  private badgeGfx!: Phaser.GameObjects.Graphics;
   private hudMeta!: Phaser.GameObjects.Text;
-  private objText!: Phaser.GameObjects.Text;
+  private objLocalText!: Phaser.GameObjects.Text;
+  private objCampaignText!: Phaser.GameObjects.Text;
+  private urgencyText!: Phaser.GameObjects.Text;
   private logText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
-  private questText!: Phaser.GameObjects.Text;
+  private badgeTexts: Phaser.GameObjects.Text[] = [];
+  private barCaptions: Phaser.GameObjects.Text[] = [];
+  private barValues: Phaser.GameObjects.Text[] = [];
   private sectorText!: Phaser.GameObjects.Text;
   private milestoneText!: Phaser.GameObjects.Text;
+  private windowPulse!: Phaser.GameObjects.Rectangle;
+  private windowPulseTween: Phaser.Tweens.Tween | null = null;
+  private hud!: HudView;
   private chevronGfx!: Phaser.GameObjects.Graphics;
   private goalMarker!: Phaser.GameObjects.Image;
   private goalPulseTween: Phaser.Tweens.Tween | null = null;
@@ -101,29 +117,84 @@ export class GameScene extends Phaser.Scene {
     this.topPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.bottomPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.barsGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
+    this.badgeGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
+
+    for (let i = 0; i < BAR_SLOTS; i++) {
+      this.barCaptions.push(
+        this.add
+          .text(0, 0, '', {
+            fontFamily: FONT_DATA,
+            fontSize: '9px',
+            color: ThemeCss.phosphorDim,
+          })
+          .setScrollFactor(0)
+          .setDepth(92),
+      );
+      this.barValues.push(
+        this.add
+          .text(0, 0, '', {
+            fontFamily: FONT_DATA,
+            fontSize: '10px',
+            color: ThemeCss.phosphor,
+          })
+          .setScrollFactor(0)
+          .setDepth(92),
+      );
+    }
+
+    this.windowPulse = this.add
+      .rectangle(0, 0, 100, 10, Theme.storm, 0.35)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(91.5)
+      .setVisible(false);
 
     this.hudMeta = this.add
-      .text(12, 8, '', { fontFamily: FONT_DATA, fontSize: '12px', color: ThemeCss.phosphor })
+      .text(14, 48, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '11px',
+        color: ThemeCss.phosphor,
+        wordWrap: { width: this.scale.width - 250 },
+      })
       .setScrollFactor(0)
       .setDepth(92);
 
-    this.objText = this.add
-      .text(12, 48, '', {
+    this.objLocalText = this.add
+      .text(14, 64, '', {
         fontFamily: FONT_DATA,
-        fontSize: '12px',
+        fontSize: '11px',
+        color: ThemeCss.phosphorDim,
+        wordWrap: { width: this.scale.width - 250 },
+      })
+      .setScrollFactor(0)
+      .setDepth(92);
+
+    this.objCampaignText = this.add
+      .text(14, 78, '', {
+        fontFamily: FONT_DISPLAY,
+        fontSize: '13px',
         color: ThemeCss.phosphorBright,
-        wordWrap: { width: this.scale.width - 220 },
-        lineSpacing: 2,
+        wordWrap: { width: this.scale.width - 250 },
+      })
+      .setScrollFactor(0)
+      .setDepth(92);
+
+    this.urgencyText = this.add
+      .text(14, 94, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '11px',
+        color: ThemeCss.danger,
+        wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
       .setDepth(92);
 
     this.milestoneText = this.add
-      .text(12, 78, '', {
+      .text(14, 94, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.quest,
-        wordWrap: { width: this.scale.width - 220 },
+        wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
       .setDepth(92);
@@ -136,19 +207,23 @@ export class GameScene extends Phaser.Scene {
     this.goalMarker.setDepth(5);
     this.itemLayer.add(this.goalMarker);
 
-    this.questText = this.add
-      .text(this.scale.width - 12, 10, '', {
-        fontFamily: FONT_DATA,
-        fontSize: '12px',
-        color: ThemeCss.quest,
-        align: 'right',
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(92);
+    for (let i = 0; i < BADGE_SLOTS; i++) {
+      this.badgeTexts.push(
+        this.add
+          .text(0, 0, '', {
+            fontFamily: FONT_DATA,
+            fontSize: '10px',
+            color: ThemeCss.groundDeep,
+            fontStyle: 'bold',
+          })
+          .setScrollFactor(0)
+          .setDepth(92)
+          .setVisible(false),
+      );
+    }
 
     this.sectorText = this.add
-      .text(this.scale.width - 12, 30, '', {
+      .text(this.scale.width - 12, 48, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.phosphorDim,
@@ -247,6 +322,26 @@ export class GameScene extends Phaser.Scene {
 
     this.fovVignette = this.add.graphics().setScrollFactor(0).setDepth(80);
 
+    this.hud = new HudView({
+      barsGfx: this.barsGfx,
+      badgeGfx: this.badgeGfx,
+      barCaptions: this.barCaptions,
+      barValues: this.barValues,
+      badgeTexts: this.badgeTexts,
+      hudMeta: this.hudMeta,
+      objLocalText: this.objLocalText,
+      objCampaignText: this.objCampaignText,
+      urgencyText: this.urgencyText,
+      milestoneText: this.milestoneText,
+      sectorText: this.sectorText,
+      logText: this.logText,
+      hintText: this.hintText,
+      windowPulse: this.windowPulse,
+      invBg: this.invBg,
+      invPanel: this.invPanel,
+      invText: this.invText,
+    });
+
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
     this.syncItems();
@@ -254,6 +349,8 @@ export class GameScene extends Phaser.Scene {
     this.redrawTilesAndHud();
     this.updateCamera(true);
     this.syncFieldAudio(true);
+    // Phaser may finish Title shutdown after create — re-assert beds next tick
+    this.time.delayedCall(50, () => this.syncFieldAudio(true));
     this.events.once('shutdown', () => {
       ambient.stop();
       music.stop();
@@ -269,8 +366,22 @@ export class GameScene extends Phaser.Scene {
     }
     sfx.unlock();
     ambient.startSector(this.state.sectorId);
-    if (force) music.syncStorm(this.state.stormTurns);
-    else music.syncStorm(this.state.stormTurns);
+    void force;
+    music.syncField({
+      sectorId: this.state.sectorId,
+      stormTurns: this.state.stormTurns,
+      inCombat: this.threatNearby(),
+    });
+  }
+
+  /** Manhattan ≤3 to a living hostile — drives combat danger bed. */
+  private threatNearby(): boolean {
+    const st = this.state;
+    const px = st.player.x;
+    const py = st.player.y;
+    return st.enemies.some(
+      (e) => e.alive && Math.abs(e.x - px) + Math.abs(e.y - py) <= 3,
+    );
   }
 
   update(_t: number, dt: number): void {
@@ -315,26 +426,13 @@ export class GameScene extends Phaser.Scene {
   private drawChrome(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    this.topPanel.clear();
-    this.topPanel.fillStyle(Theme.groundDeep, 0.98);
-    this.topPanel.fillRect(0, 0, w, TOP);
-    this.topPanel.lineStyle(1, Theme.phosphor, 0.7);
-    this.topPanel.lineBetween(0, TOP - 1, w, TOP - 1);
-    // Registration ticks
-    this.topPanel.lineStyle(1, Theme.phosphorDim, 0.9);
-    this.topPanel.lineBetween(8, TOP - 6, 8, TOP);
-    this.topPanel.lineBetween(w - 8, TOP - 6, w - 8, TOP);
-    this.topPanel.lineBetween(4, 4, 14, 4);
-    this.topPanel.lineBetween(4, 4, 4, 14);
-
-    this.bottomPanel.clear();
-    this.bottomPanel.fillStyle(Theme.groundDeep, 0.98);
-    this.bottomPanel.fillRect(0, h - BOTTOM, w, BOTTOM);
-    this.bottomPanel.lineStyle(1, Theme.phosphor, 0.7);
-    this.bottomPanel.lineBetween(0, h - BOTTOM + 1, w, h - BOTTOM + 1);
-    this.bottomPanel.lineStyle(1, Theme.phosphorDim, 0.9);
-    this.bottomPanel.lineBetween(8, h - BOTTOM, 8, h - BOTTOM + 6);
-    this.bottomPanel.lineBetween(w - 8, h - BOTTOM, w - 8, h - BOTTOM + 6);
+    drawHudStripChrome(this.topPanel, { y: 0, height: TOP, width: w, side: 'top' });
+    drawHudStripChrome(this.bottomPanel, {
+      y: h - BOTTOM,
+      height: BOTTOM,
+      width: w,
+      side: 'bottom',
+    });
   }
 
   private rebuildAtmosphere(): void {
@@ -348,8 +446,13 @@ export class GameScene extends Phaser.Scene {
 
   private buildMapSprites(): void {
     this.tweens.killAll();
+    this.windowPulseTween = null;
+    this.goalPulseTween = null;
     this.animating = false;
     this.mapLayer.removeAll(true);
+    if (this.goalMarker?.parentContainer === this.itemLayer) {
+      this.itemLayer.remove(this.goalMarker, false);
+    }
     this.itemLayer.removeAll(true);
     for (const v of this.enemyViews.values()) {
       v.img.destroy();
@@ -364,6 +467,16 @@ export class GameScene extends Phaser.Scene {
       this.entityLayer.add(this.playerSprite);
     } else if (this.playerSprite.parentContainer !== this.entityLayer) {
       this.entityLayer.add(this.playerSprite);
+    }
+
+    if (this.goalMarker?.active) {
+      this.itemLayer.add(this.goalMarker);
+    } else if (this.goalMarker) {
+      this.goalMarker = this.add.image(0, 0, 't_quest');
+      this.goalMarker.setDisplaySize(TILE_DRAW + 4, TILE_DRAW + 4);
+      this.goalMarker.setAlpha(0);
+      this.goalMarker.setDepth(5);
+      this.itemLayer.add(this.goalMarker);
     }
 
     this.tileSprites = [];
@@ -424,13 +537,14 @@ export class GameScene extends Phaser.Scene {
     if (this.animating) return;
     sfx.unlock();
 
-    if (e.key === 'm' || e.key === 'M') {
+    const chrome = chromeFromKey(e);
+    if (chrome?.kind === 'mute') {
       sfx.toggleMute();
       this.syncFieldAudio(true);
       this.hintText.setVisible(true);
       this.hintText.setText(sfx.isMuted() ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
       this.time.delayedCall(900, () => {
-        const hint = this.contextHint();
+        const hint = contextHint(this.state);
         if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
           this.hintText.setText(lore(hint));
         } else {
@@ -453,26 +567,26 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+    if (chrome?.kind === 'toggle_help') {
       this.toggleHelp();
       sfx.play('ui');
       return;
     }
-    if (e.key === 'p' || e.key === 'P') {
+    if (chrome?.kind === 'toggle_pages') {
       if (this.helpOpen) this.toggleHelp(false);
       this.togglePages();
       sfx.play('ui');
       return;
     }
     if (this.pagesOpen) {
-      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P' || e.key === 'Enter') {
+      if (isPagesDismissKey(e)) {
         this.togglePages(false);
         sfx.play('ui');
       }
       return;
     }
     if (this.helpOpen) {
-      if (e.key === 'Escape' || e.key === '?' || e.key === 'Enter') {
+      if (isHelpDismissKey(e)) {
         this.toggleHelp(false);
         sfx.play('ui');
       }
@@ -490,12 +604,15 @@ export class GameScene extends Phaser.Scene {
         }
         return;
       }
+      // Movement / kit locked until a fork is chosen — keep the skill hint visible
+      this.hintText.setVisible(true);
+      this.hintText.setText(lore('UI-HINT-SKILL'));
       return;
     }
 
-    if (e.key >= '1' && e.key <= '9') {
-      const idx = parseInt(e.key, 10) - 1;
-      applyAction(this.state, { type: 'select_slot', index: idx });
+    const slotIdx = slotIndexFromKey(e);
+    if (slotIdx !== null) {
+      applyAction(this.state, { type: 'select_slot', index: slotIdx });
       if (!this.state.ui.inventoryOpen) applyAction(this.state, { type: 'toggle_inventory' });
       sfx.play('ui');
       this.redrawTilesAndHud();
@@ -503,29 +620,20 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    let action: Action | null = null;
-    const k = e.key;
-    if (k === 'Escape') {
-      if (this.state.ui.inventoryOpen) action = { type: 'close_ui' };
-      else if (this.pagesOpen) {
+    const action = actionFromKey(e);
+    if (!action) return;
+
+    // Escape opens help when kit is closed (actionFromKey maps Escape → close_ui)
+    if (action.type === 'close_ui' && !this.state.ui.inventoryOpen) {
+      if (this.pagesOpen) {
         this.togglePages(false);
         sfx.play('ui');
         return;
-      } else {
-        this.toggleHelp(true);
-        sfx.play('ui');
-        return;
       }
-    } else if (k === 'i' || k === 'I') action = { type: 'toggle_inventory' };
-    else if (k === 'u' || k === 'U') action = { type: 'use' };
-    else if (k === 'g' || k === 'G') action = { type: 'get' };
-    else if (k === '.' && !e.shiftKey) action = { type: 'wait' };
-    else if (k === '>' || k === '=' || (e.code === 'Period' && e.shiftKey)) action = { type: 'exit' };
-    else if (k === 'ArrowUp' || k === 'w' || k === 'W') action = { type: 'move', dx: 0, dy: -1 };
-    else if (k === 'ArrowDown' || k === 's' || k === 'S') action = { type: 'move', dx: 0, dy: 1 };
-    else if (k === 'ArrowLeft' || k === 'a' || k === 'A') action = { type: 'move', dx: -1, dy: 0 };
-    else if (k === 'ArrowRight' || k === 'd' || k === 'D') action = { type: 'move', dx: 1, dy: 0 };
-    if (!action) return;
+      this.toggleHelp(true);
+      sfx.play('ui');
+      return;
+    }
 
     if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
       applyAction(this.state, action);
@@ -565,7 +673,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    music.syncStorm(this.state.stormTurns);
+    music.syncField({
+      sectorId: this.state.sectorId,
+      stormTurns: this.state.stormTurns,
+      inCombat: this.threatNearby(),
+    });
 
     const flareOrBurst =
       this.state.log.slice(prevLogLen).some(
@@ -727,9 +839,11 @@ export class GameScene extends Phaser.Scene {
   ): void {
     this.animating = true;
     let pending = 0;
+    let finished = false;
     const finish = () => {
       pending -= 1;
-      if (pending > 0) return;
+      if (pending > 0 || finished) return;
+      finished = true;
       this.animating = false;
       this.syncActors(true);
       this.maybeEnd();
@@ -753,17 +867,15 @@ export class GameScene extends Phaser.Scene {
         duration: MOVE_MS,
         ease: 'Cubic.easeOut',
         onUpdate: () => {
-          if (label) label.setPosition(img.x - 6, img.y - 10);
+          if (label && label.active) label.setPosition(img.x - 6, img.y - 10);
         },
         onComplete: () => {
-          this.tweens.add({
-            targets: img,
-            displayWidth: TILE_DRAW + 2,
-            displayHeight: TILE_DRAW - 3,
-            duration: 35,
-            yoyo: true,
-            onComplete: finish,
-          });
+          if (!img.active) {
+            finish();
+            return;
+          }
+          img.setDisplaySize(TILE_DRAW, TILE_DRAW);
+          finish();
         },
       });
     };
@@ -793,6 +905,15 @@ export class GameScene extends Phaser.Scene {
     if (pending === 0) {
       this.animating = false;
       this.maybeEnd();
+    } else {
+      // Failsafe if a tween is killed mid-move (sector rebuild, etc.)
+      this.time.delayedCall(MOVE_MS + 120, () => {
+        if (!this.animating || finished) return;
+        finished = true;
+        this.animating = false;
+        this.syncActors(true);
+        this.maybeEnd();
+      });
     }
   }
 
@@ -812,6 +933,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private syncItems(): void {
+    // Keep goal marker across refresh — removeAll(true) would destroy it
+    if (this.goalMarker?.parentContainer === this.itemLayer) {
+      this.itemLayer.remove(this.goalMarker, false);
+    }
     this.itemLayer.removeAll(true);
     const st = this.state;
     for (const item of st.items) {
@@ -839,6 +964,9 @@ export class GameScene extends Phaser.Scene {
           repeat: -1,
         });
       }
+    }
+    if (this.goalMarker?.active) {
+      this.itemLayer.add(this.goalMarker);
     }
   }
 
@@ -998,23 +1126,7 @@ export class GameScene extends Phaser.Scene {
     this.helpPanel.setVisible(this.helpOpen);
     this.helpText.setVisible(this.helpOpen);
     if (this.helpOpen) {
-      const w = 440;
-      const h = 300;
-      const x = (this.scale.width - w) / 2;
-      const y = (this.scale.height - h) / 2;
-      this.helpPanel.clear();
-      this.helpPanel.fillStyle(Theme.panel, 0.98);
-      this.helpPanel.fillRect(x, y, w, h);
-      this.helpPanel.lineStyle(1, Theme.phosphor, 0.85);
-      this.helpPanel.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-      // Registration corners
-      this.helpPanel.lineStyle(1, Theme.phosphorDim, 1);
-      this.helpPanel.lineBetween(x + 4, y + 4, x + 14, y + 4);
-      this.helpPanel.lineBetween(x + 4, y + 4, x + 4, y + 14);
-      this.helpPanel.lineBetween(x + w - 4, y + 4, x + w - 14, y + 4);
-      this.helpPanel.lineBetween(x + w - 4, y + 4, x + w - 4, y + 14);
-      this.helpText.setPosition(x + 24, y + 20);
-      this.helpText.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC / ? close`);
+      drawHelpOverlay(this.helpPanel, this.helpText, this.scale.width, this.scale.height);
     }
   }
 
@@ -1025,23 +1137,13 @@ export class GameScene extends Phaser.Scene {
     this.pagesPanel.setVisible(this.pagesOpen);
     this.pagesText.setVisible(this.pagesOpen);
     if (this.pagesOpen) {
-      const st = this.state;
-      const w = 460;
-      const body =
-        st.codexLog.length === 0
-          ? lore('UI-PAGES-EMPTY')
-          : st.codexLog.map((id, i) => `${i + 1}. ${lore(id)}`).join('\n\n');
-      const h = Math.min(420, 90 + Math.max(40, st.codexLog.length * 48));
-      const x = (this.scale.width - w) / 2;
-      const y = (this.scale.height - h) / 2;
-      this.pagesPanel.clear();
-      this.pagesPanel.fillStyle(Theme.panel, 0.98);
-      this.pagesPanel.fillRect(x, y, w, h);
-      this.pagesPanel.lineStyle(1, Theme.quest, 0.9);
-      this.pagesPanel.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-      this.pagesText.setPosition(x + 20, y + 16);
-      this.pagesText.setText(
-        `${lore('UI-PAGES')}  (${st.codexPages})\n\n${body}\n\n${lore('UI-PAGES-HINT')}`,
+      drawPaddOverlay(
+        this.pagesPanel,
+        this.pagesText,
+        this.scale.width,
+        this.scale.height,
+        this.state.codexLog,
+        this.state.codexPages,
       );
     }
   }
@@ -1054,73 +1156,6 @@ export class GameScene extends Phaser.Scene {
     this.flash.setFillStyle(color, 1);
     this.flash.setAlpha(alpha);
     this.tweens.add({ targets: this.flash, alpha: 0, duration: 120 });
-  }
-
-  private drawBar(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    ratio: number,
-    fill: number,
-    low: number,
-  ): void {
-    const r = Phaser.Math.Clamp(ratio, 0, 1);
-    this.barsGfx.fillStyle(Theme.panel, 1);
-    this.barsGfx.fillRect(x, y, w, h);
-    this.barsGfx.fillStyle(r <= 0.3 ? low : fill, 1);
-    this.barsGfx.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
-    this.barsGfx.lineStyle(1, Theme.phosphorMute, 1);
-    this.barsGfx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
-  }
-
-  private drawFovVignette(): void {
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const g = this.fovVignette;
-    g.clear();
-    const top = TOP;
-    const bot = h - BOTTOM;
-    // Plotter mask: hard L-corners, not soft vignette soup
-    g.lineStyle(1, Theme.phosphorMute, 0.35);
-    g.strokeRect(8.5, top + 8.5, w - 17, bot - top - 17);
-    const arm = 18;
-    g.lineStyle(1, Theme.phosphorDim, 0.55);
-    // TL
-    g.lineBetween(8, top + 8, 8 + arm, top + 8);
-    g.lineBetween(8, top + 8, 8, top + 8 + arm);
-    // TR
-    g.lineBetween(w - 8, top + 8, w - 8 - arm, top + 8);
-    g.lineBetween(w - 8, top + 8, w - 8, top + 8 + arm);
-    // BL
-    g.lineBetween(8, bot - 8, 8 + arm, bot - 8);
-    g.lineBetween(8, bot - 8, 8, bot - 8 - arm);
-    // BR
-    g.lineBetween(w - 8, bot - 8, w - 8 - arm, bot - 8);
-    g.lineBetween(w - 8, bot - 8, w - 8, bot - 8 - arm);
-  }
-
-  private contextHint(): LoreId | null {
-    const st = this.state;
-    if (st.ui.aimingDart) return 'UI-HINT-AIM';
-    const tile = st.tiles[st.player.y]![st.player.x]!;
-    if (tile.kind === 'exit') return 'UI-HINT-EXIT';
-    if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
-    if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
-    if (
-      st.roomQuest &&
-      !st.roomQuest.done &&
-      st.player.x === st.roomQuest.pos.x &&
-      st.player.y === st.roomQuest.pos.y
-    ) {
-      return 'UI-HINT-QUEST';
-    }
-    if (tile.kind === 'poi' && !st.poiUsed) return 'UI-HINT-POI';
-    if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
-    if (st.player.hp <= st.player.maxHp * 0.4) return 'UI-HINT-USE-MED';
-    if (st.player.energy <= st.player.maxEnergy * 0.35) return 'UI-HINT-USE-ENERGY';
-    if (st.player.armor <= 3 && st.player.maxArmor > 0) return 'UI-HINT-USE-ARMOR';
-    return null;
   }
 
   private redrawTilesAndHud(): void {
@@ -1158,122 +1193,19 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.drawFovVignette();
+    drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, BOTTOM);
 
-    this.barsGfx.clear();
-    this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, Theme.ok, Theme.danger);
-    this.drawBar(176, 30, 120, 10, st.player.armor / Math.max(1, st.player.maxArmor), Theme.phosphor, Theme.danger);
-    this.drawBar(308, 30, 120, 10, st.player.energy / st.player.maxEnergy, Theme.energy, Theme.storm);
-    this.drawBar(440, 30, 100, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
-    const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
-    this.drawBar(550, 30, 80, 10, xpFrac, Theme.quest, Theme.phosphorMute);
-
-    const probe = st.player.probeTurns > 0 ? ` P${st.player.probeTurns}` : '';
-    const stim = st.player.stimTurns > 0 ? ` S${st.player.stimTurns}` : '';
-    const filter = st.player.filterTurns > 0 ? ` F${st.player.filterTurns}` : '';
-    const jam = st.player.jammerTurns > 0 ? ` J${st.player.jammerTurns}` : '';
-    const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
-    const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
-    const activeSys = `${probe}${stim}${filter}${jam}${lens}${map}`;
-    const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
-    const tool =
-      st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:knife` : '';
-    const armorEq =
-      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:eva` : '';
-    const statuses = statusHud(st.player.statuses);
-    const statusLine = statuses ? `  ${statuses}` : '';
-    const atkBonus =
-      toolAtkBonus(st) +
-      (st.player.probeTurns > 0 ? 2 : 0) +
-      (st.player.stimTurns > 0 ? 3 : 0);
-    this.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-EM')} ${st.emStress}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${systems}${tool}${armorEq}${statusLine}`,
-    );
-
-    const sector = getSector(st.sectorIndex);
-    const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
-      i <= st.sectorIndex ? '●' : '○',
-    ).join(' ');
-    this.sectorText.setText(
-      `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
-    );
-
-    const badges: string[] = [];
-    if (st.objectives.hasRelayKey) badges.push(lore('UI-QUEST-KEY'));
-    if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
-      badges.push(lore('UI-RELAY-OPEN'));
-    }
-    if (st.objectives.hasNavCore) badges.push(lore('UI-QUEST-CORE'));
-    if (st.codexPages > 0) badges.push(`${lore('UI-CODEX')} ${st.codexPages}`);
-    this.questText.setText(badges.join('  ·  '));
-
-    const desc = describeObjective(st);
-    const localLine = lore(desc.local);
-    const campaignLine = `${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`;
-    const stormBit =
-      st.stormTurns <= 80
-        ? `\n${lore('HAZ-STORM')}  (${st.stormTurns})`
-        : st.stormTurns <= 200
-          ? `\n${lore('LOG-STORM-WARN')}  (${st.stormTurns})`
-          : '';
-    const skillBit = st.skillPick
-      ? `\n${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`
-      : '';
-    const emBit = st.emStress >= 35 ? `\n${lore('UI-EM')} ${st.emStress}` : '';
-    this.objText.setText(`${localLine}\n${campaignLine}${stormBit}${skillBit}${emBit}`);
-
-    const sticky = stickyMilestone(st.loreEvents);
-    this.milestoneText.setText(sticky ? lore(sticky) : '');
-
-    this.syncGoalVisuals(desc.pos);
-
-    const logs = st.log.slice(-5).map((l) => {
-      const base = lore(l.loreId);
-      return l.detail ? `› ${base} (${l.detail})` : `› ${base}`;
+    const pulseBox = { current: this.windowPulseTween };
+    this.hud.redraw(st, {
+      screenW: this.scale.width,
+      screenH: this.scale.height,
+      helpOpen: this.helpOpen,
+      pagesOpen: this.pagesOpen,
+      tweens: this.tweens,
+      windowPulseTween: pulseBox,
     });
-    this.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
+    this.windowPulseTween = pulseBox.current;
 
-    const hint = this.contextHint();
-    if (hint && !st.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
-      this.hintText.setVisible(true);
-      this.hintText.setText(lore(hint));
-    } else {
-      this.hintText.setVisible(false);
-    }
-
-    const invOpen = st.ui.inventoryOpen;
-    this.invBg.setVisible(invOpen);
-    this.invPanel.setVisible(invOpen);
-    this.invText.setVisible(invOpen);
-    if (invOpen) {
-      const pw = 380;
-      const ph = Math.max(180, 70 + st.inventory.length * 22);
-      const px = (this.scale.width - pw) / 2;
-      const py = (this.scale.height - ph) / 2;
-      this.invPanel.clear();
-      this.invPanel.fillStyle(Theme.panel, 0.98);
-      this.invPanel.fillRect(px, py, pw, ph);
-      this.invPanel.lineStyle(1, Theme.phosphor, 0.85);
-      this.invPanel.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
-      this.invPanel.lineStyle(1, Theme.phosphorDim, 1);
-      this.invPanel.lineBetween(px + 4, py + 4, px + 14, py + 4);
-      this.invPanel.lineBetween(px + 4, py + 4, px + 4, py + 14);
-      const lines =
-        st.inventory.length === 0
-          ? [lore('UI-EMPTY-INV')]
-          : st.inventory.map((slot, i) => {
-              const mark = i === st.ui.selectedSlot ? '▸' : ' ';
-              const num = i < 9 ? `${i + 1}` : ' ';
-              const name = lore(ITEMS[slot.kind].loreName);
-              const desc = lore(ITEMS[slot.kind].loreDesc);
-              const sel = i === st.ui.selectedSlot ? `  — ${desc}` : '';
-              return `${mark} ${num}  ${name} ×${slot.count}${sel}`;
-            });
-      this.invText.setPosition(px + 18, py + 16);
-      const equipLine = `${lore('UI-TOOL')}: ${st.player.equip.tool === 'blade' ? 'knife' : (st.player.equip.tool ?? '—')}   ${lore('UI-EQUIP-ARMOR')}: ${st.player.equip.armor === 'harness' ? 'eva' : (st.player.equip.armor ?? '—')}`;
-      this.invText.setText(
-        `${lore('UI-INV')}\n${equipLine}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`,
-      );
-    }
+    this.syncGoalVisuals(describeObjective(st).pos);
   }
 }

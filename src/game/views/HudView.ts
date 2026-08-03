@@ -1,0 +1,321 @@
+import Phaser from 'phaser';
+import { lore } from '../../data/lore';
+import { getSector } from '../../data/encounters';
+import { SKILLS } from '../../data/progression';
+import { describeObjective, stickyMilestone, type GameState } from '../../sim';
+import { statusHud } from '../../sim/status';
+import { toolAtkBonus } from '../../sim/combat';
+import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
+import { Theme, ThemeCss } from '../../scenes/theme';
+import { drawLcarsBadge } from '../../scenes/atmosphere';
+import { contextHint } from '../presenters/ContextHints';
+import { drawKitOverlay } from './overlays/KitOverlay';
+
+export const HUD_BAR_SLOTS = 5;
+export const HUD_BADGE_SLOTS = 4;
+
+export type HudViewRefs = {
+  barsGfx: Phaser.GameObjects.Graphics;
+  badgeGfx: Phaser.GameObjects.Graphics;
+  barCaptions: Phaser.GameObjects.Text[];
+  barValues: Phaser.GameObjects.Text[];
+  badgeTexts: Phaser.GameObjects.Text[];
+  hudMeta: Phaser.GameObjects.Text;
+  objLocalText: Phaser.GameObjects.Text;
+  objCampaignText: Phaser.GameObjects.Text;
+  urgencyText: Phaser.GameObjects.Text;
+  milestoneText: Phaser.GameObjects.Text;
+  sectorText: Phaser.GameObjects.Text;
+  logText: Phaser.GameObjects.Text;
+  hintText: Phaser.GameObjects.Text;
+  windowPulse: Phaser.GameObjects.Rectangle;
+  invBg: Phaser.GameObjects.Rectangle;
+  invPanel: Phaser.GameObjects.Graphics;
+  invText: Phaser.GameObjects.Text;
+};
+
+export type HudRedrawOpts = {
+  screenW: number;
+  screenH: number;
+  helpOpen: boolean;
+  pagesOpen: boolean;
+  /** Scene tweens for the storm-window pulse. */
+  tweens: Phaser.Tweens.TweenManager;
+  /** Mutable holder so the scene can stop/replace the pulse tween. */
+  windowPulseTween: { current: Phaser.Tweens.Tween | null };
+};
+
+/**
+ * Field HUD redraw helpers — bars, badges, meta, objectives, log, kit panel.
+ * Owns no Phaser objects; operates on refs created by GameScene.
+ */
+export class HudView {
+  constructor(private readonly refs: HudViewRefs) {}
+
+  redraw(st: GameState, opts: HudRedrawOpts): void {
+    const r = this.refs;
+    r.barsGfx.clear();
+    const barY = 22;
+    const barH = 10;
+    this.placeBarSlot(
+      0,
+      14,
+      barY,
+      130,
+      barH,
+      st.player.hp / st.player.maxHp,
+      Theme.ok,
+      Theme.danger,
+      lore('UI-BAR-HP'),
+      `${st.player.hp}/${st.player.maxHp}`,
+    );
+    this.placeBarSlot(
+      1,
+      156,
+      barY,
+      110,
+      barH,
+      st.player.armor / Math.max(1, st.player.maxArmor),
+      Theme.phosphor,
+      Theme.danger,
+      lore('UI-BAR-SHD'),
+      `${st.player.armor}/${st.player.maxArmor}`,
+    );
+    this.placeBarSlot(
+      2,
+      278,
+      barY,
+      110,
+      barH,
+      st.player.energy / st.player.maxEnergy,
+      Theme.energy,
+      Theme.storm,
+      lore('UI-BAR-EPS'),
+      `${st.player.energy}/${st.player.maxEnergy}`,
+    );
+    this.placeBarSlot(
+      3,
+      400,
+      barY,
+      100,
+      barH,
+      st.stormTurns / STORM_TURNS,
+      Theme.storm,
+      Theme.danger,
+      lore('UI-BAR-WINDOW'),
+      `${st.stormTurns}`,
+    );
+    const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
+    this.placeBarSlot(
+      4,
+      512,
+      barY,
+      80,
+      barH,
+      xpFrac,
+      Theme.quest,
+      Theme.phosphorMute,
+      lore('UI-BAR-XP'),
+      st.xpToNext ? `${st.xp}/${st.xpToNext}` : `${st.xp}`,
+    );
+    this.syncWindowPulse(400, barY, 100, barH, st.stormTurns <= 80, opts);
+
+    const probe = st.player.probeTurns > 0 ? ` P${st.player.probeTurns}` : '';
+    const stim = st.player.stimTurns > 0 ? ` S${st.player.stimTurns}` : '';
+    const filter = st.player.filterTurns > 0 ? ` F${st.player.filterTurns}` : '';
+    const jam = st.player.jammerTurns > 0 ? ` J${st.player.jammerTurns}` : '';
+    const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
+    const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
+    const activeSys = `${probe}${stim}${filter}${jam}${lens}${map}`;
+    const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
+    const tool = st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:knife` : '';
+    const armorEq =
+      st.player.equip.armor === 'harness' ? `  ${lore('UI-EQUIP-ARMOR')}:eva` : '';
+    const statuses = statusHud(st.player.statuses);
+    const statusLine = statuses ? `  ${statuses}` : '';
+    const atkBonus =
+      toolAtkBonus(st) +
+      (st.player.probeTurns > 0 ? 2 : 0) +
+      (st.player.stimTurns > 0 ? 3 : 0);
+    r.hudMeta.setText(
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${statusLine}`,
+    );
+
+    const sector = getSector(st.sectorIndex);
+    const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
+      i <= st.sectorIndex ? '●' : '○',
+    ).join(' ');
+    r.sectorText.setText(
+      `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
+    );
+
+    const badgeSpecs: { label: string; fill: number }[] = [];
+    if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });
+    if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
+      badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.ok });
+    }
+    if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.quest });
+    if (st.codexPages > 0) {
+      badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });
+    }
+    this.drawQuestBadges(badgeSpecs, opts.screenW);
+
+    const desc = describeObjective(st);
+    r.objLocalText.setText(lore(desc.local));
+    r.objCampaignText.setText(`${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`);
+
+    const stormHot = st.stormTurns <= 80;
+    const stormWarn = st.stormTurns <= 200;
+    const urgencyParts: string[] = [];
+    if (stormHot) urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+    else if (stormWarn) urgencyParts.push(`${lore('LOG-STORM-WARN')}  (${st.stormTurns})`);
+    if (st.skillPick) {
+      urgencyParts.push(
+        `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
+      );
+    }
+    if (st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
+
+    const hasUrgency = urgencyParts.length > 0;
+    r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
+    r.urgencyText.setColor(stormHot ? '#cc4444' : stormWarn ? '#ff9933' : ThemeCss.phosphorDim);
+
+    const sticky = stickyMilestone(st.loreEvents);
+    if (hasUrgency) {
+      r.milestoneText.setText('');
+    } else {
+      r.milestoneText.setText(sticky ? lore(sticky) : '');
+    }
+
+    const logs = st.log.slice(-5).map((l) => {
+      const base = lore(l.loreId);
+      return l.detail ? `› ${base} (${l.detail})` : `› ${base}`;
+    });
+    r.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
+
+    const hint = contextHint(st);
+    if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
+      r.hintText.setVisible(true);
+      r.hintText.setText(lore(hint));
+    } else {
+      r.hintText.setVisible(false);
+    }
+
+    const invOpen = st.ui.inventoryOpen;
+    r.invBg.setVisible(invOpen);
+    r.invPanel.setVisible(invOpen);
+    r.invText.setVisible(invOpen);
+    if (invOpen) {
+      drawKitOverlay(r.invPanel, r.invText, opts.screenW, opts.screenH, st);
+    }
+  }
+
+  private drawBar(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    ratio: number,
+    fill: number,
+    low: number,
+  ): void {
+    const r = Phaser.Math.Clamp(ratio, 0, 1);
+    const g = this.refs.barsGfx;
+    g.fillStyle(Theme.panel, 1);
+    g.fillRect(x, y, w, h);
+    g.fillStyle(r <= 0.3 ? low : fill, 1);
+    g.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
+    g.lineStyle(1, Theme.phosphorMute, 1);
+    g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  }
+
+  private placeBarSlot(
+    index: number,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    ratio: number,
+    fill: number,
+    low: number,
+    caption: string,
+    value: string,
+  ): void {
+    this.drawBar(x, y, w, h, ratio, fill, low);
+    const cap = this.refs.barCaptions[index]!;
+    const val = this.refs.barValues[index]!;
+    cap.setPosition(x, y - 11);
+    cap.setText(caption);
+    val.setPosition(x, y + h + 2);
+    val.setText(value);
+    const critical = ratio <= 0.3;
+    val.setColor(critical ? '#cc4444' : ThemeCss.phosphor);
+  }
+
+  private syncWindowPulse(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    critical: boolean,
+    opts: HudRedrawOpts,
+  ): void {
+    const pulse = this.refs.windowPulse;
+    pulse.setPosition(x, y);
+    pulse.setSize(w, h);
+    if (critical) {
+      pulse.setVisible(true);
+      const tw = opts.windowPulseTween.current;
+      if (!tw || !tw.isPlaying()) {
+        tw?.stop();
+        pulse.setAlpha(0.15);
+        opts.windowPulseTween.current = opts.tweens.add({
+          targets: pulse,
+          alpha: { from: 0.12, to: 0.42 },
+          duration: 420,
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+    } else {
+      opts.windowPulseTween.current?.stop();
+      opts.windowPulseTween.current = null;
+      pulse.setVisible(false);
+    }
+  }
+
+  private drawQuestBadges(
+    badges: { label: string; fill: number }[],
+    screenW: number,
+  ): void {
+    this.refs.badgeGfx.clear();
+    const y = 10;
+    const h = 16;
+    const padX = 8;
+    const gap = 6;
+    const widths: number[] = [];
+    for (let i = 0; i < HUD_BADGE_SLOTS; i++) {
+      const t = this.refs.badgeTexts[i]!;
+      const b = badges[i];
+      if (!b) {
+        t.setVisible(false);
+        continue;
+      }
+      t.setText(b.label);
+      t.setVisible(true);
+      widths.push(Math.ceil(t.width) + padX * 2);
+    }
+    let total = 0;
+    for (let i = 0; i < widths.length; i++) total += widths[i]! + (i > 0 ? gap : 0);
+    let x = screenW - 12 - total;
+    for (let i = 0; i < widths.length; i++) {
+      const b = badges[i]!;
+      const tw = widths[i]!;
+      const t = this.refs.badgeTexts[i]!;
+      drawLcarsBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
+      t.setColor('#06060c');
+      t.setPosition(x + padX, y + 2);
+      x += tw + gap;
+    }
+  }
+}
