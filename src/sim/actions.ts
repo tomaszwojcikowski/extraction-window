@@ -14,7 +14,7 @@ import { playerAttack, pushLog, recordLoreEvent } from './combat';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
-import { tryRoomQuest, tickRoomQuest } from './roomQuest';
+import { tryRoomQuest } from './roomQuest';
 import { gainXp } from './progression';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
