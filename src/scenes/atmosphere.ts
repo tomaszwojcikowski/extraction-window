@@ -1,92 +1,82 @@
 import Phaser from 'phaser';
-import type { SectorId } from '../data/encounters';
+import { Theme } from './theme';
 
-/** Shared menu chrome — vignette + faint scanlines. */
+/** Survey cover sheet chrome — ruled margins + registration marks, not cyber glow. */
 export function drawMenuChrome(
-  scene: Phaser.Scene,
+  _scene: Phaser.Scene,
   g: Phaser.GameObjects.Graphics,
   width: number,
   height: number,
-  accent = 0x5ec8ff,
+  accent: number = Theme.phosphor,
 ): void {
   g.clear();
-  g.fillStyle(0x0c121c, 1);
+  g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, width, height);
 
-  // Soft vignette corners
-  g.fillStyle(0x000000, 0.35);
-  g.fillRect(0, 0, width, 28);
-  g.fillRect(0, height - 28, width, 28);
-  g.fillRect(0, 0, 28, height);
-  g.fillRect(width - 28, 0, 28, height);
+  // Margin field
+  g.fillStyle(Theme.ground, 1);
+  g.fillRect(36, 40, width - 72, height - 80);
 
-  g.fillStyle(0x101820, 1);
-  g.fillRect(40, 48, width - 80, height - 96);
-  g.lineStyle(1, 0x2a3a4a, 1);
-  g.strokeRect(40.5, 48.5, width - 81, height - 97);
-  g.lineStyle(1, accent, 0.35);
-  g.strokeRect(48.5, 56.5, width - 97, height - 113);
+  // Hard outer rule
+  g.lineStyle(1, Theme.panelEdge, 1);
+  g.strokeRect(36.5, 40.5, width - 73, height - 81);
 
-  for (let y = 60; y < height - 60; y += 4) {
-    g.fillStyle(accent, 0.015);
-    g.fillRect(50, y, width - 100, 1);
+  // Inner rule
+  g.lineStyle(1, accent, 0.55);
+  g.strokeRect(48.5, 52.5, width - 97, height - 105);
+
+  // Registration marks (corners)
+  const mark = (x: number, y: number) => {
+    g.lineStyle(1, accent, 0.9);
+    g.lineBetween(x - 6, y, x + 6, y);
+    g.lineBetween(x, y - 6, x, y + 6);
+  };
+  mark(48, 52);
+  mark(width - 49, 52);
+  mark(48, height - 53);
+  mark(width - 49, height - 53);
+
+  // Horizontal ruling (plotter paper)
+  for (let y = 68; y < height - 68; y += 8) {
+    g.lineStyle(1, Theme.phosphorMute, 0.12);
+    g.lineBetween(56, y, width - 56, y);
   }
 }
 
-export type AtmoKind = 'dust' | 'motes' | 'scan' | 'none';
-
-export function atmoKindForSector(id: SectorId): AtmoKind {
-  switch (id) {
-    case 'ash':
-    case 'ruin':
-      return 'dust';
-    case 'canopy':
-    case 'plains':
-      return 'motes';
-    case 'beacon':
-    case 'vault':
-      return 'scan';
-    default:
-      return 'none';
-  }
-}
-
-/** Lightweight floating overlay particles — keep density low for FOV clarity. */
-export function createBiomeAtmosphere(
+/**
+ * Single horizontal scan-retrace — replaces particle dust clouds.
+ * Returns the line so the caller can tween/destroy it.
+ */
+export function createScanRetrace(
   scene: Phaser.Scene,
-  sectorId: SectorId,
   depth: number,
-): Phaser.GameObjects.Particles.ParticleEmitter | null {
-  const kind = atmoKindForSector(sectorId);
-  if (kind === 'none') return null;
-
-  const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(0xffffff, 1);
-  g.fillRect(0, 0, 2, 2);
-  const key = `t_atmo_dot_${kind}`;
-  if (!scene.textures.exists(key)) {
-    g.generateTexture(key, 2, 2);
-  }
-  g.destroy();
-
+): Phaser.GameObjects.Rectangle {
   const { width, height } = scene.scale;
-  const color =
-    kind === 'dust' ? 0xc0a080 : kind === 'motes' ? 0x80e0a0 : 0x60d0ff;
+  const line = scene.add
+    .rectangle(0, 80, width, 1, Theme.phosphorDim, 0.2)
+    .setOrigin(0, 0.5)
+    .setScrollFactor(0)
+    .setDepth(depth);
 
-  const emitter = scene.add.particles(0, 0, key, {
-    x: { min: 0, max: width },
-    y: { min: 60, max: height - 100 },
-    lifespan: kind === 'scan' ? 1800 : 4200,
-    speedY: kind === 'dust' ? { min: 8, max: 22 } : { min: -12, max: -4 },
-    speedX: { min: -8, max: 8 },
-    scale: { start: 1.2, end: 0.2 },
-    alpha: { start: 0.35, end: 0 },
-    quantity: 1,
-    frequency: kind === 'scan' ? 220 : 380,
-    tint: color,
-    blendMode: kind === 'scan' ? 'ADD' : 'NORMAL',
+  scene.tweens.add({
+    targets: line,
+    y: { from: 72, to: height - 120 },
+    duration: 5200,
+    ease: 'Linear',
+    repeat: -1,
+    yoyo: false,
+    onYoyo: undefined,
+    onRepeat: () => {
+      line.setAlpha(0.22);
+    },
   });
-  emitter.setScrollFactor(0);
-  emitter.setDepth(depth);
-  return emitter;
+  scene.tweens.add({
+    targets: line,
+    alpha: { from: 0.22, to: 0.04 },
+    duration: 2600,
+    yoyo: true,
+    repeat: -1,
+  });
+
+  return line;
 }

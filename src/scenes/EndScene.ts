@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
-import { FONT } from './textures';
+import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
 import { drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
@@ -29,17 +29,17 @@ export class EndScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor(0x07090e);
+    this.cameras.main.setBackgroundColor(Theme.groundDeep);
 
     const won = this.status === 'won';
     let titleId: LoreId = 'UI-WIN';
     let bodyId: LoreId = 'UI-WIN-BODY';
-    let accent = 0x5ec8ff;
-    let titleColor = '#5ec8ff';
+    let accent: number = Theme.phosphor;
+    let titleColor: string = ThemeCss.phosphorBright;
 
     if (!won) {
-      accent = 0xe05050;
-      titleColor = '#e07070';
+      accent = Theme.danger;
+      titleColor = '#c87060';
       switch (this.loseReason) {
         case 'hp':
           titleId = 'UI-LOSE-HP';
@@ -61,22 +61,20 @@ export class EndScene extends Phaser.Scene {
 
     const g = this.add.graphics();
     drawMenuChrome(this, g, width, height, accent);
-    g.lineStyle(1, accent, 0.55);
-    g.strokeRect(60.5, 70.5, width - 121, height - 141);
 
     this.add
-      .text(width / 2, height * 0.28, lore('UI-MISSION-STATUS'), {
-        fontFamily: FONT,
+      .text(width / 2, height * 0.26, lore('UI-MISSION-STATUS'), {
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#5a7a90',
-        letterSpacing: 3,
+        color: ThemeCss.phosphorMute,
+        letterSpacing: 4,
       })
       .setOrigin(0.5);
 
     const title = this.add
-      .text(width / 2, height * 0.38, lore(titleId), {
-        fontFamily: FONT,
-        fontSize: '24px',
+      .text(width / 2, height * 0.36, lore(titleId), {
+        fontFamily: FONT_DISPLAY,
+        fontSize: '26px',
         color: titleColor,
         align: 'center',
         wordWrap: { width: width - 160 },
@@ -84,40 +82,47 @@ export class EndScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     title.setAlpha(0);
-    this.tweens.add({ targets: title, alpha: 1, duration: 400 });
+    this.tweens.add({ targets: title, alpha: 1, duration: 280 });
 
     this.add
       .text(width / 2, height * 0.48, lore(bodyId), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: '#8a9bb0',
+        color: ThemeCss.phosphorDim,
         align: 'center',
         wordWrap: { width: width - 180 },
       })
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.58, `${lore('UI-SEED')} ${this.seed}   ·   turn ${this.turn}`, {
-        fontFamily: FONT,
-        fontSize: '12px',
-        color: '#5a6a7a',
-      })
+      .text(
+        width / 2,
+        height * 0.58,
+        `SHEET ${this.seed}   ·   turn ${this.turn}`,
+        {
+          fontFamily: FONT_DATA,
+          fontSize: '12px',
+          color: ThemeCss.phosphorMute,
+        },
+      )
       .setOrigin(0.5);
 
     const retry = this.add
       .text(width / 2, height * 0.7, lore('UI-RETRY'), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '14px',
-        color: '#e0c040',
+        color: ThemeCss.phosphorBright,
       })
       .setOrigin(0.5);
 
     this.tweens.add({
       targets: retry,
-      alpha: 0.4,
-      duration: 800,
+      alpha: 0.35,
+      duration: 900,
       yoyo: true,
       repeat: -1,
+      ease: 'Stepped',
+      easeParams: [2],
     });
 
     sfx.unlock();

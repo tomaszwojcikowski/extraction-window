@@ -7,14 +7,9 @@ import { applyAction, createGame, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
 import { statusHud } from '../sim/status';
 import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
-import {
-  BIOME_FLOOR_TINT,
-  FONT,
-  TILE,
-  TILE_DRAW,
-  enemyTextureKey,
-} from './textures';
-import { createBiomeAtmosphere } from './atmosphere';
+import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
+import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
+import { createScanRetrace } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 
@@ -41,7 +36,7 @@ export class GameScene extends Phaser.Scene {
   private playerSprite!: Phaser.GameObjects.Image;
   private enemyViews = new Map<number, EnemyView>();
   private animating = false;
-  private atmo: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
+  private atmo: Phaser.GameObjects.Rectangle | null = null;
   private animFrame = 0;
   private animAccum = 0;
   private fovVignette!: Phaser.GameObjects.Graphics;
@@ -80,7 +75,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.cameras.main.setBackgroundColor(0x07090e);
+    this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.mapLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
@@ -96,15 +91,15 @@ export class GameScene extends Phaser.Scene {
     this.barsGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
 
     this.hudMeta = this.add
-      .text(12, 8, '', { fontFamily: FONT, fontSize: '12px', color: '#d0dae8' })
+      .text(12, 8, '', { fontFamily: FONT_DATA, fontSize: '12px', color: ThemeCss.phosphor })
       .setScrollFactor(0)
       .setDepth(92);
 
     this.objText = this.add
       .text(12, 50, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '12px',
-        color: '#f0d060',
+        color: ThemeCss.phosphorBright,
         wordWrap: { width: this.scale.width - 220 },
       })
       .setScrollFactor(0)
@@ -112,9 +107,9 @@ export class GameScene extends Phaser.Scene {
 
     this.questText = this.add
       .text(this.scale.width - 12, 10, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '12px',
-        color: '#ff80e0',
+        color: ThemeCss.quest,
         align: 'right',
       })
       .setOrigin(1, 0)
@@ -123,9 +118,9 @@ export class GameScene extends Phaser.Scene {
 
     this.sectorText = this.add
       .text(this.scale.width - 12, 30, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#a0b0c0',
+        color: ThemeCss.phosphorDim,
         align: 'right',
       })
       .setOrigin(1, 0)
@@ -134,9 +129,9 @@ export class GameScene extends Phaser.Scene {
 
     this.logText = this.add
       .text(12, this.scale.height - BOTTOM + 10, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '12px',
-        color: '#b0c0d0',
+        color: ThemeCss.phosphorDim,
         wordWrap: { width: this.scale.width - 24 },
       })
       .setScrollFactor(0)
@@ -144,10 +139,10 @@ export class GameScene extends Phaser.Scene {
 
     this.hintText = this.add
       .text(this.scale.width / 2, this.scale.height - BOTTOM - 16, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: '#60e0ff',
-        backgroundColor: '#0a1018ee',
+        color: ThemeCss.phosphorBright,
+        backgroundColor: ThemeCss.hintBg,
         padding: { x: 10, y: 5 },
       })
       .setOrigin(0.5)
@@ -165,9 +160,9 @@ export class GameScene extends Phaser.Scene {
     this.invPanel = this.add.graphics().setScrollFactor(0).setDepth(101).setVisible(false);
     this.invText = this.add
       .text(0, 0, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: '#e0e8f0',
+        color: ThemeCss.phosphor,
         lineSpacing: 4,
       })
       .setScrollFactor(0)
@@ -175,7 +170,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.helpBg = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.6)
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(110)
@@ -184,9 +179,9 @@ export class GameScene extends Phaser.Scene {
     this.helpPanel = this.add.graphics().setScrollFactor(0).setDepth(111).setVisible(false);
     this.helpText = this.add
       .text(0, 0, '', {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: '#d0dae8',
+        color: ThemeCss.phosphor,
         lineSpacing: 6,
       })
       .setScrollFactor(0)
@@ -236,7 +231,8 @@ export class GameScene extends Phaser.Scene {
       this.tickAnimatedTiles();
     }
     if (!this.animating) {
-      this.idleBob = Math.sin(_t / 380) * 1.2;
+      // Snappy 1px plotter redraw, not floaty bob
+      this.idleBob = Math.sin(_t / 220) > 0 ? 1 : 0;
       const p = this.worldXY(this.state.player.x, this.state.player.y);
       this.playerSprite.setPosition(p.x, p.y + this.idleBob);
     }
@@ -269,27 +265,34 @@ export class GameScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     this.topPanel.clear();
-    this.topPanel.fillStyle(0x080e16, 0.98);
+    this.topPanel.fillStyle(Theme.groundDeep, 0.98);
     this.topPanel.fillRect(0, 0, w, TOP);
-    this.topPanel.fillStyle(0x122030, 0.5);
-    this.topPanel.fillRect(0, TOP - 10, w, 10);
-    this.topPanel.lineStyle(2, 0x4ab0e0, 0.65);
+    this.topPanel.lineStyle(1, Theme.phosphor, 0.7);
     this.topPanel.lineBetween(0, TOP - 1, w, TOP - 1);
-    this.topPanel.lineStyle(1, 0x1a3040, 0.8);
-    this.topPanel.lineBetween(0, 0, w, 0);
+    // Registration ticks
+    this.topPanel.lineStyle(1, Theme.phosphorDim, 0.9);
+    this.topPanel.lineBetween(8, TOP - 6, 8, TOP);
+    this.topPanel.lineBetween(w - 8, TOP - 6, w - 8, TOP);
+    this.topPanel.lineBetween(4, 4, 14, 4);
+    this.topPanel.lineBetween(4, 4, 4, 14);
 
     this.bottomPanel.clear();
-    this.bottomPanel.fillStyle(0x080e16, 0.98);
+    this.bottomPanel.fillStyle(Theme.groundDeep, 0.98);
     this.bottomPanel.fillRect(0, h - BOTTOM, w, BOTTOM);
-    this.bottomPanel.fillStyle(0x122030, 0.45);
-    this.bottomPanel.fillRect(0, h - BOTTOM, w, 10);
-    this.bottomPanel.lineStyle(2, 0x4ab0e0, 0.65);
+    this.bottomPanel.lineStyle(1, Theme.phosphor, 0.7);
     this.bottomPanel.lineBetween(0, h - BOTTOM + 1, w, h - BOTTOM + 1);
+    this.bottomPanel.lineStyle(1, Theme.phosphorDim, 0.9);
+    this.bottomPanel.lineBetween(8, h - BOTTOM, 8, h - BOTTOM + 6);
+    this.bottomPanel.lineBetween(w - 8, h - BOTTOM, w - 8, h - BOTTOM + 6);
   }
 
   private rebuildAtmosphere(): void {
-    this.atmo?.destroy();
-    this.atmo = createBiomeAtmosphere(this, this.state.sectorId, 85);
+    if (this.atmo) {
+      this.tweens.killTweensOf(this.atmo);
+      this.atmo.destroy();
+      this.atmo = null;
+    }
+    this.atmo = createScanRetrace(this, 85);
   }
 
   private buildMapSprites(): void {
@@ -359,10 +362,10 @@ export class GameScene extends Phaser.Scene {
         return f === 0 ? 't_poi' : f === 1 ? 't_poi_1' : 't_poi_2';
       case 'floor': {
         const v = (x + y * 3 + this.state.seed) % 3;
-        return `t_floor_${v}`;
+        return floorTextureKey(this.state.sectorId, v);
       }
       default:
-        return 't_floor';
+        return floorTextureKey(this.state.sectorId, 0);
     }
   }
 
@@ -483,7 +486,7 @@ export class GameScene extends Phaser.Scene {
       this.state.log.slice(prevLogLen).some(
         (l) => l.loreId === 'LOG-USE-FLARE' || l.loreId === 'LOG-SPORE-BURST',
       );
-    if (flareOrBurst) this.flashFx(0xa040ff, 0.28);
+    if (flareOrBurst) this.flashFx(Theme.ionHazard, 0.22);
 
     if (this.state.player.hp < prevHp) this.flashHit();
 
@@ -748,7 +751,7 @@ export class GameScene extends Phaser.Scene {
         const img = this.add.image(0, 0, enemyTextureKey(en.kind));
         img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
         const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
-          fontFamily: FONT,
+          fontFamily: FONT_DATA,
           fontSize: '11px',
           color: '#ffffff',
           stroke: '#000000',
@@ -816,23 +819,29 @@ export class GameScene extends Phaser.Scene {
       const x = (this.scale.width - w) / 2;
       const y = (this.scale.height - h) / 2;
       this.helpPanel.clear();
-      this.helpPanel.fillStyle(0x101820, 0.98);
-      this.helpPanel.fillRoundedRect(x, y, w, h, 4);
-      this.helpPanel.lineStyle(2, 0x5ec8ff, 0.7);
-      this.helpPanel.strokeRoundedRect(x, y, w, h, 4);
+      this.helpPanel.fillStyle(Theme.panel, 0.98);
+      this.helpPanel.fillRect(x, y, w, h);
+      this.helpPanel.lineStyle(1, Theme.phosphor, 0.85);
+      this.helpPanel.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      // Registration corners
+      this.helpPanel.lineStyle(1, Theme.phosphorDim, 1);
+      this.helpPanel.lineBetween(x + 4, y + 4, x + 14, y + 4);
+      this.helpPanel.lineBetween(x + 4, y + 4, x + 4, y + 14);
+      this.helpPanel.lineBetween(x + w - 4, y + 4, x + w - 14, y + 4);
+      this.helpPanel.lineBetween(x + w - 4, y + 4, x + w - 4, y + 14);
       this.helpText.setPosition(x + 24, y + 20);
       this.helpText.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC / ? close`);
     }
   }
 
   private flashHit(): void {
-    this.flashFx(0xe05050, 0.3);
+    this.flashFx(Theme.phosphorBright, 0.35);
   }
 
   private flashFx(color: number, alpha: number): void {
     this.flash.setFillStyle(color, 1);
     this.flash.setAlpha(alpha);
-    this.tweens.add({ targets: this.flash, alpha: 0, duration: 220 });
+    this.tweens.add({ targets: this.flash, alpha: 0, duration: 120 });
   }
 
   private drawBar(
@@ -845,11 +854,11 @@ export class GameScene extends Phaser.Scene {
     low: number,
   ): void {
     const r = Phaser.Math.Clamp(ratio, 0, 1);
-    this.barsGfx.fillStyle(0x15202c, 1);
+    this.barsGfx.fillStyle(Theme.panel, 1);
     this.barsGfx.fillRect(x, y, w, h);
     this.barsGfx.fillStyle(r <= 0.3 ? low : fill, 1);
     this.barsGfx.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
-    this.barsGfx.lineStyle(1, 0x5a7088, 1);
+    this.barsGfx.lineStyle(1, Theme.phosphorMute, 1);
     this.barsGfx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   }
 
@@ -858,18 +867,25 @@ export class GameScene extends Phaser.Scene {
     const h = this.scale.height;
     const g = this.fovVignette;
     g.clear();
-    // Soft darkened frame around the playfield (FOV mood without covering HUD)
     const top = TOP;
     const bot = h - BOTTOM;
-    const band = 36;
-    g.fillStyle(0x02060c, 0.45);
-    g.fillRect(0, top, w, band);
-    g.fillRect(0, bot - band, w, band);
-    g.fillRect(0, top, band, bot - top);
-    g.fillRect(w - band, top, band, bot - top);
-    g.fillStyle(0x02060c, 0.22);
-    g.fillRect(band, top + band, w - band * 2, 14);
-    g.fillRect(band, bot - band - 14, w - band * 2, 14);
+    // Plotter mask: hard L-corners, not soft vignette soup
+    g.lineStyle(1, Theme.phosphorMute, 0.35);
+    g.strokeRect(8.5, top + 8.5, w - 17, bot - top - 17);
+    const arm = 18;
+    g.lineStyle(1, Theme.phosphorDim, 0.55);
+    // TL
+    g.lineBetween(8, top + 8, 8 + arm, top + 8);
+    g.lineBetween(8, top + 8, 8, top + 8 + arm);
+    // TR
+    g.lineBetween(w - 8, top + 8, w - 8 - arm, top + 8);
+    g.lineBetween(w - 8, top + 8, w - 8, top + 8 + arm);
+    // BL
+    g.lineBetween(8, bot - 8, 8 + arm, bot - 8);
+    g.lineBetween(8, bot - 8, 8, bot - 8 - arm);
+    // BR
+    g.lineBetween(w - 8, bot - 8, w - 8 - arm, bot - 8);
+    g.lineBetween(w - 8, bot - 8, w - 8, bot - 8 - arm);
   }
 
   private contextHint(): LoreId | null {
@@ -909,11 +925,11 @@ export class GameScene extends Phaser.Scene {
           const dist = fovDistance(px, py, x, y);
           const falloff = Math.max(0, 1 - dist / (radius + 0.35));
           // Bright near player, soft edge at vision rim
-          img.setAlpha(0.48 + 0.52 * falloff * falloff);
+          img.setAlpha(0.55 + 0.45 * falloff * falloff);
         } else {
-          // Memory: desaturated cool silhouette
-          img.setTint(0x4a5870);
-          img.setAlpha(0.28);
+          // Memory: olive plotter ghost
+          img.setTint(Theme.memory);
+          img.setAlpha(0.32);
         }
       }
     }
@@ -921,9 +937,9 @@ export class GameScene extends Phaser.Scene {
     this.drawFovVignette();
 
     this.barsGfx.clear();
-    this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, 0x40e878, 0xff4040);
-    this.drawBar(176, 30, 150, 10, st.player.energy / st.player.maxEnergy, 0x40c8ff, 0xffa040);
-    this.drawBar(340, 30, 170, 10, st.stormTurns / STORM_TURNS, 0xf0d040, 0xff5050);
+    this.drawBar(12, 30, 150, 10, st.player.hp / st.player.maxHp, Theme.ok, Theme.danger);
+    this.drawBar(176, 30, 150, 10, st.player.energy / st.player.maxEnergy, Theme.energy, Theme.storm);
+    this.drawBar(340, 30, 170, 10, st.stormTurns / STORM_TURNS, Theme.storm, Theme.danger);
 
     const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `  ${lore('UI-STIM')} ${st.player.stimTurns}` : '';
@@ -989,10 +1005,13 @@ export class GameScene extends Phaser.Scene {
       const px = (this.scale.width - pw) / 2;
       const py = (this.scale.height - ph) / 2;
       this.invPanel.clear();
-      this.invPanel.fillStyle(0x101820, 0.98);
-      this.invPanel.fillRoundedRect(px, py, pw, ph, 4);
-      this.invPanel.lineStyle(2, 0xe0c040, 0.7);
-      this.invPanel.strokeRoundedRect(px, py, pw, ph, 4);
+      this.invPanel.fillStyle(Theme.panel, 0.98);
+      this.invPanel.fillRect(px, py, pw, ph);
+      this.invPanel.lineStyle(1, Theme.phosphor, 0.85);
+      this.invPanel.strokeRect(px + 0.5, py + 0.5, pw - 1, ph - 1);
+      this.invPanel.lineStyle(1, Theme.phosphorDim, 1);
+      this.invPanel.lineBetween(px + 4, py + 4, px + 14, py + 4);
+      this.invPanel.lineBetween(px + 4, py + 4, px + 4, py + 14);
       const lines =
         st.inventory.length === 0
           ? [lore('UI-EMPTY-INV')]

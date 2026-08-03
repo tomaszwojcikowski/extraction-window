@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
-import { FONT } from './textures';
+import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
 import { drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
@@ -16,26 +16,26 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
-    this.cameras.main.setBackgroundColor(0x07090e);
+    this.cameras.main.setBackgroundColor(Theme.groundDeep);
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
 
     this.add
-      .text(width / 2, height * 0.22, lore('UI-ORG'), {
-        fontFamily: FONT,
+      .text(width / 2, height * 0.2, lore('UI-ORG'), {
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#5a7a90',
-        letterSpacing: 4,
+        color: ThemeCss.phosphorMute,
+        letterSpacing: 5,
       })
       .setOrigin(0.5);
 
     this.add
       .text(width / 2, height * 0.3, lore('UI-TITLE'), {
-        fontFamily: FONT,
-        fontSize: '32px',
-        color: '#5ec8ff',
-        letterSpacing: 2,
+        fontFamily: FONT_DISPLAY,
+        fontSize: '36px',
+        color: ThemeCss.phosphorBright,
+        letterSpacing: 3,
       })
       .setOrigin(0.5);
 
@@ -45,55 +45,55 @@ export class TitleScene extends Phaser.Scene {
         height * 0.38,
         `${lore('UI-SUBTITLE')} — ${lore('LOC-VIRE7')} ${lore('UI-SURVEY-TAG')}`,
         {
-          fontFamily: FONT,
+          fontFamily: FONT_DATA,
           fontSize: '13px',
-          color: '#8a9bb0',
+          color: ThemeCss.phosphorDim,
         },
       )
       .setOrigin(0.5);
 
-    this.add
-      .rectangle(width / 2, height * 0.44, 180, 1, 0x2a4a5a)
-      .setOrigin(0.5);
+    // Sheet rule
+    this.add.rectangle(width / 2, height * 0.44, 220, 1, Theme.phosphorMute).setOrigin(0.5);
 
     this.seedText = this.add
       .text(width / 2, height * 0.5, this.seedLabel(), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '16px',
-        color: '#c8d0dc',
+        color: ThemeCss.phosphor,
       })
       .setOrigin(0.5);
 
     this.add
       .text(width / 2, height * 0.55, lore('UI-SEED-HINT'), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#5a6a7a',
+        color: ThemeCss.phosphorMute,
       })
       .setOrigin(0.5);
 
     this.pulse = this.add
       .text(width / 2, height * 0.64, lore('UI-PRESS-START'), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '15px',
-        color: '#e0c040',
+        color: ThemeCss.phosphorBright,
       })
       .setOrigin(0.5);
 
     this.tweens.add({
       targets: this.pulse,
-      alpha: 0.35,
-      duration: 700,
+      alpha: 0.4,
+      duration: 900,
       yoyo: true,
       repeat: -1,
-      ease: 'Sine.easeInOut',
+      ease: 'Stepped',
+      easeParams: [3],
     });
 
     this.add
       .text(width / 2, height * 0.78, lore('UI-CONTROLS'), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#4a5a6a',
+        color: ThemeCss.phosphorMute,
         align: 'center',
         wordWrap: { width: width - 120 },
       })
@@ -101,17 +101,17 @@ export class TitleScene extends Phaser.Scene {
 
     this.add
       .text(width / 2, height * 0.86, lore('UI-BRIEF'), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: '#3a5060',
+        color: ThemeCss.textMute,
       })
       .setOrigin(0.5);
 
     this.muteText = this.add
       .text(width / 2, height * 0.92, this.muteLabel(), {
-        fontFamily: FONT,
+        fontFamily: FONT_DATA,
         fontSize: '10px',
-        color: '#4a5a6a',
+        color: ThemeCss.phosphorMute,
       })
       .setOrigin(0.5);
 
@@ -127,7 +127,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private seedLabel(): string {
-    return `${lore('UI-SEED')}  ${this.seed}`;
+    return `SHEET  ${this.seed}  ·  ${lore('UI-SEED')}`;
   }
 
   private ensureBeds(): void {
