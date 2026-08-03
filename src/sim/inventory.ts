@@ -10,6 +10,37 @@ import { gainXp } from './progression';
 const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
 
+type TimerKey =
+  | 'probeTurns'
+  | 'stimTurns'
+  | 'filterTurns'
+  | 'jammerTurns'
+  | 'lensTurns'
+  | 'mapperTurns';
+
+const TIMER_KEYS: TimerKey[] = [
+  'probeTurns',
+  'stimTurns',
+  'filterTurns',
+  'jammerTurns',
+  'lensTurns',
+  'mapperTurns',
+];
+
+/** Soft cap: at most 3 concurrent kit timers (keep the one being applied). */
+function capActiveSystems(state: GameState, keep: TimerKey): void {
+  const active = TIMER_KEYS.filter((k) => state.player[k] > 0 && k !== keep);
+  while (active.length >= 3) {
+    let shortest = active[0]!;
+    for (const k of active) {
+      if (state.player[k] < state.player[shortest]) shortest = k;
+    }
+    state.player[shortest] = 0;
+    const i = active.indexOf(shortest);
+    if (i >= 0) active.splice(i, 1);
+  }
+}
+
 export function findSlot(state: GameState, kind: ItemKind): number {
   return state.inventory.findIndex((s) => s.kind === kind);
 }
@@ -19,6 +50,8 @@ export function hasItem(state: GameState, kind: ItemKind): boolean {
 }
 
 export function addItem(state: GameState, kind: ItemKind): boolean {
+  // Battery merged into coolant tier — keep kind for legacy drops, stack as coolant
+  if (kind === 'battery') kind = 'coolant';
   const def = ITEMS[kind];
   if (def.stackable) {
     const idx = findSlot(state, kind);
@@ -131,11 +164,13 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-RATION');
       break;
     case 'probe':
+      capActiveSystems(state, 'probeTurns');
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
+      capActiveSystems(state, 'stimTurns');
       state.player.stimTurns = Math.max(state.player.stimTurns, 15);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-STIM');
@@ -150,6 +185,7 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
+      capActiveSystems(state, 'filterTurns');
       state.player.filterTurns = Math.max(state.player.filterTurns, 50);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-FILTER');
@@ -161,9 +197,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'battery':
+      // Alias of coolant (legacy stacks)
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
-      pushLog(state, 'LOG-USE-BATTERY');
+      pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'patch':
       delete state.player.statuses.bleed;
@@ -172,11 +209,13 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-PATCH');
       break;
     case 'lens':
+      capActiveSystems(state, 'lensTurns');
       state.player.lensTurns = Math.max(state.player.lensTurns, 25);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-LENS');
       break;
     case 'mapper':
+      capActiveSystems(state, 'mapperTurns');
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-MAPPER');
@@ -203,6 +242,7 @@ export function useSelected(state: GameState): boolean {
       break;
     }
     case 'jammer':
+      capActiveSystems(state, 'jammerTurns');
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-JAMMER');

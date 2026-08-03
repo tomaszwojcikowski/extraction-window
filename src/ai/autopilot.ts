@@ -61,12 +61,12 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
   if (state.player.energy <= state.player.maxEnergy * 0.65) {
-    const batIdx = state.inventory.findIndex((s) => s.kind === 'battery');
+    const batIdx = state.inventory.findIndex((s) => s.kind === 'battery' || s.kind === 'coolant');
     const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
     const idx =
-      batIdx >= 0 ? batIdx : coolIdx >= 0 ? coolIdx : enIdx >= 0 ? enIdx : rationIdx;
+      coolIdx >= 0 ? coolIdx : batIdx >= 0 ? batIdx : enIdx >= 0 ? enIdx : rationIdx;
     if (idx >= 0) {
       state.ui.selectedSlot = idx;
       return { type: 'use' };

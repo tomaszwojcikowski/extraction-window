@@ -18,7 +18,9 @@ export type SfxId =
   | 'win'
   | 'lose'
   | 'start'
-  | 'armor';
+  | 'armor'
+  | 'level'
+  | 'extract';
 
 type Tone = {
   freq: number;
@@ -134,6 +136,18 @@ class SfxBus {
         return [
           { freq: 160, dur: 0.04, type: 'square', vol: 0.1 },
           { freq: 110, dur: 0.06, type: 'triangle', vol: 0.08, delay: 0.03, slide: -20 },
+        ];
+      case 'level':
+        return [
+          { freq: 400, dur: 0.06, type: 'square', vol: 0.12 },
+          { freq: 600, dur: 0.08, type: 'triangle', vol: 0.12, delay: 0.06 },
+          { freq: 800, dur: 0.12, type: 'sine', vol: 0.14, delay: 0.14 },
+        ];
+      case 'extract':
+        return [
+          { freq: 330, dur: 0.08, type: 'triangle', vol: 0.12 },
+          { freq: 440, dur: 0.1, type: 'triangle', vol: 0.12, delay: 0.08 },
+          { freq: 660, dur: 0.16, type: 'sine', vol: 0.14, delay: 0.18 },
         ];
     }
   }

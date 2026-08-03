@@ -61,6 +61,11 @@ export class GameScene extends Phaser.Scene {
   private invPanel!: Phaser.GameObjects.Graphics;
   private invText!: Phaser.GameObjects.Text;
 
+  private pagesBg!: Phaser.GameObjects.Rectangle;
+  private pagesPanel!: Phaser.GameObjects.Graphics;
+  private pagesText!: Phaser.GameObjects.Text;
+  private pagesOpen = false;
+
   private helpBg!: Phaser.GameObjects.Rectangle;
   private helpPanel!: Phaser.GameObjects.Graphics;
   private helpText!: Phaser.GameObjects.Text;
@@ -75,6 +80,7 @@ export class GameScene extends Phaser.Scene {
   init(data: { seed?: number }): void {
     this.state = createGame(data.seed ?? 42);
     this.helpOpen = false;
+    this.pagesOpen = false;
     this.animating = false;
     this.enemyViews.clear();
   }
@@ -191,6 +197,26 @@ export class GameScene extends Phaser.Scene {
       })
       .setScrollFactor(0)
       .setDepth(102)
+      .setVisible(false);
+
+    this.pagesBg = this.add
+      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(105)
+      .setVisible(false);
+
+    this.pagesPanel = this.add.graphics().setScrollFactor(0).setDepth(106).setVisible(false);
+    this.pagesText = this.add
+      .text(0, 0, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '13px',
+        color: ThemeCss.phosphor,
+        lineSpacing: 5,
+        wordWrap: { width: 400 },
+      })
+      .setScrollFactor(0)
+      .setDepth(107)
       .setVisible(false);
 
     this.helpBg = this.add
@@ -404,7 +430,7 @@ export class GameScene extends Phaser.Scene {
       this.hintText.setText(sfx.isMuted() ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
       this.time.delayedCall(900, () => {
         const hint = this.contextHint();
-        if (hint && !this.state.ui.inventoryOpen && !this.helpOpen) {
+        if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
           this.hintText.setText(lore(hint));
         } else {
           this.hintText.setVisible(false);
@@ -419,6 +445,9 @@ export class GameScene extends Phaser.Scene {
         loseReason: this.state.loseReason,
         seed: this.state.seed,
         turn: this.state.turn,
+        level: this.state.level,
+        skills: this.state.skills,
+        objective: lore(describeObjective(this.state).campaign),
       });
       return;
     }
@@ -426,6 +455,19 @@ export class GameScene extends Phaser.Scene {
     if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
       this.toggleHelp();
       sfx.play('ui');
+      return;
+    }
+    if (e.key === 'p' || e.key === 'P') {
+      if (this.helpOpen) this.toggleHelp(false);
+      this.togglePages();
+      sfx.play('ui');
+      return;
+    }
+    if (this.pagesOpen) {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P' || e.key === 'Enter') {
+        this.togglePages(false);
+        sfx.play('ui');
+      }
       return;
     }
     if (this.helpOpen) {
@@ -450,7 +492,11 @@ export class GameScene extends Phaser.Scene {
     const k = e.key;
     if (k === 'Escape') {
       if (this.state.ui.inventoryOpen) action = { type: 'close_ui' };
-      else {
+      else if (this.pagesOpen) {
+        this.togglePages(false);
+        sfx.play('ui');
+        return;
+      } else {
         this.toggleHelp(true);
         sfx.play('ui');
         return;
@@ -572,10 +618,22 @@ export class GameScene extends Phaser.Scene {
     }
     if (has('LOG-USED-KEY')) {
       sfx.play('beacon');
+      this.flashFx(Theme.quest, 0.28);
       return;
     }
     if (has('LOG-GOT-KEY') || has('LOG-GOT-CORE')) {
       sfx.play('quest');
+      this.flashFx(Theme.quest, 0.3);
+      return;
+    }
+    if (has('LOG-LEVEL')) {
+      sfx.play('level');
+      this.flashFx(Theme.phosphorBright, 0.22);
+      return;
+    }
+    if (has('LOG-EXTRACT')) {
+      sfx.play('extract');
+      this.flashFx(Theme.ok, 0.35);
       return;
     }
     if (has('LOG-STORM-WARN')) {
@@ -731,6 +789,9 @@ export class GameScene extends Phaser.Scene {
         loseReason: this.state.loseReason,
         seed: this.state.seed,
         turn: this.state.turn,
+        level: this.state.level,
+        skills: this.state.skills,
+        objective: lore(describeObjective(this.state).campaign),
       });
     });
   }
@@ -917,6 +978,7 @@ export class GameScene extends Phaser.Scene {
 
   private toggleHelp(force?: boolean): void {
     this.helpOpen = force ?? !this.helpOpen;
+    if (this.helpOpen && this.pagesOpen) this.togglePages(false);
     this.helpBg.setVisible(this.helpOpen);
     this.helpPanel.setVisible(this.helpOpen);
     this.helpText.setVisible(this.helpOpen);
@@ -938,6 +1000,34 @@ export class GameScene extends Phaser.Scene {
       this.helpPanel.lineBetween(x + w - 4, y + 4, x + w - 4, y + 14);
       this.helpText.setPosition(x + 24, y + 20);
       this.helpText.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC / ? close`);
+    }
+  }
+
+  private togglePages(force?: boolean): void {
+    this.pagesOpen = force ?? !this.pagesOpen;
+    if (this.pagesOpen && this.helpOpen) this.toggleHelp(false);
+    this.pagesBg.setVisible(this.pagesOpen);
+    this.pagesPanel.setVisible(this.pagesOpen);
+    this.pagesText.setVisible(this.pagesOpen);
+    if (this.pagesOpen) {
+      const st = this.state;
+      const w = 460;
+      const body =
+        st.codexLog.length === 0
+          ? lore('UI-PAGES-EMPTY')
+          : st.codexLog.map((id, i) => `${i + 1}. ${lore(id)}`).join('\n\n');
+      const h = Math.min(420, 90 + Math.max(40, st.codexLog.length * 48));
+      const x = (this.scale.width - w) / 2;
+      const y = (this.scale.height - h) / 2;
+      this.pagesPanel.clear();
+      this.pagesPanel.fillStyle(Theme.panel, 0.98);
+      this.pagesPanel.fillRect(x, y, w, h);
+      this.pagesPanel.lineStyle(1, Theme.quest, 0.9);
+      this.pagesPanel.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      this.pagesText.setPosition(x + 20, y + 16);
+      this.pagesText.setText(
+        `${lore('UI-PAGES')}  (${st.codexPages})\n\n${body}\n\n${lore('UI-PAGES-HINT')}`,
+      );
     }
   }
 
@@ -1002,8 +1092,19 @@ export class GameScene extends Phaser.Scene {
     if (tile.kind === 'exit') return 'UI-HINT-EXIT';
     if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
     if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
+    if (
+      st.roomQuest &&
+      !st.roomQuest.done &&
+      st.player.x === st.roomQuest.pos.x &&
+      st.player.y === st.roomQuest.pos.y
+    ) {
+      return 'UI-HINT-QUEST';
+    }
     if (tile.kind === 'poi' && !st.poiUsed) return 'UI-HINT-POI';
     if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
+    if (st.player.hp <= st.player.maxHp * 0.4) return 'UI-HINT-USE-MED';
+    if (st.player.energy <= st.player.maxEnergy * 0.35) return 'UI-HINT-USE-ENERGY';
+    if (st.player.armor <= 3 && st.player.maxArmor > 0) return 'UI-HINT-USE-ARMOR';
     return null;
   }
 
@@ -1051,12 +1152,14 @@ export class GameScene extends Phaser.Scene {
     const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
     this.drawBar(550, 30, 80, 10, xpFrac, Theme.quest, Theme.phosphorMute);
 
-    const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
-    const stim = st.player.stimTurns > 0 ? `  ${lore('UI-STIM')} ${st.player.stimTurns}` : '';
-    const filter =
-      st.player.filterTurns > 0 ? `  ${lore('UI-FILTER')} ${st.player.filterTurns}` : '';
-    const jam =
-      st.player.jammerTurns > 0 ? `  ${lore('UI-JAMMER')} ${st.player.jammerTurns}` : '';
+    const probe = st.player.probeTurns > 0 ? ` P${st.player.probeTurns}` : '';
+    const stim = st.player.stimTurns > 0 ? ` S${st.player.stimTurns}` : '';
+    const filter = st.player.filterTurns > 0 ? ` F${st.player.filterTurns}` : '';
+    const jam = st.player.jammerTurns > 0 ? ` J${st.player.jammerTurns}` : '';
+    const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
+    const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
+    const activeSys = `${probe}${stim}${filter}${jam}${lens}${map}`;
+    const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
     const tool =
       st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:blade` : '';
     const armorEq =
@@ -1068,7 +1171,7 @@ export class GameScene extends Phaser.Scene {
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
     this.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${probe}${stim}${filter}${jam}${tool}${armorEq}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-XP')} ${st.xp}${st.xpToNext ? `/${st.xpToNext}` : ''}  ${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}  ${lore('UI-ARMOR')} ${st.player.armor}/${st.player.maxArmor}  ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}  ${lore('UI-WINDOW')} ${st.stormTurns}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${systems}${tool}${armorEq}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -1091,7 +1194,12 @@ export class GameScene extends Phaser.Scene {
     const desc = describeObjective(st);
     const localLine = lore(desc.local);
     const campaignLine = `${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`;
-    const stormBit = st.stormTurns <= 50 ? `\n${lore('HAZ-STORM')}` : '';
+    const stormBit =
+      st.stormTurns <= 80
+        ? `\n${lore('HAZ-STORM')}  (${st.stormTurns})`
+        : st.stormTurns <= 200
+          ? `\n${lore('LOG-STORM-WARN')}  (${st.stormTurns})`
+          : '';
     this.objText.setText(`${localLine}\n${campaignLine}${stormBit}`);
 
     const sticky = stickyMilestone(st.loreEvents);
@@ -1106,7 +1214,7 @@ export class GameScene extends Phaser.Scene {
     this.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
 
     const hint = this.contextHint();
-    if (hint && !st.ui.inventoryOpen && !this.helpOpen) {
+    if (hint && !st.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
       this.hintText.setVisible(true);
       this.hintText.setText(lore(hint));
     } else {

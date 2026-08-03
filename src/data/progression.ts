@@ -12,13 +12,13 @@ export const MAX_LEVEL = 8;
 
 /** XP required to advance FROM (level-1) TO level. Index = target level. */
 export const XP_TO_REACH: Record<number, number> = {
-  2: 40,
-  3: 60,
-  4: 80,
-  5: 100,
-  6: 120,
-  7: 140,
-  8: 160,
+  2: 55,
+  3: 80,
+  4: 110,
+  5: 140,
+  6: 170,
+  7: 200,
+  8: 240,
 };
 
 export interface LevelBump {
@@ -86,11 +86,11 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
 };
 
-export const XP_KILL_BASE = 8;
-export const XP_SECTOR = 25;
-export const XP_ROOM_QUEST = 20;
-export const XP_QUEST_ITEM = 30;
-export const XP_BEACON = 20;
+export const XP_KILL_BASE = 6;
+export const XP_SECTOR = 18;
+export const XP_ROOM_QUEST = 15;
+export const XP_QUEST_ITEM = 22;
+export const XP_BEACON = 15;
 
 export function xpToNextForLevel(level: number): number {
   if (level >= MAX_LEVEL) return 0;

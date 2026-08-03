@@ -110,11 +110,11 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
   if (enemy.windup > 0) {
     enemy.windup = 0;
     if (dist === 1) {
-      tryMelee(state, enemy, 1);
+      tryMelee(state, enemy, 3);
     } else {
       stepToward(state, enemy, state.player.x, state.player.y);
       const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-      if (d2 === 1) tryMelee(state, enemy, 1);
+      if (d2 === 1) tryMelee(state, enemy, 3);
       else if (d2 > 1) stepToward(state, enemy, state.player.x, state.player.y);
     }
     return;
@@ -177,9 +177,10 @@ export function moveEnemies(state: GameState): void {
           if (enemy.swellTurns >= 3) {
             pushLog(state, 'LOG-SPORE-BURST');
             if (dist <= 2) {
-              state.player.energy -= 4;
-              applyPlayerDamage(state, 1, 'ion');
-              addStatus(state.player, 'ion_burn', 2);
+              state.player.energy -= 6;
+              applyPlayerDamage(state, 3, 'ion');
+              addStatus(state.player, 'ion_burn', 3);
+              addStatus(state.player, 'expose', 2);
             }
             enemy.alive = false;
             enemy.hp = 0;

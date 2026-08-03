@@ -32,19 +32,21 @@ Fixed order: Plains → Flood Basin → Canopy → Spire Reach → Ruin Belt →
 - Ruin Belt always has Relay Key (random placement, reachable)
 - Beacon Relay: spend key to open inland path
 - Cache Vault always has Nav Core (reachable)
-- Sector 8 shuttle: win if carrying Nav Core before storm timer hits 0
+- Sector 12 (Ridge Approaches) shuttle: win if carrying Nav Core before storm timer hits 0
 - Lose: HP≤0, Energy≤0, or storm expires
 - Target successful run pacing ~60–90 min for humans; autopilot may finish faster in turns
+- Storm budget starts at **500** turns (late sectors tax extra); autopilot win-rate target **~55–75%**
 
-Partly procedural per seed: layouts, branches, enemy packs, loot, exact objective tiles. Same seed = same world.
+Partly procedural per seed: layouts, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy scrub, rubble mazes, vent corridors, vault choke rooms.
 
 ## Mechanics
 
-- Turn-based grid; WASD/arrows move; bump = melee; `.` wait; `g` get; `i` inventory; `u` use; `>` exit; Esc close
-- HP, Energy (slow drain + hazards), ATK, DEF
-- Inventory ~10 slots; quest items occupy slots
+- Turn-based grid; WASD/arrows move; bump = melee; `.` wait; `g` get; `i` inventory; `u` use; `p` pages/codex; `>` exit; Esc close
+- HP, Energy (slow drain + hazards), ATK, DEF, ablative Armor
+- Inventory **16** slots; quest items occupy slots; blade/harness equip; energy/coolant two-tier recharge
+- In-run XP/skills (levels 1–8); room quests with storm/kit payoffs; expedition Pages panel
 - FOV + fog of war
-- ~6–8 enemy types; biome encounter tables; difficulty by sector index
+- ~13 enemy types; biome encounter tables; difficulty by sector index; telegraph punish (pounce/swell)
 - Seeded RNG (mulberry32)
 
 ## Required layout
@@ -54,11 +56,12 @@ src/
   sim/           # pure TS: state, actions, turn, combat, inventory, objectives, fov, rng
   map/           # generator, biomes
   campaign/      # spine
-  data/          # enemies, items, lore, encounters
+  data/          # enemies, items, lore, encounters, progression, drops
   ai/autopilot.ts
   scenes/        # Boot, Title, Game, End
   main.ts
 scripts/playtest.ts
+scripts/cohere.ts
 docs/LORE.md
 ```
 
@@ -67,7 +70,9 @@ docs/LORE.md
 - `npm run playtest` — headless autopilot over multiple seeds → `playtest-report.json`
 - Autopilot: path toward current objective, pick key/core, use heals when low, fight when blocked
 - Assertions: no crash, objectives reachable at gen, win only with Core at shuttle, lore events legal order
+- Win-rate gate: **55–85%** full suite (target band ~55–75%)
 - `npm run playtest:smoke` — fewer seeds
+- `npm run playtest:cohere` — coherency checks
 - `npm run dev` — browser UI
 - `npm run build` — production build must succeed
 

@@ -147,6 +147,8 @@ export interface GameState {
   poiUsed: boolean;
   roomQuest: RoomQuest | null;
   codexPages: number;
+  /** Collected CODEX-* lore ids for this run (Pages panel). */
+  codexLog: LoreId[];
   /** In-run surveyor proficiency (resets each seed) */
   level: number;
   xp: number;

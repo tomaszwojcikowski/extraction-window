@@ -148,9 +148,11 @@ function main(): void {
   } else if (illegal > 0) {
     process.exitCode = 1;
     console.error('FAIL: illegal win/lore order');
-  } else if (!smoke && winRate < 0.7) {
+  } else if (!smoke && (winRate < 0.55 || winRate > 0.85)) {
     process.exitCode = 1;
-    console.error(`FAIL: win rate ${(winRate * 100).toFixed(0)}% < 70%`);
+    console.error(
+      `FAIL: win rate ${(winRate * 100).toFixed(0)}% outside target band 55–85%`,
+    );
   } else {
     console.log('PASS');
   }

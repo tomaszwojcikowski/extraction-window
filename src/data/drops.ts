@@ -27,7 +27,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
   sentinel: [
     { kind: 'plate', weight: 2 },
     { kind: 'filter', weight: 2 },
-    { kind: 'battery', weight: 1 },
+    { kind: 'coolant', weight: 1 },
   ],
   serpent: [
     { kind: 'energy', weight: 2 },
@@ -51,7 +51,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'med', weight: 1 },
   ],
   rift: [
-    { kind: 'battery', weight: 2 },
+    { kind: 'coolant', weight: 2 },
     { kind: 'mapper', weight: 1 },
     { kind: 'filter', weight: 1 },
   ],

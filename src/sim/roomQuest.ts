@@ -16,6 +16,7 @@ const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
 };
 
 function addLoot(state: GameState, kind: ItemKind): void {
+  if (kind === 'battery') kind = 'coolant';
   const def = ITEMS[kind];
   if (def.stackable) {
     const idx = state.inventory.findIndex((s) => s.kind === kind);
@@ -31,9 +32,27 @@ function addLoot(state: GameState, kind: ItemKind): void {
 export function grantCodex(state: GameState): void {
   state.codexPages += 1;
   const page = CODEX_BY_SECTOR[state.sectorId] ?? 'CODEX-GENERIC';
+  if (!state.codexLog.includes(page)) state.codexLog.push(page);
   pushLog(state, 'LOG-CODEX');
   pushLog(state, page);
   gainXp(state, XP_ROOM_QUEST, 'quest');
+}
+
+/** Storm refund / temporary systems charge / unique consumable — changes the run. */
+function grantQuestPayoff(state: GameState, tier: 'basic' | 'good'): void {
+  const refund = tier === 'good' ? 20 : 12;
+  state.stormTurns += refund;
+  pushLog(state, 'LOG-RQ-STORM', `+${refund}`);
+
+  if (tier === 'good' || state.rng() < 0.45) {
+    state.player.filterTurns = Math.max(state.player.filterTurns, 35);
+    state.player.stimTurns = Math.max(state.player.stimTurns, 12);
+    pushLog(state, 'LOG-RQ-CHARGE');
+  }
+
+  const unique: ItemKind[] =
+    tier === 'good' ? ['mapper', 'lens', 'coolant', 'plate'] : ['patch', 'coolant', 'dart', 'filter'];
+  addLoot(state, pick(state.rng, unique));
 }
 
 function inRoom(rq: RoomQuest, x: number, y: number): boolean {
@@ -92,12 +111,13 @@ function purgeCleared(state: GameState): boolean {
 
 function finishQuestLoot(state: GameState, better: boolean): void {
   const loot: ItemKind[] = better
-    ? ['plate', 'battery', 'med', 'filter', 'mapper']
+    ? ['plate', 'coolant', 'med', 'filter', 'mapper']
     : ['energy', 'med', 'dart', 'sealant', 'patch'];
   addLoot(state, pick(state.rng, loot));
   addLoot(state, pick(state.rng, loot));
-  if (better) addLoot(state, pick(state.rng, ['battery', 'plate', 'lens'] as ItemKind[]));
+  if (better) addLoot(state, pick(state.rng, ['coolant', 'plate', 'lens'] as ItemKind[]));
   pushLog(state, 'LOG-PICKUP');
+  grantQuestPayoff(state, better ? 'good' : 'basic');
   grantCodex(state);
 }
 
@@ -128,8 +148,8 @@ function completeDecode(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq || rq.done) return;
   rq.done = true;
-  state.stormTurns += 40;
   pushLog(state, 'LOG-RQ-DECODE');
+  grantQuestPayoff(state, 'good');
   grantCodex(state);
   clearQuestTile(state);
 }
@@ -198,6 +218,7 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
   state.player.armor = state.player.maxArmor;
   state.player.stabilizeTurns = Math.max(state.player.stabilizeTurns, 30);
   pushLog(state, 'LOG-RQ-STABILIZE');
+  grantQuestPayoff(state, 'good');
   grantCodex(state);
   clearQuestTile(state);
   void withKind;

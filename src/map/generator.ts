@@ -89,14 +89,123 @@ function carveV(tiles: Tile[][], y1: number, y2: number, x: number, wide = false
   }
 }
 
-function connect(tiles: Tile[][], a: Room, b: Room, rng: Rng): void {
-  const wide = rng() < 0.35;
+function connect(tiles: Tile[][], a: Room, b: Room, rng: Rng, wideChance = 0.35): void {
+  const wide = rng() < wideChance;
   if (rng() < 0.5) {
     carveH(tiles, a.cx, b.cx, a.cy, wide);
     carveV(tiles, a.cy, b.cy, b.cx, wide);
   } else {
     carveV(tiles, a.cy, b.cy, a.cx, wide);
     carveH(tiles, a.cx, b.cx, b.cy, wide);
+  }
+}
+
+/** Biome-flavored room footprint. */
+function roomSizeForBiome(id: SectorDef['id'], rng: Rng): { w: number; h: number } {
+  switch (id) {
+    case 'vault':
+      return { w: randInt(rng, 4, 6), h: randInt(rng, 3, 5) };
+    case 'flood':
+      return { w: randInt(rng, 6, 11), h: randInt(rng, 5, 9) };
+    case 'ridge':
+      return { w: randInt(rng, 4, 7), h: randInt(rng, 3, 5) };
+    case 'canopy':
+    case 'spire':
+      return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 8) };
+    case 'ruin':
+    case 'trench':
+      return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 7) };
+    default:
+      return { w: randInt(rng, 5, 10), h: randInt(rng, 4, 8) };
+  }
+}
+
+function corridorWideChance(id: SectorDef['id']): number {
+  if (id === 'flood' || id === 'vault') return 0.12; // choke bridges / tight halls
+  if (id === 'ridge') return 0.2;
+  if (id === 'canopy' || id === 'spire') return 0.25;
+  return 0.35;
+}
+
+/** Flood lakes, canopy scrub walls, ash vent lines, rubble mazes. */
+function dressBiomeTerrain(
+  tiles: Tile[][],
+  rooms: Room[],
+  sector: SectorDef,
+  rng: Rng,
+): void {
+  const id = sector.id;
+  const height = tiles.length;
+  const width = tiles[0]!.length;
+
+  // Base sparse dressing
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (tiles[y]![x]!.kind !== 'floor') continue;
+      const roll = rng();
+      if (roll < sector.hazardChance) tiles[y]![x] = hazard();
+      else if (roll < sector.hazardChance + sector.ventChance) tiles[y]![x] = vent();
+      else if (roll < sector.hazardChance + sector.ventChance + sector.scrubChance) {
+        tiles[y]![x] = scrub();
+      } else if (
+        roll <
+        sector.hazardChance + sector.ventChance + sector.scrubChance + sector.rubbleChance
+      ) {
+        tiles[y]![x] = rubble();
+      }
+    }
+  }
+
+  if (id === 'flood') {
+    // Hazard lakes inside a few rooms, leave bridge strip through center
+    for (const room of rooms) {
+      if (rng() > 0.55) continue;
+      for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+          if (Math.abs(x - room.cx) <= 1) continue; // dry bridge
+          if (tiles[y]![x]!.walkable && rng() < 0.55) tiles[y]![x] = hazard();
+        }
+      }
+    }
+  }
+
+  if (id === 'canopy' || id === 'spire') {
+    // Longer scrub sight-blockers along room edges
+    for (const room of rooms) {
+      for (let x = room.x; x < room.x + room.w; x++) {
+        if (tiles[room.y]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[room.y]![x] = scrub();
+        const by = room.y + room.h - 1;
+        if (tiles[by]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[by]![x] = scrub();
+      }
+    }
+  }
+
+  if (id === 'ruin' || id === 'trench') {
+    // Rubble maze pockets
+    for (const room of rooms) {
+      if (rng() > 0.5) continue;
+      for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+          if ((x + y) % 2 === 0 && tiles[y]![x]!.kind === 'floor' && rng() < 0.4) {
+            tiles[y]![x] = rubble();
+          }
+        }
+      }
+    }
+  }
+
+  if (id === 'ash' || id === 'brine' || id === 'fissure') {
+    // Vent corridors between adjacent rooms
+    for (let i = 0; i + 1 < rooms.length; i++) {
+      const a = rooms[i]!;
+      const b = rooms[i + 1]!;
+      const y = a.cy;
+      const x0 = Math.min(a.cx, b.cx);
+      const x1 = Math.max(a.cx, b.cx);
+      for (let x = x0; x <= x1; x++) {
+        if (tiles[y]?.[x]?.walkable && rng() < 0.55) tiles[y]![x] = vent();
+      }
+    }
   }
 }
 
@@ -146,19 +255,19 @@ export function generateSectorMap(
   );
 
   const rooms: Room[] = [];
+  const wideChance = corridorWideChance(sector.id);
   const targetRooms = randInt(rng, sector.roomCount[0], sector.roomCount[1]);
   let attempts = 0;
   while (rooms.length < targetRooms && attempts < 200) {
     attempts++;
-    const w = randInt(rng, 5, 10);
-    const h = randInt(rng, 4, 8);
+    const { w, h } = roomSizeForBiome(sector.id, rng);
     const x = randInt(rng, 1, width - w - 2);
     const y = randInt(rng, 1, height - h - 2);
     const room: Room = { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2) };
     if (rooms.some((r) => roomOverlaps(r, room, 2))) continue;
     rooms.push(room);
     carveRoom(tiles, room);
-    if (rooms.length > 1) connect(tiles, rooms[rooms.length - 2]!, room, rng);
+    if (rooms.length > 1) connect(tiles, rooms[rooms.length - 2]!, room, rng, wideChance);
   }
 
   // Ensure minimum rooms
@@ -182,13 +291,13 @@ export function generateSectorMap(
       if (rooms.some((r) => roomOverlaps(r, room))) continue;
       rooms.push(room);
       carveRoom(tiles, room);
-      if (rooms.length > 1) connect(tiles, rooms[0]!, room, rng);
+      if (rooms.length > 1) connect(tiles, rooms[0]!, room, rng, wideChance);
     }
   }
 
-  // Extra connections for loops
-  if (rooms.length >= 3) {
-    connect(tiles, rooms[0]!, rooms[rooms.length - 1]!, rng);
+  // Extra connections for loops (ridge stays more linear)
+  if (rooms.length >= 3 && sector.id !== 'ridge') {
+    connect(tiles, rooms[0]!, rooms[rooms.length - 1]!, rng, wideChance);
   }
 
   // Sparse alcoves off random rooms (open feel, not crowded)
@@ -214,26 +323,10 @@ export function generateSectorMap(
     if (rooms.some((r) => roomOverlaps(r, alcove, 0))) continue;
     rooms.push(alcove);
     carveRoom(tiles, alcove);
-    connect(tiles, parent, alcove, rng);
+    connect(tiles, parent, alcove, rng, wideChance);
   }
 
-  // Terrain dressing — sparse, skip specials later
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      if (tiles[y]![x]!.kind !== 'floor') continue;
-      const roll = rng();
-      if (roll < sector.hazardChance) tiles[y]![x] = hazard();
-      else if (roll < sector.hazardChance + sector.ventChance) tiles[y]![x] = vent();
-      else if (roll < sector.hazardChance + sector.ventChance + sector.scrubChance) {
-        tiles[y]![x] = scrub();
-      } else if (
-        roll <
-        sector.hazardChance + sector.ventChance + sector.scrubChance + sector.rubbleChance
-      ) {
-        tiles[y]![x] = rubble();
-      }
-    }
-  }
+  dressBiomeTerrain(tiles, rooms, sector, rng);
 
   const startRoom = rooms[0]!;
   const endRoom = rooms[rooms.length - 1]!;
@@ -314,9 +407,10 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
-  // One-room quest (preferred) or sparse POI fallback
-  if (rooms.length >= 3 && rng() < 0.55) {
-    const sideIdx = randInt(rng, 1, rooms.length - 2);
+  // One-room quest — prefer early/mid spine rooms so autopilot geodesic can hit them
+  if (rooms.length >= 3 && rng() < 0.7) {
+    const maxSide = Math.max(1, Math.min(rooms.length - 2, Math.ceil(rooms.length * 0.55)));
+    const sideIdx = randInt(rng, 1, maxSide);
     const side = rooms[sideIdx]!;
     // Skip if this is start/end room
     if (side !== startRoom && side !== endRoom) {

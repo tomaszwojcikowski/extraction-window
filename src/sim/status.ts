@@ -24,11 +24,11 @@ export function tickPlayerStatusEffects(state: GameState): void {
   const p = state.player;
   if (hasStatus(p, 'bleed')) {
     // Bleed bypasses ablative armor
-    p.hp -= 1;
+    p.hp -= 2;
     pushLog(state, 'LOG-STATUS-BLEED');
   }
   if (hasStatus(p, 'ion_burn')) {
-    const drain = p.filterTurns > 0 ? 1 : 2;
+    const drain = p.filterTurns > 0 ? 1 : 3;
     p.energy -= drain;
     pushLog(state, 'LOG-STATUS-ION');
   }
@@ -41,7 +41,7 @@ export function tickEnemyStatusEffects(state: GameState, enemy: Enemy): void {
     enemy.windup = 0;
   }
   if (hasStatus(enemy, 'bleed')) {
-    enemy.hp -= 1;
+    enemy.hp -= 2;
     if (enemy.hp <= 0) {
       enemy.alive = false;
       enemy.hp = 0;

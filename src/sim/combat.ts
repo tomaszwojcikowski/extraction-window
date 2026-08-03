@@ -44,7 +44,12 @@ export function applyPlayerDamage(
   if (dmg <= 0) return { armorLost: 0, hpLost: 0, fullyAbsorbed: true };
 
   if (state.player.armor > 0) {
-    armorLost = Math.min(state.player.armor, dmg);
+    let absorbCap = dmg;
+    // Exposed surveyors bleed through ablative plating
+    if (hasStatus(state.player, 'expose')) {
+      absorbCap = Math.max(0, Math.ceil(dmg * 0.55));
+    }
+    armorLost = Math.min(state.player.armor, absorbCap);
     state.player.armor -= armorLost;
     dmg -= armorLost;
     if (armorLost > 0) pushLog(state, 'LOG-ARMOR-ABSORB', `-${armorLost}`);
@@ -57,8 +62,8 @@ export function applyPlayerDamage(
   return { armorLost, hpLost, fullyAbsorbed: hpLost === 0 && armorLost > 0 };
 }
 
-function tryDeathDrop(state: GameState, enemy: Enemy): void {
-  let chance = dropChance(state.sectorIndex);
+function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
+  let chance = dropChance(state.sectorIndex) + bonusChance;
   if (hasSkill(state, 'scavenger')) chance = Math.min(0.95, chance + 0.15);
   if (state.rng() > chance) return;
   const table = ENEMY_DROPS[enemy.kind];
@@ -83,11 +88,15 @@ function tryDeathDrop(state: GameState, enemy: Enemy): void {
 }
 
 export function killEnemy(state: GameState, enemy: Enemy): void {
+  const windupInterrupt = enemy.windup > 0 || enemy.swellTurns >= 2;
   enemy.alive = false;
   enemy.hp = 0;
   pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
-  tryDeathDrop(state, enemy);
-  gainXp(state, XP_KILL_BASE + Math.floor(enemy.maxHp / 2));
+  tryDeathDrop(state, enemy, windupInterrupt ? 0.25 : 0);
+  const xp =
+    XP_KILL_BASE + Math.floor(enemy.maxHp / 2) + (windupInterrupt ? XP_KILL_BASE : 0);
+  gainXp(state, xp);
+  if (windupInterrupt) pushLog(state, 'LOG-WINDUP-KILL');
 }
 
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
@@ -98,9 +107,9 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
     toolAtkBonus(state) +
     (state.player.probeTurns > 0 ? 2 : 0) +
     (state.player.stimTurns > 0 ? 3 : 0) +
-    (hasStatus(enemy, 'expose') ? 2 : 0) +
+    (hasStatus(enemy, 'expose') ? 4 : 0) +
     overcharge;
-  const def = enemy.def - (hasStatus(enemy, 'expose') ? 1 : 0);
+  const def = enemy.def - (hasStatus(enemy, 'expose') ? 2 : 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
@@ -121,7 +130,7 @@ export function enemyAttack(
     state.player.def +
     (state.player.stabilizeTurns > 0 ? 1 : 0) +
     lastWindow -
-    (hasStatus(state.player, 'expose') ? 1 : 0);
+    (hasStatus(state.player, 'expose') ? 2 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
@@ -137,10 +146,10 @@ export function enemyAttack(
     enemy.kind === 'wraith' ||
     enemy.kind === 'skitter'
   ) {
-    addStatus(state.player, 'bleed', 2);
+    addStatus(state.player, 'bleed', 3);
   }
   if (enemy.kind === 'rift') {
-    addStatus(state.player, 'expose', 3);
+    addStatus(state.player, 'expose', 4);
   }
   return result.fullyAbsorbed;
 }

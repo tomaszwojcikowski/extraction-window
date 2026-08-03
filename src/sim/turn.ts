@@ -37,7 +37,7 @@ export function checkLose(state: GameState): void {
 export function finishSectorTransition(state: GameState): void {
   state.turn += 1;
   state.stormTurns -= 1;
-  if (state.stormTurns === 50 || state.stormTurns === 20) {
+  if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
   }
   computeFov(
@@ -55,8 +55,12 @@ export function finishSectorTransition(state: GameState): void {
 function tickEnvironment(state: GameState): void {
   const sector = getSector(state.sectorIndex);
   state.stormTurns -= 1;
-  if (state.stormTurns === 50 || state.stormTurns === 20) {
+  if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
+  }
+  // Late-sector storm tax — window closes faster inland
+  if (sector.index >= 7 && state.turn % 2 === 0) {
+    state.stormTurns -= 1;
   }
 
   const filter = state.player.filterTurns > 0;
@@ -77,9 +81,8 @@ function tickEnvironment(state: GameState): void {
     pushLog(state, 'LOG-HAZARD');
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter ? 0 : 1;
-  } else if (tile.kind === 'scrub') {
-    state.player.energy -= filter ? 0 : 1;
   }
+  // scrub is a sight-blocker only — no energy tax
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;

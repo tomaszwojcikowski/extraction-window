@@ -4,12 +4,16 @@ import type { LoseReason } from '../sim';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
 import { drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
+import { SKILLS, type SkillId } from '../data/progression';
 
 export class EndScene extends Phaser.Scene {
   private status: 'won' | 'lost' = 'lost';
   private loseReason: LoseReason = null;
   private seed = 42;
   private turn = 0;
+  private level = 1;
+  private skills: SkillId[] = [];
+  private objective = '';
 
   constructor() {
     super('End');
@@ -20,11 +24,17 @@ export class EndScene extends Phaser.Scene {
     loseReason: LoseReason;
     seed: number;
     turn: number;
+    level?: number;
+    skills?: SkillId[];
+    objective?: string;
   }): void {
     this.status = data.status;
     this.loseReason = data.loseReason;
     this.seed = data.seed;
     this.turn = data.turn;
+    this.level = data.level ?? 1;
+    this.skills = data.skills ?? [];
+    this.objective = data.objective ?? '';
   }
 
   create(): void {
@@ -63,7 +73,7 @@ export class EndScene extends Phaser.Scene {
     drawMenuChrome(this, g, width, height, accent);
 
     this.add
-      .text(width / 2, height * 0.26, lore('UI-MISSION-STATUS'), {
+      .text(width / 2, height * 0.2, lore('UI-MISSION-STATUS'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.phosphorMute,
@@ -72,7 +82,7 @@ export class EndScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const title = this.add
-      .text(width / 2, height * 0.36, lore(titleId), {
+      .text(width / 2, height * 0.3, lore(titleId), {
         fontFamily: FONT_DISPLAY,
         fontSize: '26px',
         color: titleColor,
@@ -85,7 +95,7 @@ export class EndScene extends Phaser.Scene {
     this.tweens.add({ targets: title, alpha: 1, duration: 280 });
 
     this.add
-      .text(width / 2, height * 0.48, lore(bodyId), {
+      .text(width / 2, height * 0.4, lore(bodyId), {
         fontFamily: FONT_DATA,
         fontSize: '13px',
         color: ThemeCss.phosphorDim,
@@ -94,21 +104,29 @@ export class EndScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    const skillNames = this.skills
+      .map((id) => lore(SKILLS[id].loreName))
+      .join(', ');
+    const summary = [
+      this.objective ? `OBJ  ${this.objective}` : null,
+      `LVL  ${this.level}${skillNames ? `  ·  ${skillNames}` : ''}`,
+      `SHEET ${this.seed}   ·   turn ${this.turn}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
     this.add
-      .text(
-        width / 2,
-        height * 0.58,
-        `SHEET ${this.seed}   ·   turn ${this.turn}`,
-        {
-          fontFamily: FONT_DATA,
-          fontSize: '12px',
-          color: ThemeCss.phosphorMute,
-        },
-      )
+      .text(width / 2, height * 0.54, summary, {
+        fontFamily: FONT_DATA,
+        fontSize: '12px',
+        color: ThemeCss.phosphorMute,
+        align: 'center',
+        lineSpacing: 4,
+      })
       .setOrigin(0.5);
 
     const retry = this.add
-      .text(width / 2, height * 0.7, lore('UI-RETRY'), {
+      .text(width / 2, height * 0.72, lore('UI-RETRY'), {
         fontFamily: FONT_DATA,
         fontSize: '14px',
         color: ThemeCss.phosphorBright,
