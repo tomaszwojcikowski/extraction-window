@@ -21,12 +21,10 @@ export function addItem(state: GameState, kind: ItemKind): boolean {
   }
   if (state.inventory.length >= INVENTORY_SLOTS) {
     if (def.quest) {
-      // Evict a non-quest stack to make room for mission-critical gear
       const dropIdx = state.inventory.findIndex((s) => !ITEMS[s.kind].quest);
       if (dropIdx >= 0) {
         const dropped = state.inventory[dropIdx]!;
         state.inventory.splice(dropIdx, 1);
-        // Drop onto the ground underfoot so kit items are not voided
         for (let n = 0; n < dropped.count; n++) {
           state.items.push({
             id: state.nextEntityId++,
@@ -89,10 +87,49 @@ export function useSelected(state: GameState): void {
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-PROBE');
       break;
-    case 'relay_key':
-      // Used via exit/beacon interaction, not inventory use
-      pushLog(state, 'LOG-USE-FAIL');
+    case 'stim':
+      state.player.stimTurns = Math.max(state.player.stimTurns, 15);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-STIM');
       break;
+    case 'plate':
+      state.player.plateTurns = Math.max(state.player.plateTurns, 30);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-PLATE');
+      break;
+    case 'filter':
+      state.player.filterTurns = Math.max(state.player.filterTurns, 50);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-FILTER');
+      break;
+    case 'coolant':
+      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-COOLANT');
+      break;
+    case 'blade':
+      state.player.atk += 1;
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-BLADE');
+      break;
+    case 'flare': {
+      removeOne(state, kind);
+      let hits = 0;
+      for (const en of state.enemies) {
+        if (!en.alive) continue;
+        if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) !== 1) continue;
+        en.hp -= 6;
+        hits += 1;
+        if (en.hp <= 0) {
+          en.alive = false;
+          en.hp = 0;
+          pushLog(state, 'LOG-KILL');
+        }
+      }
+      pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
+      break;
+    }
+    case 'relay_key':
     case 'nav_core':
       pushLog(state, 'LOG-USE-FAIL');
       break;

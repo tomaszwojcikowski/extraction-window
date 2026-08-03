@@ -45,6 +45,16 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 
 **Vault Sentinels** — Automated Helix depot security. Signal ecology RF corruption flipped friend-or-foe; they treat active survey gear as hostile.
 
+## Terrain (sparse)
+
+- Floor / rubble / scrub — open ground; scrub costs light energy
+- Vent / hazard — ion stress drains life support (filter halves)
+- Exit / beacon / shuttle — mission structures
+
+## Field kit
+
+Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate, flare, filter. Upgrades: scrap blade (+1 ATK). Quest: Relay Key, Nav Core.
+
 ---
 
 ## Player Strings (IDs)

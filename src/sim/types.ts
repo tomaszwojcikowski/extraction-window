@@ -9,7 +9,16 @@ export interface Pos {
   y: number;
 }
 
-export type TileKind = 'wall' | 'floor' | 'hazard' | 'exit' | 'beacon' | 'shuttle';
+export type TileKind =
+  | 'wall'
+  | 'floor'
+  | 'hazard'
+  | 'scrub'
+  | 'rubble'
+  | 'vent'
+  | 'exit'
+  | 'beacon'
+  | 'shuttle';
 
 export interface Tile {
   kind: TileKind;
@@ -81,6 +90,9 @@ export interface GameState {
     atk: number;
     def: number;
     probeTurns: number;
+    stimTurns: number;
+    plateTurns: number;
+    filterTurns: number;
   };
   inventory: InventorySlot[];
   enemies: Enemy[];

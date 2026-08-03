@@ -6,6 +6,7 @@ import {
   type Action,
   type GameState,
 } from '../sim';
+import { INVENTORY_SLOTS } from '../data/items';
 
 /**
  * Headless autopilot: path to objectives, fight blockers, heal when low,
@@ -25,21 +26,43 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
   if (state.player.energy <= state.player.maxEnergy * 0.45) {
+    const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
-    const idx = enIdx >= 0 ? enIdx : rationIdx;
+    const idx = coolIdx >= 0 ? coolIdx : enIdx >= 0 ? enIdx : rationIdx;
     if (idx >= 0) {
       state.ui.selectedSlot = idx;
       return { type: 'use' };
     }
   }
-  // Buff before likely fights in late sectors
-  if (state.sectorIndex >= 3 && state.player.probeTurns <= 0) {
-    const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
-    if (probeIdx >= 0 && state.player.hp > state.player.maxHp * 0.5) {
-      state.ui.selectedSlot = probeIdx;
+  if (state.sectorId === 'ash' && state.player.filterTurns <= 0) {
+    const fIdx = state.inventory.findIndex((s) => s.kind === 'filter');
+    if (fIdx >= 0) {
+      state.ui.selectedSlot = fIdx;
       return { type: 'use' };
     }
+  }
+  // Buff before likely fights in late sectors
+  if (state.sectorIndex >= 3 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
+    const stimIdx = state.inventory.findIndex((s) => s.kind === 'stim');
+    const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
+    const idx = stimIdx >= 0 ? stimIdx : probeIdx;
+    if (idx >= 0 && state.player.hp > state.player.maxHp * 0.5) {
+      state.ui.selectedSlot = idx;
+      return { type: 'use' };
+    }
+  }
+  if (state.sectorIndex >= 4 && state.player.plateTurns <= 0) {
+    const pIdx = state.inventory.findIndex((s) => s.kind === 'plate');
+    if (pIdx >= 0 && state.player.hp > state.player.maxHp * 0.45) {
+      state.ui.selectedSlot = pIdx;
+      return { type: 'use' };
+    }
+  }
+  const bladeIdx = state.inventory.findIndex((s) => s.kind === 'blade');
+  if (bladeIdx >= 0) {
+    state.ui.selectedSlot = bladeIdx;
+    return { type: 'use' };
   }
 
   const { x, y } = state.player;
@@ -69,7 +92,7 @@ export function chooseAction(state: GameState): Action | null {
   const here = state.items.find((i) => i.x === x && i.y === y);
   if (here && here.kind !== 'relay_key' && here.kind !== 'nav_core') {
     // quest auto-picked; grab consumables if space
-    if (state.inventory.length < 10) return { type: 'get' };
+    if (state.inventory.length < INVENTORY_SLOTS) return { type: 'get' };
   }
 
   const goal = currentObjectivePos(state);

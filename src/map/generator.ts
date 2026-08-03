@@ -37,6 +37,15 @@ function floor(): Tile {
 function hazard(): Tile {
   return { kind: 'hazard', walkable: true, transparent: true };
 }
+function scrub(): Tile {
+  return { kind: 'scrub', walkable: true, transparent: true };
+}
+function rubble(): Tile {
+  return { kind: 'rubble', walkable: true, transparent: true };
+}
+function vent(): Tile {
+  return { kind: 'vent', walkable: true, transparent: true };
+}
 function exitTile(): Tile {
   return { kind: 'exit', walkable: true, transparent: true };
 }
@@ -55,25 +64,32 @@ function carveRoom(tiles: Tile[][], room: Room): void {
   }
 }
 
-function carveH(tiles: Tile[][], x1: number, x2: number, y: number): void {
+function carveH(tiles: Tile[][], x1: number, x2: number, y: number, wide = false): void {
   const a = Math.min(x1, x2);
   const b = Math.max(x1, x2);
-  for (let x = a; x <= b; x++) tiles[y]![x] = floor();
+  for (let x = a; x <= b; x++) {
+    tiles[y]![x] = floor();
+    if (wide && y + 1 < tiles.length - 1) tiles[y + 1]![x] = floor();
+  }
 }
 
-function carveV(tiles: Tile[][], y1: number, y2: number, x: number): void {
+function carveV(tiles: Tile[][], y1: number, y2: number, x: number, wide = false): void {
   const a = Math.min(y1, y2);
   const b = Math.max(y1, y2);
-  for (let y = a; y <= b; y++) tiles[y]![x] = floor();
+  for (let y = a; y <= b; y++) {
+    tiles[y]![x] = floor();
+    if (wide && x + 1 < tiles[0]!.length - 1) tiles[y]![x + 1] = floor();
+  }
 }
 
 function connect(tiles: Tile[][], a: Room, b: Room, rng: Rng): void {
+  const wide = rng() < 0.35;
   if (rng() < 0.5) {
-    carveH(tiles, a.cx, b.cx, a.cy);
-    carveV(tiles, a.cy, b.cy, b.cx);
+    carveH(tiles, a.cx, b.cx, a.cy, wide);
+    carveV(tiles, a.cy, b.cy, b.cx, wide);
   } else {
-    carveV(tiles, a.cy, b.cy, a.cx);
-    carveH(tiles, a.cx, b.cx, b.cy);
+    carveV(tiles, a.cy, b.cy, a.cx, wide);
+    carveH(tiles, a.cx, b.cx, b.cy, wide);
   }
 }
 
@@ -127,12 +143,12 @@ export function generateSectorMap(
   let attempts = 0;
   while (rooms.length < targetRooms && attempts < 200) {
     attempts++;
-    const w = randInt(rng, 4, 8);
-    const h = randInt(rng, 4, 7);
+    const w = randInt(rng, 5, 10);
+    const h = randInt(rng, 4, 8);
     const x = randInt(rng, 1, width - w - 2);
     const y = randInt(rng, 1, height - h - 2);
     const room: Room = { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2) };
-    if (rooms.some((r) => roomOverlaps(r, room))) continue;
+    if (rooms.some((r) => roomOverlaps(r, room, 2))) continue;
     rooms.push(room);
     carveRoom(tiles, room);
     if (rooms.length > 1) connect(tiles, rooms[rooms.length - 2]!, room, rng);
@@ -168,11 +184,46 @@ export function generateSectorMap(
     connect(tiles, rooms[0]!, rooms[rooms.length - 1]!, rng);
   }
 
-  // Hazards
+  // Sparse alcoves off random rooms (open feel, not crowded)
+  const alcoveN = randInt(rng, 1, 2);
+  for (let i = 0; i < alcoveN && rooms.length > 0; i++) {
+    const parent = pick(rng, rooms);
+    const ox = randInt(rng, -1, 1);
+    const oy = randInt(rng, -1, 1);
+    if (ox === 0 && oy === 0) continue;
+    const w = randInt(rng, 3, 5);
+    const h = randInt(rng, 3, 4);
+    const x = parent.cx + ox * (parent.w + 1);
+    const y = parent.cy + oy * (parent.h + 1);
+    if (x < 1 || y < 1 || x + w >= width - 1 || y + h >= height - 1) continue;
+    const alcove: Room = {
+      x,
+      y,
+      w,
+      h,
+      cx: x + Math.floor(w / 2),
+      cy: y + Math.floor(h / 2),
+    };
+    if (rooms.some((r) => roomOverlaps(r, alcove, 0))) continue;
+    rooms.push(alcove);
+    carveRoom(tiles, alcove);
+    connect(tiles, parent, alcove, rng);
+  }
+
+  // Terrain dressing — sparse, skip specials later
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
-      if (tiles[y]![x]!.kind === 'floor' && rng() < sector.hazardChance) {
-        tiles[y]![x] = hazard();
+      if (tiles[y]![x]!.kind !== 'floor') continue;
+      const roll = rng();
+      if (roll < sector.hazardChance) tiles[y]![x] = hazard();
+      else if (roll < sector.hazardChance + sector.ventChance) tiles[y]![x] = vent();
+      else if (roll < sector.hazardChance + sector.ventChance + sector.scrubChance) {
+        tiles[y]![x] = scrub();
+      } else if (
+        roll <
+        sector.hazardChance + sector.ventChance + sector.scrubChance + sector.rubbleChance
+      ) {
+        tiles[y]![x] = rubble();
       }
     }
   }
@@ -253,7 +304,7 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
-  // Loot
+  // Loot — fewer piles, more variety (already in tables)
   const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
   let placed = 0;
   const occ = () => occupiedSet(enemies, items, start, specials);
@@ -262,25 +313,24 @@ export function generateSectorMap(
     const key = `${p.x},${p.y}`;
     if (occ().has(key)) continue;
     if (!canReach(tiles, start, p)) continue;
-    if (rng() > 0.35) continue;
+    // Prefer room interiors over corridors: lower spawn rate
+    if (rng() > 0.22) continue;
     const kind = pick(rng, sector.lootTable);
     items.push({ id: nextEntityId++, kind, x: p.x, y: p.y });
     placed++;
   }
 
-  // Enemies
+  // Enemies — keep packs sparse
   const enemyN = randInt(rng, sector.enemyCount[0], sector.enemyCount[1]);
   let ePlaced = 0;
   for (const p of floors) {
     if (ePlaced >= enemyN) break;
     const key = `${p.x},${p.y}`;
     if (occ().has(key)) continue;
-    // Keep spawn clear
-    if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < 4) continue;
-    if (rng() > 0.4) continue;
+    if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < 5) continue;
+    if (rng() > 0.28) continue;
     const kind = pick(rng, sector.enemyTable);
     const def = ENEMIES[kind];
-    // Scale lightly by sector index
     const scale = 1 + sector.index * 0.05;
     enemies.push({
       id: nextEntityId++,

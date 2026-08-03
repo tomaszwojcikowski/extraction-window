@@ -260,7 +260,7 @@ export class GameScene extends Phaser.Scene {
           this.tileKey(kind),
         );
         img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-        if (kind === 'floor') img.setTint(tint);
+        if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
         this.mapLayer.add(img);
         this.tileSprites[y]![x] = img;
       }
@@ -274,6 +274,12 @@ export class GameScene extends Phaser.Scene {
         return 't_wall';
       case 'hazard':
         return 't_hazard';
+      case 'scrub':
+        return 't_scrub';
+      case 'rubble':
+        return 't_rubble';
+      case 'vent':
+        return 't_vent';
       case 'exit':
         return 't_exit';
       case 'beacon':
@@ -468,7 +474,13 @@ export class GameScene extends Phaser.Scene {
       has('LOG-USE-MED') ||
       has('LOG-USE-ENERGY') ||
       has('LOG-USE-RATION') ||
-      has('LOG-USE-PROBE')
+      has('LOG-USE-PROBE') ||
+      has('LOG-USE-STIM') ||
+      has('LOG-USE-PLATE') ||
+      has('LOG-USE-FLARE') ||
+      has('LOG-USE-FILTER') ||
+      has('LOG-USE-COOLANT') ||
+      has('LOG-USE-BLADE')
     ) {
       sfx.play('use');
       return;
@@ -757,7 +769,7 @@ export class GameScene extends Phaser.Scene {
           img.setAlpha(1);
         } else {
           img.setTexture(this.tileKey(kind));
-          if (kind === 'floor') img.setTint(tint);
+          if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
           else img.clearTint();
           // Explored-but-not-visible stays more readable
           img.setAlpha(st.visible[y]![x] ? 1 : 0.45);
@@ -771,8 +783,15 @@ export class GameScene extends Phaser.Scene {
     this.drawBar(340, 30, 170, 10, st.stormTurns / STORM_TURNS, 0xf0d040, 0xff5050);
 
     const probe = st.player.probeTurns > 0 ? `  ${lore('UI-PROBE')} ${st.player.probeTurns}` : '';
+    const stim = st.player.stimTurns > 0 ? `  ${lore('UI-STIM')} ${st.player.stimTurns}` : '';
+    const plate = st.player.plateTurns > 0 ? `  ${lore('UI-PLATE')} ${st.player.plateTurns}` : '';
+    const filter =
+      st.player.filterTurns > 0 ? `  ${lore('UI-FILTER')} ${st.player.filterTurns}` : '';
+    const atkBonus =
+      (st.player.probeTurns > 0 ? 2 : 0) + (st.player.stimTurns > 0 ? 3 : 0);
+    const defBonus = st.player.plateTurns > 0 ? 2 : 0;
     this.hudMeta.setText(
-      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}    ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}    ${lore('UI-WINDOW')} ${st.stormTurns}    ${lore('UI-ATK')} ${st.player.atk}${st.player.probeTurns > 0 ? '+2' : ''}  ${lore('UI-DEF')} ${st.player.def}${probe}`,
+      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}    ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}    ${lore('UI-WINDOW')} ${st.stormTurns}    ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${probe}${stim}${plate}${filter}`,
     );
 
     const sector = getSector(st.sectorIndex);

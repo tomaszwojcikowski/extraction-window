@@ -17,7 +17,10 @@ export function meleeDamage(atk: number, def: number, variance: number): number 
 }
 
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
-  const atk = state.player.atk + (state.player.probeTurns > 0 ? 2 : 0);
+  const atk =
+    state.player.atk +
+    (state.player.probeTurns > 0 ? 2 : 0) +
+    (state.player.stimTurns > 0 ? 3 : 0);
   const dmg = meleeDamage(atk, enemy.def, variance);
   enemy.hp -= dmg;
   pushLog(state, 'LOG-HIT', `-${dmg}`);
@@ -29,7 +32,8 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
 }
 
 export function enemyAttack(state: GameState, enemy: Enemy, variance: number): void {
-  const dmg = meleeDamage(enemy.atk, state.player.def, variance);
+  const def = state.player.def + (state.player.plateTurns > 0 ? 2 : 0);
+  const dmg = meleeDamage(enemy.atk, def, variance);
   state.player.hp -= dmg;
   pushLog(state, 'LOG-HURT', `-${dmg}`);
 }

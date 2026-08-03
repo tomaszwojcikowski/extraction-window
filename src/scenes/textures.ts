@@ -65,6 +65,49 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(2, T - 2, T - 3, 1);
   bake('t_floor');
 
+  // Scrub — teal vegetation tufts
+  g.clear();
+  g.fillStyle(0x0a1810, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x1a3020, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x40a060, 1);
+  g.fillRect(4, 10, 3, 8);
+  g.fillRect(10, 6, 3, 12);
+  g.fillRect(16, 12, 3, 6);
+  g.fillStyle(0x80e0a0, 1);
+  g.fillRect(5, 8, 1, 3);
+  g.fillRect(11, 4, 1, 3);
+  bake('t_scrub');
+
+  // Rubble — warm debris
+  g.clear();
+  g.fillStyle(0x14100c, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x3a3028, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x8a7060, 1);
+  g.fillRect(3, 12, 6, 5);
+  g.fillRect(12, 8, 7, 6);
+  g.fillStyle(0xc0a090, 1);
+  g.fillRect(4, 13, 3, 2);
+  g.fillRect(14, 9, 3, 2);
+  bake('t_rubble');
+
+  // Vent — cyan grate
+  g.clear();
+  g.fillStyle(0x081018, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x203040, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x40a0c0, 1);
+  g.fillRect(4, 4, T - 8, 3);
+  g.fillRect(4, 10, T - 8, 3);
+  g.fillRect(4, 16, T - 8, 3);
+  g.fillStyle(0xa0e8ff, 1);
+  g.fillRect(5, 5, T - 10, 1);
+  bake('t_vent');
+
   // --- Hazard: hot magenta warning ---
   g.clear();
   g.fillStyle(0x1a0820, 1);

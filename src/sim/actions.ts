@@ -1,3 +1,4 @@
+import { INVENTORY_SLOTS } from '../data/items';
 import { hasItem, removeOne, tryPickup, useSelected, syncObjectiveFlags, findSlot } from './inventory';
 import { playerAttack, pushLog, recordLoreEvent } from './combat';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
@@ -35,7 +36,7 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   if (ground) {
     if (ground.kind === 'relay_key' || ground.kind === 'nav_core') {
       tryPickup(state);
-    } else if (state.inventory.length < 10 || findSlot(state, ground.kind) >= 0) {
+    } else if (state.inventory.length < INVENTORY_SLOTS || findSlot(state, ground.kind) >= 0) {
       tryPickup(state);
     }
   }

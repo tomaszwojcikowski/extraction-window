@@ -49,19 +49,28 @@ function tickEnvironment(state: GameState): void {
     pushLog(state, 'LOG-STORM-WARN');
   }
 
+  const filter = state.player.filterTurns > 0;
   // Base life-support drip every few turns
   if (state.turn % 5 === 0) {
-    state.player.energy -= 1;
+    state.player.energy -= filter ? 0 : 1;
   }
-  state.player.energy -= sector.energyDrain;
+  const drain = filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
+  state.player.energy -= drain;
 
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind === 'hazard') {
-    state.player.energy -= 2;
+    state.player.energy -= filter ? 1 : 2;
     pushLog(state, 'LOG-HAZARD');
+  } else if (tile.kind === 'vent') {
+    state.player.energy -= filter ? 0 : 1;
+  } else if (tile.kind === 'scrub') {
+    state.player.energy -= filter ? 0 : 1;
   }
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
+  if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
+  if (state.player.plateTurns > 0) state.player.plateTurns -= 1;
+  if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
 }
 
 function moveEnemies(state: GameState): void {
