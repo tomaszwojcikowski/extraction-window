@@ -4,6 +4,7 @@ import { getSector } from '../data/encounters';
 import { ITEMS } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { applyAction, createGame, type Action, type GameState } from '../sim';
+import { fovDistance, playerFovRadius } from '../sim/fov';
 import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
 import {
   BIOME_FLOOR_TINT,
@@ -609,17 +610,22 @@ export class GameScene extends Phaser.Scene {
     this.itemLayer.removeAll(true);
     const st = this.state;
     for (const item of st.items) {
-      if (!st.explored[item.y]![item.x]) continue;
+      const seen = st.explored[item.y]![item.x];
+      const vis = st.visible[item.y]![item.x];
+      if (!seen) continue;
       const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
+      // Non-quest loot only while in FOV; quest items leave a dim memory ghost
+      if (!vis && !quest) continue;
       const spr = this.add.image(
         item.x * TILE_DRAW + TILE_DRAW / 2,
         item.y * TILE_DRAW + TILE_DRAW / 2,
         quest ? 't_quest' : 't_item',
       );
       spr.setDisplaySize(TILE_DRAW - 4, TILE_DRAW - 4);
-      spr.setAlpha(st.visible[item.y]![item.x] ? 1 : 0.4);
+      spr.setAlpha(vis ? 1 : 0.3);
+      if (!vis) spr.setTint(0x6688aa);
       this.itemLayer.add(spr);
-      if (quest && st.visible[item.y]![item.x]) {
+      if (quest && vis) {
         this.tweens.add({
           targets: spr,
           alpha: 0.55,
@@ -758,6 +764,9 @@ export class GameScene extends Phaser.Scene {
   private redrawTilesAndHud(): void {
     const st = this.state;
     const tint = BIOME_FLOOR_TINT[st.sectorId];
+    const radius = playerFovRadius(st.player.probeTurns);
+    const px = st.player.x;
+    const py = st.player.y;
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
@@ -767,12 +776,21 @@ export class GameScene extends Phaser.Scene {
           img.setTexture('t_fog');
           img.clearTint();
           img.setAlpha(1);
-        } else {
-          img.setTexture(this.tileKey(kind));
+          continue;
+        }
+
+        img.setTexture(this.tileKey(kind));
+        if (st.visible[y]![x]) {
           if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
           else img.clearTint();
-          // Explored-but-not-visible stays more readable
-          img.setAlpha(st.visible[y]![x] ? 1 : 0.45);
+          const dist = fovDistance(px, py, x, y);
+          const falloff = Math.max(0, 1 - dist / (radius + 0.35));
+          // Bright near player, soft edge at vision rim
+          img.setAlpha(0.52 + 0.48 * falloff);
+        } else {
+          // Memory: desaturated cool silhouette
+          img.setTint(0x4a5870);
+          img.setAlpha(0.28);
         }
       }
     }

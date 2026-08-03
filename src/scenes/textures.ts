@@ -165,11 +165,22 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(8, 8, 8, 8);
   bake('t_shuttle');
 
-  // --- Fog ---
+  // Fog — near-black with faint noise grain
   g.clear();
-  g.fillStyle(0x04060a, 1);
+  g.fillStyle(0x020308, 1);
   g.fillRect(0, 0, T, T);
+  g.fillStyle(0x0a0e16, 1);
+  g.fillRect(3, 5, 1, 1);
+  g.fillRect(11, 9, 1, 1);
+  g.fillRect(17, 14, 1, 1);
+  g.fillRect(7, 18, 1, 1);
   bake('t_fog');
+
+  // Memory fog overlay (multiplied via tint/alpha on tiles)
+  g.clear();
+  g.fillStyle(0x000000, 1);
+  g.fillRect(0, 0, T, T);
+  bake('t_memory');
 
   // --- Player: bright cyan astronaut ---
   g.clear();

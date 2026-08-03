@@ -1,8 +1,12 @@
 import type { Pos, Tile } from './types';
 
-const FOV_RADIUS = 8;
+/** Base sight radius (Euclidean). */
+export const FOV_RADIUS = 9;
 
-/** Diamond / shadowcast-lite FOV. Mutates `visible`. */
+/**
+ * Recursive shadowcasting FOV (standard roguelike).
+ * Mutates `visible` and marks seen tiles in `explored`.
+ */
 export function computeFov(
   tiles: Tile[][],
   explored: boolean[][],
@@ -13,94 +17,127 @@ export function computeFov(
 ): void {
   const h = tiles.length;
   const w = tiles[0]?.length ?? 0;
+
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       visible[y]![x] = false;
     }
   }
+
   visible[oy]![ox] = true;
   explored[oy]![ox] = true;
 
-  for (let i = 0; i < 8; i++) {
-    castOctant(tiles, explored, visible, ox, oy, radius, i);
+  // Mults for the 8 octants
+  const octants: Array<[number, number, number, number]> = [
+    [1, 0, 0, 1],
+    [0, 1, 1, 0],
+    [0, -1, 1, 0],
+    [-1, 0, 0, 1],
+    [-1, 0, 0, -1],
+    [0, -1, -1, 0],
+    [0, 1, -1, 0],
+    [1, 0, 0, -1],
+  ];
+
+  for (const [xx, xy, yx, yy] of octants) {
+    castLight(tiles, explored, visible, ox, oy, radius, 1, 1.0, 0.0, xx, xy, yx, yy, w, h);
   }
 }
 
-function castOctant(
+function castLight(
   tiles: Tile[][],
   explored: boolean[][],
   visible: boolean[][],
   ox: number,
   oy: number,
   radius: number,
-  octant: number,
+  row: number,
+  startSlope: number,
+  endSlope: number,
+  xx: number,
+  xy: number,
+  yx: number,
+  yy: number,
+  w: number,
+  h: number,
 ): void {
-  const h = tiles.length;
-  const w = tiles[0]?.length ?? 0;
-  let start = 0;
-  let end = 1;
-  // Simple row sweeps per octant using slope blocking
-  for (let row = 1; row <= radius; row++) {
+  if (startSlope < endSlope) return;
+
+  let nextStart = startSlope;
+  for (let i = row; i <= radius; i++) {
     let blocked = false;
-    let newStart = start;
-    for (let col = 0; col <= row; col++) {
-      const slopeStart = (col - 0.5) / row;
-      const slopeEnd = (col + 0.5) / row;
-      if (slopeEnd < start) continue;
-      if (slopeStart > end) break;
+    const dy = -i;
+    let dx = -i;
+    while (dx <= 0) {
+      const lSlope = (dx - 0.5) / (dy + 0.5);
+      const rSlope = (dx + 0.5) / (dy - 0.5);
 
-      const [mx, my] = transform(ox, oy, col, row, octant);
-      if (mx < 0 || my < 0 || mx >= w || my >= h) continue;
-      const dist = Math.abs(mx - ox) + Math.abs(my - oy);
-      if (dist > radius * 1.5) continue;
-
-      visible[my]![mx] = true;
-      explored[my]![mx] = true;
-
-      const opaque = !tiles[my]![mx]!.transparent;
-      if (blocked) {
-        if (opaque) {
-          newStart = slopeEnd;
-          continue;
-        }
-        blocked = false;
-        start = newStart;
-      } else if (opaque) {
-        blocked = true;
-        // Recurse remaining with narrowed end — simplified: just mark and continue
-        end = slopeStart;
-        newStart = slopeEnd;
+      if (startSlope < rSlope) {
+        dx++;
+        continue;
       }
+      if (endSlope > lSlope) break;
+
+      const sax = dx * xx + dy * xy;
+      const say = dx * yx + dy * yy;
+      const ax = ox + sax;
+      const ay = oy + say;
+
+      if (ax >= 0 && ay >= 0 && ax < w && ay < h) {
+        const dist2 = sax * sax + say * say;
+        if (dist2 <= radius * radius) {
+          visible[ay]![ax] = true;
+          explored[ay]![ax] = true;
+        }
+
+        if (blocked) {
+          if (!tiles[ay]![ax]!.transparent) {
+            nextStart = rSlope;
+            dx++;
+            continue;
+          }
+          blocked = false;
+          startSlope = nextStart;
+        } else if (!tiles[ay]![ax]!.transparent) {
+          blocked = true;
+          castLight(
+            tiles,
+            explored,
+            visible,
+            ox,
+            oy,
+            radius,
+            i + 1,
+            startSlope,
+            lSlope,
+            xx,
+            xy,
+            yx,
+            yy,
+            w,
+            h,
+          );
+          nextStart = rSlope;
+        }
+      }
+      dx++;
     }
     if (blocked) break;
   }
 }
 
-function transform(
-  ox: number,
-  oy: number,
-  col: number,
-  row: number,
-  octant: number,
-): [number, number] {
-  switch (octant) {
-    case 0:
-      return [ox + col, oy - row];
-    case 1:
-      return [ox + row, oy - col];
-    case 2:
-      return [ox + row, oy + col];
-    case 3:
-      return [ox + col, oy + row];
-    case 4:
-      return [ox - col, oy + row];
-    case 5:
-      return [ox - row, oy + col];
-    case 6:
-      return [ox - row, oy - col];
-    default:
-      return [ox - col, oy - row];
-  }
+/** Euclidean distance helper for light falloff rendering. */
+export function fovDistance(ox: number, oy: number, x: number, y: number): number {
+  const dx = x - ox;
+  const dy = y - oy;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/**
+ * Sight radius for the current player buffs (probe extends RF ranging).
+ */
+export function playerFovRadius(probeTurns: number): number {
+  return probeTurns > 0 ? FOV_RADIUS + 3 : FOV_RADIUS;
 }
 
 export function bfsPath(
@@ -155,10 +192,6 @@ export function bfsPath(
   return null;
 }
 
-export function canReach(
-  tiles: Tile[][],
-  from: Pos,
-  to: Pos,
-): boolean {
+export function canReach(tiles: Tile[][], from: Pos, to: Pos): boolean {
   return bfsPath(tiles, from, to, () => false) !== null;
 }

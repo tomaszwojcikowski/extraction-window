@@ -14,6 +14,6 @@ export type {
 } from './types';
 export { createGame, loadSector } from './state';
 export { applyAction } from './actions';
-export { computeFov, bfsPath, canReach } from './fov';
+export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS } from './fov';
 export { currentObjectivePos, assertLegalWin, loreOrderLegal } from './objectives';
 export { hasItem, syncObjectiveFlags } from './inventory';

@@ -81,7 +81,7 @@ export const LORE = {
   'ITEM-RATION': 'Field Ration',
   'ITEM-RATION-DESC': 'Minor HP and Energy recovery.',
   'ITEM-PROBE': 'Survey Probe',
-  'ITEM-PROBE-DESC': 'Temporary ATK boost from RF ranging.',
+  'ITEM-PROBE-DESC': 'Temporary ATK boost and extended RF vision (+3 FOV).',
   'ITEM-STIM': 'Combat Stim',
   'ITEM-STIM-DESC': 'Short ATK surge (+3 ATK, 15 turns).',
   'ITEM-PLATE': 'Ablative Plate',

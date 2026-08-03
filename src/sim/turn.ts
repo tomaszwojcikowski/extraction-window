@@ -1,7 +1,7 @@
 import { getSector } from '../data/encounters';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { enemyAttack } from './combat';
-import { computeFov, bfsPath } from './fov';
+import { computeFov, bfsPath, playerFovRadius } from './fov';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
@@ -37,7 +37,14 @@ export function finishSectorTransition(state: GameState): void {
   if (state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
   }
-  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  computeFov(
+    state.tiles,
+    state.explored,
+    state.visible,
+    state.player.x,
+    state.player.y,
+    playerFovRadius(state.player.probeTurns),
+  );
   syncObjectiveFlags(state);
   checkLose(state);
 }
@@ -111,7 +118,14 @@ export function endPlayerTurn(state: GameState): void {
   state.turn += 1;
   tickEnvironment(state);
   moveEnemies(state);
-  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  computeFov(
+    state.tiles,
+    state.explored,
+    state.visible,
+    state.player.x,
+    state.player.y,
+    playerFovRadius(state.player.probeTurns),
+  );
   syncObjectiveFlags(state);
   checkLose(state);
 }

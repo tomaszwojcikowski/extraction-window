@@ -2,7 +2,7 @@ import { getSector, type SectorId } from '../data/encounters';
 import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
 import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
-import { computeFov } from './fov';
+import { computeFov, playerFovRadius } from './fov';
 import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './combat';
@@ -83,7 +83,14 @@ export function createGame(seed: number): GameState {
     loreEvents: [],
   };
 
-  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  computeFov(
+    state.tiles,
+    state.explored,
+    state.visible,
+    state.player.x,
+    state.player.y,
+    playerFovRadius(state.player.probeTurns),
+  );
   pushLog(state, 'LOG-DROP');
   syncObjectiveFlags(state);
   return state;
@@ -124,7 +131,14 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     };
   }
 
-  computeFov(state.tiles, state.explored, state.visible, state.player.x, state.player.y);
+  computeFov(
+    state.tiles,
+    state.explored,
+    state.visible,
+    state.player.x,
+    state.player.y,
+    playerFovRadius(state.player.probeTurns),
+  );
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);
