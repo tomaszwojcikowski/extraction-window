@@ -10,9 +10,9 @@ class AudioBus {
   private channels: Partial<Record<BusChannel, GainNode>> = {};
   private muted = false;
   private readonly channelLevels: Record<BusChannel, number> = {
-    sfx: 0.22,
-    ambient: 0.14,
-    music: 0.1,
+    sfx: 0.28,
+    ambient: 0.22,
+    music: 0.32,
   };
   private duckUntil = 0;
 

@@ -10,6 +10,8 @@ import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawLcarsBadge } from '../../scenes/atmosphere';
 import { contextHint } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
+import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
+import { isQuietStance } from '../../sim/mechanics/quietStance';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 4;
@@ -23,6 +25,7 @@ export type HudViewRefs = {
   hudMeta: Phaser.GameObjects.Text;
   objLocalText: Phaser.GameObjects.Text;
   objCampaignText: Phaser.GameObjects.Text;
+  questText: Phaser.GameObjects.Text;
   urgencyText: Phaser.GameObjects.Text;
   milestoneText: Phaser.GameObjects.Text;
   sectorText: Phaser.GameObjects.Text;
@@ -124,9 +127,11 @@ export class HudView {
     const stim = st.player.stimTurns > 0 ? ` S${st.player.stimTurns}` : '';
     const filter = st.player.filterTurns > 0 ? ` F${st.player.filterTurns}` : '';
     const jam = st.player.jammerTurns > 0 ? ` J${st.player.jammerTurns}` : '';
+    const quiet = isQuietStance(st) ? ' Q' : '';
     const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
     const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
-    const activeSys = `${probe}${stim}${filter}${jam}${lens}${map}`;
+    const desync = st.patternDesync > 0 ? ` DS${st.patternDesync}` : '';
+    const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
     const tool = st.player.equip.tool === 'blade' ? `  ${lore('UI-TOOL')}:knife` : '';
     const armorEq =
@@ -163,6 +168,18 @@ export class HudView {
     const desc = describeObjective(st);
     r.objLocalText.setText(lore(desc.local));
     r.objCampaignText.setText(`${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`);
+
+    const questLine = roomQuestHudLine(st);
+    if (questLine) {
+      r.questText.setVisible(true);
+      r.questText.setText(
+        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)}  ${questLine.index}/${questLine.total}`,
+      );
+      r.questText.setColor(st.ui.questFlash > 0 ? ThemeCss.phosphorBright : ThemeCss.quest);
+    } else {
+      r.questText.setVisible(false);
+      r.questText.setText('');
+    }
 
     const stormHot = st.stormTurns <= 80;
     const stormWarn = st.stormTurns <= 200;

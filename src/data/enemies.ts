@@ -15,7 +15,10 @@ export type EnemyKind =
   | 'drone'
   | 'mastling'
   | 'skitter'
-  | 'rift';
+  | 'rift'
+  | 'reef_skitter'
+  | 'duct_drone'
+  | 'shear_wraith';
 
 export type EnemyBehavior =
   | 'wander'
@@ -196,6 +199,42 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     color: 0xff6688,
     behavior: 'hunter',
     aggroRange: 13,
+    damageType: 'ion',
+  },
+  reef_skitter: {
+    kind: 'reef_skitter',
+    loreName: 'ENEMY-REEF-SKITTER',
+    hp: 4,
+    atk: 3,
+    def: 0,
+    glyph: 'r',
+    color: 0x66ddaa,
+    behavior: 'ambush',
+    aggroRange: 8,
+    damageType: 'ion',
+  },
+  duct_drone: {
+    kind: 'duct_drone',
+    loreName: 'ENEMY-DUCT-DRONE',
+    hp: 9,
+    atk: 4,
+    def: 2,
+    glyph: 'd',
+    color: 0x8899aa,
+    behavior: 'sentinel',
+    aggroRange: 5,
+    damageType: 'kinetic',
+  },
+  shear_wraith: {
+    kind: 'shear_wraith',
+    loreName: 'ENEMY-SHEAR-WRAITH',
+    hp: 6,
+    atk: 5,
+    def: 0,
+    glyph: 'H',
+    color: 0xc0e0ff,
+    behavior: 'hunter',
+    aggroRange: 11,
     damageType: 'ion',
   },
 };

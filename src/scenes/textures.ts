@@ -512,5 +512,33 @@ export function registerTextures(scene: Phaser.Scene): void {
     g.fillRect(11, 10, 2, 2);
   });
 
+  paintEnemy('reef_skitter', () => {
+    ink(g, 0x44aa88);
+    g.fillRect(4, 11, 16, 5);
+    g.fillRect(5, 7, 4, 4);
+    g.fillRect(15, 7, 4, 4);
+    ink(g, Theme.ionHazard);
+    g.fillRect(9, 12, 2, 2);
+  });
+
+  paintEnemy('duct_drone', () => {
+    ink(g, 0x708090);
+    g.fillRect(6, 5, 12, 14);
+    ink(g, Theme.phosphorMute);
+    g.fillRect(8, 7, 8, 10);
+    ink(g, Theme.storm);
+    g.fillRect(10, 9, 4, 2);
+  });
+
+  paintEnemy('shear_wraith', () => {
+    ink(g, 0xa8d0f0);
+    g.fillRect(9, 2, 6, 2);
+    g.fillRect(7, 4, 2, 14);
+    g.fillRect(15, 4, 2, 14);
+    g.fillRect(9, 18, 6, 2);
+    ink(g, Theme.danger);
+    g.fillRect(10, 8, 4, 2);
+  });
+
   g.destroy();
 }

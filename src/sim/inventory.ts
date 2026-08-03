@@ -8,6 +8,8 @@ import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
+import { onNavCoreAcquired } from './mechanics/scriptedEvents';
+import { tryClearPatternDesync } from './mechanics/patternBuffer';
 
 const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
@@ -226,6 +228,10 @@ export function useSelected(state: GameState): boolean {
       break;
     }
     case 'coolant':
+      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
+        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
+        break;
+      }
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
@@ -233,6 +239,10 @@ export function useSelected(state: GameState): boolean {
       break;
     case 'battery':
       // Alias of coolant (legacy stacks)
+      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
+        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
+        break;
+      }
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
@@ -284,6 +294,7 @@ export function useSelected(state: GameState): boolean {
       removeOne(state, kind);
       addEmStress(state, 5, 'scrambler');
       pushLog(state, 'LOG-USE-JAMMER');
+      pushLog(state, 'LOG-QUIET-ON');
       break;
     case 'salvage': {
       identifySalvage(state);
@@ -388,6 +399,7 @@ export function tryPickup(state: GameState): void {
     pushLog(state, 'LOG-GOT-CORE');
     recordLoreEvent(state, 'LOG-GOT-CORE');
     gainXp(state, XP_QUEST_ITEM, 'core');
+    onNavCoreAcquired(state);
   }
   syncObjectiveFlags(state);
 }

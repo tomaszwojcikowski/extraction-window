@@ -84,16 +84,46 @@ export interface ObjectiveFlags {
 
 export type PoiKind = 'console' | 'nest' | 'cache_scar';
 
-export type RoomQuestKind = 'salvage' | 'purge' | 'decode' | 'stabilize';
+export type RoomQuestKind =
+  | 'salvage'
+  | 'purge'
+  | 'decode'
+  | 'stabilize'
+  | 'relay_chain'
+  | 'calibrate'
+  | 'vent_seal';
+
+export interface QuestStep {
+  id: string;
+  pos: Pos;
+  room: { x: number; y: number; w: number; h: number };
+  done: boolean;
+  /** Lore id for HUD step prompt */
+  prompt: LoreId;
+}
 
 export interface RoomQuest {
   kind: RoomQuestKind;
+  steps: QuestStep[];
+  stepIndex: number;
+  /**
+   * Active step position — kept in sync with `steps[stepIndex]` for callers.
+   * Prefer `activeQuestStep()` when reading multi-step state.
+   */
   pos: Pos;
   room: { x: number; y: number; w: number; h: number };
-  /** decode wait counter; purge stage 0=idle 1=fighting 2=ready */
+  /** decode wait / purge stage / calibrate timer / relay phase counter */
   stage: number;
   done: boolean;
   spawnedIds: number[];
+}
+
+/** Beacon multi-turn authorization progress. */
+export interface BeaconHandshake {
+  /** Turns spent syncing on the beacon tile (need HANDSHAKE_TURNS). */
+  progress: number;
+  /** True once > was pressed with key on beacon. */
+  active: boolean;
 }
 
 export interface EquipSlots {
@@ -151,6 +181,14 @@ export interface GameState {
   codexLog: LoreId[];
   /** EM contamination 0–100 (ADOM corruption-lite). */
   emStress: number;
+  /** Beacon multi-turn handshake (null when idle / not on beacon sector). */
+  handshake: BeaconHandshake | null;
+  /** Nav Core pattern-buffer desync; shuttle rejects while > 0. */
+  patternDesync: number;
+  /** Scripted event once-flags (event id → fired). */
+  scriptedFired: Record<string, boolean>;
+  /** Turns accrued in approach for shear pulse cadence. */
+  approachShearAcc: number;
   /** In-run PADD modifiers from recovered pages. */
   paddMods: {
     filterBonus: number;
@@ -174,6 +212,8 @@ export interface GameState {
     selectedSlot: number;
     /** After using dart, next move key aims */
     aimingDart: boolean;
+    /** Turns remaining to sticky-flash quest milestone in HUD */
+    questFlash: number;
   };
   nextEntityId: number;
   loreEvents: LoreId[];

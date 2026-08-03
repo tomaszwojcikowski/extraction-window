@@ -31,32 +31,38 @@ Voyager drops an away team for ground survey after long-range subspace array fai
 
 | ID | Name | Notes |
 |----|------|-------|
-| SEC-PLAINS | Drop Zone | Beam-in flats; low threat |
+| SEC-PLAINS | Drop Zone | Beam-in flats; low threat; drop afterglow EM beat |
 | SEC-FLOOD | Ion Floodplain | Standing ion-water; elevated hazard tiles |
 | SEC-CANOPY | Canopy Sector | Dense EM scatter; hunters |
+| SEC-REEF | Nucleonic Reef | Crystal scrub; reef skitters; early multiroom calibrate |
 | SEC-SPIRE | Sensor Mast Reach | Abandoned Starfleet arrays; EM intensifies |
 | SEC-RUIN | Crash Wreck Belt | Prior wreckage; Isolinear Key in caches (guaranteed) |
-| SEC-BEACON | Emergency Beacon | Spend Isolinear Key to open inland path |
+| SEC-BEACON | Emergency Beacon | Sustained Isolinear handshake opens inland path |
 | SEC-TRENCH | Fault Corridor | Inland after seal; deep fauna |
+| SEC-DUCT | EPS Conduit Warren | Vent spines; duct drones; vent-seal quests |
 | SEC-ASH | Radiogenic Ash | Baseline radiation EPS drain |
 | SEC-BRINE | Nucleonic Brine | Ion-brine pools before cache |
-| SEC-VAULT | Contingency Cache | Starfleet depot; spare Nav Core; EM-corrupted sentinels |
+| SEC-VAULT | Contingency Cache | Starfleet depot; spare Nav Core; pattern-buffer hook |
 | SEC-FISSURE | Gravimetric Fissure | Storm pressure climb toward the pad |
-| SEC-RIDGE | Shuttle Ridge | Type-9 pad; win with Core before window = 0 |
+| SEC-APPROACH | Pad Approach | Compact choke; storm shear; pattern stress |
+| SEC-RIDGE | Shuttle Ridge | Type-9 pad; win with synced Core before window = 0 |
 
 **Crash Wreck Belt** — Remains of an earlier Starfleet ground survey that lost array lock and was abandoned. Contingency caches still hold Isolinear Keys for beacon authorization.
 
 **Cache Sentinels** — Automated depot security. EM corruption flipped friend-or-foe; they treat active away gear as hostile.
 
-### One-room quests
+### Room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed).
+Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize (single-site), plus multiroom relay_chain / calibrate / vent_seal. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
 
 ### Hostiles
 
 - **Array Feeder** — EM-fed skirmisher; plasma damage
 - **Fault Skitter** — fast ambush; applies bleed
 - **Fissure Rift** — hunter; plasma + expose
+- **Reef Skitter** — crystal-bank ambush; plasma
+- **Duct Drone** — EPS junction sentinel
+- **Shear Wraith** — approach storm hunter
 
 ### Death drops
 
@@ -85,7 +91,7 @@ Statuses: stun, bleed, plasma burn, expose — tick on turns; HUD glyphs beside 
 
 ## Field audio (synthesized)
 
-Away gear listens to local EM / ion stress. Ambient beds shift by biome. Sparse music densifies as the ion window closes. `m` mutes all buses. Procedural Web Audio only.
+Away gear listens to local EM / ion stress. Ambient drones shift by biome; melodic beds tint to the sector and densify as the ion window closes. Nearby hostiles trigger a combat danger layer. `m` mutes all buses. Procedural Web Audio only.
 
 ---
 

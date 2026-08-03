@@ -116,10 +116,8 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
-    this.events.once('shutdown', () => {
-      ambient.stop();
-      music.stop();
-    });
+    // Do not stop music/ambient here — GameScene takes over beds.
+    // Stopping on shutdown races Phaser start order and kills newly started field music.
   }
 
   private muteLabel(): string {

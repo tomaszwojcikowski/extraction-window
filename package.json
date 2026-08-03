@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/sim tests/map tests/ai",
+    "test:balance": "vitest run tests/balance",
     "playtest": "tsx scripts/playtest.ts",
     "playtest:smoke": "tsx scripts/playtest.ts --smoke",
     "playtest:cohere": "tsx scripts/cohere.ts"
@@ -17,6 +21,7 @@
     "@types/node": "^26.1.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vitest": "^3.2.7"
   }
 }

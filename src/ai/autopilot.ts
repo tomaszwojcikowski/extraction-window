@@ -3,6 +3,7 @@ import {
   bfsPath,
   currentObjectivePos,
   hasItem,
+  mechanicsAutopilotHint,
   type Action,
   type GameState,
 } from '../sim';
@@ -50,6 +51,9 @@ export function chooseAction(state: GameState): Action | null {
     return { type: 'pick_skill', id: state.skillPick[0]! };
   }
 
+  const mechanicHint = mechanicsAutopilotHint(state);
+  if (mechanicHint) return mechanicHint;
+
   // Finish dart aim if already aiming
   if (state.ui.aimingDart) {
     const target = nearestDartTarget(state);
@@ -60,7 +64,7 @@ export function chooseAction(state: GameState): Action | null {
   }
 
   // Heal / recharge aggressively
-  if (state.player.hp <= state.player.maxHp * 0.55) {
+  if (state.player.hp <= state.player.maxHp * 0.65) {
     const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
     const idx = medIdx >= 0 ? medIdx : rationIdx;
@@ -199,18 +203,19 @@ export function chooseAction(state: GameState): Action | null {
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
-  // Safe POI / room quests (skip purge unless healthy; skip nest)
+  // Safe POI / room quests (skip purge unless healthy; skip nest; skip item-gated steps)
   if (tile.kind === 'poi') {
     const rq = state.roomQuest;
     if (rq && !rq.done && x === rq.pos.x && y === rq.pos.y) {
       if (rq.kind === 'purge' && (rq.stage < 2 || state.player.hp < state.player.maxHp * 0.6)) {
-        // skip incomplete/dangerous purge
-      } else if (rq.kind === 'stabilize') {
+        // skip incomplete/dangerous purge — walk away below
+      } else if (rq.kind === 'stabilize' || (rq.kind === 'vent_seal' && rq.stepIndex === 0)) {
         const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant' || s.kind === 'filter');
         if (sIdx >= 0) {
           state.ui.selectedSlot = sIdx;
           return { type: 'use' };
         }
+        // No sealant — abandon this step; fall through to campaign objective
       } else {
         return { type: 'exit' };
       }
@@ -219,28 +224,6 @@ export function chooseAction(state: GameState): Action | null {
       (state.poiKind === 'console' || state.poiKind === 'cache_scar')
     ) {
       return { type: 'exit' };
-    }
-  }
-
-  // Path toward safe room quest when explored and storm comfortable
-  if (
-    state.roomQuest &&
-    !state.roomQuest.done &&
-    state.stormTurns > 200 &&
-    state.roomQuest.kind !== 'purge' &&
-    state.explored[state.roomQuest.pos.y]?.[state.roomQuest.pos.x]
-  ) {
-    const rq = state.roomQuest;
-    if (x !== rq.pos.x || y !== rq.pos.y) {
-      const blocked = (bx: number, by: number) =>
-        state.enemies.some((e) => e.alive && e.x === bx && e.y === by);
-      const path = bfsPath(state.tiles, { x, y }, rq.pos, blocked);
-      if (path && path.length) {
-        const step = path[0]!;
-        const foe = state.enemies.find((e) => e.alive && e.x === step.x && e.y === step.y);
-        if (foe) return { type: 'move', dx: step.x - x, dy: step.y - y };
-        return { type: 'move', dx: step.x - x, dy: step.y - y };
-      }
     }
   }
 

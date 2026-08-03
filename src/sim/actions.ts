@@ -1,11 +1,8 @@
 import { INVENTORY_SLOTS } from '../data/items';
-import { XP_BEACON } from '../data/progression';
 import {
   hasItem,
-  removeOne,
   tryPickup,
   useSelected,
-  syncObjectiveFlags,
   findSlot,
   fireDart,
   addItem,
@@ -14,9 +11,9 @@ import { playerAttack, pushLog, recordLoreEvent } from './combat';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
-import { tryRoomQuest } from './roomQuest';
-import { gainXp, pickSkill } from './progression';
+import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
+import { mechanicsTryAction } from './mechanics';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -64,10 +61,6 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 }
 
 function tryPoi(state: GameState): boolean {
-  if (tryRoomQuest(state)) {
-    endPlayerTurn(state);
-    return true;
-  }
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind !== 'poi' || !state.poiPos || state.poiUsed) return false;
   if (state.player.x !== state.poiPos.x || state.player.y !== state.poiPos.y) return false;
@@ -110,44 +103,17 @@ function tryPoi(state: GameState): boolean {
 }
 
 function tryExit(state: GameState): void {
+  // Mechanics first (room quest, future beacon handshake, …)
+  if (mechanicsTryAction(state, { type: 'exit' })) {
+    endPlayerTurn(state);
+    return;
+  }
   if (tryPoi(state)) return;
 
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
-  if (
-    tile.kind === 'beacon' ||
-    (state.sectorId === 'beacon' &&
-      state.beaconPos &&
-      x === state.beaconPos.x &&
-      y === state.beaconPos.y)
-  ) {
-    if (state.objectives.beaconOpen) {
-      pushLog(state, 'LOG-EXIT-BLOCKED');
-      return;
-    }
-    if (!hasItem(state, 'relay_key')) {
-      pushLog(state, 'LOG-NEED-KEY');
-      endPlayerTurn(state);
-      return;
-    }
-    removeOne(state, 'relay_key');
-    state.objectives.usedRelayKey = true;
-    state.objectives.beaconOpen = true;
-    syncObjectiveFlags(state);
-    pushLog(state, 'LOG-USED-KEY');
-    recordLoreEvent(state, 'LOG-USED-KEY');
-    gainXp(state, XP_BEACON, 'beacon');
-    if (state.exitPos) {
-      state.tiles[state.exitPos.y]![state.exitPos.x] = {
-        kind: 'exit',
-        walkable: true,
-        transparent: true,
-      };
-    }
-    endPlayerTurn(state);
-    return;
-  }
+  // Beacon authorization is owned by beaconHandshake mechanic (multi-turn).
 
   if (
     tile.kind === 'shuttle' ||

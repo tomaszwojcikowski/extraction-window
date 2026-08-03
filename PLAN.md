@@ -14,6 +14,8 @@ Solo turn-based sci-fi roguelike for the browser. **Voyager / Delta Quadrant awa
 
 Starfleet away team from **U.S.S. Voyager** on **Site Theta-7** (Delta Quadrant). Long-range array died mid-drop. Type-9 needs **Nav Core**. Ion storm closes extraction window (turn timer).
 
+Architecture for future mechanics: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 Causal chain:
 1. Tricorder EM agitates local ecology → hostile fauna
 2. Array down → spare Nav Core only in inland Contingency Cache
@@ -25,18 +27,18 @@ Tone: Starfleet field logbook. No medieval/fantasy magic.
 
 Lore bible: `docs/LORE.md` + `src/data/lore.ts`. Every player-facing string maps to a lore entry ID.
 
-## Campaign (12 sectors)
+## Campaign (15 sectors)
 
-Fixed order: Drop Zone → Ion Floodplain → Canopy → Sensor Mast Reach → Crash Wreck Belt → Emergency Beacon → Fault Corridor → Radiogenic Ash → Nucleonic Brine → Contingency Cache → Gravimetric Fissure → Shuttle Ridge / Type-9
+Fixed order: Drop Zone → Ion Floodplain → Canopy → **Nucleonic Reef** → Sensor Mast Reach → Crash Wreck Belt → Emergency Beacon → Fault Corridor → **EPS Conduit Warren** → Radiogenic Ash → Nucleonic Brine → Contingency Cache → Gravimetric Fissure → **Pad Approach** → Shuttle Ridge / Type-9
 
 - Crash Wreck Belt always has Isolinear Key (random placement, reachable)
-- Emergency Beacon: spend key to open inland path
-- Contingency Cache always has Nav Core (reachable)
-- Sector 12 (Shuttle Ridge) Type-9: win if carrying Nav Core before ion window hits 0
+- Emergency Beacon: multi-turn Isolinear handshake (hold pad) to open inland path
+- Contingency Cache always has Nav Core (reachable); pattern buffer may desync under vents/EM
+- Sector 15 (Shuttle Ridge) Type-9: win if carrying synced Nav Core before ion window hits 0
 - Lose: HP≤0, EPS≤0, or window expires
-- Storm budget starts at **500** turns (late sectors tax extra); autopilot win-rate target **~55–75%**
+- Storm budget starts at **700** turns (late sectors tax extra from duct/vault); autopilot win-rate target **55–85%**
 
-Partly procedural per seed: layouts, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy scrub, rubble mazes, vent corridors, vault choke rooms.
+Partly procedural per seed: layouts, room templates, multiroom quests, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy/reef scrub, rubble mazes, vent corridors, vault choke rooms.
 
 ## Mechanics
 
@@ -45,7 +47,8 @@ Partly procedural per seed: layouts, branches, enemy packs, loot, exact objectiv
 - Inventory **16** slots; quest items occupy slots; knife/EVA equip; power cell/coolant two-tier recharge
 - In-run XP/skills (levels 1–8); room quests with window/kit payoffs; mission PADD panel
 - FOV + fog of war
-- ~13 enemy types; biome encounter tables; telegraph punish (pounce/swell)
+- ~16 enemy types; biome encounter tables; telegraph punish (pounce/swell)
+- Mechanics registry: room quests, beacon handshake, quiet stance, pattern buffer, scripted events
 - Seeded RNG (mulberry32)
 
 ## Required layout

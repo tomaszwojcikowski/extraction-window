@@ -10,6 +10,9 @@ See [PLAN.md](./PLAN.md) and [docs/LORE.md](./docs/LORE.md).
 npm install
 npm run dev          # browser UI
 npm run build        # production build
+npm run test         # Vitest: unit + autopilot + balance
+npm run test:unit    # sim / map / autopilot only
+npm run test:balance # win-rate band + lose-mix gates
 npm run playtest:smoke
 npm run playtest:cohere  # static spine/lore coherency
 npm run playtest     # full seed suite → playtest-report.json

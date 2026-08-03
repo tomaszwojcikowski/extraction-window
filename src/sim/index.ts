@@ -18,3 +18,11 @@ export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags } from './inventory';
+export {
+  mechanicsTryAction,
+  mechanicsOnEndTurn,
+  mechanicsContextHint,
+  mechanicsAutopilotHint,
+  mechanicsModifyFov,
+} from './mechanics';
+export type { Mechanic } from './mechanics';

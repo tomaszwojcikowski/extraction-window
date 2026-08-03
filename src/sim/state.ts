@@ -9,6 +9,7 @@ import type { GameState } from './types';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
 import { hasSkill } from './progression';
+import { mechanicsOnSectorEnter } from './mechanics';
 
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   flood: 'LOG-SEC-FLOOD',
@@ -75,9 +76,9 @@ export function createGame(seed: number): GameState {
       equip: { tool: null, armor: null },
     },
     inventory: [
-      { kind: 'med', count: 3 },
-      { kind: 'energy', count: 3 },
-      { kind: 'coolant', count: 1 },
+      { kind: 'med', count: 4 },
+      { kind: 'energy', count: 4 },
+      { kind: 'coolant', count: 2 },
       { kind: 'ration', count: 1 },
       { kind: 'probe', count: 1 },
       { kind: 'stim', count: 1 },
@@ -101,6 +102,10 @@ export function createGame(seed: number): GameState {
     codexPages: 0,
     codexLog: [],
     emStress: 0,
+    handshake: null,
+    patternDesync: 0,
+    scriptedFired: {},
+    approachShearAcc: 0,
     paddMods: {
       filterBonus: 0,
       fovBonus: 0,
@@ -120,7 +125,7 @@ export function createGame(seed: number): GameState {
       beaconOpen: false,
     },
     log: [],
-    ui: { inventoryOpen: false, selectedSlot: 0, aimingDart: false },
+    ui: { inventoryOpen: false, selectedSlot: 0, aimingDart: false, questFlash: 0 },
     nextEntityId: map.nextEntityId,
     loreEvents: [],
   };
@@ -135,6 +140,7 @@ export function createGame(seed: number): GameState {
   );
   pushLog(state, 'LOG-DROP');
   syncObjectiveFlags(state);
+  mechanicsOnSectorEnter(state);
   return state;
 }
 
@@ -167,7 +173,10 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.poiUsed = false;
   state.roomQuest = map.roomQuest;
   state.lootTakenThisSector = false;
+  state.handshake = null;
+  state.approachShearAcc = 0;
   state.ui.aimingDart = false;
+  state.ui.questFlash = 0;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
 
   // If returning somehow to open beacon
@@ -193,4 +202,5 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);
+  mechanicsOnSectorEnter(state);
 }

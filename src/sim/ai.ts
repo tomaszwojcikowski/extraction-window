@@ -17,12 +17,14 @@ function manhattan(ax: number, ay: number, bx: number, by: number): number {
 function effectiveAggro(state: GameState, enemy: Enemy): number {
   const def = ENEMIES[enemy.kind];
   let r = def.aggroRange;
-  if (enemy.kind === 'mite' || enemy.kind === 'wasp' || enemy.kind === 'mastling') {
+  if (enemy.kind === 'mite' || enemy.kind === 'wasp' || enemy.kind === 'mastling' || enemy.kind === 'reef_skitter') {
     r += emAggroBonus(state);
   }
   if (state.sectorId === 'vault' && state.lootTakenThisSector && !state.paddMods.quietVault) {
     if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
   }
+  // Quiet stance (jammer): shrink interest radius
+  if (state.player.jammerTurns > 0) r = Math.max(1, r - 2);
   return r;
 }
 
@@ -147,7 +149,7 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
 function silenced(state: GameState, enemy: Enemy): boolean {
   if (state.player.jammerTurns <= 0) return false;
   const kind = enemy.kind;
-  return kind === 'mite' || kind === 'wasp';
+  return kind === 'mite' || kind === 'wasp' || kind === 'reef_skitter';
 }
 
 /**

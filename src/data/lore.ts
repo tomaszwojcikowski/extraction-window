@@ -43,15 +43,18 @@ export const LORE = {
     'HUD READOUT\n' +
     'HP / SHD / EPS / WINDOW / XP — vitals, shields, power, ion window, proficiency\n' +
     'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant)\n' +
-    'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping)\n' +
+    'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping, Q quiet)\n' +
+    'QUEST — optional away procedure tracker (step text + 1/N); chevron prefers nearby steps\n' +
     'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · p PADD · > exit · ? help · m mute',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'Stand on hatch — press > to advance',
-  'UI-HINT-BEACON': 'Emergency beacon — press > with Isolinear Key',
+  'UI-HINT-BEACON': 'Emergency beacon — press > to start Isolinear handshake',
+  'UI-HINT-HANDSHAKE': 'Handshake syncing — hold position on the beacon',
   'UI-HINT-SHUTTLE': 'Type-9 pad — press > with Nav Core',
+  'UI-HINT-DESYNC': 'Pattern buffer desynced — use EPS Coolant before Type-9 lock',
   'UI-HINT-ITEM': 'Salvage underfoot — press g to recover',
   'UI-HINT-POI': 'Anomaly underfoot — press > to scan',
   'UI-HINT-AIM': 'Aim microdart — press a direction (target must be visible, within 3 tiles)',
@@ -60,6 +63,18 @@ export const LORE = {
   'UI-HINT-USE-ARMOR': 'Shields thin — use Shield Charge plate (u)',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
   'UI-HINT-QUEST': 'Away procedure underfoot — press >',
+  'UI-QUEST-TRACK': 'QUEST',
+  'UI-RQ-SALVAGE': 'Salvage console — press >',
+  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then >',
+  'UI-RQ-DECODE': 'Decode console — hold or spend Tricorder Pulse',
+  'UI-RQ-STABILIZE': 'Stabilize node — use Sealant / Filter',
+  'UI-RQ-RELAY-A': 'Relay mast A — press > to tag chain',
+  'UI-RQ-RELAY-B': 'Tagged cache B — press > to recover packet',
+  'UI-RQ-RELAY-RETURN': 'Return to mast A — press > to close chain',
+  'UI-RQ-CAL-A': 'Calibrate mast A — press > then race to mast B',
+  'UI-RQ-CAL-B': 'Calibrate mast B — press > before sync window closes',
+  'UI-RQ-VENT-A': 'Vent cluster — use Sealant Foam here',
+  'UI-RQ-VENT-B': 'Seal console — press > to lock the warren',
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this away mission.',
   'UI-PAGES-HINT': 'p or esc — close',
@@ -133,6 +148,12 @@ export const LORE = {
     'Fissure brief: ion shear widens cracks — pad approach under rising window tax.',
   'CODEX-VAULT':
     'Cache scrap: spare nav cores were contingency for long-range array blackout events.',
+  'CODEX-REEF':
+    'Reef survey: nucleonic crystal banks scatter tricorder returns — hunters ride the pulse.',
+  'CODEX-DUCT':
+    'Conduit memo: abandoned EPS junctions still vent; duct drones patrol seal points.',
+  'CODEX-APPROACH':
+    'Approach brief: storm shear desyncs nav pattern buffers — coolant before Type-9 lock.',
   'CODEX-GENERIC': 'PADD fragment recovered — Starfleet away hand, incomplete.',
 
   // Items
@@ -157,7 +178,8 @@ export const LORE = {
   'ITEM-FILTER': 'Plasma Filter',
   'ITEM-FILTER-DESC': 'Halves environmental power drain and plasma hits (50 turns).',
   'ITEM-COOLANT': 'EPS Coolant',
-  'ITEM-COOLANT-DESC': 'Heavy recharge — +35 Power. Tier-2 life support.',
+  'ITEM-COOLANT-DESC':
+    'Heavy recharge — +35 Power. Also restabilizes Nav Core pattern buffer when desynced.',
   'ITEM-BLADE': 'Combat Knife',
   'ITEM-BLADE-DESC': 'Equip as tool: +1 ATK while worn.',
   'ITEM-HARNESS': 'EVA Harness',
@@ -165,7 +187,8 @@ export const LORE = {
   'ITEM-DART': 'Plasma Microdart',
   'ITEM-DART-DESC': 'Aim (u then a direction): hit a visible target within 3 tiles — expose + damage.',
   'ITEM-JAMMER': 'EM Scrambler',
-  'ITEM-JAMMER-DESC': 'Short silence — mites/wasps ignore tricorder EM (12 turns).',
+  'ITEM-JAMMER-DESC':
+    'Quiet stance — FOV shrinks, fauna interest drops; mites/wasps/reef skitters silence (12 turns).',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC': 'Neutralize hazard/vent underfoot for this sector visit.',
   'ITEM-BATTERY': 'Reserve EPS Pack',
@@ -193,9 +216,15 @@ export const LORE = {
   'ENEMY-MASTLING': 'Array Feeder',
   'ENEMY-SKITTER': 'Fault Skitter',
   'ENEMY-RIFT': 'Fissure Rift',
+  'ENEMY-REEF-SKITTER': 'Reef Skitter',
+  'ENEMY-DUCT-DRONE': 'Duct Drone',
+  'ENEMY-SHEAR-WRAITH': 'Shear Wraith',
   'ENEMY-MASTLING-NOTE': 'EM-fed — dashes after a short windup.',
   'ENEMY-SKITTER-NOTE': 'Fast ambush — opens wounds on contact.',
   'ENEMY-RIFT-NOTE': 'Ion shear — exposes shield seams.',
+  'ENEMY-REEF-NOTE': 'Crystal-bank ambush — plasma bite.',
+  'ENEMY-DUCT-NOTE': 'EPS junction sentinel — holds seal points.',
+  'ENEMY-SHEAR-NOTE': 'Storm-shear hunter — desync pressure.',
 
   // Logs
   'LOG-DROP':
@@ -290,6 +319,29 @@ export const LORE = {
   'LOG-RQ-CHARGE': 'Anomaly charge — temporary combat/filter systems online.',
   'LOG-CODEX': 'PADD page filed.',
   'LOG-RQ-NEED': 'Anomaly still active — complete the away procedure.',
+  'LOG-RQ-STEP': 'Away procedure step advanced.',
+  'LOG-RQ-RELAY': 'Relay chain closed — packet recovered.',
+  'LOG-RQ-RELAY-AMBUSH': 'Relay ping woke a pack near the tagged cache.',
+  'LOG-RQ-CALIBRATE': 'Dual-mast calibrate locked.',
+  'LOG-RQ-CAL-TICK': 'Calibrate window open — reach mast B.',
+  'LOG-RQ-CAL-FAIL': 'Calibrate window expired — return to mast A.',
+  'LOG-RQ-VENT': 'Vent seal complete — warren pressure dropping.',
+  'LOG-RQ-VENT-SEALED': 'Vent cluster sealed — proceed to seal console.',
+  'LOG-HS-START': 'Beacon handshake started — hold position for sync.',
+  'LOG-HS-TICK': 'Beacon handshake syncing.',
+  'LOG-HS-INTERRUPT': 'Handshake interrupted — left the beacon pad.',
+  'LOG-PB-DESYNC': 'Nav Core pattern buffer desynced — coolant required before Type-9 lock.',
+  'LOG-PB-SYNC': 'Pattern buffer restabilized.',
+  'LOG-PB-REJECT': 'Type-9 rejects lock — pattern buffer still desynced.',
+  'LOG-PB-STRESS': 'Pattern buffer under shear stress.',
+  'LOG-QUIET-ON': 'Quiet stance online — sensors narrowed, fauna interest down.',
+  'LOG-EVT-AFTERGLOW': 'Drop afterglow — residual tricorder EM spike.',
+  'LOG-EVT-SURVEY': 'Prior survey echo — mapper pulse paints a room.',
+  'LOG-EVT-BEACON-TEACH':
+    'Beacon note: Isolinear authorization is a sustained handshake — do not leave the pad.',
+  'LOG-EVT-PATTERN-HOOK': 'Cache warning: Nav Core pattern buffers hate plasma vents and EM.',
+  'LOG-EVT-APPROACH': 'Pad approach — storm shear will pulse; watch the pattern buffer.',
+  'LOG-EVT-SHEAR': 'Storm shear pulse — vent band and EPS tax.',
   'LOG-XP': 'Away proficiency gained.',
   'LOG-LEVEL': 'Away proficiency advanced.',
   'LOG-SKILL': 'Field skill unlocked.',

@@ -10,11 +10,12 @@ export function drawHelpOverlay(
   screenW: number,
   screenH: number,
 ): void {
-  const w = 440;
-  const h = 300;
+  const w = 520;
+  const h = Math.min(520, screenH - 48);
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
   drawLcarsPanel(panel, x, y, w, h, Theme.phosphor);
-  text.setPosition(x + 24, y + 24);
-  text.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC / ? close`);
+  text.setWordWrapWidth(w - 48);
+  text.setPosition(x + 24, y + 22);
+  text.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-BODY')}\n\nESC or ? — close`);
 }

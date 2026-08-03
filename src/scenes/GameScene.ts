@@ -59,6 +59,7 @@ export class GameScene extends Phaser.Scene {
   private hudMeta!: Phaser.GameObjects.Text;
   private objLocalText!: Phaser.GameObjects.Text;
   private objCampaignText!: Phaser.GameObjects.Text;
+  private questText!: Phaser.GameObjects.Text;
   private urgencyText!: Phaser.GameObjects.Text;
   private logText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
@@ -179,8 +180,19 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(92);
 
-    this.urgencyText = this.add
+    this.questText = this.add
       .text(14, 94, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '12px',
+        color: ThemeCss.quest,
+        wordWrap: { width: this.scale.width - 250 },
+      })
+      .setScrollFactor(0)
+      .setDepth(92)
+      .setVisible(false);
+
+    this.urgencyText = this.add
+      .text(14, 110, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.danger,
@@ -190,7 +202,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.milestoneText = this.add
-      .text(14, 94, '', {
+      .text(14, 110, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.quest,
@@ -306,9 +318,9 @@ export class GameScene extends Phaser.Scene {
     this.helpText = this.add
       .text(0, 0, '', {
         fontFamily: FONT_DATA,
-        fontSize: '13px',
+        fontSize: '11px',
         color: ThemeCss.phosphor,
-        lineSpacing: 6,
+        lineSpacing: 3,
       })
       .setScrollFactor(0)
       .setDepth(112)
@@ -331,6 +343,7 @@ export class GameScene extends Phaser.Scene {
       hudMeta: this.hudMeta,
       objLocalText: this.objLocalText,
       objCampaignText: this.objCampaignText,
+      questText: this.questText,
       urgencyText: this.urgencyText,
       milestoneText: this.milestoneText,
       sectorText: this.sectorText,

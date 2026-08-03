@@ -5,7 +5,7 @@ import { XP_ROOM_QUEST } from '../data/progression';
 import { pushLog } from './combat';
 import { gainXp } from './progression';
 import { pick, randInt } from './rng';
-import type { GameState, RoomQuest, RoomQuestKind } from './types';
+import type { GameState, Pos, QuestStep, RoomQuest, RoomQuestKind } from './types';
 
 const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
   spire: 'CODEX-SPIRE',
@@ -13,7 +13,170 @@ const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
   brine: 'CODEX-BRINE',
   fissure: 'CODEX-FISSURE',
   vault: 'CODEX-VAULT',
+  reef: 'CODEX-REEF',
+  duct: 'CODEX-DUCT',
+  approach: 'CODEX-APPROACH',
 };
+
+const CALIBRATE_WINDOW = 12;
+
+export function activeQuestStep(rq: RoomQuest): QuestStep | null {
+  if (rq.done || rq.steps.length === 0) return null;
+  return rq.steps[Math.min(rq.stepIndex, rq.steps.length - 1)] ?? null;
+}
+
+/** Keep legacy `pos` / `room` mirrors pointed at the active step. */
+export function syncQuestActive(rq: RoomQuest): void {
+  const step = rq.steps[Math.min(rq.stepIndex, rq.steps.length - 1)];
+  if (!step) return;
+  rq.pos = { x: step.pos.x, y: step.pos.y };
+  rq.room = { ...step.room };
+}
+
+function makeSingleStep(
+  kind: RoomQuestKind,
+  pos: Pos,
+  room: { x: number; y: number; w: number; h: number },
+  prompt: LoreId,
+): RoomQuest {
+  const step: QuestStep = {
+    id: `${kind}-0`,
+    pos: { ...pos },
+    room: { ...room },
+    done: false,
+    prompt,
+  };
+  return {
+    kind,
+    steps: [step],
+    stepIndex: 0,
+    pos: { ...pos },
+    room: { ...room },
+    stage: 0,
+    done: false,
+    spawnedIds: [],
+  };
+}
+
+export function buildSingleRoomQuest(
+  kind: RoomQuestKind,
+  pos: Pos,
+  room: { x: number; y: number; w: number; h: number },
+): RoomQuest {
+  const prompts: Record<RoomQuestKind, LoreId> = {
+    salvage: 'UI-RQ-SALVAGE',
+    purge: 'UI-RQ-PURGE',
+    decode: 'UI-RQ-DECODE',
+    stabilize: 'UI-RQ-STABILIZE',
+    relay_chain: 'UI-RQ-RELAY-A',
+    calibrate: 'UI-RQ-CAL-A',
+    vent_seal: 'UI-RQ-VENT-A',
+  };
+  return makeSingleStep(kind, pos, room, prompts[kind]);
+}
+
+export function buildMultiRoomQuest(
+  kind: 'relay_chain' | 'calibrate' | 'vent_seal',
+  sites: Array<{ pos: Pos; room: { x: number; y: number; w: number; h: number } }>,
+): RoomQuest {
+  if (kind === 'relay_chain' && sites.length >= 2) {
+    const a = sites[0]!;
+    const b = sites[1]!;
+    const steps: QuestStep[] = [
+      {
+        id: 'relay-a',
+        pos: { ...a.pos },
+        room: { ...a.room },
+        done: false,
+        prompt: 'UI-RQ-RELAY-A',
+      },
+      {
+        id: 'relay-b',
+        pos: { ...b.pos },
+        room: { ...b.room },
+        done: false,
+        prompt: 'UI-RQ-RELAY-B',
+      },
+      {
+        id: 'relay-return',
+        pos: { ...a.pos },
+        room: { ...a.room },
+        done: false,
+        prompt: 'UI-RQ-RELAY-RETURN',
+      },
+    ];
+    const rq: RoomQuest = {
+      kind,
+      steps,
+      stepIndex: 0,
+      pos: { ...a.pos },
+      room: { ...a.room },
+      stage: 0,
+      done: false,
+      spawnedIds: [],
+    };
+    return rq;
+  }
+  if (kind === 'calibrate' && sites.length >= 2) {
+    const a = sites[0]!;
+    const b = sites[1]!;
+    const steps: QuestStep[] = [
+      {
+        id: 'cal-a',
+        pos: { ...a.pos },
+        room: { ...a.room },
+        done: false,
+        prompt: 'UI-RQ-CAL-A',
+      },
+      {
+        id: 'cal-b',
+        pos: { ...b.pos },
+        room: { ...b.room },
+        done: false,
+        prompt: 'UI-RQ-CAL-B',
+      },
+    ];
+    return {
+      kind,
+      steps,
+      stepIndex: 0,
+      pos: { ...a.pos },
+      room: { ...a.room },
+      stage: 0,
+      done: false,
+      spawnedIds: [],
+    };
+  }
+  // vent_seal
+  const a = sites[0]!;
+  const b = sites[1] ?? sites[0]!;
+  const steps: QuestStep[] = [
+    {
+      id: 'vent-a',
+      pos: { ...a.pos },
+      room: { ...a.room },
+      done: false,
+      prompt: 'UI-RQ-VENT-A',
+    },
+    {
+      id: 'vent-b',
+      pos: { ...b.pos },
+      room: { ...b.room },
+      done: false,
+      prompt: 'UI-RQ-VENT-B',
+    },
+  ];
+  return {
+    kind: 'vent_seal',
+    steps,
+    stepIndex: 0,
+    pos: { ...a.pos },
+    room: { ...a.room },
+    stage: 0,
+    done: false,
+    spawnedIds: [],
+  };
+}
 
 function addLoot(state: GameState, kind: ItemKind): void {
   if (kind === 'battery') kind = 'coolant';
@@ -63,6 +226,19 @@ function applyPaddModifier(state: GameState, page: LoreId): void {
       state.player.def += 1;
       pushLog(state, 'LOG-PADD-MOD', '+1 DEF');
       break;
+    case 'CODEX-REEF':
+      state.paddMods.fovBonus = Math.max(state.paddMods.fovBonus, 1);
+      purgeEmViaPadd(state);
+      pushLog(state, 'LOG-PADD-MOD', 'reef FOV');
+      break;
+    case 'CODEX-DUCT':
+      state.stormTurns += 10;
+      pushLog(state, 'LOG-PADD-MOD', '+10 window');
+      break;
+    case 'CODEX-APPROACH':
+      state.player.filterTurns = Math.max(state.player.filterTurns, 20);
+      pushLog(state, 'LOG-PADD-MOD', 'filter pulse');
+      break;
     default:
       purgeEmViaPadd(state);
       break;
@@ -90,13 +266,8 @@ function grantQuestPayoff(state: GameState, tier: 'basic' | 'good'): void {
   addLoot(state, pick(state.rng, unique));
 }
 
-function inRoom(rq: RoomQuest, x: number, y: number): boolean {
-  return (
-    x >= rq.room.x &&
-    y >= rq.room.y &&
-    x < rq.room.x + rq.room.w &&
-    y < rq.room.y + rq.room.h
-  );
+function inRoom(room: { x: number; y: number; w: number; h: number }, x: number, y: number): boolean {
+  return x >= room.x && y >= room.y && x < room.x + room.w && y < room.y + room.h;
 }
 
 function spawnPurgeHostiles(state: GameState): void {
@@ -156,12 +327,79 @@ function finishQuestLoot(state: GameState, better: boolean): void {
   grantCodex(state);
 }
 
-/** Call after player moves — purge wake / decode tick. */
+function flashQuestStep(state: GameState): void {
+  state.ui.questFlash = Math.max(state.ui.questFlash, 4);
+}
+
+function advanceStep(state: GameState): void {
+  const rq = state.roomQuest;
+  if (!rq || rq.done) return;
+  const cur = rq.steps[rq.stepIndex];
+  if (cur) cur.done = true;
+  flashQuestStep(state);
+  if (rq.stepIndex + 1 >= rq.steps.length) {
+    completeMultiQuest(state);
+    return;
+  }
+  rq.stepIndex += 1;
+  syncQuestActive(rq);
+  pushLog(state, 'LOG-RQ-STEP', `${rq.stepIndex + 1}/${rq.steps.length}`);
+}
+
+function completeMultiQuest(state: GameState): void {
+  const rq = state.roomQuest;
+  if (!rq || rq.done) return;
+  rq.done = true;
+  const better = rq.kind === 'relay_chain' || rq.kind === 'calibrate' || rq.kind === 'vent_seal';
+  if (rq.kind === 'relay_chain') pushLog(state, 'LOG-RQ-RELAY');
+  else if (rq.kind === 'calibrate') pushLog(state, 'LOG-RQ-CALIBRATE');
+  else if (rq.kind === 'vent_seal') pushLog(state, 'LOG-RQ-VENT');
+  finishQuestLoot(state, better);
+  clearAllQuestTiles(state);
+}
+
+/** Spawn a weak pack near the next step — used by scriptedEvents on relay step1. */
+export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
+  const rq = state.roomQuest;
+  if (!rq) return;
+  const kinds = ['mite', 'reef_skitter'] as const;
+  const n = randInt(state.rng, 1, 2);
+  for (let i = 0; i < n; i++) {
+    const kind = pick(state.rng, [...kinds]);
+    const def = ENEMIES[kind];
+    const ox = i === 0 ? 1 : -1;
+    const x = Math.max(1, Math.min(state.width - 2, near.x + ox));
+    const y = near.y;
+    if (!state.tiles[y]?.[x]?.walkable) continue;
+    state.enemies.push({
+      id: state.nextEntityId++,
+      kind,
+      x,
+      y,
+      hp: def.hp,
+      maxHp: def.hp,
+      atk: def.atk,
+      def: def.def,
+      alive: true,
+      statuses: {},
+      alerted: true,
+      swellTurns: 0,
+      homeX: x,
+      homeY: y,
+      skirmishRetreat: false,
+      windup: 0,
+    });
+  }
+  pushLog(state, 'LOG-RQ-RELAY-AMBUSH');
+}
+
+/** Call after player moves — purge wake / decode tick / calibrate timer. */
 export function tickRoomQuest(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq || rq.done) return;
+  syncQuestActive(rq);
 
-  if (rq.kind === 'purge' && rq.stage === 0 && inRoom(rq, state.player.x, state.player.y)) {
+  if (rq.kind === 'purge' && rq.stage === 0 && inRoom(rq.room, state.player.x, state.player.y)) {
     spawnPurgeHostiles(state);
   }
   if (rq.kind === 'purge' && rq.stage === 1 && purgeCleared(state)) {
@@ -177,39 +415,64 @@ export function tickRoomQuest(state: GameState): void {
     if (rq.stage < 3) pushLog(state, 'LOG-RQ-DECODE-TICK', `${rq.stage}/3`);
     else completeDecode(state);
   }
+
+  // Calibrate soft timer after mast A locked
+  if (rq.kind === 'calibrate' && rq.stepIndex === 1 && rq.stage > 0) {
+    rq.stage -= 1;
+    if (rq.stage <= 0) {
+      pushLog(state, 'LOG-RQ-CAL-FAIL');
+      rq.stepIndex = 0;
+      rq.stage = 0;
+      if (rq.steps[0]) rq.steps[0].done = false;
+      if (rq.steps[1]) rq.steps[1].done = false;
+      syncQuestActive(rq);
+    }
+  }
 }
 
 function completeDecode(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq || rq.done) return;
   rq.done = true;
+  if (rq.steps[0]) rq.steps[0].done = true;
   pushLog(state, 'LOG-RQ-DECODE');
   grantQuestPayoff(state, 'good');
   grantCodex(state);
-  clearQuestTile(state);
+  clearAllQuestTiles(state);
 }
 
-function clearQuestTile(state: GameState): void {
+function clearAllQuestTiles(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq) return;
-  state.tiles[rq.pos.y]![rq.pos.x] = {
-    kind: 'floor',
-    walkable: true,
-    transparent: true,
-  };
+  const seen = new Set<string>();
+  for (const step of rq.steps) {
+    const key = `${step.pos.x},${step.pos.y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const t = state.tiles[step.pos.y]?.[step.pos.x];
+    if (t && t.kind === 'poi') {
+      state.tiles[step.pos.y]![step.pos.x] = {
+        kind: 'floor',
+        walkable: true,
+        transparent: true,
+      };
+    }
+  }
 }
 
 /** Interact with room-quest console via > */
 export function tryRoomQuest(state: GameState): boolean {
   const rq = state.roomQuest;
   if (!rq || rq.done) return false;
+  syncQuestActive(rq);
   if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
 
   if (rq.kind === 'salvage') {
     rq.done = true;
+    if (rq.steps[0]) rq.steps[0].done = true;
     pushLog(state, 'LOG-RQ-SALVAGE');
     finishQuestLoot(state, false);
-    clearQuestTile(state);
+    clearAllQuestTiles(state);
     return true;
   }
   if (rq.kind === 'purge') {
@@ -218,14 +481,14 @@ export function tryRoomQuest(state: GameState): boolean {
       return true;
     }
     rq.done = true;
+    if (rq.steps[0]) rq.steps[0].done = true;
     pushLog(state, 'LOG-RQ-PURGE');
     finishQuestLoot(state, true);
-    clearQuestTile(state);
+    clearAllQuestTiles(state);
     return true;
   }
   if (rq.kind === 'decode') {
     if (rq.stage >= 3 || rq.done) return false;
-    // Spend probe to finish immediately
     const pIdx = state.inventory.findIndex((s) => s.kind === 'probe');
     if (pIdx >= 0) {
       const slot = state.inventory[pIdx]!;
@@ -241,15 +504,54 @@ export function tryRoomQuest(state: GameState): boolean {
     pushLog(state, 'LOG-RQ-NEED');
     return true;
   }
+  if (rq.kind === 'relay_chain') {
+    advanceStep(state);
+    return true;
+  }
+  if (rq.kind === 'calibrate') {
+    if (rq.stepIndex === 0) {
+      advanceStep(state);
+      rq.stage = CALIBRATE_WINDOW;
+      pushLog(state, 'LOG-RQ-CAL-TICK', `${CALIBRATE_WINDOW}`);
+      return true;
+    }
+    // mast B within window
+    advanceStep(state);
+    return true;
+  }
+  if (rq.kind === 'vent_seal') {
+    if (rq.stepIndex === 0) {
+      pushLog(state, 'LOG-RQ-NEED');
+      return true;
+    }
+    advanceStep(state);
+    return true;
+  }
   return false;
 }
 
-/** Sealant/filter used on stabilize quest tile. */
+/** Sealant/filter used on stabilize quest tile, or vent_seal step 0. */
 export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filter'): boolean {
   const rq = state.roomQuest;
-  if (!rq || rq.done || rq.kind !== 'stabilize') return false;
+  if (!rq || rq.done) return false;
+  syncQuestActive(rq);
+
+  if (rq.kind === 'vent_seal' && rq.stepIndex === 0) {
+    if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
+    if (withKind !== 'sealant') {
+      pushLog(state, 'LOG-RQ-NEED');
+      return false;
+    }
+    advanceStep(state);
+    pushLog(state, 'LOG-RQ-VENT-SEALED');
+    void withKind;
+    return true;
+  }
+
+  if (rq.kind !== 'stabilize') return false;
   if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
   rq.done = true;
+  if (rq.steps[0]) rq.steps[0].done = true;
   state.player.armor = state.player.maxArmor;
   state.player.stabilizeTurns = Math.max(state.player.stabilizeTurns, 30);
   state.emStress = Math.max(0, state.emStress - 35);
@@ -257,12 +559,30 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
   pushLog(state, 'LOG-EM-PURGE', '-35');
   grantQuestPayoff(state, 'good');
   grantCodex(state);
-  clearQuestTile(state);
+  clearAllQuestTiles(state);
   void withKind;
   return true;
 }
 
 export function pickRoomQuestKind(rng: () => number): RoomQuestKind {
-  const kinds: RoomQuestKind[] = ['salvage', 'purge', 'decode', 'stabilize'];
+  const kinds: RoomQuestKind[] = [
+    'salvage',
+    'purge',
+    'decode',
+    'stabilize',
+    'relay_chain',
+    'calibrate',
+    'vent_seal',
+  ];
   return kinds[Math.floor(rng() * kinds.length)]!;
+}
+
+export function isMultiSiteKind(kind: RoomQuestKind): boolean {
+  return kind === 'relay_chain' || kind === 'calibrate' || kind === 'vent_seal';
+}
+
+export function questStepPrompt(rq: RoomQuest): LoreId | null {
+  if (rq.done) return null;
+  const step = activeQuestStep(rq);
+  return step?.prompt ?? null;
 }

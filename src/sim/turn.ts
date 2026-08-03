@@ -61,8 +61,11 @@ function tickEnvironment(state: GameState): void {
   if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
   }
-  // Late-sector storm tax — window closes faster from ash onward (index 9+)
-  if (sector.index >= 9 && state.turn % 2 === 0) {
+  // Late-sector storm tax — duct onward (index 8+); vault+ every turn
+  if (sector.index >= 8 && state.turn % 2 === 0) {
+    state.stormTurns -= 1;
+  }
+  if (sector.index >= 11) {
     state.stormTurns -= 1;
   }
 

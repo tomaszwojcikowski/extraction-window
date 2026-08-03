@@ -56,18 +56,20 @@ export function describeObjective(state: GameState): ObjectiveDesc {
   let local: LoreId = 'OBJ-LOCAL-EXIT';
 
   const rq = state.roomQuest;
+  const step = rq && !rq.done ? rq.steps[rq.stepIndex] : null;
+  const questDist = step
+    ? Math.abs(state.player.x - step.pos.x) + Math.abs(state.player.y - step.pos.y)
+    : 999;
   const preferRoom =
-    rq &&
-    !rq.done &&
+    step &&
     state.exitPos &&
     pos &&
     pos.x === state.exitPos.x &&
     pos.y === state.exitPos.y &&
-    (state.explored[rq.pos.y]?.[rq.pos.x] ||
-      Math.abs(state.player.x - rq.pos.x) + Math.abs(state.player.y - rq.pos.y) <= 2);
+    (state.explored[step.pos.y]?.[step.pos.x] || questDist <= 6);
 
-  if (preferRoom) {
-    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: rq!.pos };
+  if (preferRoom && step) {
+    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: step.pos };
   }
 
   if (state.sectorId === 'ruin' && !state.objectives.hasRelayKey) {

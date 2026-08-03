@@ -56,6 +56,18 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'mapper', weight: 1 },
     { kind: 'filter', weight: 1 },
   ],
+  reef_skitter: [
+    { kind: 'energy', weight: 2 },
+    { kind: 'probe', weight: 1 },
+  ],
+  duct_drone: [
+    { kind: 'sealant', weight: 2 },
+    { kind: 'jammer', weight: 1 },
+  ],
+  shear_wraith: [
+    { kind: 'coolant', weight: 2 },
+    { kind: 'filter', weight: 1 },
+  ],
 };
 
 /** Drop chance by sector depth (early softer). */

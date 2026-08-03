@@ -4,7 +4,14 @@ import type { ItemKind } from '../data/items';
 import type { Enemy, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
-import { pickRoomQuestKind } from '../sim/roomQuest';
+import {
+  buildMultiRoomQuest,
+  buildSingleRoomQuest,
+  isMultiSiteKind,
+  pickRoomQuestKind,
+} from '../sim/roomQuest';
+
+type RoomTemplate = 'chamber' | 'gallery' | 'machine' | 'cross' | 'cache';
 
 export interface Room {
   x: number;
@@ -216,6 +223,96 @@ function dressBiomeTerrain(
   }
 }
 
+function pickRoomTemplate(id: SectorDef['id'], rng: Rng): RoomTemplate {
+  const roll = rng();
+  switch (id) {
+    case 'reef':
+      return roll < 0.55 ? 'gallery' : roll < 0.8 ? 'chamber' : 'cross';
+    case 'duct':
+      return roll < 0.5 ? 'machine' : roll < 0.75 ? 'cross' : 'cache';
+    case 'vault':
+      return roll < 0.45 ? 'cache' : roll < 0.75 ? 'chamber' : 'machine';
+    case 'approach':
+      return roll < 0.55 ? 'cross' : roll < 0.8 ? 'chamber' : 'machine';
+    case 'canopy':
+    case 'spire':
+      return roll < 0.4 ? 'gallery' : roll < 0.7 ? 'chamber' : 'cross';
+    default:
+      if (roll < 0.25) return 'chamber';
+      if (roll < 0.45) return 'gallery';
+      if (roll < 0.65) return 'machine';
+      if (roll < 0.85) return 'cross';
+      return 'cache';
+  }
+}
+
+/** Landmark + internal props per room — keep walkability. */
+function dressRoomTemplate(
+  tiles: Tile[][],
+  room: Room,
+  template: RoomTemplate,
+  rng: Rng,
+  start: Pos,
+  exit: Pos,
+): void {
+  const placeIfFloor = (x: number, y: number, tile: Tile) => {
+    if (x === start.x && y === start.y) return;
+    if (x === exit.x && y === exit.y) return;
+    if (tiles[y]?.[x]?.kind === 'floor') tiles[y]![x] = tile;
+  };
+
+  if (template === 'chamber') {
+    placeIfFloor(room.cx, room.cy, poiTile());
+    return;
+  }
+  if (template === 'gallery') {
+    for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+      const x = room.x + 1 + ((y - room.y) % Math.max(2, room.w - 2));
+      if (x > room.x && x < room.x + room.w - 1) placeIfFloor(x, y, scrub(true));
+    }
+    placeIfFloor(room.cx, room.cy, poiTile());
+    return;
+  }
+  if (template === 'machine') {
+    const wallY = room.y + 1;
+    for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+      if (rng() < 0.55) placeIfFloor(x, wallY, vent());
+    }
+    placeIfFloor(room.cx, room.cy, poiTile());
+    return;
+  }
+  if (template === 'cross') {
+    // Stub arms — short corridors already exist; add rubble choke near center
+    placeIfFloor(room.cx + 1, room.cy, rubble());
+    placeIfFloor(room.cx - 1, room.cy, rubble());
+    placeIfFloor(room.cx, room.cy, poiTile());
+    return;
+  }
+  // cache — guaranteed loot pile later; rubble choke near door-ish edge
+  placeIfFloor(room.x + 1, room.cy, rubble());
+  placeIfFloor(room.cx, room.cy, poiTile());
+}
+
+function dressAllRoomTemplates(
+  tiles: Tile[][],
+  rooms: Room[],
+  sector: SectorDef,
+  rng: Rng,
+  start: Pos,
+  exit: Pos,
+): void {
+  for (let i = 0; i < rooms.length; i++) {
+    const room = rooms[i]!;
+    if (room.w < 4 || room.h < 3) continue;
+    // Skip tiny alcoves
+    if (i === 0 || i === rooms.length - 1) {
+      if (rng() > 0.35) continue;
+    }
+    const tpl = pickRoomTemplate(sector.id, rng);
+    dressRoomTemplate(tiles, room, tpl, rng, start, exit);
+  }
+}
+
 function roomOverlaps(a: Room, b: Room, pad = 1): boolean {
   return !(
     a.x + a.w + pad <= b.x ||
@@ -343,6 +440,8 @@ export function generateSectorMap(
     exit = { x: rooms[1]!.cx, y: rooms[1]!.cy };
   }
 
+  dressAllRoomTemplates(tiles, rooms, sector, rng, start, exit);
+
   let beaconPos: Pos | null = null;
   let shuttlePos: Pos | null = null;
   let poiPos: Pos | null = null;
@@ -414,29 +513,80 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
-  // One-room quest — prefer early/mid spine rooms so autopilot geodesic can hit them
-  if (rooms.length >= 3 && rng() < 0.7) {
-    const maxSide = Math.max(1, Math.min(rooms.length - 2, Math.ceil(rooms.length * 0.55)));
-    const sideIdx = randInt(rng, 1, maxSide);
-    const side = rooms[sideIdx]!;
-    // Skip if this is start/end room
-    if (side !== startRoom && side !== endRoom) {
+  // Optional room quest — single-site or 2-site multiroom (~55–70%)
+  const questChance = sector.index >= 3 && sector.index <= 12 ? 0.68 : 0.58;
+  if (rooms.length >= 3 && rng() < questChance) {
+    const midRooms = rooms.filter((r, i) => i > 0 && i < rooms.length - 1 && r !== startRoom && r !== endRoom);
+    const candidates = midRooms.length >= 1 ? midRooms : rooms.slice(1, -1);
+    const kind = pickRoomQuestKind(rng);
+
+    if (isMultiSiteKind(kind) && candidates.length >= 2) {
+      const multiKind = kind as 'relay_chain' | 'calibrate' | 'vent_seal';
+      const shuffled = shuffle(rng, [...candidates]);
+      const aRoom = shuffled[0]!;
+      let bRoom: Room | null = null;
+      for (let i = 1; i < shuffled.length; i++) {
+        const cand = shuffled[i]!;
+        const aPos = { x: aRoom.cx, y: aRoom.cy };
+        const bPos = { x: cand.cx, y: cand.cy };
+        if (
+          canReach(tiles, start, aPos) &&
+          canReach(tiles, aPos, bPos) &&
+          !(aPos.x === exit.x && aPos.y === exit.y) &&
+          !(bPos.x === exit.x && bPos.y === exit.y)
+        ) {
+          bRoom = cand;
+          break;
+        }
+      }
+      if (bRoom) {
+        // Prefer a vent tile in room A for vent_seal
+        let aPos = { x: aRoom.cx, y: aRoom.cy };
+        if (multiKind === 'vent_seal') {
+          let found: Pos | null = null;
+          for (let y = aRoom.y; y < aRoom.y + aRoom.h && !found; y++) {
+            for (let x = aRoom.x; x < aRoom.x + aRoom.w; x++) {
+              if (tiles[y]?.[x]?.kind === 'vent') {
+                found = { x, y };
+                break;
+              }
+            }
+          }
+          if (found) aPos = found;
+          else {
+            tiles[aPos.y]![aPos.x] = vent();
+          }
+        }
+        const bPos = { x: bRoom.cx, y: bRoom.cy };
+        tiles[aPos.y]![aPos.x] = poiTile();
+        tiles[bPos.y]![bPos.x] = poiTile();
+        specials.push(aPos, bPos);
+        roomQuest = buildMultiRoomQuest(multiKind, [
+          { pos: aPos, room: { x: aRoom.x, y: aRoom.y, w: aRoom.w, h: aRoom.h } },
+          { pos: bPos, room: { x: bRoom.x, y: bRoom.y, w: bRoom.w, h: bRoom.h } },
+        ]);
+      }
+    }
+
+    if (!roomQuest && candidates.length >= 1) {
+      const side = pick(rng, candidates);
       const pos = { x: side.cx, y: side.cy };
       if (
         canReach(tiles, start, pos) &&
         !(pos.x === exit.x && pos.y === exit.y) &&
         !(pos.x === start.x && pos.y === start.y)
       ) {
+        const singleKind = isMultiSiteKind(kind)
+          ? pick(rng, ['salvage', 'purge', 'decode', 'stabilize'] as const)
+          : kind;
         tiles[pos.y]![pos.x] = poiTile();
         specials.push(pos);
-        roomQuest = {
-          kind: pickRoomQuestKind(rng),
-          pos,
-          room: { x: side.x, y: side.y, w: side.w, h: side.h },
-          stage: 0,
-          done: false,
-          spawnedIds: [],
-        };
+        roomQuest = buildSingleRoomQuest(singleKind, pos, {
+          x: side.x,
+          y: side.y,
+          w: side.w,
+          h: side.h,
+        });
       }
     }
   }
@@ -488,7 +638,7 @@ export function generateSectorMap(
     if (rng() > 0.28) continue;
     const kind = pick(rng, sector.enemyTable);
     const def = ENEMIES[kind];
-    const scale = 1 + sector.index * 0.05;
+    const scale = 1 + sector.index * 0.035;
     enemies.push({
       id: nextEntityId++,
       kind,
@@ -517,7 +667,11 @@ export function generateSectorMap(
     if (sector.isShuttle && shuttlePos) tiles[shuttlePos.y]![shuttlePos.x] = shuttleTile();
     else tiles[exit.y]![exit.x] = exitTile();
     if (poiPos && poiKind) tiles[poiPos.y]![poiPos.x] = poiTile();
-    if (roomQuest) tiles[roomQuest.pos.y]![roomQuest.pos.x] = poiTile();
+    if (roomQuest) {
+      for (const step of roomQuest.steps) {
+        tiles[step.pos.y]![step.pos.x] = poiTile();
+      }
+    }
   }
   for (const it of items) {
     if ((it.kind === 'relay_key' || it.kind === 'nav_core') && !canReach(tiles, start, it)) {
