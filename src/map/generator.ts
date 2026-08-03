@@ -109,12 +109,15 @@ function roomSizeForBiome(id: SectorDef['id'], rng: Rng): { w: number; h: number
     case 'flood':
       return { w: randInt(rng, 6, 11), h: randInt(rng, 5, 9) };
     case 'ridge':
+    case 'approach':
       return { w: randInt(rng, 4, 7), h: randInt(rng, 3, 5) };
     case 'canopy':
     case 'spire':
+    case 'reef':
       return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 8) };
     case 'ruin':
     case 'trench':
+    case 'duct':
       return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 7) };
     default:
       return { w: randInt(rng, 5, 10), h: randInt(rng, 4, 8) };
@@ -123,8 +126,9 @@ function roomSizeForBiome(id: SectorDef['id'], rng: Rng): { w: number; h: number
 
 function corridorWideChance(id: SectorDef['id']): number {
   if (id === 'flood' || id === 'vault') return 0.12; // choke bridges / tight halls
-  if (id === 'ridge') return 0.2;
-  if (id === 'canopy' || id === 'spire') return 0.25;
+  if (id === 'ridge' || id === 'approach') return 0.2;
+  if (id === 'canopy' || id === 'spire' || id === 'reef') return 0.25;
+  if (id === 'duct') return 0.18;
   return 0.35;
 }
 
@@ -139,7 +143,7 @@ function dressBiomeTerrain(
   const height = tiles.length;
   const width = tiles[0]!.length;
 
-  const blockScrub = id === 'canopy' || id === 'spire';
+  const blockScrub = id === 'canopy' || id === 'spire' || id === 'reef';
 
   // Base sparse dressing
   for (let y = 1; y < height - 1; y++) {
@@ -172,7 +176,7 @@ function dressBiomeTerrain(
     }
   }
 
-  if (id === 'canopy' || id === 'spire') {
+  if (id === 'canopy' || id === 'spire' || id === 'reef') {
     // Longer scrub sight-blockers along room edges
     for (const room of rooms) {
       for (let x = room.x; x < room.x + room.w; x++) {
@@ -183,7 +187,7 @@ function dressBiomeTerrain(
     }
   }
 
-  if (id === 'ruin' || id === 'trench') {
+  if (id === 'ruin' || id === 'trench' || id === 'duct') {
     // Rubble maze pockets
     for (const room of rooms) {
       if (rng() > 0.5) continue;
@@ -197,7 +201,7 @@ function dressBiomeTerrain(
     }
   }
 
-  if (id === 'ash' || id === 'brine' || id === 'fissure') {
+  if (id === 'ash' || id === 'brine' || id === 'fissure' || id === 'duct') {
     // Vent corridors between adjacent rooms
     for (let i = 0; i + 1 < rooms.length; i++) {
       const a = rooms[i]!;

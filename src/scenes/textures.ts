@@ -84,6 +84,15 @@ export function registerTextures(scene: Phaser.Scene): void {
         g.fillRect(x + 1, y + 1, 1, 2);
       }
     },
+    reef: (v) => {
+      ink(g, Theme.phosphorDim, 0.55);
+      for (let i = 0; i < 9; i++) {
+        const px = 3 + ((i * 5 + v * 4) % (T - 6));
+        const py = 3 + ((i * 7 + v * 3) % (T - 6));
+        g.fillRect(px, py, 2, 2);
+        if (i % 3 === 0) g.fillRect(px + 1, py - 1, 1, 1);
+      }
+    },
     spire: (v) => {
       ink(g, Theme.phosphorDim, 0.55);
       for (let x = 5 + v; x < T - 4; x += 6) {
@@ -116,6 +125,15 @@ export function registerTextures(scene: Phaser.Scene): void {
         g.fillRect(4, y + 1, T - 8, 1);
       }
     },
+    duct: (v) => {
+      ink(g, Theme.phosphorMute, 0.7);
+      for (let x = 4 + v; x < T - 4; x += 5) {
+        g.fillRect(x, 3, 1, T - 6);
+        g.fillRect(x - 1, 8 + v, 3, 1);
+      }
+      ink(g, Theme.ionHazardDeep, 0.35);
+      g.fillRect(6, 10 + v, T - 12, 1);
+    },
     ash: (v) => {
       ink(g, Theme.phosphorMute, 0.8);
       for (let i = 0; i < 14; i++) {
@@ -146,6 +164,16 @@ export function registerTextures(scene: Phaser.Scene): void {
         const y = 4 + ((i * 2 + v * 3) % (T - 8));
         g.fillRect(i, y, 1, 2);
       }
+    },
+    approach: (v) => {
+      ink(g, Theme.phosphorMute, 0.7);
+      for (let i = 0; i < T; i++) {
+        const y = 4 + ((i * 3 + v * 2) % (T - 8));
+        g.fillRect(i, y, 1, 1);
+        g.fillRect((i + 2) % T, y + 2, 1, 1);
+      }
+      ink(g, Theme.storm, 0.25);
+      g.fillRect(5 + v, 5, T - 10, 1);
     },
     ridge: (v) => {
       ink(g, Theme.phosphorMute, 0.65);

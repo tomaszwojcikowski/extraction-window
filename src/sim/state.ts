@@ -13,14 +13,17 @@ import { hasSkill } from './progression';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   flood: 'LOG-SEC-FLOOD',
   canopy: 'LOG-SEC-CANOPY',
+  reef: 'LOG-SEC-REEF',
   spire: 'LOG-SEC-SPIRE',
   ruin: 'LOG-SEC-RUIN',
   beacon: 'LOG-SEC-BEACON',
   trench: 'LOG-SEC-TRENCH',
+  duct: 'LOG-SEC-DUCT',
   ash: 'LOG-SEC-ASH',
   brine: 'LOG-SEC-BRINE',
   vault: 'LOG-SEC-VAULT',
   fissure: 'LOG-SEC-FISSURE',
+  approach: 'LOG-SEC-APPROACH',
   ridge: 'LOG-SEC-RIDGE',
 };
 

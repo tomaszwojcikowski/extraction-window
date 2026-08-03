@@ -14,6 +14,11 @@ export const LORE = {
   'UI-HP': 'Vitals',
   'UI-ENERGY': 'EPS power',
   'UI-WINDOW': 'Ion window',
+  'UI-BAR-HP': 'HP',
+  'UI-BAR-SHD': 'SHD',
+  'UI-BAR-EPS': 'EPS',
+  'UI-BAR-WINDOW': 'WINDOW',
+  'UI-BAR-XP': 'XP',
   'UI-SECTOR': 'Sector',
   'UI-ATK': 'ATK',
   'UI-DEF': 'DEF',
@@ -22,7 +27,25 @@ export const LORE = {
   'UI-OBJECTIVE': 'Objective',
   'UI-HELP': 'Away team manual',
   'UI-HELP-BODY':
-    'MOVE  WASD / arrows\nWAIT  . (period)\nGET   g  — recover ground salvage\nKIT   i  — open away kit\nUSE   u  — use selected kit item\nSLOT  1–9 / ↑↓ while kit open\nEXIT  > or =  — hatch / beacon / shuttle / anomaly\nPADD  p  — mission PADD pages for this ID\nSKILL 1/2 — pick field skill when prompted\nDART  u then direction — aim plasma microdart\nHELP  ?  — this manual\nMUTE  m  — toggle sound\nESC   close panels',
+    'MOVE    WASD or arrow keys — one tile per turn\n' +
+    'WAIT    . (period) — hold position, time still passes\n' +
+    'GET     g — pick up salvage under your boots\n' +
+    'KIT     i — open away kit; ↑↓ or 1–9 to select; esc closes\n' +
+    'USE     u — use the selected kit item\n' +
+    'EXIT    > or = — hatch, beacon, Type-9 pad, or anomaly\n' +
+    'PADD    p — mission notes recovered this run\n' +
+    'SKILL   1 or 2 — choose a field skill when prompted (move locked until then)\n' +
+    'DART    u on Microdart, then a direction — hits a seen target within 3 tiles\n' +
+    'HELP    ? — this manual\n' +
+    'MUTE    m — toggle sound\n' +
+    'ESC     close kit / PADD / help (opens help if nothing is open)\n' +
+    '\n' +
+    'HUD READOUT\n' +
+    'HP / SHD / EPS / WINDOW / XP — vitals, shields, power, ion window, proficiency\n' +
+    'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant)\n' +
+    'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping)\n' +
+    'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
+    'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · p PADD · > exit · ? help · m mute',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
@@ -31,14 +54,15 @@ export const LORE = {
   'UI-HINT-SHUTTLE': 'Type-9 pad — press > with Nav Core',
   'UI-HINT-ITEM': 'Salvage underfoot — press g to recover',
   'UI-HINT-POI': 'Anomaly underfoot — press > to scan',
-  'UI-HINT-AIM': 'Aim microdart — press a direction (Chebyshev ≤3)',
+  'UI-HINT-AIM': 'Aim microdart — press a direction (target must be visible, within 3 tiles)',
   'UI-HINT-USE-MED': 'Vitals critical — open kit (i) and use Hypospray (u)',
   'UI-HINT-USE-ENERGY': 'EPS low — open kit (i) and use Power Cell / Coolant (u)',
   'UI-HINT-USE-ARMOR': 'Shields thin — use Shield Charge plate (u)',
+  'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
   'UI-HINT-QUEST': 'Away procedure underfoot — press >',
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this away mission.',
-  'UI-PAGES-HINT': 'p / esc close',
+  'UI-PAGES-HINT': 'p or esc — close',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective / proficiency',
   'UI-QUEST-KEY': 'KEY',
@@ -85,14 +109,17 @@ export const LORE = {
   'SEC-PLAINS': 'Drop Zone',
   'SEC-FLOOD': 'Ion Floodplain',
   'SEC-CANOPY': 'Canopy Sector',
+  'SEC-REEF': 'Nucleonic Reef',
   'SEC-SPIRE': 'Sensor Mast Reach',
   'SEC-RUIN': 'Crash Wreck Belt',
   'SEC-BEACON': 'Emergency Beacon',
   'SEC-TRENCH': 'Fault Corridor',
+  'SEC-DUCT': 'EPS Conduit Warren',
   'SEC-ASH': 'Radiogenic Ash',
   'SEC-BRINE': 'Nucleonic Brine',
   'SEC-VAULT': 'Contingency Cache',
   'SEC-FISSURE': 'Gravimetric Fissure',
+  'SEC-APPROACH': 'Pad Approach',
   'SEC-RIDGE': 'Shuttle Ridge',
 
   // Codex (in-run PADD pages)
@@ -120,7 +147,7 @@ export const LORE = {
   'ITEM-RATION': 'Replicated Ration',
   'ITEM-RATION-DESC': 'Emergency both — +8 HP and +8 Power. Not a full heal.',
   'ITEM-PROBE': 'Tricorder Pulse',
-  'ITEM-PROBE-DESC': 'Temporary ATK boost and extended sensor FOV (+3).',
+  'ITEM-PROBE-DESC': 'Temporary attack boost and wider sensor range (+3).',
   'ITEM-STIM': 'Combat Stim',
   'ITEM-STIM-DESC': 'Short ATK surge (+3 ATK, 15 turns).',
   'ITEM-PLATE': 'Shield Charge',
@@ -136,7 +163,7 @@ export const LORE = {
   'ITEM-HARNESS': 'EVA Harness',
   'ITEM-HARNESS-DESC': 'Equip as suit: +6 max shields and refill pool.',
   'ITEM-DART': 'Plasma Microdart',
-  'ITEM-DART-DESC': 'Aim (u then direction): hit FOV target ≤3 — expose + damage.',
+  'ITEM-DART-DESC': 'Aim (u then a direction): hit a visible target within 3 tiles — expose + damage.',
   'ITEM-JAMMER': 'EM Scrambler',
   'ITEM-JAMMER-DESC': 'Short silence — mites/wasps ignore tricorder EM (12 turns).',
   'ITEM-SEALANT': 'Sealant Foam',
@@ -146,7 +173,7 @@ export const LORE = {
   'ITEM-PATCH': 'Dermal Seal',
   'ITEM-PATCH-DESC': 'Clears bleed status and restores +8 HP. Not a substitute for Hypospray.',
   'ITEM-LENS': 'Tricorder Lens',
-  'ITEM-LENS-DESC': 'Wide sensor ranging — extended FOV for 25 turns.',
+  'ITEM-LENS-DESC': 'Wide sensor ranging — extended sight for 25 turns.',
   'ITEM-MAPPER': 'Nav Ping',
   'ITEM-MAPPER-DESC': 'Sensor ping — chevron to sector hatch for 40 turns (even unexplored).',
   'ITEM-SALVAGE': 'Unknown Salvage',
@@ -199,7 +226,7 @@ export const LORE = {
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
-  'LOG-AIM-MISS': 'Microdart spent — no valid FOV target.',
+  'LOG-AIM-MISS': 'Microdart spent — no valid visible target in range.',
   'LOG-USE-FAIL': 'No usable item selected.',
   'LOG-DRAIN': 'EPS siphoned.',
   'LOG-SPORE-BURST': 'Plasma spore burst — power spike and burn.',
@@ -223,6 +250,8 @@ export const LORE = {
     'Ion Floodplain. Standing ion-water sheets the flats — EPS will feel every step.',
   'LOG-SEC-CANOPY':
     'Canopy Sector. Dense EM scatter under the leaf decks — hunters stalk warm gear.',
+  'LOG-SEC-REEF':
+    'Nucleonic Reef. Crystal scatter and scrub banks — EM hunters ride the reef pulse.',
   'LOG-SEC-SPIRE':
     'Sensor Mast Reach. Abandoned Starfleet arrays still hum — array feeders drink residual EM.',
   'LOG-SEC-RUIN':
@@ -230,6 +259,8 @@ export const LORE = {
   'LOG-SEC-BEACON': 'Emergency Beacon hub. Authorize with Isolinear Key to unseal inland path.',
   'LOG-SEC-TRENCH':
     'Fault Corridor. Inland after seal — cut rock, deep fauna, no Voyager cover.',
+  'LOG-SEC-DUCT':
+    'EPS Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
   'LOG-SEC-ASH': 'Radiogenic Ash. Baseline radiation — EPS drain elevated.',
   'LOG-SEC-BRINE':
     'Nucleonic Brine. Ion-brine pools lace the shelf — hazard density spikes before the cache.',
@@ -237,6 +268,8 @@ export const LORE = {
     'Contingency Cache. Starfleet depot. Sentinels are site defense — EM-corrupted, still hostile.',
   'LOG-SEC-FISSURE':
     'Gravimetric Fissure. Ion shear opens the rock — window tax rising; pad still inland.',
+  'LOG-SEC-APPROACH':
+    'Pad Approach. Storm shear over the final choke — Type-9 ridge ahead.',
   'LOG-SEC-RIDGE': 'Shuttle Ridge. Type-9 pad ahead — Nav Core required for lock.',
   'LOG-EXIT-BLOCKED': 'Hatch sealed.',
   'LOG-HAZARD': 'Ion hazard — EPS drain.',

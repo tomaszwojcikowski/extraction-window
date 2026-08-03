@@ -6,14 +6,17 @@ export type SectorId =
   | 'plains'
   | 'flood'
   | 'canopy'
+  | 'reef'
   | 'spire'
   | 'ruin'
   | 'beacon'
   | 'trench'
+  | 'duct'
   | 'ash'
   | 'brine'
   | 'vault'
   | 'fissure'
+  | 'approach'
   | 'ridge';
 
 export interface SectorDef {
@@ -133,8 +136,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
-    id: 'spire',
+    id: 'reef',
     index: 3,
+    loreName: 'SEC-REEF',
+    width: 44,
+    height: 30,
+    roomCount: [6, 8],
+    enemyTable: ['stalker', 'wasp', 'mastling', 'spore'],
+    enemyCount: [3, 5],
+    lootTable: [...FIELD_LOOT, 'probe', 'jammer', 'lens'],
+    lootCount: [3, 5],
+    hazardChance: 0.03,
+    scrubChance: 0.16,
+    rubbleChance: 0.025,
+    ventChance: 0.02,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
+    id: 'spire',
+    index: 4,
     loreName: 'SEC-SPIRE',
     width: 42,
     height: 28,
@@ -155,7 +179,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'ruin',
-    index: 4,
+    index: 5,
     loreName: 'SEC-RUIN',
     width: 44,
     height: 30,
@@ -176,7 +200,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'beacon',
-    index: 5,
+    index: 6,
     loreName: 'SEC-BEACON',
     width: 34,
     height: 24,
@@ -197,7 +221,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'trench',
-    index: 6,
+    index: 7,
     loreName: 'SEC-TRENCH',
     width: 40,
     height: 28,
@@ -217,8 +241,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
+    id: 'duct',
+    index: 8,
+    loreName: 'SEC-DUCT',
+    width: 40,
+    height: 28,
+    roomCount: [5, 8],
+    enemyTable: ['drone', 'crawler', 'skitter', 'wasp'],
+    enemyCount: [3, 5],
+    lootTable: [...FIELD_LOOT, 'sealant', 'filter', 'coolant', 'patch', 'plate'],
+    lootCount: [3, 5],
+    hazardChance: 0.02,
+    scrubChance: 0.01,
+    rubbleChance: 0.12,
+    ventChance: 0.12,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
     id: 'ash',
-    index: 7,
+    index: 9,
     loreName: 'SEC-ASH',
     width: 42,
     height: 30,
@@ -239,7 +284,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'brine',
-    index: 8,
+    index: 10,
     loreName: 'SEC-BRINE',
     width: 42,
     height: 28,
@@ -260,7 +305,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'vault',
-    index: 9,
+    index: 11,
     loreName: 'SEC-VAULT',
     width: 38,
     height: 26,
@@ -281,7 +326,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'fissure',
-    index: 10,
+    index: 12,
     loreName: 'SEC-FISSURE',
     width: 38,
     height: 26,
@@ -301,8 +346,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
+    id: 'approach',
+    index: 13,
+    loreName: 'SEC-APPROACH',
+    width: 36,
+    height: 24,
+    roomCount: [4, 5],
+    enemyTable: ['serpent', 'wraith', 'crawler', 'rift'],
+    enemyCount: [2, 4],
+    lootTable: ['med', 'energy', 'coolant', 'stim', 'filter', 'plate'],
+    lootCount: [2, 4],
+    hazardChance: 0.035,
+    scrubChance: 0.02,
+    rubbleChance: 0.08,
+    ventChance: 0.05,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
     id: 'ridge',
-    index: 11,
+    index: 14,
     loreName: 'SEC-RIDGE',
     width: 36,
     height: 24,

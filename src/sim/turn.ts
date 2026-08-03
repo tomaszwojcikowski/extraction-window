@@ -7,15 +7,15 @@ import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { addStatus, tickPlayerStatusEffects } from './status';
-import { tickRoomQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax } from './emStress';
+import { mechanicsOnEndTurn, mechanicsModifyFov } from './mechanics';
 import type { GameState } from './types';
 
 function fovR(state: GameState): number {
-  return (
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus
-  );
+  const base =
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns) + state.paddMods.fovBonus;
+  return mechanicsModifyFov(state, base);
 }
 
 export function checkLose(state: GameState): void {
@@ -61,8 +61,8 @@ function tickEnvironment(state: GameState): void {
   if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
   }
-  // Late-sector storm tax — window closes faster inland
-  if (sector.index >= 7 && state.turn % 2 === 0) {
+  // Late-sector storm tax — window closes faster from ash onward (index 9+)
+  if (sector.index >= 9 && state.turn % 2 === 0) {
     state.stormTurns -= 1;
   }
 
@@ -99,7 +99,7 @@ function tickEnvironment(state: GameState): void {
   if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
 
   tickPlayerStatusEffects(state);
-  tickRoomQuest(state);
+  mechanicsOnEndTurn(state);
 }
 
 export function endPlayerTurn(state: GameState): void {

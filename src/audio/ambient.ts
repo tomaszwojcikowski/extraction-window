@@ -35,6 +35,13 @@ const PRESETS: Record<SectorId, AmbientPreset> = {
       { freq: 110, type: 'sine', vol: 0.015, lfoHz: 0.2, lfoDepth: 8 },
     ],
   },
+  reef: {
+    drones: [
+      { freq: 78, type: 'sine', vol: 0.032, lfoHz: 0.22, lfoDepth: 11 },
+      { freq: 156, type: 'triangle', vol: 0.012 },
+    ],
+    noise: { vol: 0.01, filterHz: 750 },
+  },
   spire: {
     drones: [
       { freq: 88, type: 'sine', vol: 0.032, lfoHz: 0.18, lfoDepth: 10 },
@@ -61,6 +68,13 @@ const PRESETS: Record<SectorId, AmbientPreset> = {
     ],
     noise: { vol: 0.012, filterHz: 350 },
   },
+  duct: {
+    drones: [
+      { freq: 54, type: 'sine', vol: 0.036 },
+      { freq: 108, type: 'square', vol: 0.008, lfoHz: 0.09, lfoDepth: 5 },
+    ],
+    noise: { vol: 0.014, filterHz: 450 },
+  },
   ash: {
     drones: [{ freq: 42, type: 'sawtooth', vol: 0.01 }],
     noise: { vol: 0.028, filterHz: 900 },
@@ -82,6 +96,13 @@ const PRESETS: Record<SectorId, AmbientPreset> = {
       { freq: 104, type: 'sine', vol: 0.028, lfoHz: 0.11, lfoDepth: 6 },
     ],
     noise: { vol: 0.016, filterHz: 700 },
+  },
+  approach: {
+    drones: [
+      { freq: 60, type: 'sawtooth', vol: 0.012 },
+      { freq: 120, type: 'sine', vol: 0.03, lfoHz: 0.16, lfoDepth: 8 },
+    ],
+    noise: { vol: 0.018, filterHz: 650 },
   },
   ridge: {
     drones: [
