@@ -14,6 +14,7 @@ import {
   TILE_DRAW,
   enemyTextureKey,
 } from './textures';
+import { createBiomeAtmosphere } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 
@@ -40,6 +41,7 @@ export class GameScene extends Phaser.Scene {
   private playerSprite!: Phaser.GameObjects.Image;
   private enemyViews = new Map<number, EnemyView>();
   private animating = false;
+  private atmo: Phaser.GameObjects.Particles.ParticleEmitter | null = null;
 
   private topPanel!: Phaser.GameObjects.Graphics;
   private bottomPanel!: Phaser.GameObjects.Graphics;
@@ -235,16 +237,27 @@ export class GameScene extends Phaser.Scene {
     const w = this.scale.width;
     const h = this.scale.height;
     this.topPanel.clear();
-    this.topPanel.fillStyle(0x0a1018, 0.97);
+    this.topPanel.fillStyle(0x080e16, 0.98);
     this.topPanel.fillRect(0, 0, w, TOP);
-    this.topPanel.lineStyle(2, 0x3a90c0, 0.5);
+    this.topPanel.fillStyle(0x122030, 0.5);
+    this.topPanel.fillRect(0, TOP - 10, w, 10);
+    this.topPanel.lineStyle(2, 0x4ab0e0, 0.65);
     this.topPanel.lineBetween(0, TOP - 1, w, TOP - 1);
+    this.topPanel.lineStyle(1, 0x1a3040, 0.8);
+    this.topPanel.lineBetween(0, 0, w, 0);
 
     this.bottomPanel.clear();
-    this.bottomPanel.fillStyle(0x0a1018, 0.97);
+    this.bottomPanel.fillStyle(0x080e16, 0.98);
     this.bottomPanel.fillRect(0, h - BOTTOM, w, BOTTOM);
-    this.bottomPanel.lineStyle(2, 0x3a90c0, 0.5);
+    this.bottomPanel.fillStyle(0x122030, 0.45);
+    this.bottomPanel.fillRect(0, h - BOTTOM, w, 10);
+    this.bottomPanel.lineStyle(2, 0x4ab0e0, 0.65);
     this.bottomPanel.lineBetween(0, h - BOTTOM + 1, w, h - BOTTOM + 1);
+  }
+
+  private rebuildAtmosphere(): void {
+    this.atmo?.destroy();
+    this.atmo = createBiomeAtmosphere(this, this.state.sectorId, 85);
   }
 
   private buildMapSprites(): void {
@@ -277,7 +290,7 @@ export class GameScene extends Phaser.Scene {
         const img = this.add.image(
           x * TILE_DRAW + TILE_DRAW / 2,
           y * TILE_DRAW + TILE_DRAW / 2,
-          this.tileKey(kind),
+          this.tileKey(kind, x, y),
         );
         img.setDisplaySize(TILE_DRAW, TILE_DRAW);
         if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
@@ -286,12 +299,15 @@ export class GameScene extends Phaser.Scene {
       }
     }
     this.snapImg(this.playerSprite, this.state.player.x, this.state.player.y);
+    this.rebuildAtmosphere();
   }
 
-  private tileKey(kind: string): string {
+  private tileKey(kind: string, x = 0, y = 0): string {
     switch (kind) {
-      case 'wall':
-        return 't_wall';
+      case 'wall': {
+        const v = (x * 3 + y * 7 + this.state.seed) % 2;
+        return v === 0 ? 't_wall' : 't_wall_1';
+      }
       case 'hazard':
         return 't_hazard';
       case 'scrub':
@@ -308,6 +324,10 @@ export class GameScene extends Phaser.Scene {
         return 't_shuttle';
       case 'poi':
         return 't_poi';
+      case 'floor': {
+        const v = (x + y * 3 + this.state.seed) % 3;
+        return `t_floor_${v}`;
+      }
       default:
         return 't_floor';
     }
@@ -809,7 +829,7 @@ export class GameScene extends Phaser.Scene {
           continue;
         }
 
-        img.setTexture(this.tileKey(kind));
+        img.setTexture(this.tileKey(kind, x, y));
         if (st.visible[y]![x]) {
           if (kind === 'floor' || kind === 'scrub' || kind === 'rubble') img.setTint(tint);
           else img.clearTint();

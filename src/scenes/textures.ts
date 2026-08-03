@@ -64,6 +64,52 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(T - 2, 2, 1, T - 3);
   g.fillRect(2, T - 2, T - 3, 1);
   bake('t_floor');
+  bake('t_floor_0');
+
+  // Floor variant 1 — subtle speckles
+  g.clear();
+  g.fillStyle(0x0a1018, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x2c3a4a, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x3a4858, 1);
+  g.fillRect(1, 1, T - 2, 1);
+  g.fillStyle(0x243040, 1);
+  g.fillRect(5, 7, 1, 1);
+  g.fillRect(14, 11, 1, 1);
+  g.fillRect(9, 16, 1, 1);
+  g.fillRect(18, 5, 1, 1);
+  bake('t_floor_1');
+
+  // Floor variant 2 — faint seam
+  g.clear();
+  g.fillStyle(0x0a1018, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x283848, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x1e2a38, 1);
+  g.fillRect(11, 2, 1, T - 4);
+  g.fillStyle(0x3a4858, 1);
+  g.fillRect(1, 1, 1, T - 2);
+  bake('t_floor_2');
+
+  // Wall variant — riveted panel
+  g.clear();
+  g.fillStyle(0x05070c, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x445060, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x6a7588, 1);
+  g.fillRect(2, 2, T - 4, 2);
+  g.fillStyle(0x2a3038, 1);
+  g.fillRect(4, 8, 3, 3);
+  g.fillRect(T - 7, 8, 3, 3);
+  g.fillRect(4, T - 8, 3, 3);
+  g.fillRect(T - 7, T - 8, 3, 3);
+  g.fillStyle(0x9aa5b8, 1);
+  g.fillRect(5, 9, 1, 1);
+  g.fillRect(T - 6, 9, 1, 1);
+  bake('t_wall_1');
 
   // Scrub — teal vegetation tufts
   g.clear();
@@ -108,6 +154,29 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(5, 5, T - 10, 1);
   bake('t_vent');
 
+  // Vent animation frames
+  g.clear();
+  g.fillStyle(0x081018, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x203040, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x50c0e0, 1);
+  g.fillRect(4, 5, T - 8, 3);
+  g.fillRect(4, 11, T - 8, 3);
+  g.fillRect(4, 17, T - 8, 3);
+  bake('t_vent_1');
+
+  g.clear();
+  g.fillStyle(0x081018, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x203040, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x30a0c0, 1);
+  g.fillRect(4, 3, T - 8, 3);
+  g.fillRect(4, 9, T - 8, 3);
+  g.fillRect(4, 15, T - 8, 3);
+  bake('t_vent_2');
+
   // --- Hazard: hot magenta warning ---
   g.clear();
   g.fillStyle(0x1a0820, 1);
@@ -121,7 +190,33 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillStyle(0x401060, 1);
   g.fillRect(2, 2, 3, 3);
   g.fillRect(T - 5, T - 5, 3, 3);
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(10, 5, 4, 1);
+  g.fillRect(11, 6, 2, 8);
   bake('t_hazard');
+
+  // Hazard frame 1/2 for later animation
+  g.clear();
+  g.fillStyle(0x1a0820, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x9028c0, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0xff60ff, 1);
+  g.fillRect(5, 5, T - 10, T - 10);
+  g.fillStyle(0xffe0ff, 1);
+  g.fillRect(9, 9, T - 18, T - 18);
+  bake('t_hazard_1');
+
+  g.clear();
+  g.fillStyle(0x1a0820, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x7018a0, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0xe030e0, 1);
+  g.fillRect(4, 4, T - 8, T - 8);
+  g.fillStyle(0xffa0ff, 1);
+  g.fillRect(8, 8, T - 16, T - 16);
+  bake('t_hazard_2');
 
   // --- Exit: bright green hatch ---
   g.clear();
@@ -152,6 +247,32 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(6, 16, 12, 4);
   bake('t_beacon');
 
+  g.clear();
+  g.fillStyle(0x081828, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x2870b0, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x60e0ff, 1);
+  g.fillRect(9, 2, 6, 15);
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(10, 4, 4, 5);
+  g.fillStyle(0x80e0ff, 1);
+  g.fillRect(5, 16, 14, 4);
+  bake('t_beacon_1');
+
+  g.clear();
+  g.fillStyle(0x081828, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x185090, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0x30a0e0, 1);
+  g.fillRect(9, 4, 6, 13);
+  g.fillStyle(0xc0f0ff, 1);
+  g.fillRect(10, 6, 4, 3);
+  g.fillStyle(0x60c0e0, 1);
+  g.fillRect(6, 16, 12, 4);
+  bake('t_beacon_2');
+
   // --- Shuttle: lime landing pad ---
   g.clear();
   g.fillStyle(0x102008, 1);
@@ -177,6 +298,30 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillStyle(0xffe080, 1);
   g.fillRect(11, 9, 2, 2);
   bake('t_poi');
+
+  g.clear();
+  g.fillStyle(0x181008, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x907028, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0xffb030, 1);
+  g.fillRect(10, 3, 4, 14);
+  g.fillRect(5, 8, 14, 4);
+  g.fillStyle(0xfff0a0, 1);
+  g.fillRect(11, 9, 2, 2);
+  bake('t_poi_1');
+
+  g.clear();
+  g.fillStyle(0x181008, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x705018, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0xe09018, 1);
+  g.fillRect(10, 5, 4, 10);
+  g.fillRect(7, 8, 10, 4);
+  g.fillStyle(0xffd070, 1);
+  g.fillRect(11, 9, 2, 2);
+  bake('t_poi_2');
 
   // Fog — near-black with faint noise grain
   g.clear();

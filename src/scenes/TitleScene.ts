@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { FONT } from './textures';
+import { drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
 export class TitleScene extends Phaser.Scene {
@@ -17,22 +18,8 @@ export class TitleScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.cameras.main.setBackgroundColor(0x07090e);
 
-    // Atmosphere — layered panels
     const bg = this.add.graphics();
-    bg.fillStyle(0x0c121c, 1);
-    bg.fillRect(0, 0, width, height);
-    bg.fillStyle(0x101820, 1);
-    bg.fillRect(40, 48, width - 80, height - 96);
-    bg.lineStyle(1, 0x2a3a4a, 1);
-    bg.strokeRect(40.5, 48.5, width - 81, height - 97);
-    bg.lineStyle(1, 0x5ec8ff, 0.35);
-    bg.strokeRect(48.5, 56.5, width - 97, height - 113);
-
-    // Scanline accent
-    for (let y = 60; y < height - 60; y += 4) {
-      bg.fillStyle(0x5ec8ff, 0.015);
-      bg.fillRect(50, y, width - 100, 1);
-    }
+    drawMenuChrome(this, bg, width, height);
 
     this.add
       .text(width / 2, height * 0.22, lore('UI-ORG'), {

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
 import { FONT } from './textures';
+import { drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
 export class EndScene extends Phaser.Scene {
@@ -59,10 +60,7 @@ export class EndScene extends Phaser.Scene {
     }
 
     const g = this.add.graphics();
-    g.fillStyle(0x0c121c, 1);
-    g.fillRect(0, 0, width, height);
-    g.fillStyle(0x101820, 1);
-    g.fillRect(60, 70, width - 120, height - 140);
+    drawMenuChrome(this, g, width, height, accent);
     g.lineStyle(1, accent, 0.55);
     g.strokeRect(60.5, 70.5, width - 121, height - 141);
 
