@@ -16,7 +16,11 @@ export type ItemKind =
   | 'harness'
   | 'dart'
   | 'jammer'
-  | 'sealant';
+  | 'sealant'
+  | 'battery'
+  | 'patch'
+  | 'lens'
+  | 'mapper';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -136,6 +140,34 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'sealant',
     loreName: 'ITEM-SEALANT',
     loreDesc: 'ITEM-SEALANT-DESC',
+    quest: false,
+    stackable: true,
+  },
+  battery: {
+    kind: 'battery',
+    loreName: 'ITEM-BATTERY',
+    loreDesc: 'ITEM-BATTERY-DESC',
+    quest: false,
+    stackable: true,
+  },
+  patch: {
+    kind: 'patch',
+    loreName: 'ITEM-PATCH',
+    loreDesc: 'ITEM-PATCH-DESC',
+    quest: false,
+    stackable: true,
+  },
+  lens: {
+    kind: 'lens',
+    loreName: 'ITEM-LENS',
+    loreDesc: 'ITEM-LENS-DESC',
+    quest: false,
+    stackable: true,
+  },
+  mapper: {
+    kind: 'mapper',
+    loreName: 'ITEM-MAPPER',
+    loreDesc: 'ITEM-MAPPER-DESC',
     quest: false,
     stackable: true,
   },

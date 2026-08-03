@@ -13,6 +13,7 @@ import { playerAttack, pushLog, recordLoreEvent } from './combat';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
+import { tryRoomQuest, tickRoomQuest } from './roomQuest';
 import type { Action, Enemy, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -60,6 +61,10 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 }
 
 function tryPoi(state: GameState): boolean {
+  if (tryRoomQuest(state)) {
+    endPlayerTurn(state);
+    return true;
+  }
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind !== 'poi' || !state.poiPos || state.poiUsed) return false;
   if (state.player.x !== state.poiPos.x || state.player.y !== state.poiPos.y) return false;

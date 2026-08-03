@@ -1,0 +1,65 @@
+import type { EnemyKind } from './enemies';
+import type { ItemKind } from './items';
+
+/** Weighted drop tables per enemy kind. Never includes quest items. */
+export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: number }>> = {
+  mite: [{ kind: 'ration', weight: 2 }],
+  spore: [
+    { kind: 'energy', weight: 2 },
+    { kind: 'filter', weight: 1 },
+  ],
+  wasp: [
+    { kind: 'dart', weight: 2 },
+    { kind: 'energy', weight: 1 },
+  ],
+  stalker: [
+    { kind: 'med', weight: 2 },
+    { kind: 'stim', weight: 1 },
+  ],
+  leech: [
+    { kind: 'filter', weight: 2 },
+    { kind: 'coolant', weight: 1 },
+  ],
+  crawler: [
+    { kind: 'plate', weight: 2 },
+    { kind: 'ration', weight: 1 },
+  ],
+  sentinel: [
+    { kind: 'plate', weight: 2 },
+    { kind: 'filter', weight: 2 },
+    { kind: 'battery', weight: 1 },
+  ],
+  serpent: [
+    { kind: 'energy', weight: 2 },
+    { kind: 'patch', weight: 1 },
+  ],
+  wraith: [
+    { kind: 'energy', weight: 2 },
+    { kind: 'filter', weight: 2 },
+  ],
+  drone: [
+    { kind: 'jammer', weight: 2 },
+    { kind: 'coolant', weight: 2 },
+  ],
+  mastling: [
+    { kind: 'probe', weight: 2 },
+    { kind: 'jammer', weight: 1 },
+    { kind: 'lens', weight: 1 },
+  ],
+  skitter: [
+    { kind: 'patch', weight: 2 },
+    { kind: 'med', weight: 1 },
+  ],
+  rift: [
+    { kind: 'battery', weight: 2 },
+    { kind: 'mapper', weight: 1 },
+    { kind: 'filter', weight: 1 },
+  ],
+};
+
+/** Drop chance by sector depth (early softer). */
+export function dropChance(sectorIndex: number): number {
+  if (sectorIndex < 3) return 0.22;
+  if (sectorIndex < 6) return 0.35;
+  return 0.42;
+}

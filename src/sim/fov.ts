@@ -134,10 +134,13 @@ export function fovDistance(ox: number, oy: number, x: number, y: number): numbe
 }
 
 /**
- * Sight radius for the current player buffs (probe extends RF ranging).
+ * Sight radius for the current player buffs (probe / lens extend RF ranging).
  */
-export function playerFovRadius(probeTurns: number): number {
-  return probeTurns > 0 ? FOV_RADIUS + 3 : FOV_RADIUS;
+export function playerFovRadius(probeTurns: number, lensTurns = 0): number {
+  let r = FOV_RADIUS;
+  if (probeTurns > 0) r += 3;
+  if (lensTurns > 0) r += 4;
+  return r;
 }
 
 export function bfsPath(

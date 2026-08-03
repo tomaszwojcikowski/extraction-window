@@ -68,7 +68,9 @@ export const LORE = {
   'OBJ-LOCAL-BEACON': '→ Beacon console',
   'OBJ-LOCAL-CORE': '→ Nav Core',
   'OBJ-LOCAL-SHUTTLE': '→ Shuttle pad',
+  'OBJ-LOCAL-ROOM': '→ Room anomaly',
   'HAZ-STORM': 'Ion storm turn budget remaining.',
+  'UI-CODEX': 'Pages',
 
   // Sectors
   'SEC-PLAINS': 'Survey Plains',
@@ -83,6 +85,14 @@ export const LORE = {
   'SEC-VAULT': 'Cache Vault',
   'SEC-FISSURE': 'Fissure March',
   'SEC-RIDGE': 'Ridge Approaches',
+
+  // Codex (in-run expedition pages)
+  'CODEX-SPIRE': 'Spire logs: Helix mast arrays kept RF ranging warm — fauna learned the beat.',
+  'CODEX-TRENCH': 'Trench note: inland seal lift exposed fault fauna packs nesting in cut rock.',
+  'CODEX-BRINE': 'Brine sample: ion salts amplify hazard tiles; filters buy minutes, not hours.',
+  'CODEX-FISSURE': 'Fissure brief: storm shear widens cracks — pad approach under rising window tax.',
+  'CODEX-VAULT': 'Vault scrap: spare Nav Cores were contingency for orbital blackout events.',
+  'CODEX-GENERIC': 'Field page recovered — Helix surveyor hand, incomplete.',
 
   // Items
   'ITEM-RELAY-KEY': 'Relay Key',
@@ -117,6 +127,14 @@ export const LORE = {
   'ITEM-JAMMER-DESC': 'Short silence — mites/wasps ignore survey RF (12 turns).',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC': 'Neutralize hazard/vent underfoot for this sector visit.',
+  'ITEM-BATTERY': 'Reserve Battery',
+  'ITEM-BATTERY-DESC': 'Heavy life-support top-up (+35 Energy).',
+  'ITEM-PATCH': 'Bleed Patch',
+  'ITEM-PATCH-DESC': 'Clears bleed and restores minor vitals (+8 HP).',
+  'ITEM-LENS': 'Survey Lens',
+  'ITEM-LENS-DESC': 'Wide RF ranging — extended FOV for 25 turns.',
+  'ITEM-MAPPER': 'Path Mapper',
+  'ITEM-MAPPER-DESC': 'Survey ping — chevron to sector exit for 40 turns (even unexplored).',
 
   // Enemies
   'ENEMY-MITE': 'Signal Mite',
@@ -129,6 +147,12 @@ export const LORE = {
   'ENEMY-SERPENT': 'Ion Serpent',
   'ENEMY-WRAITH': 'Ash Ion Wraith',
   'ENEMY-DRONE': 'Vault Drone',
+  'ENEMY-MASTLING': 'Spire Mastling',
+  'ENEMY-SKITTER': 'Fault Skitter',
+  'ENEMY-RIFT': 'Fissure Rift',
+  'ENEMY-MASTLING-NOTE': 'RF-fed — dashes after a short windup.',
+  'ENEMY-SKITTER-NOTE': 'Fast ambush — opens wounds on contact.',
+  'ENEMY-RIFT-NOTE': 'Ion shear — exposes armor seams.',
 
   // Logs
   'LOG-DROP':
@@ -171,6 +195,7 @@ export const LORE = {
   'LOG-POI-CONSOLE': 'Dead Helix console — partial storm-window refund and salvage.',
   'LOG-POI-NEST': 'Disturbed signal nest — RF wake and ion burn.',
   'LOG-POI-CACHE': 'Cache scar cracked — field kit recovered.',
+  'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-GOT-KEY': 'Relay Key acquired from Ruin Belt cache. Proceed to Beacon Relay.',
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Cache Vault holds spare Nav Core.',
@@ -178,23 +203,41 @@ export const LORE = {
   'LOG-GOT-CORE': 'Nav Core secured from Helix depot. Return to Ridge Approaches pad.',
   'LOG-NEED-CORE': 'Shuttle refuses lock — Nav Core missing.',
   'LOG-SECTOR': 'Sector boundary crossed.',
-  'LOG-SEC-FLOOD': 'Flood Basin. Standing ion-water — watch energy.',
-  'LOG-SEC-CANOPY': 'Canopy Reach. Dense RF scatter — stalkers likely.',
-  'LOG-SEC-SPIRE': 'Spire Reach. Abandoned Helix survey masts — RF scatter intensifies.',
+  'LOG-SEC-FLOOD':
+    'Flood Basin. Standing ion-water sheets the flats — life support will feel every step.',
+  'LOG-SEC-CANOPY':
+    'Canopy Reach. Dense RF scatter under the leaf decks — stalkers hunt the warm gear.',
+  'LOG-SEC-SPIRE':
+    'Spire Reach. Abandoned Helix survey masts still hum — mastlings feed on the residual RF.',
   'LOG-SEC-RUIN':
     'Ruin Belt. Prior Helix survey site — collapsed stacks; Relay Key in local caches.',
   'LOG-SEC-BEACON': 'Beacon Relay hub. Authorize with Relay Key to unseal inland path.',
-  'LOG-SEC-TRENCH': 'Fault Trench. Inland corridor after seal — deep fauna pressure rising.',
+  'LOG-SEC-TRENCH':
+    'Fault Trench. Inland corridor after seal — cut rock, deep fauna, no orbital cover.',
   'LOG-SEC-ASH': 'Ash Wastes. Baseline radiation — life support drain elevated.',
-  'LOG-SEC-BRINE': 'Brine Shelf. Ion-brine pools — hazard density high before the vault.',
+  'LOG-SEC-BRINE':
+    'Brine Shelf. Ion-brine pools lace the shelf — hazard density spikes before the vault.',
   'LOG-SEC-VAULT':
     'Cache Vault. Helix depot. Sentinels are site defense — RF-corrupted, still hostile.',
-  'LOG-SEC-FISSURE': 'Fissure March. Storm pressure climbing — push to Ridge Approaches pad.',
+  'LOG-SEC-FISSURE':
+    'Fissure March. Storm shear opens the rock — window tax rising; pad still inland.',
   'LOG-SEC-RIDGE': 'Ridge Approaches. Shuttle pad ahead — Nav Core required for lock.',
   'LOG-EXIT-BLOCKED': 'Exit sealed.',
   'LOG-HAZARD': 'Ion hazard — energy drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-STORM-WARN': 'Storm window critical.',
+  'LOG-USE-BATTERY': 'Reserve battery cycled — life support topped.',
+  'LOG-USE-PATCH': 'Bleed patch applied — wound sealed.',
+  'LOG-USE-LENS': 'Survey lens online — ranging extended.',
+  'LOG-USE-MAPPER': 'Path mapper ping — exit bearing locked.',
+  'LOG-RQ-SALVAGE': 'Room salvage complete — kit and field page recovered.',
+  'LOG-RQ-PURGE': 'Room purge complete — hostiles cleared; crate unlocked.',
+  'LOG-RQ-PURGE-WAKE': 'Room purge — hostiles spawning.',
+  'LOG-RQ-DECODE': 'Decode cycle finished — storm window refunded.',
+  'LOG-RQ-DECODE-TICK': 'Decode in progress — hold position.',
+  'LOG-RQ-STABILIZE': 'Stabilize complete — armor pool refilled.',
+  'LOG-CODEX': 'Expedition page filed.',
+  'LOG-RQ-NEED': 'Anomaly still active — complete the room procedure.',
 } as const;
 
 export type LoreId = keyof typeof LORE;

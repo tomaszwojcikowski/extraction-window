@@ -55,6 +55,21 @@ export function describeObjective(state: GameState): ObjectiveDesc {
   const pos = currentObjectivePos(state);
   let local: LoreId = 'OBJ-LOCAL-EXIT';
 
+  const rq = state.roomQuest;
+  const preferRoom =
+    rq &&
+    !rq.done &&
+    state.exitPos &&
+    pos &&
+    pos.x === state.exitPos.x &&
+    pos.y === state.exitPos.y &&
+    (state.explored[rq.pos.y]?.[rq.pos.x] ||
+      Math.abs(state.player.x - rq.pos.x) + Math.abs(state.player.y - rq.pos.y) <= 2);
+
+  if (preferRoom) {
+    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: rq!.pos };
+  }
+
   if (state.sectorId === 'ruin' && !state.objectives.hasRelayKey) {
     local = 'OBJ-LOCAL-KEY';
   } else if (state.sectorId === 'beacon' && !state.objectives.beaconOpen) {

@@ -1,5 +1,7 @@
+import { ENEMY_DROPS, dropChance } from '../data/drops';
 import { ENEMIES } from '../data/enemies';
 import { lore, type LoreId } from '../data/lore';
+import { pick } from './rng';
 import { addStatus, hasStatus } from './status';
 import type { DamageType, Enemy, GameState } from './types';
 
@@ -52,6 +54,36 @@ export function applyPlayerDamage(
   return { armorLost, hpLost, fullyAbsorbed: hpLost === 0 && armorLost > 0 };
 }
 
+function tryDeathDrop(state: GameState, enemy: Enemy): void {
+  if (state.rng() > dropChance(state.sectorIndex)) return;
+  const table = ENEMY_DROPS[enemy.kind];
+  if (!table.length) return;
+  const total = table.reduce((s, e) => s + e.weight, 0);
+  let roll = state.rng() * total;
+  let kind = table[0]!.kind;
+  for (const entry of table) {
+    roll -= entry.weight;
+    if (roll <= 0) {
+      kind = entry.kind;
+      break;
+    }
+  }
+  state.items.push({
+    id: state.nextEntityId++,
+    kind,
+    x: enemy.x,
+    y: enemy.y,
+  });
+  pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
+}
+
+export function killEnemy(state: GameState, enemy: Enemy): void {
+  enemy.alive = false;
+  enemy.hp = 0;
+  pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
+  tryDeathDrop(state, enemy);
+}
+
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
   const atk =
     state.player.atk +
@@ -65,9 +97,7 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
   const rem = Math.max(0, enemy.hp);
   pushLog(state, 'LOG-HIT', rem > 0 ? `-${dmg} · hp${rem}` : `-${dmg}`);
   if (enemy.hp <= 0) {
-    enemy.alive = false;
-    enemy.hp = 0;
-    pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
+    killEnemy(state, enemy);
   }
 }
 
@@ -78,9 +108,11 @@ export function enemyAttack(
   opts?: { bonusAtk?: number },
 ): boolean {
   const def =
-    state.player.def - (hasStatus(state.player, 'expose') ? 1 : 0);
+    state.player.def +
+    (state.player.stabilizeTurns > 0 ? 1 : 0) -
+    (hasStatus(state.player, 'expose') ? 1 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
-  let dmg = meleeDamage(atk, Math.max(0, def), variance);
+  const dmg = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
   const result = applyPlayerDamage(state, dmg, dtype);
 
@@ -88,8 +120,16 @@ export function enemyAttack(
     state.player.energy -= 2;
     pushLog(state, 'LOG-DRAIN', '-2E');
   }
-  if (enemy.kind === 'stalker' || enemy.kind === 'serpent' || enemy.kind === 'wraith') {
+  if (
+    enemy.kind === 'stalker' ||
+    enemy.kind === 'serpent' ||
+    enemy.kind === 'wraith' ||
+    enemy.kind === 'skitter'
+  ) {
     addStatus(state.player, 'bleed', 2);
+  }
+  if (enemy.kind === 'rift') {
+    addStatus(state.player, 'expose', 3);
   }
   return result.fullyAbsorbed;
 }

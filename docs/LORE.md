@@ -49,6 +49,20 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 
 **Vault Sentinels** — Automated Helix depot security. Signal ecology RF corruption flipped friend-or-foe; they treat active survey gear as hostile.
 
+### One-room quests
+
+Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize. Never required for extraction. Completing them can grant expedition **Pages** (in-run codex; reset each seed).
+
+### New hostiles
+
+- **Spire Mastling** — RF-fed skirmisher; ion damage
+- **Fault Skitter** — fast ambush; applies bleed
+- **Fissure Rift** — hunter; ion + expose
+
+### Death drops
+
+Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
+
 ## Terrain (sparse)
 
 - Floor / rubble / scrub — open ground; scrub costs light energy
@@ -62,7 +76,7 @@ Each biome signature hostile has a readable behavior (wander, swell burst, skirm
 
 ## Field kit
 
-Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate (repairs ablative armor), flare, filter, dart, jammer, sealant. Equipment (separate from bag): scrap blade (tool +1 ATK), field harness (+6 max armor). Quest: Relay Key, Nav Core.
+Capacity 16 slots. Consumables: med, energy, ration, coolant, battery, probe, stim, plate (repairs ablative armor), flare, filter, dart, jammer, sealant, patch, lens, mapper. Equipment (separate from bag): scrap blade (tool +1 ATK), field harness (+6 max armor). Quest: Relay Key, Nav Core.
 
 **Ablative armor** — hits strike armor pool before vitals. Bleed bypasses armor. Ion damage halved while filter is active. Kinetic vs ion damage types on hostiles.
 

@@ -6,6 +6,7 @@ import { CAMPAIGN_LENGTH } from '../src/campaign/spine';
 import { SECTORS, type SectorId } from '../src/data/encounters';
 import { ENEMIES, type EnemyKind } from '../src/data/enemies';
 import { ITEMS, type ItemKind } from '../src/data/items';
+import { ENEMY_DROPS } from '../src/data/drops';
 import { LORE, type LoreId } from '../src/data/lore';
 
 const errors: string[] = [];
@@ -67,17 +68,37 @@ function main(): void {
     'OBJ-LOCAL-BEACON',
     'OBJ-LOCAL-CORE',
     'OBJ-LOCAL-SHUTTLE',
+    'OBJ-LOCAL-ROOM',
     'LOG-GOT-KEY',
     'LOG-USED-KEY',
     'LOG-GOT-CORE',
     'LOG-EXTRACT',
+    'LOG-LOOT-DROP',
+    'LOG-RQ-SALVAGE',
+    'LOG-RQ-PURGE',
+    'LOG-CODEX',
     'SEC-SPIRE',
     'SEC-TRENCH',
     'SEC-BRINE',
     'SEC-FISSURE',
+    'ITEM-BATTERY',
+    'ITEM-PATCH',
+    'ITEM-LENS',
+    'ITEM-MAPPER',
+    'ENEMY-MASTLING',
+    'ENEMY-SKITTER',
+    'ENEMY-RIFT',
   ];
   for (const id of required) {
     if (!(id in LORE)) fail(`required lore missing: ${id}`);
+  }
+
+  // Drop tables cover every enemy kind
+  for (const kind of Object.keys(ENEMIES) as EnemyKind[]) {
+    if (!(kind in ENEMY_DROPS)) fail(`missing drop table for ${kind}`);
+    for (const entry of ENEMY_DROPS[kind]) {
+      if (!(entry.kind in ITEMS)) fail(`drop ${entry.kind} for ${kind} not in ITEMS`);
+    }
   }
 
   if (errors.length) {

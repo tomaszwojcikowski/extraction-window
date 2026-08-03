@@ -61,12 +61,21 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
   if (state.player.energy <= state.player.maxEnergy * 0.65) {
+    const batIdx = state.inventory.findIndex((s) => s.kind === 'battery');
     const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
-    const idx = coolIdx >= 0 ? coolIdx : enIdx >= 0 ? enIdx : rationIdx;
+    const idx =
+      batIdx >= 0 ? batIdx : coolIdx >= 0 ? coolIdx : enIdx >= 0 ? enIdx : rationIdx;
     if (idx >= 0) {
       state.ui.selectedSlot = idx;
+      return { type: 'use' };
+    }
+  }
+  if (state.player.statuses.bleed && state.player.statuses.bleed > 0) {
+    const pIdx = state.inventory.findIndex((s) => s.kind === 'patch');
+    if (pIdx >= 0) {
+      state.ui.selectedSlot = pIdx;
       return { type: 'use' };
     }
   }
@@ -166,13 +175,58 @@ export function chooseAction(state: GameState): Action | null {
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
-  // Safe POI: console / cache_scar only (skip nest — wakes hostiles)
+  // Safe POI / room quests (skip purge unless healthy; skip nest)
+  if (tile.kind === 'poi') {
+    const rq = state.roomQuest;
+    if (rq && !rq.done && x === rq.pos.x && y === rq.pos.y) {
+      if (rq.kind === 'purge' && (rq.stage < 2 || state.player.hp < state.player.maxHp * 0.6)) {
+        // skip incomplete/dangerous purge
+      } else if (rq.kind === 'stabilize') {
+        const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant' || s.kind === 'filter');
+        if (sIdx >= 0) {
+          state.ui.selectedSlot = sIdx;
+          return { type: 'use' };
+        }
+      } else {
+        return { type: 'exit' };
+      }
+    } else if (
+      !state.poiUsed &&
+      (state.poiKind === 'console' || state.poiKind === 'cache_scar')
+    ) {
+      return { type: 'exit' };
+    }
+  }
+
+  // Path toward safe room quest when explored and storm comfortable
   if (
-    tile.kind === 'poi' &&
-    !state.poiUsed &&
-    (state.poiKind === 'console' || state.poiKind === 'cache_scar')
+    state.roomQuest &&
+    !state.roomQuest.done &&
+    state.stormTurns > 200 &&
+    state.roomQuest.kind !== 'purge' &&
+    state.explored[state.roomQuest.pos.y]?.[state.roomQuest.pos.x]
   ) {
-    return { type: 'exit' };
+    const rq = state.roomQuest;
+    if (x !== rq.pos.x || y !== rq.pos.y) {
+      const blocked = (bx: number, by: number) =>
+        state.enemies.some((e) => e.alive && e.x === bx && e.y === by);
+      const path = bfsPath(state.tiles, { x, y }, rq.pos, blocked);
+      if (path && path.length) {
+        const step = path[0]!;
+        const foe = state.enemies.find((e) => e.alive && e.x === step.x && e.y === step.y);
+        if (foe) return { type: 'move', dx: step.x - x, dy: step.y - y };
+        return { type: 'move', dx: step.x - x, dy: step.y - y };
+      }
+    }
+  }
+
+  // Mapper when exploring without clear path
+  if (state.player.mapperTurns <= 0 && state.sectorIndex >= 2) {
+    const mIdx = state.inventory.findIndex((s) => s.kind === 'mapper');
+    if (mIdx >= 0 && state.player.energy > state.player.maxEnergy * 0.4) {
+      state.ui.selectedSlot = mIdx;
+      return { type: 'use' };
+    }
   }
 
   // Interact when standing on special tiles

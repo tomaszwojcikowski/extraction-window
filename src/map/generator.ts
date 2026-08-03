@@ -1,9 +1,10 @@
 import type { SectorDef } from '../data/encounters';
 import { ENEMIES } from '../data/enemies';
 import type { ItemKind } from '../data/items';
-import type { Enemy, GroundItem, Pos, PoiKind, Tile } from '../sim/types';
+import type { Enemy, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
+import { pickRoomQuestKind } from '../sim/roomQuest';
 
 export interface Room {
   x: number;
@@ -27,6 +28,7 @@ export interface GeneratedMap {
   shuttlePos: Pos | null;
   poiPos: Pos | null;
   poiKind: PoiKind | null;
+  roomQuest: RoomQuest | null;
   nextEntityId: number;
 }
 
@@ -245,6 +247,7 @@ export function generateSectorMap(
   let shuttlePos: Pos | null = null;
   let poiPos: Pos | null = null;
   let poiKind: PoiKind | null = null;
+  let roomQuest: RoomQuest | null = null;
   let nextEntityId = 1;
   const enemies: Enemy[] = [];
   const items: GroundItem[] = [];
@@ -311,8 +314,32 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
-  // Sparse POI — at most one, never on start/exit/quest
-  if (rng() < 0.7 && rooms.length >= 2) {
+  // One-room quest (preferred) or sparse POI fallback
+  if (rooms.length >= 3 && rng() < 0.55) {
+    const sideIdx = randInt(rng, 1, rooms.length - 2);
+    const side = rooms[sideIdx]!;
+    // Skip if this is start/end room
+    if (side !== startRoom && side !== endRoom) {
+      const pos = { x: side.cx, y: side.cy };
+      if (
+        canReach(tiles, start, pos) &&
+        !(pos.x === exit.x && pos.y === exit.y) &&
+        !(pos.x === start.x && pos.y === start.y)
+      ) {
+        tiles[pos.y]![pos.x] = poiTile();
+        specials.push(pos);
+        roomQuest = {
+          kind: pickRoomQuestKind(rng),
+          pos,
+          room: { x: side.x, y: side.y, w: side.w, h: side.h },
+          stage: 0,
+          done: false,
+          spawnedIds: [],
+        };
+      }
+    }
+  }
+  if (!roomQuest && rng() < 0.45 && rooms.length >= 2) {
     const poiRoom = rooms[randInt(rng, 1, rooms.length - 1)]!;
     const candidates = [
       { x: poiRoom.cx, y: poiRoom.cy },
@@ -389,6 +416,7 @@ export function generateSectorMap(
     if (sector.isShuttle && shuttlePos) tiles[shuttlePos.y]![shuttlePos.x] = shuttleTile();
     else tiles[exit.y]![exit.x] = exitTile();
     if (poiPos && poiKind) tiles[poiPos.y]![poiPos.x] = poiTile();
+    if (roomQuest) tiles[roomQuest.pos.y]![roomQuest.pos.x] = poiTile();
   }
   for (const it of items) {
     if ((it.kind === 'relay_key' || it.kind === 'nav_core') && !canReach(tiles, start, it)) {
@@ -409,6 +437,7 @@ export function generateSectorMap(
     shuttlePos,
     poiPos,
     poiKind,
+    roomQuest,
     nextEntityId,
   };
 }

@@ -83,6 +83,18 @@ export interface ObjectiveFlags {
 
 export type PoiKind = 'console' | 'nest' | 'cache_scar';
 
+export type RoomQuestKind = 'salvage' | 'purge' | 'decode' | 'stabilize';
+
+export interface RoomQuest {
+  kind: RoomQuestKind;
+  pos: Pos;
+  room: { x: number; y: number; w: number; h: number };
+  /** decode wait counter; purge stage 0=idle 1=fighting 2=ready */
+  stage: number;
+  done: boolean;
+  spawnedIds: number[];
+}
+
 export interface EquipSlots {
   tool: ItemKind | null;
   armor: ItemKind | null;
@@ -117,6 +129,9 @@ export interface GameState {
     stimTurns: number;
     filterTurns: number;
     jammerTurns: number;
+    lensTurns: number;
+    mapperTurns: number;
+    stabilizeTurns: number;
     statuses: StatusMap;
     equip: EquipSlots;
   };
@@ -129,6 +144,8 @@ export interface GameState {
   poiPos: Pos | null;
   poiKind: PoiKind | null;
   poiUsed: boolean;
+  roomQuest: RoomQuest | null;
+  codexPages: number;
   /** Loot taken this sector — wakes guard crawlers */
   lootTakenThisSector: boolean;
   objectives: ObjectiveFlags;

@@ -63,6 +63,9 @@ export function createGame(seed: number): GameState {
       stimTurns: 0,
       filterTurns: 0,
       jammerTurns: 0,
+      lensTurns: 0,
+      mapperTurns: 0,
+      stabilizeTurns: 0,
       statuses: {},
       equip: { tool: null, armor: null },
     },
@@ -70,12 +73,14 @@ export function createGame(seed: number): GameState {
       { kind: 'med', count: 4 },
       { kind: 'energy', count: 5 },
       { kind: 'coolant', count: 2 },
+      { kind: 'battery', count: 1 },
       { kind: 'ration', count: 2 },
       { kind: 'probe', count: 1 },
       { kind: 'stim', count: 1 },
       { kind: 'flare', count: 1 },
       { kind: 'plate', count: 3 },
       { kind: 'filter', count: 2 },
+      { kind: 'patch', count: 1 },
       { kind: 'dart', count: 2 },
       { kind: 'jammer', count: 1 },
       { kind: 'sealant', count: 2 },
@@ -88,6 +93,8 @@ export function createGame(seed: number): GameState {
     poiPos: map.poiPos,
     poiKind: map.poiKind,
     poiUsed: false,
+    roomQuest: map.roomQuest,
+    codexPages: 0,
     lootTakenThisSector: false,
     objectives: {
       hasRelayKey: false,
@@ -107,7 +114,7 @@ export function createGame(seed: number): GameState {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns),
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns),
   );
   pushLog(state, 'LOG-DROP');
   syncObjectiveFlags(state);
@@ -141,6 +148,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.poiPos = map.poiPos;
   state.poiKind = map.poiKind;
   state.poiUsed = false;
+  state.roomQuest = map.roomQuest;
   state.lootTakenThisSector = false;
   state.ui.aimingDart = false;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
@@ -160,7 +168,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns),
+    playerFovRadius(state.player.probeTurns, state.player.lensTurns),
   );
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];

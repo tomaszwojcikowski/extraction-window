@@ -6,7 +6,12 @@ import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { addStatus, tickPlayerStatusEffects } from './status';
+import { tickRoomQuest } from './roomQuest';
 import type { GameState } from './types';
+
+function fovR(state: GameState): number {
+  return playerFovRadius(state.player.probeTurns, state.player.lensTurns);
+}
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
@@ -39,7 +44,7 @@ export function finishSectorTransition(state: GameState): void {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns),
+    fovR(state),
   );
   syncObjectiveFlags(state);
   checkLose(state);
@@ -74,8 +79,12 @@ function tickEnvironment(state: GameState): void {
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
   if (state.player.jammerTurns > 0) state.player.jammerTurns -= 1;
+  if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
+  if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
+  if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
 
   tickPlayerStatusEffects(state);
+  tickRoomQuest(state);
 }
 
 export function endPlayerTurn(state: GameState): void {
@@ -89,7 +98,7 @@ export function endPlayerTurn(state: GameState): void {
     state.visible,
     state.player.x,
     state.player.y,
-    playerFovRadius(state.player.probeTurns),
+    fovR(state),
   );
   syncObjectiveFlags(state);
   checkLose(state);

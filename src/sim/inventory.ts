@@ -1,10 +1,9 @@
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
-import { ENEMIES } from '../data/enemies';
-import { lore } from '../data/lore';
 import type { GameState } from './types';
-import { pushLog, recordLoreEvent, playerAttack } from './combat';
+import { pushLog, recordLoreEvent, playerAttack, killEnemy } from './combat';
 import { addStatus } from './status';
 import { randInt } from './rng';
+import { tryStabilizeQuest } from './roomQuest';
 
 const HARNESS_ARMOR_BONUS = 6;
 const PLATE_REPAIR = 10;
@@ -144,15 +143,41 @@ export function useSelected(state: GameState): boolean {
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-PLATE');
       break;
-    case 'filter':
+    case 'filter': {
+      if (tryStabilizeQuest(state, 'filter')) {
+        removeOne(state, kind);
+        break;
+      }
       state.player.filterTurns = Math.max(state.player.filterTurns, 50);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-FILTER');
       break;
+    }
     case 'coolant':
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-COOLANT');
+      break;
+    case 'battery':
+      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-BATTERY');
+      break;
+    case 'patch':
+      delete state.player.statuses.bleed;
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + 8);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-PATCH');
+      break;
+    case 'lens':
+      state.player.lensTurns = Math.max(state.player.lensTurns, 25);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-LENS');
+      break;
+    case 'mapper':
+      state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-MAPPER');
       break;
     case 'blade':
       equipTool(state, 'blade');
@@ -170,11 +195,7 @@ export function useSelected(state: GameState): boolean {
         addStatus(en, 'stun', 2);
         en.windup = 0;
         hits += 1;
-        if (en.hp <= 0) {
-          en.alive = false;
-          en.hp = 0;
-          pushLog(state, 'LOG-KILL', lore(ENEMIES[en.kind].loreName));
-        }
+        if (en.hp <= 0) killEnemy(state, en);
       }
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
       break;
@@ -185,6 +206,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-JAMMER');
       break;
     case 'sealant': {
+      if (tryStabilizeQuest(state, 'sealant')) {
+        removeOne(state, kind);
+        break;
+      }
       const tile = state.tiles[state.player.y]![state.player.x]!;
       if (tile.kind === 'hazard' || tile.kind === 'vent') {
         state.tiles[state.player.y]![state.player.x] = {

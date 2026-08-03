@@ -851,7 +851,8 @@ export class GameScene extends Phaser.Scene {
 
     const explored = st.explored[pos.y]?.[pos.x] === true;
     const visible = st.visible[pos.y]?.[pos.x] === true;
-    if (!explored && !visible) {
+    const mapperReveal = st.player.mapperTurns > 0;
+    if (!explored && !visible && !mapperReveal) {
       this.goalMarker.setAlpha(0);
       this.goalPulseTween?.stop();
       this.goalPulseTween = null;
@@ -1009,7 +1010,7 @@ export class GameScene extends Phaser.Scene {
   private redrawTilesAndHud(): void {
     const st = this.state;
     const tint = BIOME_FLOOR_TINT[st.sectorId];
-    const radius = playerFovRadius(st.player.probeTurns);
+    const radius = playerFovRadius(st.player.probeTurns, st.player.lensTurns);
     const px = st.player.x;
     const py = st.player.y;
 
@@ -1082,6 +1083,7 @@ export class GameScene extends Phaser.Scene {
       badges.push(lore('UI-RELAY-OPEN'));
     }
     if (st.objectives.hasNavCore) badges.push(lore('UI-QUEST-CORE'));
+    if (st.codexPages > 0) badges.push(`${lore('UI-CODEX')} ${st.codexPages}`);
     this.questText.setText(badges.join('  ·  '));
 
     const desc = describeObjective(st);

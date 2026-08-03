@@ -457,5 +457,32 @@ export function registerTextures(scene: Phaser.Scene): void {
     g.fillRect(15, 4, 3, 3);
   });
 
+  paintEnemy('mastling', () => {
+    ink(g, Theme.ionHazard);
+    g.fillRect(11, 3, 2, 16);
+    g.fillRect(7, 6, 10, 2);
+    ink(g, Theme.phosphorBright);
+    g.fillRect(10, 10, 4, 4);
+  });
+
+  paintEnemy('skitter', () => {
+    ink(g, Theme.quest);
+    g.fillRect(4, 12, 16, 4);
+    g.fillRect(6, 8, 3, 4);
+    g.fillRect(15, 8, 3, 4);
+    ink(g, Theme.phosphorBright);
+    g.fillRect(8, 13, 2, 2);
+  });
+
+  paintEnemy('rift', () => {
+    ink(g, Theme.danger);
+    g.fillRect(5, 4, 3, 16);
+    g.fillRect(16, 4, 3, 16);
+    ink(g, Theme.ionHazard);
+    g.fillRect(9, 8, 6, 8);
+    ink(g, Theme.phosphorBright);
+    g.fillRect(11, 10, 2, 2);
+  });
+
   g.destroy();
 }

@@ -12,7 +12,10 @@ export type EnemyKind =
   | 'sentinel'
   | 'serpent'
   | 'wraith'
-  | 'drone';
+  | 'drone'
+  | 'mastling'
+  | 'skitter'
+  | 'rift';
 
 export type EnemyBehavior =
   | 'wander'
@@ -158,5 +161,41 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 4,
     damageType: 'kinetic',
+  },
+  mastling: {
+    kind: 'mastling',
+    loreName: 'ENEMY-MASTLING',
+    hp: 5,
+    atk: 3,
+    def: 0,
+    glyph: 'M',
+    color: 0xb0c070,
+    behavior: 'skirmish',
+    aggroRange: 7,
+    damageType: 'ion',
+  },
+  skitter: {
+    kind: 'skitter',
+    loreName: 'ENEMY-SKITTER',
+    hp: 4,
+    atk: 3,
+    def: 0,
+    glyph: 'k',
+    color: 0xa88860,
+    behavior: 'ambush',
+    aggroRange: 9,
+    damageType: 'kinetic',
+  },
+  rift: {
+    kind: 'rift',
+    loreName: 'ENEMY-RIFT',
+    hp: 7,
+    atk: 5,
+    def: 1,
+    glyph: 'R',
+    color: 0xc07090,
+    behavior: 'hunter',
+    aggroRange: 13,
+    damageType: 'ion',
   },
 };
