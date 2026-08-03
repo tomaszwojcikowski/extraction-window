@@ -8,12 +8,47 @@ import {
 } from '../sim';
 import { INVENTORY_SLOTS } from '../data/items';
 
+function dartAim(
+  state: GameState,
+  en: { x: number; y: number },
+): { dx: number; dy: number } | null {
+  const dx = en.x - state.player.x;
+  const dy = en.y - state.player.y;
+  const d = Math.max(Math.abs(dx), Math.abs(dy));
+  if (d < 1 || d > 3) return null;
+  if (!state.visible[en.y]?.[en.x]) return null;
+  // Must lie on a cardinal or diagonal ray
+  if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return null;
+  return { dx: Math.sign(dx), dy: Math.sign(dy) };
+}
+
+function nearestDartTarget(state: GameState) {
+  let best: { x: number; y: number; d: number; dx: number; dy: number } | null = null;
+  for (const en of state.enemies) {
+    if (!en.alive) continue;
+    const aim = dartAim(state, en);
+    if (!aim) continue;
+    const d = Math.max(Math.abs(en.x - state.player.x), Math.abs(en.y - state.player.y));
+    if (!best || d < best.d) best = { x: en.x, y: en.y, d, ...aim };
+  }
+  return best;
+}
+
 /**
  * Headless autopilot: path to objectives, fight blockers, heal when low,
- * use key/core interactions, exit sectors.
+ * use tactical tools, key/core interactions, exit sectors.
  */
 export function chooseAction(state: GameState): Action | null {
   if (state.status !== 'playing') return null;
+
+  // Finish dart aim if already aiming
+  if (state.ui.aimingDart) {
+    const target = nearestDartTarget(state);
+    if (target) {
+      return { type: 'aim', dx: target.dx, dy: target.dy };
+    }
+    return { type: 'wait' };
+  }
 
   // Heal / recharge aggressively
   if (state.player.hp <= state.player.maxHp * 0.55) {
@@ -25,7 +60,7 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  if (state.player.energy <= state.player.maxEnergy * 0.45) {
+  if (state.player.energy <= state.player.maxEnergy * 0.55) {
     const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
@@ -42,6 +77,59 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
+
+  // Sealant when standing on hazard/vent
+  const underfoot = state.tiles[state.player.y]![state.player.x]!;
+  if (underfoot.kind === 'hazard' || underfoot.kind === 'vent') {
+    const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant');
+    if (sIdx >= 0) {
+      state.ui.selectedSlot = sIdx;
+      return { type: 'use' };
+    }
+  }
+
+  // Jammer when mites/wasps nearby and not already jamming
+  if (state.player.jammerTurns <= 0) {
+    const noisyNear = state.enemies.some(
+      (e) =>
+        e.alive &&
+        (e.kind === 'mite' || e.kind === 'wasp') &&
+        Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) <= 4,
+    );
+    if (noisyNear) {
+      const jIdx = state.inventory.findIndex((s) => s.kind === 'jammer');
+      if (jIdx >= 0) {
+        state.ui.selectedSlot = jIdx;
+        return { type: 'use' };
+      }
+    }
+  }
+
+  // Dart when mid HP and a FOV threat on a valid ray
+  if (
+    state.player.hp <= state.player.maxHp * 0.75 &&
+    state.player.hp > state.player.maxHp * 0.35
+  ) {
+    const dartIdx = state.inventory.findIndex((s) => s.kind === 'dart');
+    if (dartIdx >= 0 && nearestDartTarget(state)) {
+      state.ui.selectedSlot = dartIdx;
+      return { type: 'use' };
+    }
+  }
+
+  // Flare when adjacent hostiles
+  const adjHostile = state.enemies.some(
+    (e) =>
+      e.alive && Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) === 1,
+  );
+  if (adjHostile && state.player.hp <= state.player.maxHp * 0.7) {
+    const fIdx = state.inventory.findIndex((s) => s.kind === 'flare');
+    if (fIdx >= 0) {
+      state.ui.selectedSlot = fIdx;
+      return { type: 'use' };
+    }
+  }
+
   // Buff before likely fights in late sectors
   if (state.sectorIndex >= 3 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
     const stimIdx = state.inventory.findIndex((s) => s.kind === 'stim');
@@ -68,6 +156,15 @@ export function chooseAction(state: GameState): Action | null {
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
+  // Safe POI: console / cache_scar only (skip nest — wakes hostiles)
+  if (
+    tile.kind === 'poi' &&
+    !state.poiUsed &&
+    (state.poiKind === 'console' || state.poiKind === 'cache_scar')
+  ) {
+    return { type: 'exit' };
+  }
+
   // Interact when standing on special tiles
   if (tile.kind === 'beacon' && !state.objectives.beaconOpen && hasItem(state, 'relay_key')) {
     return { type: 'exit' };
@@ -76,7 +173,6 @@ export function chooseAction(state: GameState): Action | null {
     return { type: 'exit' };
   }
   if (tile.kind === 'exit') {
-    // Never leave early without required quest items
     if (state.sectorId === 'ruin' && !hasItem(state, 'relay_key')) {
       // fall through to path toward key
     } else if (state.sectorId === 'vault' && !hasItem(state, 'nav_core')) {
@@ -91,14 +187,12 @@ export function chooseAction(state: GameState): Action | null {
   // Pickup useful items underfoot
   const here = state.items.find((i) => i.x === x && i.y === y);
   if (here && here.kind !== 'relay_key' && here.kind !== 'nav_core') {
-    // quest auto-picked; grab consumables if space
     if (state.inventory.length < INVENTORY_SLOTS) return { type: 'get' };
   }
 
   const goal = currentObjectivePos(state);
   if (!goal) return { type: 'wait' };
 
-  // If on beacon tile needing key
   if (
     state.beaconPos &&
     goal.x === state.beaconPos.x &&
@@ -109,7 +203,6 @@ export function chooseAction(state: GameState): Action | null {
     return { type: 'exit' };
   }
 
-  // If on shuttle
   if (
     state.shuttlePos &&
     x === state.shuttlePos.x &&
@@ -118,7 +211,6 @@ export function chooseAction(state: GameState): Action | null {
     return { type: 'exit' };
   }
 
-  // If on exit
   if (state.exitPos && x === state.exitPos.x && y === state.exitPos.y) {
     if (state.sectorId === 'ruin' && !hasItem(state, 'relay_key')) {
       // stay and seek key
@@ -131,21 +223,16 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  const blocked = (bx: number, by: number) => {
-    // Allow stepping onto enemy (attack)
-    return false;
-  };
+  const blocked = (_bx: number, _by: number) => false;
 
   const path = bfsPath(state.tiles, { x, y }, goal, blocked);
   if (!path || path.length === 0) {
-    // Wander toward exit if stuck on current goal
     if (state.exitPos && !(goal.x === state.exitPos.x && goal.y === state.exitPos.y)) {
       const alt = bfsPath(state.tiles, { x, y }, state.exitPos, blocked);
       if (alt && alt[0]) {
         return { type: 'move', dx: alt[0].x - x, dy: alt[0].y - y };
       }
     }
-    // Random step
     const dirs = [
       [1, 0],
       [-1, 0],
@@ -181,7 +268,7 @@ export function runAutopilot(
     actions++;
 
     const pos = `${state.player.x},${state.player.y},${state.sectorIndex},${state.objectives.beaconOpen},${state.objectives.hasRelayKey},${state.objectives.hasNavCore}`;
-    if (pos === lastPos && action.type !== 'use' && action.type !== 'get') {
+    if (pos === lastPos && action.type !== 'use' && action.type !== 'get' && action.type !== 'aim') {
       idleStreak++;
     } else {
       idleStreak = 0;

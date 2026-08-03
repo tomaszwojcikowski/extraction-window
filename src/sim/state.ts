@@ -57,6 +57,8 @@ export function createGame(seed: number): GameState {
       stimTurns: 0,
       plateTurns: 0,
       filterTurns: 0,
+      jammerTurns: 0,
+      statuses: {},
     },
     inventory: [
       { kind: 'med', count: 4 },
@@ -65,12 +67,19 @@ export function createGame(seed: number): GameState {
       { kind: 'probe', count: 1 },
       { kind: 'stim', count: 1 },
       { kind: 'flare', count: 1 },
+      { kind: 'dart', count: 2 },
+      { kind: 'jammer', count: 1 },
+      { kind: 'sealant', count: 1 },
     ],
     enemies: map.enemies,
     items: map.items,
     exitPos: map.exit,
     shuttlePos: map.shuttlePos,
     beaconPos: map.beaconPos,
+    poiPos: map.poiPos,
+    poiKind: map.poiKind,
+    poiUsed: false,
+    lootTakenThisSector: false,
     objectives: {
       hasRelayKey: false,
       usedRelayKey: false,
@@ -78,7 +87,7 @@ export function createGame(seed: number): GameState {
       beaconOpen: false,
     },
     log: [],
-    ui: { inventoryOpen: false, selectedSlot: 0 },
+    ui: { inventoryOpen: false, selectedSlot: 0, aimingDart: false },
     nextEntityId: map.nextEntityId,
     loreEvents: [],
   };
@@ -120,6 +129,11 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.exitPos = map.exit;
   state.shuttlePos = map.shuttlePos;
   state.beaconPos = map.beaconPos;
+  state.poiPos = map.poiPos;
+  state.poiKind = map.poiKind;
+  state.poiUsed = false;
+  state.lootTakenThisSector = false;
+  state.ui.aimingDart = false;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
 
   // If returning somehow to open beacon

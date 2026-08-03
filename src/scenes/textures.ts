@@ -165,6 +165,19 @@ export function registerTextures(scene: Phaser.Scene): void {
   g.fillRect(8, 8, 8, 8);
   bake('t_shuttle');
 
+  // --- POI: amber anomaly marker ---
+  g.clear();
+  g.fillStyle(0x181008, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(0x806020, 1);
+  g.fillRect(1, 1, T - 2, T - 2);
+  g.fillStyle(0xf0a020, 1);
+  g.fillRect(10, 4, 4, 12);
+  g.fillRect(6, 8, 12, 4);
+  g.fillStyle(0xffe080, 1);
+  g.fillRect(11, 9, 2, 2);
+  bake('t_poi');
+
   // Fog — near-black with faint noise grain
   g.clear();
   g.fillStyle(0x020308, 1);

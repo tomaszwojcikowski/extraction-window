@@ -1,6 +1,10 @@
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
+import { ENEMIES } from '../data/enemies';
+import { lore } from '../data/lore';
 import type { GameState } from './types';
-import { pushLog, recordLoreEvent } from './combat';
+import { pushLog, recordLoreEvent, playerAttack } from './combat';
+import { addStatus } from './status';
+import { randInt } from './rng';
 
 export function findSlot(state: GameState, kind: ItemKind): number {
   return state.inventory.findIndex((s) => s.kind === kind);
@@ -56,10 +60,10 @@ export function removeOne(state: GameState, kind: ItemKind): boolean {
   return true;
 }
 
-export function useSelected(state: GameState): void {
+export function useSelected(state: GameState): boolean {
   if (state.inventory.length === 0) {
     pushLog(state, 'LOG-USE-FAIL');
-    return;
+    return true;
   }
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
   const slot = state.inventory[idx]!;
@@ -118,23 +122,89 @@ export function useSelected(state: GameState): void {
       for (const en of state.enemies) {
         if (!en.alive) continue;
         if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) !== 1) continue;
-        en.hp -= 6;
+        en.hp -= 4;
+        addStatus(en, 'stun', 2);
         hits += 1;
         if (en.hp <= 0) {
           en.alive = false;
           en.hp = 0;
-          pushLog(state, 'LOG-KILL');
+          pushLog(state, 'LOG-KILL', lore(ENEMIES[en.kind].loreName));
         }
       }
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
       break;
     }
+    case 'jammer':
+      state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
+      removeOne(state, kind);
+      pushLog(state, 'LOG-USE-JAMMER');
+      break;
+    case 'sealant': {
+      const tile = state.tiles[state.player.y]![state.player.x]!;
+      if (tile.kind === 'hazard' || tile.kind === 'vent') {
+        state.tiles[state.player.y]![state.player.x] = {
+          kind: 'floor',
+          walkable: true,
+          transparent: true,
+        };
+        removeOne(state, kind);
+        pushLog(state, 'LOG-USE-SEALANT');
+      } else {
+        pushLog(state, 'LOG-SEALANT-FAIL');
+      }
+      break;
+    }
+    case 'dart':
+      // Enter aim mode — does not consume until shot
+      state.ui.aimingDart = true;
+      state.ui.inventoryOpen = false;
+      pushLog(state, 'LOG-AIM-DART');
+      return false; // do not end turn yet
     case 'relay_key':
     case 'nav_core':
       pushLog(state, 'LOG-USE-FAIL');
       break;
   }
   syncObjectiveFlags(state);
+  return true;
+}
+
+/** Fire dart in a direction (Chebyshev range ≤3, needs FOV). */
+export function fireDart(state: GameState, dx: number, dy: number): void {
+  state.ui.aimingDart = false;
+  if (!hasItem(state, 'dart')) {
+    pushLog(state, 'LOG-USE-FAIL');
+    return;
+  }
+  if (dx === 0 && dy === 0) {
+    pushLog(state, 'LOG-AIM-MISS');
+    return;
+  }
+  // Normalize to unit step direction, then scan line
+  const sx = Math.sign(dx);
+  const sy = Math.sign(dy);
+  let hit = false;
+  for (let i = 1; i <= 3; i++) {
+    const x = state.player.x + sx * i;
+    const y = state.player.y + sy * i;
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) break;
+    if (!state.tiles[y]![x]!.transparent && !state.tiles[y]![x]!.walkable) break;
+    if (!state.visible[y]![x]) break;
+    const en = state.enemies.find((e) => e.alive && e.x === x && e.y === y);
+    if (en) {
+      removeOne(state, 'dart');
+      addStatus(en, 'expose', 4);
+      playerAttack(state, en, randInt(state.rng, 0, 1));
+      pushLog(state, 'LOG-USE-DART');
+      hit = true;
+      break;
+    }
+  }
+  if (!hit) {
+    // Still spend dart on miss if we aimed
+    removeOne(state, 'dart');
+    pushLog(state, 'LOG-AIM-MISS');
+  }
 }
 
 export function syncObjectiveFlags(state: GameState): void {
@@ -152,6 +222,7 @@ export function tryPickup(state: GameState): void {
   }
   if (!addItem(state, item.kind)) return;
   state.items = state.items.filter((i) => i.id !== item.id);
+  state.lootTakenThisSector = true;
   pushLog(state, 'LOG-PICKUP');
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');

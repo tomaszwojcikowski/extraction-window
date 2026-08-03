@@ -10,6 +10,16 @@ export type EnemyKind =
   | 'sentinel'
   | 'serpent';
 
+export type EnemyBehavior =
+  | 'wander'
+  | 'swell'
+  | 'skirmish'
+  | 'ambush'
+  | 'drain'
+  | 'guard'
+  | 'sentinel'
+  | 'hunter';
+
 export interface EnemyDef {
   kind: EnemyKind;
   loreName: LoreId;
@@ -18,6 +28,9 @@ export interface EnemyDef {
   def: number;
   glyph: string;
   color: number;
+  behavior: EnemyBehavior;
+  /** Manhattan aggro / interest radius */
+  aggroRange: number;
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
@@ -29,6 +42,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 0,
     glyph: 'm',
     color: 0x88aa44,
+    behavior: 'wander',
+    aggroRange: 2,
   },
   spore: {
     kind: 'spore',
@@ -38,6 +53,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 0,
     glyph: 's',
     color: 0x66ccaa,
+    behavior: 'swell',
+    aggroRange: 3,
   },
   wasp: {
     kind: 'wasp',
@@ -47,6 +64,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 0,
     glyph: 'w',
     color: 0xccaa22,
+    behavior: 'skirmish',
+    aggroRange: 6,
   },
   stalker: {
     kind: 'stalker',
@@ -56,6 +75,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 1,
     glyph: 'S',
     color: 0x44aa66,
+    behavior: 'ambush',
+    aggroRange: 8,
   },
   leech: {
     kind: 'leech',
@@ -65,6 +86,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 0,
     glyph: 'l',
     color: 0x4488bb,
+    behavior: 'drain',
+    aggroRange: 5,
   },
   crawler: {
     kind: 'crawler',
@@ -74,6 +97,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 1,
     glyph: 'c',
     color: 0xaa6644,
+    behavior: 'guard',
+    aggroRange: 7,
   },
   sentinel: {
     kind: 'sentinel',
@@ -83,6 +108,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 2,
     glyph: 'V',
     color: 0x8888cc,
+    behavior: 'sentinel',
+    aggroRange: 5,
   },
   serpent: {
     kind: 'serpent',
@@ -92,5 +119,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     def: 1,
     glyph: 'Z',
     color: 0xcc4488,
+    behavior: 'hunter',
+    aggroRange: 12,
   },
 };

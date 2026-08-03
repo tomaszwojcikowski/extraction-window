@@ -18,7 +18,8 @@ export type TileKind =
   | 'vent'
   | 'exit'
   | 'beacon'
-  | 'shuttle';
+  | 'shuttle'
+  | 'poi';
 
 export interface Tile {
   kind: TileKind;
@@ -31,6 +32,10 @@ export interface InventorySlot {
   count: number;
 }
 
+export type StatusId = 'stun' | 'bleed' | 'ion_burn' | 'expose';
+
+export type StatusMap = Partial<Record<StatusId, number>>;
+
 export interface Enemy {
   id: number;
   kind: EnemyKind;
@@ -41,6 +46,13 @@ export interface Enemy {
   atk: number;
   def: number;
   alive: boolean;
+  statuses: StatusMap;
+  /** AI memory */
+  alerted: boolean;
+  swellTurns: number;
+  homeX: number;
+  homeY: number;
+  skirmishRetreat: boolean;
 }
 
 export interface GroundItem {
@@ -65,6 +77,8 @@ export interface ObjectiveFlags {
   hasNavCore: boolean;
   beaconOpen: boolean;
 }
+
+export type PoiKind = 'console' | 'nest' | 'cache_scar';
 
 export interface GameState {
   seed: number;
@@ -93,6 +107,8 @@ export interface GameState {
     stimTurns: number;
     plateTurns: number;
     filterTurns: number;
+    jammerTurns: number;
+    statuses: StatusMap;
   };
   inventory: InventorySlot[];
   enemies: Enemy[];
@@ -100,14 +116,20 @@ export interface GameState {
   exitPos: Pos | null;
   shuttlePos: Pos | null;
   beaconPos: Pos | null;
+  poiPos: Pos | null;
+  poiKind: PoiKind | null;
+  poiUsed: boolean;
+  /** Loot taken this sector — wakes guard crawlers */
+  lootTakenThisSector: boolean;
   objectives: ObjectiveFlags;
   log: LogEntry[];
   ui: {
     inventoryOpen: boolean;
     selectedSlot: number;
+    /** After using dart, next move key aims */
+    aimingDart: boolean;
   };
   nextEntityId: number;
-  /** Lore event order for playtest assertions */
   loreEvents: LoreId[];
 }
 
@@ -118,5 +140,6 @@ export type Action =
   | { type: 'toggle_inventory' }
   | { type: 'select_slot'; index: number }
   | { type: 'use' }
+  | { type: 'aim'; dx: number; dy: number }
   | { type: 'exit' }
   | { type: 'close_ui' };

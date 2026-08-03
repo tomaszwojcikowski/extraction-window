@@ -12,7 +12,10 @@ export type ItemKind =
   | 'flare'
   | 'filter'
   | 'coolant'
-  | 'blade';
+  | 'blade'
+  | 'dart'
+  | 'jammer'
+  | 'sealant';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -107,7 +110,27 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: false,
   },
+  dart: {
+    kind: 'dart',
+    loreName: 'ITEM-DART',
+    loreDesc: 'ITEM-DART-DESC',
+    quest: false,
+    stackable: true,
+  },
+  jammer: {
+    kind: 'jammer',
+    loreName: 'ITEM-JAMMER',
+    loreDesc: 'ITEM-JAMMER-DESC',
+    quest: false,
+    stackable: true,
+  },
+  sealant: {
+    kind: 'sealant',
+    loreName: 'ITEM-SEALANT',
+    loreDesc: 'ITEM-SEALANT-DESC',
+    quest: false,
+    stackable: true,
+  },
 };
 
-/** Expanded field kit capacity. */
 export const INVENTORY_SLOTS = 16;

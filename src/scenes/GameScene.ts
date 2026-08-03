@@ -5,6 +5,7 @@ import { ITEMS } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { applyAction, createGame, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
+import { statusHud } from '../sim/status';
 import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
 import {
   BIOME_FLOOR_TINT,
@@ -287,6 +288,8 @@ export class GameScene extends Phaser.Scene {
         return 't_beacon';
       case 'shuttle':
         return 't_shuttle';
+      case 'poi':
+        return 't_poi';
       default:
         return 't_floor';
     }
@@ -753,10 +756,12 @@ export class GameScene extends Phaser.Scene {
 
   private contextHint(): LoreId | null {
     const st = this.state;
+    if (st.ui.aimingDart) return 'UI-HINT-AIM';
     const tile = st.tiles[st.player.y]![st.player.x]!;
     if (tile.kind === 'exit') return 'UI-HINT-EXIT';
     if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
     if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
+    if (tile.kind === 'poi' && !st.poiUsed) return 'UI-HINT-POI';
     if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
     return null;
   }
@@ -805,11 +810,15 @@ export class GameScene extends Phaser.Scene {
     const plate = st.player.plateTurns > 0 ? `  ${lore('UI-PLATE')} ${st.player.plateTurns}` : '';
     const filter =
       st.player.filterTurns > 0 ? `  ${lore('UI-FILTER')} ${st.player.filterTurns}` : '';
+    const jam =
+      st.player.jammerTurns > 0 ? `  ${lore('UI-JAMMER')} ${st.player.jammerTurns}` : '';
+    const statuses = statusHud(st.player.statuses);
+    const statusLine = statuses ? `  ${statuses}` : '';
     const atkBonus =
       (st.player.probeTurns > 0 ? 2 : 0) + (st.player.stimTurns > 0 ? 3 : 0);
     const defBonus = st.player.plateTurns > 0 ? 2 : 0;
     this.hudMeta.setText(
-      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}    ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}    ${lore('UI-WINDOW')} ${st.stormTurns}    ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${probe}${stim}${plate}${filter}`,
+      `${lore('UI-HP')} ${st.player.hp}/${st.player.maxHp}    ${lore('UI-ENERGY')} ${st.player.energy}/${st.player.maxEnergy}    ${lore('UI-WINDOW')} ${st.stormTurns}    ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${probe}${stim}${plate}${filter}${jam}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

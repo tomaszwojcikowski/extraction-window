@@ -48,12 +48,19 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 ## Terrain (sparse)
 
 - Floor / rubble / scrub — open ground; scrub costs light energy
-- Vent / hazard — ion stress drains life support (filter halves)
+- Vent / hazard — ion stress drains life support (filter halves; sealant can neutralize underfoot)
 - Exit / beacon / shuttle — mission structures
+- POI (≤1 per sector) — optional anomaly (console / nest / cache scar); never required for win
+
+## Signal ecology behaviors
+
+Each biome signature hostile has a readable behavior (wander, swell burst, skirmish, ambush, drain, guard, sentinel hold, hunter chase). RF jammer briefly silences mites/wasps — survey RF is what agitates them.
 
 ## Field kit
 
-Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate, flare, filter. Upgrades: scrap blade (+1 ATK). Quest: Relay Key, Nav Core.
+Capacity 16 slots. Consumables: med, energy, ration, coolant, probe, stim, plate, flare (damage+stun), filter, dart (aim expose), jammer, sealant. Upgrades: scrap blade (+1 ATK). Quest: Relay Key, Nav Core.
+
+Statuses (shared): stun, bleed, ion_burn, expose — tick on turns; HUD glyphs beside vitals.
 
 ---
 

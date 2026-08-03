@@ -1,16 +1,12 @@
 import { getSector } from '../data/encounters';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
-import { enemyAttack } from './combat';
-import { computeFov, bfsPath, playerFovRadius } from './fov';
+import { computeFov, playerFovRadius } from './fov';
 import { pushLog } from './combat';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
-import type { Enemy, GameState } from './types';
-import { randInt } from './rng';
-
-function enemyAt(state: GameState, x: number, y: number): Enemy | undefined {
-  return state.enemies.find((e) => e.alive && e.x === x && e.y === y);
-}
+import { moveEnemies } from './ai';
+import { addStatus, tickPlayerStatusEffects } from './status';
+import type { GameState } from './types';
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
@@ -57,7 +53,6 @@ function tickEnvironment(state: GameState): void {
   }
 
   const filter = state.player.filterTurns > 0;
-  // Base life-support drip every few turns
   if (state.turn % 5 === 0) {
     state.player.energy -= filter ? 0 : 1;
   }
@@ -67,6 +62,7 @@ function tickEnvironment(state: GameState): void {
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind === 'hazard') {
     state.player.energy -= filter ? 1 : 2;
+    addStatus(state.player, 'ion_burn', 1);
     pushLog(state, 'LOG-HAZARD');
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter ? 0 : 1;
@@ -78,39 +74,9 @@ function tickEnvironment(state: GameState): void {
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
   if (state.player.plateTurns > 0) state.player.plateTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
-}
+  if (state.player.jammerTurns > 0) state.player.jammerTurns -= 1;
 
-function moveEnemies(state: GameState): void {
-  for (const enemy of state.enemies) {
-    if (!enemy.alive) continue;
-    const dist =
-      Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y);
-    if (dist > 10) continue;
-
-    if (dist === 1) {
-      enemyAttack(state, enemy, randInt(state.rng, -1, 1));
-      continue;
-    }
-
-    // Step toward player if close
-    if (dist <= 6) {
-      const path = bfsPath(
-        state.tiles,
-        { x: enemy.x, y: enemy.y },
-        { x: state.player.x, y: state.player.y },
-        (x, y) => !!enemyAt(state, x, y),
-      );
-      if (path && path.length > 0) {
-        const step = path[0]!;
-        if (!(step.x === state.player.x && step.y === state.player.y)) {
-          if (!enemyAt(state, step.x, step.y)) {
-            enemy.x = step.x;
-            enemy.y = step.y;
-          }
-        }
-      }
-    }
-  }
+  tickPlayerStatusEffects(state);
 }
 
 export function endPlayerTurn(state: GameState): void {

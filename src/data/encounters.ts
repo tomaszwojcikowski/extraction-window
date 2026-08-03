@@ -34,7 +34,16 @@ export interface SectorDef {
   isShuttle: boolean;
 }
 
-const FIELD_LOOT: ItemKind[] = ['med', 'energy', 'ration', 'probe', 'stim', 'flare'];
+const FIELD_LOOT: ItemKind[] = [
+  'med',
+  'energy',
+  'ration',
+  'probe',
+  'stim',
+  'flare',
+  'dart',
+  'sealant',
+];
 const DEEP_LOOT: ItemKind[] = [
   'med',
   'energy',
@@ -45,6 +54,9 @@ const DEEP_LOOT: ItemKind[] = [
   'coolant',
   'flare',
   'blade',
+  'dart',
+  'jammer',
+  'sealant',
 ];
 
 export const SECTORS: SectorDef[] = [
@@ -57,7 +69,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [5, 7],
     enemyTable: ['mite', 'spore'],
     enemyCount: [2, 3],
-    lootTable: ['med', 'ration', 'energy', 'flare'],
+    lootTable: ['med', 'ration', 'energy', 'flare', 'dart'],
     lootCount: [3, 5],
     hazardChance: 0.015,
     scrubChance: 0.06,
@@ -78,7 +90,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [5, 7],
     enemyTable: ['leech', 'mite', 'spore'],
     enemyCount: [2, 4],
-    lootTable: ['med', 'energy', 'ration', 'filter', 'coolant'],
+    lootTable: ['med', 'energy', 'ration', 'filter', 'coolant', 'sealant'],
     lootCount: [3, 5],
     hazardChance: 0.07,
     scrubChance: 0.04,
@@ -120,7 +132,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [6, 9],
     enemyTable: ['wasp', 'stalker', 'spore'],
     enemyCount: [3, 5],
-    lootTable: ['med', 'energy', 'probe', 'stim', 'plate', 'blade', 'flare'],
+    lootTable: ['med', 'energy', 'probe', 'stim', 'plate', 'blade', 'flare', 'jammer', 'dart'],
     lootCount: [3, 5],
     hazardChance: 0.03,
     scrubChance: 0.02,
@@ -141,7 +153,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [4, 5],
     enemyTable: ['wasp', 'sentinel'],
     enemyCount: [2, 3],
-    lootTable: ['energy', 'med', 'coolant', 'filter'],
+    lootTable: ['energy', 'med', 'coolant', 'filter', 'jammer'],
     lootCount: [2, 3],
     hazardChance: 0.015,
     scrubChance: 0.01,
@@ -162,7 +174,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [6, 8],
     enemyTable: ['crawler', 'serpent', 'wasp'],
     enemyCount: [3, 5],
-    lootTable: ['med', 'energy', 'ration', 'filter', 'coolant', 'plate'],
+    lootTable: ['med', 'energy', 'ration', 'filter', 'coolant', 'plate', 'sealant', 'dart'],
     lootCount: [3, 5],
     hazardChance: 0.05,
     scrubChance: 0.02,

@@ -1,7 +1,7 @@
 import type { SectorDef } from '../data/encounters';
 import { ENEMIES } from '../data/enemies';
 import type { ItemKind } from '../data/items';
-import type { Enemy, GroundItem, Pos, Tile } from '../sim/types';
+import type { Enemy, GroundItem, Pos, PoiKind, Tile } from '../sim/types';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
 
@@ -25,6 +25,8 @@ export interface GeneratedMap {
   items: GroundItem[];
   beaconPos: Pos | null;
   shuttlePos: Pos | null;
+  poiPos: Pos | null;
+  poiKind: PoiKind | null;
   nextEntityId: number;
 }
 
@@ -54,6 +56,9 @@ function beaconTile(): Tile {
 }
 function shuttleTile(): Tile {
   return { kind: 'shuttle', walkable: true, transparent: true };
+}
+function poiTile(): Tile {
+  return { kind: 'poi', walkable: true, transparent: true };
 }
 
 function carveRoom(tiles: Tile[][], room: Room): void {
@@ -238,6 +243,8 @@ export function generateSectorMap(
 
   let beaconPos: Pos | null = null;
   let shuttlePos: Pos | null = null;
+  let poiPos: Pos | null = null;
+  let poiKind: PoiKind | null = null;
   let nextEntityId = 1;
   const enemies: Enemy[] = [];
   const items: GroundItem[] = [];
@@ -304,6 +311,29 @@ export function generateSectorMap(
   if (sector.hasRelayKey) placeQuest('relay_key');
   if (sector.hasNavCore) placeQuest('nav_core');
 
+  // Sparse POI — at most one, never on start/exit/quest
+  if (rng() < 0.7 && rooms.length >= 2) {
+    const poiRoom = rooms[randInt(rng, 1, rooms.length - 1)]!;
+    const candidates = [
+      { x: poiRoom.cx, y: poiRoom.cy },
+      { x: poiRoom.cx + 1, y: poiRoom.cy },
+      { x: poiRoom.cx, y: poiRoom.cy + 1 },
+    ].filter(
+      (p) =>
+        tiles[p.y]?.[p.x]?.walkable &&
+        !(p.x === start.x && p.y === start.y) &&
+        !(p.x === exit.x && p.y === exit.y) &&
+        canReach(tiles, start, p),
+    );
+    if (candidates.length) {
+      poiPos = candidates[0]!;
+      const kinds: PoiKind[] = ['console', 'nest', 'cache_scar'];
+      poiKind = pick(rng, kinds);
+      tiles[poiPos.y]![poiPos.x] = poiTile();
+      specials.push(poiPos);
+    }
+  }
+
   // Loot — fewer piles, more variety (already in tables)
   const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
   let placed = 0;
@@ -313,7 +343,6 @@ export function generateSectorMap(
     const key = `${p.x},${p.y}`;
     if (occ().has(key)) continue;
     if (!canReach(tiles, start, p)) continue;
-    // Prefer room interiors over corridors: lower spawn rate
     if (rng() > 0.22) continue;
     const kind = pick(rng, sector.lootTable);
     items.push({ id: nextEntityId++, kind, x: p.x, y: p.y });
@@ -342,6 +371,12 @@ export function generateSectorMap(
       atk: Math.ceil(def.atk * scale),
       def: def.def,
       alive: true,
+      statuses: {},
+      alerted: false,
+      swellTurns: 0,
+      homeX: p.x,
+      homeY: p.y,
+      skirmishRetreat: false,
     });
     ePlaced++;
   }
@@ -352,6 +387,7 @@ export function generateSectorMap(
     if (sector.isBeacon && beaconPos) tiles[beaconPos.y]![beaconPos.x] = beaconTile();
     if (sector.isShuttle && shuttlePos) tiles[shuttlePos.y]![shuttlePos.x] = shuttleTile();
     else tiles[exit.y]![exit.x] = exitTile();
+    if (poiPos && poiKind) tiles[poiPos.y]![poiPos.x] = poiTile();
   }
   for (const it of items) {
     if ((it.kind === 'relay_key' || it.kind === 'nav_core') && !canReach(tiles, start, it)) {
@@ -370,6 +406,8 @@ export function generateSectorMap(
     items,
     beaconPos,
     shuttlePos,
+    poiPos,
+    poiKind,
     nextEntityId,
   };
 }
