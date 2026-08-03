@@ -1,0 +1,14 @@
+---
+description: Commit coherent work units between major changes
+alwaysApply: true
+---
+
+# Commit between major changes
+
+After each coherent unit of work — and after `npm run build` + `npm run playtest:smoke` (and full `npm run playtest` when required) pass — create a git commit before starting the next major change.
+
+- Use conventional commits: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`
+- Keep commits focused (one purpose each when practical)
+- Do not accumulate large unrelated diffs
+- Do not amend pushed commits unless explicitly asked
+- Do not force-push or change git config

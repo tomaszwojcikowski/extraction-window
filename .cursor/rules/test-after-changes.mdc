@@ -1,0 +1,19 @@
+---
+description: Run build and playtests after every major change
+alwaysApply: true
+---
+
+# Test after major changes
+
+After any major change (sim, map gen, combat, objectives, UI wiring to actions, lore that affects win/order checks), always run before considering the work done:
+
+1. `npm run build`
+2. `npm run playtest:smoke`
+
+If the change touches win conditions, sector transitions, inventory/quest items, or autopilot behavior, also run:
+
+3. `npm run playtest`
+
+Do not skip these between major edits. Fix failures before moving on. Report pass/fail summary to the user.
+
+After tests pass, commit the coherent change set before starting the next major change (see `commit-between-changes` rule).
