@@ -17,8 +17,11 @@ import {
 
 const smoke = process.argv.includes('--smoke');
 const seeds = smoke
-  ? [1, 42, 99, 12345, 777]
-  : [1, 7, 13, 42, 99, 256, 1024, 2024, 4096, 7777, 9999, 12345, 54321, 65535, 88888];
+  ? [1, 42, 99, 12345, 777, 256, 2024, 88888]
+  : [
+      1, 7, 13, 42, 99, 111, 256, 333, 512, 777, 1024, 1337, 2024, 3141, 4096, 5000, 7777, 8192,
+      9999, 12345, 22222, 31415, 44444, 54321, 65535, 77777, 88888, 99999, 123456, 654321,
+    ];
 
 interface SeedReport {
   seed: number;
@@ -110,6 +113,7 @@ function main(): void {
   const wins = results.filter((r) => r.status === 'won').length;
   const crashes = results.filter((r) => r.crash).length;
   const illegal = results.filter((r) => !r.winLegal || !r.loreLegal || !r.objectivesReachable).length;
+  const winRate = results.length ? wins / results.length : 0;
 
   const report = {
     mode: smoke ? 'smoke' : 'full',
@@ -120,6 +124,7 @@ function main(): void {
       losses: results.filter((r) => r.status === 'lost').length,
       crashes,
       illegal,
+      winRate,
       allReachable: results.every((r) => r.objectivesReachable),
       noCrashes: crashes === 0,
       allLegal: illegal === 0,
@@ -131,7 +136,7 @@ function main(): void {
   writeFileSync(outPath, JSON.stringify(report, null, 2));
   console.log(`\nWrote ${outPath}`);
   console.log(
-    `Summary: ${wins}/${results.length} wins, ${crashes} crashes, illegal=${illegal}, allReachable=${report.summary.allReachable}`,
+    `Summary: ${wins}/${results.length} wins (${(winRate * 100).toFixed(0)}%), ${crashes} crashes, illegal=${illegal}, allReachable=${report.summary.allReachable}`,
   );
 
   if (crashes > 0) {
@@ -143,6 +148,9 @@ function main(): void {
   } else if (illegal > 0) {
     process.exitCode = 1;
     console.error('FAIL: illegal win/lore order');
+  } else if (!smoke && winRate < 0.7) {
+    process.exitCode = 1;
+    console.error(`FAIL: win rate ${(winRate * 100).toFixed(0)}% < 70%`);
   } else {
     console.log('PASS');
   }

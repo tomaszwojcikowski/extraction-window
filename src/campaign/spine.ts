@@ -4,17 +4,17 @@ import type { LoreId } from '../data/lore';
 export const CAMPAIGN_LENGTH = SECTORS.length;
 
 /** Starting storm window — tuned for ~60–90 min human play; autopilot finishes sooner. */
-export const STORM_TURNS = 1300;
+export const STORM_TURNS = 1500;
 
 export const PLAYER_BASE = {
   hp: 50,
   maxHp: 50,
-  energy: 95,
-  maxEnergy: 95,
+  energy: 100,
+  maxEnergy: 100,
   atk: 6,
   def: 2,
-  armor: 10,
-  maxArmor: 10,
+  armor: 12,
+  maxArmor: 12,
 };
 
 export function sectorLore(id: SectorId): LoreId {

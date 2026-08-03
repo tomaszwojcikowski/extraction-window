@@ -60,7 +60,7 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  if (state.player.energy <= state.player.maxEnergy * 0.55) {
+  if (state.player.energy <= state.player.maxEnergy * 0.65) {
     const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
@@ -70,7 +70,10 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  if (state.sectorId === 'ash' && state.player.filterTurns <= 0) {
+  if (
+    (state.sectorId === 'ash' || state.sectorId === 'brine' || state.sectorId === 'fissure') &&
+    state.player.filterTurns <= 0
+  ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'filter');
     if (fIdx >= 0) {
       state.ui.selectedSlot = fIdx;
