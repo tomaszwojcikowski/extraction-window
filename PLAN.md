@@ -25,9 +25,9 @@ Tone: clinical field-ops sci-fi logbook. No medieval/fantasy magic.
 
 Lore bible: `docs/LORE.md` + `src/data/lore.ts`. Every player-facing string maps to a lore entry ID.
 
-## Campaign (8 sectors)
+## Campaign (12 sectors)
 
-Fixed order: Plains → Flood Basin → Canopy → Ruin Belt → Beacon Relay hub → Ash Wastes → Cache Vault → Ridge Approaches / Shuttle Pad
+Fixed order: Plains → Flood Basin → Canopy → Spire Reach → Ruin Belt → Beacon Relay hub → Fault Trench → Ash Wastes → Brine Shelf → Cache Vault → Fissure March → Ridge Approaches / Shuttle Pad
 
 - Ruin Belt always has Relay Key (random placement, reachable)
 - Beacon Relay: spend key to open inland path

@@ -11,10 +11,14 @@ import { syncObjectiveFlags } from './inventory';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   flood: 'LOG-SEC-FLOOD',
   canopy: 'LOG-SEC-CANOPY',
+  spire: 'LOG-SEC-SPIRE',
   ruin: 'LOG-SEC-RUIN',
   beacon: 'LOG-SEC-BEACON',
+  trench: 'LOG-SEC-TRENCH',
   ash: 'LOG-SEC-ASH',
+  brine: 'LOG-SEC-BRINE',
   vault: 'LOG-SEC-VAULT',
+  fissure: 'LOG-SEC-FISSURE',
   ridge: 'LOG-SEC-RIDGE',
 };
 

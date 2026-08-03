@@ -7,7 +7,7 @@ import { applyAction, createGame, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
 import { statusHud } from '../sim/status';
 import { toolAtkBonus } from '../sim/combat';
-import { objectivePrompt, STORM_TURNS } from '../campaign/spine';
+import { CAMPAIGN_LENGTH, objectivePrompt, STORM_TURNS } from '../campaign/spine';
 import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
 import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
 import { createScanRetrace } from './atmosphere';
@@ -968,9 +968,11 @@ export class GameScene extends Phaser.Scene {
     );
 
     const sector = getSector(st.sectorIndex);
-    const dots = Array.from({ length: 8 }, (_, i) => (i <= st.sectorIndex ? '●' : '○')).join(' ');
+    const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
+      i <= st.sectorIndex ? '●' : '○',
+    ).join(' ');
     this.sectorText.setText(
-      `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/8  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
+      `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
     );
 
     const badges: string[] = [];

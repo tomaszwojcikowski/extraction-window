@@ -53,10 +53,14 @@ export const BIOME_FLOOR_TINT: Record<SectorId, number> = {
   plains: 0xe8e0c0,
   flood: 0xc0d0c8,
   canopy: 0xc8d8b0,
+  spire: 0xd0d8c0,
   ruin: 0xd8c8a8,
   beacon: 0xd0d0b8,
+  trench: 0xc8c0a8,
   ash: 0xd0c0a0,
+  brine: 0xb8d0c8,
   vault: 0xc8c8b0,
+  fissure: 0xd0b8a8,
   ridge: 0xd8d0b0,
 };
 

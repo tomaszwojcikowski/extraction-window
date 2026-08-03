@@ -4,6 +4,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { CAMPAIGN_LENGTH } from '../src/campaign/spine';
 import { runAutopilot } from '../src/ai/autopilot';
 import { getSector } from '../src/data/encounters';
 import { generateSectorMap } from '../src/map/generator';
@@ -34,7 +35,7 @@ interface SeedReport {
 }
 
 function checkObjectivesReachable(seed: number): boolean {
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
     const sector = getSector(i);
     const map = generateSectorMap(sector, seed, i);
     if (!canReach(map.tiles, map.start, map.exit)) return false;

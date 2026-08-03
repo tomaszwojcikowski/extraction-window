@@ -84,6 +84,13 @@ export function registerTextures(scene: Phaser.Scene): void {
         g.fillRect(x + 1, y + 1, 1, 2);
       }
     },
+    spire: (v) => {
+      ink(g, Theme.phosphorDim, 0.55);
+      for (let x = 5 + v; x < T - 4; x += 6) {
+        g.fillRect(x, 4, 1, T - 8);
+        g.fillRect(x - 1, 6 + v, 3, 1);
+      }
+    },
     ruin: (v) => {
       ink(g, Theme.phosphorMute, 0.65);
       for (let x = 3 + v; x < T - 3; x += 5) g.fillRect(x, 3, 1, T - 6);
@@ -102,6 +109,13 @@ export function registerTextures(scene: Phaser.Scene): void {
         g.fillRect(c - 2, c + 2, 5, 1);
       }
     },
+    trench: (v) => {
+      ink(g, Theme.phosphorMute, 0.7);
+      for (let y = 5 + v; y < T - 4; y += 4) {
+        g.fillRect(2, y, T - 4, 1);
+        g.fillRect(4, y + 1, T - 8, 1);
+      }
+    },
     ash: (v) => {
       ink(g, Theme.phosphorMute, 0.8);
       for (let i = 0; i < 14; i++) {
@@ -110,12 +124,27 @@ export function registerTextures(scene: Phaser.Scene): void {
         g.fillRect(px, py, 1, 1);
       }
     },
+    brine: (v) => {
+      ink(g, Theme.phosphorMute, 0.75);
+      for (let y = 3 + v; y < T - 3; y += 2) {
+        g.fillRect(3, y, T - 6, 1);
+      }
+      ink(g, Theme.ionHazardDeep, 0.4);
+      g.fillRect(8 + v, 8, 6, 4);
+    },
     vault: (v) => {
       ink(g, Theme.phosphorMute, 0.55);
       for (let y = 4; y < T - 4; y += 4) {
         for (let x = 4 + ((y + v) % 2) * 2; x < T - 4; x += 4) {
           g.fillRect(x, y, 2, 2);
         }
+      }
+    },
+    fissure: (v) => {
+      ink(g, Theme.phosphorMute, 0.7);
+      for (let i = 0; i < T; i++) {
+        const y = 4 + ((i * 2 + v * 3) % (T - 8));
+        g.fillRect(i, y, 1, 2);
       }
     },
     ridge: (v) => {

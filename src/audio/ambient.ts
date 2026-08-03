@@ -35,6 +35,12 @@ const PRESETS: Record<SectorId, AmbientPreset> = {
       { freq: 110, type: 'sine', vol: 0.015, lfoHz: 0.2, lfoDepth: 8 },
     ],
   },
+  spire: {
+    drones: [
+      { freq: 88, type: 'sine', vol: 0.032, lfoHz: 0.18, lfoDepth: 10 },
+      { freq: 176, type: 'triangle', vol: 0.01 },
+    ],
+  },
   ruin: {
     drones: [
       { freq: 62, type: 'sawtooth', vol: 0.012 },
@@ -48,15 +54,34 @@ const PRESETS: Record<SectorId, AmbientPreset> = {
       { freq: 180, type: 'triangle', vol: 0.012 },
     ],
   },
+  trench: {
+    drones: [
+      { freq: 50, type: 'sine', vol: 0.038 },
+      { freq: 100, type: 'sawtooth', vol: 0.008, lfoHz: 0.06, lfoDepth: 4 },
+    ],
+    noise: { vol: 0.012, filterHz: 350 },
+  },
   ash: {
     drones: [{ freq: 42, type: 'sawtooth', vol: 0.01 }],
     noise: { vol: 0.028, filterHz: 900 },
+  },
+  brine: {
+    drones: [{ freq: 46, type: 'sine', vol: 0.038, lfoHz: 0.14, lfoDepth: 7 }],
+    noise: { vol: 0.02, filterHz: 500 },
+    dripHz: 0.28,
   },
   vault: {
     drones: [
       { freq: 75, type: 'sine', vol: 0.04 },
       { freq: 150, type: 'square', vol: 0.008, lfoHz: 0.05, lfoDepth: 3 },
     ],
+  },
+  fissure: {
+    drones: [
+      { freq: 52, type: 'sawtooth', vol: 0.014 },
+      { freq: 104, type: 'sine', vol: 0.028, lfoHz: 0.11, lfoDepth: 6 },
+    ],
+    noise: { vol: 0.016, filterHz: 700 },
   },
   ridge: {
     drones: [

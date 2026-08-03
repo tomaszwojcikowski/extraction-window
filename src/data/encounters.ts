@@ -6,10 +6,14 @@ export type SectorId =
   | 'plains'
   | 'flood'
   | 'canopy'
+  | 'spire'
   | 'ruin'
   | 'beacon'
+  | 'trench'
   | 'ash'
+  | 'brine'
   | 'vault'
+  | 'fissure'
   | 'ridge';
 
 export interface SectorDef {
@@ -125,8 +129,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
-    id: 'ruin',
+    id: 'spire',
     index: 3,
+    loreName: 'SEC-SPIRE',
+    width: 42,
+    height: 28,
+    roomCount: [5, 7],
+    enemyTable: ['wasp', 'stalker', 'spore'],
+    enemyCount: [3, 4],
+    lootTable: [...FIELD_LOOT, 'probe', 'jammer'],
+    lootCount: [3, 5],
+    hazardChance: 0.03,
+    scrubChance: 0.03,
+    rubbleChance: 0.04,
+    ventChance: 0.03,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
+    id: 'ruin',
+    index: 4,
     loreName: 'SEC-RUIN',
     width: 44,
     height: 30,
@@ -147,7 +172,7 @@ export const SECTORS: SectorDef[] = [
   },
   {
     id: 'beacon',
-    index: 4,
+    index: 5,
     loreName: 'SEC-BEACON',
     width: 34,
     height: 24,
@@ -167,8 +192,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
+    id: 'trench',
+    index: 6,
+    loreName: 'SEC-TRENCH',
+    width: 40,
+    height: 28,
+    roomCount: [5, 7],
+    enemyTable: ['crawler', 'wasp', 'stalker'],
+    enemyCount: [3, 4],
+    lootTable: [...FIELD_LOOT, 'plate', 'filter', 'coolant'],
+    lootCount: [3, 5],
+    hazardChance: 0.035,
+    scrubChance: 0.02,
+    rubbleChance: 0.07,
+    ventChance: 0.03,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
     id: 'ash',
-    index: 5,
+    index: 7,
     loreName: 'SEC-ASH',
     width: 42,
     height: 30,
@@ -188,8 +234,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
+    id: 'brine',
+    index: 8,
+    loreName: 'SEC-BRINE',
+    width: 42,
+    height: 28,
+    roomCount: [5, 7],
+    enemyTable: ['leech', 'serpent', 'crawler', 'wraith'],
+    enemyCount: [3, 5],
+    lootTable: ['med', 'energy', 'filter', 'coolant', 'sealant', 'plate', 'dart'],
+    lootCount: [3, 5],
+    hazardChance: 0.08,
+    scrubChance: 0.02,
+    rubbleChance: 0.04,
+    ventChance: 0.05,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
     id: 'vault',
-    index: 6,
+    index: 9,
     loreName: 'SEC-VAULT',
     width: 38,
     height: 26,
@@ -209,8 +276,29 @@ export const SECTORS: SectorDef[] = [
     isShuttle: false,
   },
   {
+    id: 'fissure',
+    index: 10,
+    loreName: 'SEC-FISSURE',
+    width: 38,
+    height: 26,
+    roomCount: [4, 6],
+    enemyTable: ['serpent', 'wraith', 'crawler', 'wasp'],
+    enemyCount: [2, 4],
+    lootTable: ['med', 'energy', 'coolant', 'stim', 'plate', 'filter'],
+    lootCount: [2, 4],
+    hazardChance: 0.04,
+    scrubChance: 0.02,
+    rubbleChance: 0.08,
+    ventChance: 0.04,
+    energyDrain: 0,
+    hasRelayKey: false,
+    hasNavCore: false,
+    isBeacon: false,
+    isShuttle: false,
+  },
+  {
     id: 'ridge',
-    index: 7,
+    index: 11,
     loreName: 'SEC-RIDGE',
     width: 36,
     height: 24,

@@ -140,7 +140,7 @@ export function chooseAction(state: GameState): Action | null {
   }
 
   // Buff before likely fights in late sectors
-  if (state.sectorIndex >= 3 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
+  if (state.sectorIndex >= 4 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
     const stimIdx = state.inventory.findIndex((s) => s.kind === 'stim');
     const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
     const idx = stimIdx >= 0 ? stimIdx : probeIdx;

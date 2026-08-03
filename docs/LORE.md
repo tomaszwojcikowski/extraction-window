@@ -35,10 +35,14 @@ Orbital relay failed mid-drop. Shuttle nav stack lost lock. Extraction window cl
 | SEC-PLAINS | Survey Plains | Drop zone; low threat |
 | SEC-FLOOD | Flood Basin | Standing ion-water; elevated hazard tiles |
 | SEC-CANOPY | Canopy Reach | Dense RF scatter; stalkers |
+| SEC-SPIRE | Spire Reach | Abandoned Helix survey masts; RF scatter intensifies |
 | SEC-RUIN | Ruin Belt | Prior Helix survey wreckage; Relay Key in caches (guaranteed) |
 | SEC-BEACON | Beacon Relay | Spend Relay Key to open inland path to Cache Vault |
+| SEC-TRENCH | Fault Trench | Inland corridor after seal; deep fauna rising |
 | SEC-ASH | Ash Wastes | Baseline radiation energy drain; crawlers |
+| SEC-BRINE | Brine Shelf | Ion-brine pools; hazard density before vault |
 | SEC-VAULT | Cache Vault | Helix depot; spare Nav Core; Vault Sentinels = RF-corrupted site defense |
+| SEC-FISSURE | Fissure March | Storm pressure climb toward the pad |
 | SEC-RIDGE | Ridge Approaches | Shuttle pad; win with Core before storm = 0 |
 
 **Ruin Belt** — Remains of an earlier Helix ground survey that lost orbital lock and was abandoned. Contingency caches still hold Relay Keys for Beacon authorization.

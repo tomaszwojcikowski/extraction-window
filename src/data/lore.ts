@@ -63,16 +63,25 @@ export const LORE = {
   'OBJ-RELAYKEY': 'Secure Relay Key from Ruin Belt — prior Helix survey wreckage.',
   'OBJ-BEACON': 'Authorize Beacon Relay with Relay Key to open inland path.',
   'OBJ-SHUTTLE': 'Reach Ridge Approaches shuttle pad with Nav Core.',
+  'OBJ-LOCAL-EXIT': '→ Sector exit',
+  'OBJ-LOCAL-KEY': '→ Relay Key',
+  'OBJ-LOCAL-BEACON': '→ Beacon console',
+  'OBJ-LOCAL-CORE': '→ Nav Core',
+  'OBJ-LOCAL-SHUTTLE': '→ Shuttle pad',
   'HAZ-STORM': 'Ion storm turn budget remaining.',
 
   // Sectors
   'SEC-PLAINS': 'Survey Plains',
   'SEC-FLOOD': 'Flood Basin',
   'SEC-CANOPY': 'Canopy Reach',
+  'SEC-SPIRE': 'Spire Reach',
   'SEC-RUIN': 'Ruin Belt',
   'SEC-BEACON': 'Beacon Relay',
+  'SEC-TRENCH': 'Fault Trench',
   'SEC-ASH': 'Ash Wastes',
+  'SEC-BRINE': 'Brine Shelf',
   'SEC-VAULT': 'Cache Vault',
+  'SEC-FISSURE': 'Fissure March',
   'SEC-RIDGE': 'Ridge Approaches',
 
   // Items
@@ -171,12 +180,16 @@ export const LORE = {
   'LOG-SECTOR': 'Sector boundary crossed.',
   'LOG-SEC-FLOOD': 'Flood Basin. Standing ion-water — watch energy.',
   'LOG-SEC-CANOPY': 'Canopy Reach. Dense RF scatter — stalkers likely.',
+  'LOG-SEC-SPIRE': 'Spire Reach. Abandoned Helix survey masts — RF scatter intensifies.',
   'LOG-SEC-RUIN':
     'Ruin Belt. Prior Helix survey site — collapsed stacks; Relay Key in local caches.',
   'LOG-SEC-BEACON': 'Beacon Relay hub. Authorize with Relay Key to unseal inland path.',
+  'LOG-SEC-TRENCH': 'Fault Trench. Inland corridor after seal — deep fauna pressure rising.',
   'LOG-SEC-ASH': 'Ash Wastes. Baseline radiation — life support drain elevated.',
+  'LOG-SEC-BRINE': 'Brine Shelf. Ion-brine pools — hazard density high before the vault.',
   'LOG-SEC-VAULT':
     'Cache Vault. Helix depot. Sentinels are site defense — RF-corrupted, still hostile.',
+  'LOG-SEC-FISSURE': 'Fissure March. Storm pressure climbing — push to Ridge Approaches pad.',
   'LOG-SEC-RIDGE': 'Ridge Approaches. Shuttle pad ahead — Nav Core required for lock.',
   'LOG-EXIT-BLOCKED': 'Exit sealed.',
   'LOG-HAZARD': 'Ion hazard — energy drain.',
