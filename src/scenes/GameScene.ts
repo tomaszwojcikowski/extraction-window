@@ -3,18 +3,18 @@ import { lore, type LoreId } from '../data/lore';
 import { getSector } from '../data/encounters';
 import { ITEMS } from '../data/items';
 import { ENEMIES } from '../data/enemies';
-import { applyAction, createGame, type Action, type GameState } from '../sim';
+import { applyAction, createGame, describeObjective, stickyMilestone, type Action, type GameState } from '../sim';
 import { fovDistance, playerFovRadius } from '../sim/fov';
 import { statusHud } from '../sim/status';
 import { toolAtkBonus } from '../sim/combat';
-import { CAMPAIGN_LENGTH, objectivePrompt, STORM_TURNS } from '../campaign/spine';
+import { CAMPAIGN_LENGTH, STORM_TURNS } from '../campaign/spine';
 import { TILE, TILE_DRAW, enemyTextureKey } from './textures';
 import { BIOME_FLOOR_TINT, FONT_DATA, Theme, ThemeCss, floorTextureKey } from './theme';
 import { createScanRetrace } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 
-const TOP = 76;
+const TOP = 92;
 const BOTTOM = 112;
 const MOVE_MS = 100;
 
@@ -52,6 +52,10 @@ export class GameScene extends Phaser.Scene {
   private hintText!: Phaser.GameObjects.Text;
   private questText!: Phaser.GameObjects.Text;
   private sectorText!: Phaser.GameObjects.Text;
+  private milestoneText!: Phaser.GameObjects.Text;
+  private chevronGfx!: Phaser.GameObjects.Graphics;
+  private goalMarker!: Phaser.GameObjects.Image;
+  private goalPulseTween: Phaser.Tweens.Tween | null = null;
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -97,14 +101,33 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.objText = this.add
-      .text(12, 50, '', {
+      .text(12, 48, '', {
         fontFamily: FONT_DATA,
         fontSize: '12px',
         color: ThemeCss.phosphorBright,
         wordWrap: { width: this.scale.width - 220 },
+        lineSpacing: 2,
       })
       .setScrollFactor(0)
       .setDepth(92);
+
+    this.milestoneText = this.add
+      .text(12, 78, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '11px',
+        color: ThemeCss.quest,
+        wordWrap: { width: this.scale.width - 220 },
+      })
+      .setScrollFactor(0)
+      .setDepth(92);
+
+    this.chevronGfx = this.add.graphics().setScrollFactor(0).setDepth(94);
+
+    this.goalMarker = this.add.image(0, 0, 't_quest');
+    this.goalMarker.setDisplaySize(TILE_DRAW + 4, TILE_DRAW + 4);
+    this.goalMarker.setAlpha(0);
+    this.goalMarker.setDepth(5);
+    this.itemLayer.add(this.goalMarker);
 
     this.questText = this.add
       .text(this.scale.width - 12, 10, '', {
@@ -811,6 +834,84 @@ export class GameScene extends Phaser.Scene {
     this.mapLayer.setPosition(ox, oy);
     this.itemLayer.setPosition(ox, oy);
     this.entityLayer.setPosition(ox, oy);
+    // Keep chevron fresh as camera drifts
+    if (!snap) this.syncGoalVisuals(describeObjective(this.state).pos);
+  }
+
+  /** Pulse explored/visible goal tile; edge chevron when known but off-screen. */
+  private syncGoalVisuals(pos: { x: number; y: number } | null): void {
+    this.chevronGfx.clear();
+    const st = this.state;
+    if (!pos) {
+      this.goalMarker.setAlpha(0);
+      this.goalPulseTween?.stop();
+      this.goalPulseTween = null;
+      return;
+    }
+
+    const explored = st.explored[pos.y]?.[pos.x] === true;
+    const visible = st.visible[pos.y]?.[pos.x] === true;
+    if (!explored && !visible) {
+      this.goalMarker.setAlpha(0);
+      this.goalPulseTween?.stop();
+      this.goalPulseTween = null;
+      return;
+    }
+
+    const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
+    const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
+    this.goalMarker.setPosition(wx, wy);
+    this.goalMarker.setTint(Theme.quest);
+    if (!this.goalPulseTween) {
+      this.goalMarker.setAlpha(0.75);
+      this.goalPulseTween = this.tweens.add({
+        targets: this.goalMarker,
+        alpha: 0.35,
+        duration: 520,
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+
+    // Screen-space position of goal
+    const screenX = wx - this.camX;
+    const screenY = wy - this.camY + TOP;
+    const pad = 18;
+    const left = pad;
+    const right = this.scale.width - pad;
+    const top = TOP + pad;
+    const bottom = this.scale.height - BOTTOM - pad;
+    const onScreen =
+      screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
+    if (onScreen) return;
+
+    const cx = this.scale.width / 2;
+    const cy = TOP + (this.scale.height - TOP - BOTTOM) / 2;
+    const dx = screenX - cx;
+    const dy = screenY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    // Clamp to viewport edge
+    const edgeDistX = ux > 0 ? (right - cx) / ux : ux < 0 ? (left - cx) / ux : Infinity;
+    const edgeDistY = uy > 0 ? (bottom - cy) / uy : uy < 0 ? (top - cy) / uy : Infinity;
+    const edgeDist = Math.min(Math.abs(edgeDistX), Math.abs(edgeDistY));
+    const ex = cx + ux * edgeDist;
+    const ey = cy + uy * edgeDist;
+
+    this.chevronGfx.fillStyle(Theme.quest, 0.95);
+    this.chevronGfx.lineStyle(1, Theme.phosphorBright, 1);
+    const s = 10;
+    const px = -uy;
+    const py = ux;
+    this.chevronGfx.fillTriangle(
+      ex + ux * s,
+      ey + uy * s,
+      ex - ux * s * 0.4 + px * s * 0.7,
+      ey - uy * s * 0.4 + py * s * 0.7,
+      ex - ux * s * 0.4 - px * s * 0.7,
+      ey - uy * s * 0.4 - py * s * 0.7,
+    );
   }
 
   private toggleHelp(force?: boolean): void {
@@ -983,15 +1084,16 @@ export class GameScene extends Phaser.Scene {
     if (st.objectives.hasNavCore) badges.push(lore('UI-QUEST-CORE'));
     this.questText.setText(badges.join('  ·  '));
 
-    const objLine = `${lore('UI-OBJECTIVE')}: ${lore(
-      objectivePrompt({
-        hasRelayKey: st.objectives.hasRelayKey,
-        usedRelayKey: st.objectives.usedRelayKey,
-        hasNavCore: st.objectives.hasNavCore,
-        sectorId: st.sectorId,
-      }),
-    )}`;
-    this.objText.setText(st.stormTurns <= 50 ? `${objLine}\n${lore('HAZ-STORM')}` : objLine);
+    const desc = describeObjective(st);
+    const localLine = lore(desc.local);
+    const campaignLine = `${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`;
+    const stormBit = st.stormTurns <= 50 ? `\n${lore('HAZ-STORM')}` : '';
+    this.objText.setText(`${localLine}\n${campaignLine}${stormBit}`);
+
+    const sticky = stickyMilestone(st.loreEvents);
+    this.milestoneText.setText(sticky ? lore(sticky) : '');
+
+    this.syncGoalVisuals(desc.pos);
 
     const logs = st.log.slice(-5).map((l) => {
       const base = lore(l.loreId);
