@@ -584,18 +584,32 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
 }
 
 const BASE_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
-const MIDGAME_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'relay_chain'];
+const RELAY_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'relay_chain'];
+const CALIBRATE_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'calibrate'];
+const DUAL_MAST_ROOM_QUEST_KINDS: RoomQuestKind[] = [
+  ...BASE_ROOM_QUEST_KINDS,
+  'relay_chain',
+  'calibrate',
+];
 
 /**
- * Relay-chain is a midgame optional route investment. Calibrate/stabilize keep
- * their save-compatible handlers but remain deferred until their polish pass.
+ * Relay-chain is a midgame optional route investment. Dual-mast calibration
+ * starts only after the beacon, when linked arrays fit the shelf fiction.
+ * Stabilize keeps its save-compatible handler deferred until its polish pass.
  */
 export function pickRoomQuestKind(rng: () => number, sectorIndex: number): RoomQuestKind {
-  const pool = sectorIndex >= 4 && sectorIndex <= 10 ? MIDGAME_ROOM_QUEST_KINDS : BASE_ROOM_QUEST_KINDS;
+  const pool =
+    sectorIndex >= 7 && sectorIndex <= 10
+      ? DUAL_MAST_ROOM_QUEST_KINDS
+      : sectorIndex >= 4 && sectorIndex <= 6
+        ? RELAY_ROOM_QUEST_KINDS
+        : sectorIndex >= 11 && sectorIndex <= 12
+          ? CALIBRATE_ROOM_QUEST_KINDS
+          : BASE_ROOM_QUEST_KINDS;
   return pool[Math.floor(rng() * pool.length)]!;
 }
 
-/** Multi-site builders — relay-chain and vent-seal are active; calibrate is deferred. */
+/** Multi-site builders for linked arrays and the vent-seal procedure. */
 export function isMultiSiteKind(kind: RoomQuestKind): boolean {
   return kind === 'relay_chain' || kind === 'calibrate' || kind === 'vent_seal';
 }

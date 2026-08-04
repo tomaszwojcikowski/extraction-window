@@ -45,7 +45,7 @@ describe('ADOM Wave 3 — ion fronts', () => {
 describe('ADOM Wave 3 — relay chain', () => {
   it('appears only in the midgame pool', () => {
     expect(pickRoomQuestKind(() => 0.99, 4)).toBe('relay_chain');
-    expect(pickRoomQuestKind(() => 0.99, 11)).toBe('decode');
+    expect(pickRoomQuestKind(() => 0.99, 11)).toBe('calibrate');
   });
 
   it('grants a pattern-buffer fail-safe after all relays are closed', () => {
@@ -64,5 +64,32 @@ describe('ADOM Wave 3 — relay chain', () => {
 
     expect(st.roomQuest.done).toBe(true);
     expect(st.extractFavor).toEqual({ kind: 'pattern_fail_safe' });
+  });
+});
+
+describe('ADOM Wave 3 — calibrate', () => {
+  it('appears only in late-mid and late sector pools', () => {
+    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('relay_chain');
+    expect(pickRoomQuestKind(() => 0.99, 7)).toBe('calibrate');
+    expect(pickRoomQuestKind(() => 0.99, 12)).toBe('calibrate');
+    expect(pickRoomQuestKind(() => 0.99, 13)).toBe('decode');
+  });
+
+  it('grants a storm shelter after both masts are calibrated', () => {
+    const st = combatArena();
+    const room = { x: 1, y: 1, w: 3, h: 3 };
+    st.roomQuest = buildMultiRoomQuest('calibrate', [
+      { pos: { x: 2, y: 2 }, room },
+      { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
+    ]);
+
+    for (const step of st.roomQuest.steps) {
+      st.player.x = step.pos.x;
+      st.player.y = step.pos.y;
+      expect(tryRoomQuest(st)).toBe(true);
+    }
+
+    expect(st.roomQuest.done).toBe(true);
+    expect(st.extractFavor).toEqual({ kind: 'storm_shelter' });
   });
 });

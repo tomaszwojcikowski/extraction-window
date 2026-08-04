@@ -61,16 +61,26 @@ describe('map generator', () => {
     }
   });
 
-  it('keeps relay-chain quests in the midgame pool only', () => {
+  it('keeps linked room quests within their sector gates', () => {
     const base = new Set(['salvage', 'purge', 'vent_seal', 'decode']);
-    const midgame = new Set([...base, 'relay_chain']);
+    const relay = new Set([...base, 'relay_chain']);
+    const dualMast = new Set([...relay, 'calibrate']);
+    const calibrate = new Set([...base, 'calibrate']);
     for (const seed of [1, 7, 42, 99, 256, 777, 1337, 4096, 9999, 12345]) {
       for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
         const sector = getSector(i);
         const map = generateSectorMap(sector, seed, i);
         if (!map.roomQuest) continue;
+        const allowed =
+          i >= 7 && i <= 10
+            ? dualMast
+            : i >= 4 && i <= 6
+              ? relay
+              : i >= 11 && i <= 12
+                ? calibrate
+                : base;
         expect(
-          (i >= 4 && i <= 10 ? midgame : base).has(map.roomQuest.kind),
+          allowed.has(map.roomQuest.kind),
           `seed=${seed} sector=${sector.id} kind=${map.roomQuest.kind}`,
         ).toBe(true);
       }
