@@ -48,7 +48,8 @@ export interface EnemyDef {
   /** Manhattan aggro / interest radius */
   aggroRange: number;
   damageType: DamageType;
-}
+  /** Prefer dark (hunt shadows) or lit (hunt lamps) tiles for aggro bias. */
+  lightPrefer?: 'dark' | 'lit';}
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   mite: {
@@ -62,6 +63,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'wander',
     aggroRange: 2,
     damageType: 'kinetic',
+    lightPrefer: 'dark',
   },
   spore: {
     kind: 'spore',
@@ -74,6 +76,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'swell',
     aggroRange: 3,
     damageType: 'ion',
+    lightPrefer: 'dark',
   },
   wasp: {
     kind: 'wasp',
@@ -86,6 +89,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'skirmish',
     aggroRange: 6,
     damageType: 'kinetic',
+    lightPrefer: 'lit',
   },
   stalker: {
     kind: 'stalker',
@@ -98,6 +102,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'ambush',
     aggroRange: 8,
     damageType: 'kinetic',
+    lightPrefer: 'dark',
   },
   leech: {
     kind: 'leech',
@@ -170,6 +175,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 4,
     damageType: 'kinetic',
+    lightPrefer: 'lit',
   },
   mastling: {
     kind: 'mastling',
@@ -182,6 +188,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'skirmish',
     aggroRange: 7,
     damageType: 'ion',
+    lightPrefer: 'lit',
   },
   skitter: {
     kind: 'skitter',
@@ -194,6 +201,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'ambush',
     aggroRange: 9,
     damageType: 'kinetic',
+    lightPrefer: 'dark',
   },
   rift: {
     kind: 'rift',
@@ -218,6 +226,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'ambush',
     aggroRange: 8,
     damageType: 'ion',
+    lightPrefer: 'dark',
   },
   duct_drone: {
     kind: 'duct_drone',
@@ -230,6 +239,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 5,
     damageType: 'kinetic',
+    lightPrefer: 'lit',
   },
   shear_wraith: {
     kind: 'shear_wraith',

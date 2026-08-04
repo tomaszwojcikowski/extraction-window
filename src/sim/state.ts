@@ -113,6 +113,8 @@ export function createGame(seed: number): GameState {
     emStress: 0,
     emHighStreak: 0,
     scanScars: [],
+    doctrineQuiet: 0,
+    doctrineProbe: 0,
     handshake: null,
     patternDesync: 0,
     scriptedFired: {},

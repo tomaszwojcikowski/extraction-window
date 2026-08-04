@@ -1,4 +1,5 @@
 import { getSector } from '../data/encounters';
+import { ENEMIES } from '../data/enemies';
 import { progressEnergyTax, progressStormTax } from '../data/difficulty';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { XP_SECTOR } from '../data/progression';
@@ -8,14 +9,55 @@ import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { moveAllies } from './allyAi';
-import { addStatus, hasScar, hasStatus, tickPlayerStatusEffects } from './status';
+import { addStatus, addPlayerMarked, hasScar, hasStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax, EM_HIGH, SCAR_STREAK_TURNS } from './emStress';
 import { mechanicsOnEndTurn } from './mechanics';
 import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
-import type { GameState, ScanScarId } from './types';
+import { enemyAt, manhattan } from './spatial';
+import type { Enemy, GameState, ScanScarId } from './types';
 import { pick } from './rng';
+
+function trySpawnNestMite(state: GameState): void {
+  const dirs = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ] as const;
+  for (const [dx, dy] of dirs) {
+    const x = state.player.x + dx;
+    const y = state.player.y + dy;
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) continue;
+    if (!state.tiles[y]![x]!.walkable) continue;
+    if (enemyAt(state, x, y)) continue;
+    if (x === state.player.x && y === state.player.y) continue;
+    const def = ENEMIES.mite;
+    const mite: Enemy = {
+      id: state.nextEntityId++,
+      kind: 'mite',
+      x,
+      y,
+      hp: def.hp,
+      maxHp: def.hp,
+      atk: def.atk,
+      def: def.def,
+      alive: true,
+      statuses: {},
+      alerted: true,
+      swellTurns: 0,
+      homeX: x,
+      homeY: y,
+      skirmishRetreat: false,
+      windup: 0,
+      tier: 'normal',
+    };
+    state.enemies.push(mite);
+    pushLog(state, 'LOG-SCRUB-NEST');
+    return;
+  }
+}
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
@@ -116,6 +158,16 @@ function tickEnvironment(state: GameState): void {
     state.player.energy -= hazardDrain;
     addStatus(state.player, 'ion_burn', 1);
     pushLog(state, 'LOG-HAZARD');
+  } else if (tile.kind === 'brine_pool') {
+    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
+    let poolDrain = (filter ? 1 : 2) + brineExtra;
+    if (coupler) poolDrain = Math.max(0, poolDrain - 1);
+    state.player.energy -= poolDrain;
+    if (state.rng() < 0.18) {
+      addStatus(state.player, 'fatigue', 2);
+      pushLog(state, 'LOG-STATUS-FATIGUE');
+    }
+    pushLog(state, 'LOG-BRINE-POOL');
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter || coupler ? 0 : 1;
     if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
@@ -128,8 +180,30 @@ function tickEnvironment(state: GameState): void {
       addStatus(state.player, 'fatigue', 2);
       pushLog(state, 'LOG-STATUS-FATIGUE');
     }
+  } else if (tile.kind === 'tripwire') {
+    addEmStress(state, 2, 'tripwire');
+    for (const en of state.enemies) {
+      if (!en.alive) continue;
+      if (manhattan(en.x, en.y, state.player.x, state.player.y) <= 5) {
+        en.alerted = true;
+      }
+    }
+    state.tiles[state.player.y]![state.player.x] = {
+      kind: 'floor',
+      walkable: true,
+      transparent: true,
+    };
+    pushLog(state, 'LOG-TRIPWIRE');
+  } else if (tile.kind === 'scrub_nest') {
+    const nestRoll = state.rng();
+    if (nestRoll < 0.08) {
+      addPlayerMarked(state, 3);
+      pushLog(state, 'LOG-STATUS-MARKED');
+    } else if (nestRoll < 0.14) {
+      trySpawnNestMite(state);
+    }
   }
-  // scrub is a sight-blocker only — no energy tax
+  // scrub / scrub_nest are sight-blockers — scrub_nest may also spawn
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;

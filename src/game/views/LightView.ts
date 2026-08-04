@@ -210,7 +210,12 @@ export class LightView {
             : toneMap(biome.ambient * 0.85);
         const { colorAcc, colorPull } = this.sampleColor(st, x, y, sources);
 
-        const isTerrain = kind === 'floor' || kind === 'scrub' || kind === 'rubble';
+        const isTerrain =
+          kind === 'floor' ||
+          kind === 'scrub' ||
+          kind === 'scrub_nest' ||
+          kind === 'rubble' ||
+          kind === 'tripwire';
         let tint = isTerrain ? floorTint : 0xffffff;
         tint = multiplyTint(tint, ambientTint, 0.35);
         if (colorPull > 0.04) {

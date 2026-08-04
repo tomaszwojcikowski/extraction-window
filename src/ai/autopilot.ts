@@ -149,9 +149,9 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  // Sealant when standing on hazard/vent
+  // Sealant when standing on hazard/vent/brine
   const underfoot = state.tiles[state.player.y]![state.player.x]!;
-  if (underfoot.kind === 'hazard' || underfoot.kind === 'vent') {
+  if (underfoot.kind === 'hazard' || underfoot.kind === 'vent' || underfoot.kind === 'brine_pool') {
     const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant');
     if (sIdx >= 0) {
       state.ui.selectedSlot = sIdx;

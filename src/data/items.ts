@@ -27,7 +27,9 @@ export type ItemKind =
   | 'mapper'
   | 'salvage'
   | 'sealed_crate'
-  | 'array_shard';
+  | 'array_shard'
+  | 'field_sample'
+  | 'pattern_balm';
 
 export type EquipSlotId = 'tool' | 'armor' | 'utility';
 
@@ -258,6 +260,20 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'array_shard',
     loreName: 'ITEM-SHARD',
     loreDesc: 'ITEM-SHARD-DESC',
+    quest: false,
+    stackable: true,
+  },
+  field_sample: {
+    kind: 'field_sample',
+    loreName: 'ITEM-SAMPLE',
+    loreDesc: 'ITEM-SAMPLE-DESC',
+    quest: false,
+    stackable: true,
+  },
+  pattern_balm: {
+    kind: 'pattern_balm',
+    loreName: 'ITEM-BALM',
+    loreDesc: 'ITEM-BALM-DESC',
     quest: false,
     stackable: true,
   },

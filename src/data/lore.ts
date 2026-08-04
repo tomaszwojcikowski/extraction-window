@@ -73,6 +73,8 @@ export const LORE = {
   'UI-HINT-USE-ARMOR': 'Shields thin — use Shield Charge plate (u)',
   'UI-HINT-USE-PATCH': 'Bleeding — open kit (i) and use Medpatch (u)',
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
+  'UI-HINT-SEALED': 'Sealed hatch adjacent — need sealant or baton pry (>)',
+  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with pulse baton (>)',
   'UI-HINT-QUIET': 'Quiet stance — lamp dimmed; FOV tight; fauna less interested',
   'UI-HINT-QUIET-EM':
     'EM critical — use EM Scrambler (u) for quiet stance; suppresses fauna aggro bump (FOV shrinks)',
@@ -186,6 +188,8 @@ export const LORE = {
     'Stranded ensign: escort protocol armed — temporary ally will expire when power fades.',
   'CODEX-TECH':
     'Field tech: Halcyon probe reboot successful — short combat assist only.',
+  'CODEX-SURVEY':
+    'Survey contact: map a mid-room or bring a Nav Ping — optional favor for storm refund.',
   'CODEX-PRIOR-MAP':
     'Prior PADD: hatch bearing due inland-east from drop. Array reported cold — safe for survey.',
   'CODEX-PRIOR-ARRAY':
@@ -250,7 +254,12 @@ export const LORE = {
     'Hard-sealed unknown — higher ID risk than salvage. Use (u) to array-scan.',
   'ITEM-SHARD': 'Array Shard',
   'ITEM-SHARD-DESC':
-    'Unstable field-array fragment — highest ID backlash. Scavenger may get a partial category read.',
+    'Unstable field-array fragment — highest ID backlash. With coolant, crafts Pattern Balm (u).',
+  'ITEM-SAMPLE': 'Field Sample',
+  'ITEM-SAMPLE-DESC':
+    'Fauna residue. Craft with sealant → filter, or energy → ration (u).',
+  'ITEM-BALM': 'Pattern Balm',
+  'ITEM-BALM-DESC': 'Clears pattern desync and purges EM stress. Crafted from shard + coolant.',
 
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
@@ -278,6 +287,7 @@ export const LORE = {
   'NPC-HOLO': 'Archive Holo',
   'NPC-ENSIGN': 'Stranded Ensign',
   'NPC-TECH': 'Field Tech',
+  'NPC-SURVEY': 'Survey Contact',
   'ALLY-DRONE': 'Halcyon Probe',
   'ALLY-ESCORT': 'Survey Escort',
   'ENEMY-MITE-NOTE': 'Grazes residual field-array bleed — packs thicken near warm gear.',
@@ -307,7 +317,14 @@ export const LORE = {
   'LOG-NPC-HOLO': 'Archive dump — shear-window refund.',
   'LOG-NPC-ENSIGN': 'Ensign transfers kit scrap and escort protocol.',
   'LOG-NPC-TECH': 'Tech reboots a Halcyon probe for temporary assist.',
+  'LOG-NPC-SURVEY': 'Survey contact shares bearing notes — optional favor open.',
   'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with > or step around.',
+  'LOG-AGENDA-WANT-MED': 'Ensign needs a Field Hypo spare — hail again when you have one.',
+  'LOG-AGENDA-WANT-QUIET': 'Tech wants a scrambler or active quiet — hail again when ready.',
+  'LOG-AGENDA-WANT-SURVEY': 'Contact wants a surveyed room this sector or a Nav Ping.',
+  'LOG-AGENDA-NONE': 'Contact has nothing further.',
+  'LOG-AGENDA-DONE': 'Favor repaid — shear-window refund.',
+  'LOG-AGENDA-PROBE-BONUS': 'Probe doctrine bonus — extra storm.',
   'LOG-ALLY-UP': 'Ally online.',
   'LOG-ALLY-HIT': 'Ally strikes',
   'LOG-ALLY-KILL': 'Ally downs hostile',
@@ -344,6 +361,18 @@ export const LORE = {
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-JAMMER': 'EM scrambler active — local mites/wasps silenced.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
+  'LOG-SEALED-OPEN': 'Sealant cracks the sealed hatch — floor cleared.',
+  'LOG-SEALED-PRY': 'Pulse baton pries the sealed hatch open.',
+  'LOG-TRIPWIRE': 'Tripwire snaps — EM spike; nearby fauna alerted.',
+  'LOG-BRINE-POOL': 'Brine pool drains the bus.',
+  'LOG-SCRUB-NEST': 'Scrub nest stirs — mite emerges.',
+  'LOG-CRAFT-FILTER': 'Field craft: sample + sealant → plasma filter.',
+  'LOG-CRAFT-RATION': 'Field craft: sample + energy → emergency ration.',
+  'LOG-CRAFT-BALM': 'Field craft: shard + coolant → pattern balm.',
+  'LOG-CRAFT-NEED': 'Need sealant or energy with the field sample to craft.',
+  'LOG-USE-BALM': 'Pattern balm applied — desync cleared, EM purged.',
+  'LOG-DOCTRINE-QUIET': 'Quiet doctrine settling — soft stance habits forming.',
+  'LOG-DOCTRINE-PROBE': 'Probe doctrine settling — array habits forming.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
   'LOG-AIM-MISS': 'Microdart spent — no valid visible target in range.',
@@ -466,6 +495,7 @@ export const LORE = {
   'LOG-SALVAGE-BAD': 'Unstable salvage — EM backlash and local wake.',
   'LOG-PADD-MOD': 'PADD page alters field parameters.',
   'UI-EM': 'EM',
+  'UI-DOCTRINE': 'DOC',
   'UI-SKILL-PICK': 'Field skill',
   'UI-LEVEL': 'LVL',
   'UI-XP': 'XP',

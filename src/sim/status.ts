@@ -7,6 +7,13 @@ export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: 
   target.statuses[id] = Math.max(cur, turns);
 }
 
+/** Marked with Quiet-doctrine soft: duration −1 when Quiet ahead of Probe. */
+export function addPlayerMarked(state: GameState, turns: number): void {
+  let t = turns;
+  if (state.doctrineQuiet > state.doctrineProbe) t = Math.max(1, t - 1);
+  addStatus(state.player, 'marked', t);
+}
+
 export function hasStatus(target: { statuses: StatusMap }, id: StatusId): boolean {
   return (target.statuses[id] ?? 0) > 0;
 }

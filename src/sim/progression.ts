@@ -43,14 +43,35 @@ function applyLevelBump(state: GameState, level: number): void {
 function offerSkillFork(state: GameState, level: number): void {
   const fork = SKILL_FORKS[level];
   if (!fork) return;
-  const options = fork.filter((id) => !state.skills.includes(id));
+  let options = fork.filter((id) => !state.skills.includes(id));
   if (options.length === 0) return;
   if (options.length === 1) {
     pickSkill(state, options[0]!);
     return;
   }
+  // Doctrine bias at level 7: Quiet → last_window first; Probe → deep_reserve first
+  if (level === 7 && options.length === 2) {
+    const quietLead = state.doctrineQuiet >= state.doctrineProbe + 2;
+    const probeLead = state.doctrineProbe >= state.doctrineQuiet + 2;
+    if (quietLead && options.includes('last_window')) {
+      options = ['last_window', ...options.filter((id) => id !== 'last_window')];
+    } else if (probeLead && options.includes('deep_reserve')) {
+      options = ['deep_reserve', ...options.filter((id) => id !== 'deep_reserve')];
+    }
+  }
   state.skillPick = options as SkillId[];
   pushLog(state, 'LOG-SKILL-PICK', `${lore(SKILLS[options[0]!].loreName)} / ${lore(SKILLS[options[1]!].loreName)}`);
+}
+
+/** Tally Quiet vs Probe doctrine; log once when crossing 3. */
+export function bumpDoctrine(state: GameState, which: 'quiet' | 'probe'): void {
+  if (which === 'quiet') {
+    state.doctrineQuiet += 1;
+    if (state.doctrineQuiet === 3) pushLog(state, 'LOG-DOCTRINE-QUIET');
+  } else {
+    state.doctrineProbe += 1;
+    if (state.doctrineProbe === 3) pushLog(state, 'LOG-DOCTRINE-PROBE');
+  }
 }
 
 export function pickSkill(state: GameState, id: SkillId): boolean {

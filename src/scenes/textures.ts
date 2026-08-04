@@ -296,7 +296,20 @@ function drawWall(g: G, T: number, style: WallStyle, variant: number): void {
 function drawProp(
   g: G,
   T: number,
-  kind: 'scrub' | 'rubble' | 'vent' | 'hazard' | 'exit' | 'beacon' | 'shuttle' | 'poi' | 'quest',
+  kind:
+    | 'scrub'
+    | 'rubble'
+    | 'vent'
+    | 'hazard'
+    | 'exit'
+    | 'beacon'
+    | 'shuttle'
+    | 'poi'
+    | 'quest'
+    | 'sealed'
+    | 'tripwire'
+    | 'brine_pool'
+    | 'scrub_nest',
   frame = 0,
 ): void {
   clearGround(g, T);
@@ -310,6 +323,18 @@ function drawProp(
       g.fillRect(6, 8, 3, 2);
       g.fillRect(13, 4, 3, 2);
       g.fillRect(21, 10, 3, 2);
+      break;
+    case 'scrub_nest':
+      ink(g, Theme.phosphorDim);
+      g.fillRect(7, 10, 1, 12);
+      g.fillRect(14, 6, 1, 16);
+      g.fillRect(22, 12, 1, 8);
+      ink(g, Theme.phosphor);
+      g.fillRect(6, 8, 3, 2);
+      g.fillRect(13, 4, 3, 2);
+      g.fillRect(21, 10, 3, 2);
+      ink(g, Theme.ionHazard, 0.55);
+      g.fillRect(12, 14, 8, 6);
       break;
     case 'rubble':
       ink(g, Theme.phosphorMute);
@@ -341,6 +366,34 @@ function drawProp(
       g.fillRect(19, 8 + frame, 3, 3);
       ink(g, Theme.phosphorBright);
       g.fillRect(T / 2 - 1, 6 + frame, 3, 3);
+      break;
+    case 'brine_pool':
+      ink(g, 0x224455);
+      g.fillRect(1, 1, T - 2, T - 2);
+      ink(g, Theme.ionHazard, 0.55 + frame * 0.1);
+      g.fillRect(4, 10, T - 8, 10);
+      ink(g, Theme.phosphorBright, 0.4);
+      g.fillRect(8, 12 + frame, 4, 2);
+      g.fillRect(16, 16, 5, 2);
+      break;
+    case 'sealed':
+      ink(g, Theme.panel);
+      g.fillRect(1, 1, T - 2, T - 2);
+      ink(g, Theme.groundDeep);
+      g.fillRect(6, 6, T - 12, T - 12);
+      ink(g, Theme.storm);
+      g.fillRect(8, 8, T - 16, T - 16);
+      ink(g, Theme.phosphorBright);
+      g.fillRect(13, 12, 6, 2);
+      g.fillRect(15, 10, 2, 6);
+      break;
+    case 'tripwire':
+      ink(g, Theme.phosphorMute, 0.35);
+      g.fillRect(1, 1, T - 2, T - 2);
+      ink(g, Theme.storm);
+      g.fillRect(2, 14, T - 4, 1);
+      g.fillRect(4, 12, 1, 5);
+      g.fillRect(T - 5, 12, 1, 5);
       break;
     case 'exit':
       // Survey hatch — door frame + flag
@@ -855,14 +908,22 @@ export function registerTextures(scene: Phaser.Scene): void {
 
   drawProp(g, T, 'scrub');
   bake(g, 't_scrub', T);
+  drawProp(g, T, 'scrub_nest');
+  bake(g, 't_scrub_nest', T);
   drawProp(g, T, 'rubble');
   bake(g, 't_rubble', T);
+  drawProp(g, T, 'sealed');
+  bake(g, 't_sealed', T);
+  drawProp(g, T, 'tripwire');
+  bake(g, 't_tripwire', T);
 
   for (let f = 0; f < 3; f++) {
     drawProp(g, T, 'vent', f);
     bake(g, f === 0 ? 't_vent' : `t_vent_${f}`, T);
     drawProp(g, T, 'hazard', f);
     bake(g, f === 0 ? 't_hazard' : `t_hazard_${f}`, T);
+    drawProp(g, T, 'brine_pool', f);
+    bake(g, f === 0 ? 't_brine_pool' : `t_brine_pool_${f}`, T);
     drawProp(g, T, 'beacon', f);
     bake(g, f === 0 ? 't_beacon' : `t_beacon_${f}`, T);
     drawProp(g, T, 'poi', f);
@@ -928,6 +989,8 @@ export function registerTextures(scene: Phaser.Scene): void {
   bake(g, npcTextureKey('stranded_ensign'), T);
   drawNpcTech(g, T);
   bake(g, npcTextureKey('field_tech'), T);
+  drawNpcSurvey(g, T);
+  bake(g, npcTextureKey('survey_contact'), T);
   drawAllyDrone(g, T);
   bake(g, allyTextureKey('probe_drone'), T);
   drawAllyEscort(g, T);
@@ -976,6 +1039,23 @@ function drawNpcTech(g: G, T: number): void {
   ink(g, 0x556644);
   g.fillRect(11, 22, 4, 4);
   g.fillRect(17, 22, 4, 4);
+}
+
+function drawNpcSurvey(g: G, T: number): void {
+  g.clear();
+  g.fillStyle(0x000000, 0);
+  g.fillRect(0, 0, T, T);
+  ink(g, 0xaacc88);
+  g.fillRect(11, 6, 10, 8);
+  g.fillRect(10, 14, 12, 10);
+  ink(g, Theme.phosphorBright);
+  g.fillRect(13, 8, 2, 2);
+  g.fillRect(17, 8, 2, 2);
+  ink(g, Theme.ok);
+  g.fillRect(14, 16, 4, 3);
+  ink(g, 0x668855);
+  g.fillRect(12, 24, 3, 4);
+  g.fillRect(17, 24, 3, 4);
 }
 
 function drawAllyDrone(g: G, T: number): void {

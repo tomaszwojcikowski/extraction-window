@@ -69,7 +69,7 @@ export function lightTransmittance(
     if (y < 0 || x < 0 || y >= h || x >= w) return 0;
     const tile = tiles[y]![x]!;
     if (!tile.transparent) return 0;
-    if (tile.kind === 'scrub') transmit *= 0.55;
+    if (tile.kind === 'scrub' || tile.kind === 'scrub_nest') transmit *= 0.55;
     if (transmit < 0.02) return 0;
   }
   return transmit;
@@ -133,7 +133,7 @@ function fovRadius(state: GameState): number {
     state.paddMods.fovBonus +
     (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
   // Mirror quietStance.modifyFov without importing the registry (avoid cycles).
-  if (isQuietStance(state)) base = Math.max(3, base - 1);
+  if (isQuietStance(state) && state.doctrineQuiet < 5) base = Math.max(3, base - 1);
   return base;
 }
 
@@ -176,6 +176,7 @@ function tileEmitter(kind: TileKind): Omit<SimLightSource, 'x' | 'y'> | null {
       return { radius: 3.5, intensity: 0.9, color: 0xff9933 };
     case 'hazard':
     case 'vent':
+    case 'brine_pool':
       return { radius: 2.4, intensity: 0.6, color: 0x66ffcc };
     default:
       return null;

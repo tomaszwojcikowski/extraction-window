@@ -137,6 +137,10 @@ export class HudView {
     const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
     const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? ` DS${st.patternDesync}` : '';
+    const doctrine =
+      st.doctrineQuiet > 0 || st.doctrineProbe > 0
+        ? `  ${lore('UI-DOCTRINE')}:Q${st.doctrineQuiet} P${st.doctrineProbe}`
+        : '';
     const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
     const tool = st.player.equip.tool
@@ -159,7 +163,7 @@ export class HudView {
       (st.scanScars.some((s) => s.id === 'array_bleed') ? 1 : 0);
     const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${doctrine}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

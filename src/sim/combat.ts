@@ -3,7 +3,7 @@ import { lore } from '../data/lore';
 import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS, equipOnHitBleed, equipOnHitStun } from '../data/items';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
-import { addStatus, hasScar, hasStatus } from './status';
+import { addStatus, addPlayerMarked, hasScar, hasStatus } from './status';
 import { hasSkill } from './progression';
 import type { DamageType, Enemy, GameState } from './types';
 
@@ -140,7 +140,7 @@ export function enemyAttack(
   // Wasp / skitter: chance to mark the surveyor (hunter notice)
   if (enemy.kind === 'wasp' || enemy.kind === 'skitter' || enemy.kind === 'reef_skitter') {
     if (state.rng() < 0.28) {
-      addStatus(state.player, 'marked', 4);
+      addPlayerMarked(state, 4);
       pushLog(state, 'LOG-STATUS-MARKED');
     }
   }

@@ -19,6 +19,10 @@ export type TileKind =
   | 'scrub'
   | 'rubble'
   | 'vent'
+  | 'sealed'
+  | 'tripwire'
+  | 'brine_pool'
+  | 'scrub_nest'
   | 'exit'
   | 'beacon'
   | 'shuttle'
@@ -110,6 +114,9 @@ export interface FieldNpc {
   x: number;
   y: number;
   talked: boolean;
+  /** Second hail can complete a soft agenda (optional). */
+  agendaOpen?: boolean;
+  agendaDone?: boolean;
 }
 
 export interface Ally {
@@ -264,6 +271,10 @@ export interface GameState {
   emHighStreak: number;
   /** Sustained scan scars from prolonged EM-HIGH (max 2). */
   scanScars: ScanScar[];
+  /** Quiet-doctrine tally (successful jammer uses). */
+  doctrineQuiet: number;
+  /** Probe-doctrine tally (successful probe uses). */
+  doctrineProbe: number;
   /** Beacon multi-turn handshake (null when idle / not on beacon sector). */
   handshake: BeaconHandshake | null;
   /** Nav Core pattern-buffer desync; shuttle rejects while > 0. */

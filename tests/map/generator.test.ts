@@ -118,4 +118,21 @@ describe('map generator', () => {
     }
     expect(found).toBeGreaterThanOrEqual(3);
   });
+
+  it('places at most one sealed hatch without breaking start→exit', () => {
+    for (const seed of [1, 42, 777, 12345]) {
+      for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
+        const sector = getSector(i);
+        const map = generateSectorMap(sector, seed, i);
+        expect(canReach(map.tiles, map.start, map.exit)).toBe(true);
+        let sealed = 0;
+        for (const row of map.tiles) {
+          for (const t of row) {
+            if (t.kind === 'sealed') sealed += 1;
+          }
+        }
+        expect(sealed).toBeLessThanOrEqual(1);
+      }
+    }
+  });
 });

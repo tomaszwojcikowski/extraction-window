@@ -49,9 +49,17 @@ flowchart TB
 
 ---
 
-## Wave 2 — Mid-systems (later)
+## Wave 2 — Mid-systems (Done)
 
-Terrain features, field craft (2–3 recipes), NPC agendas, Quiet vs Probe doctrine tallies, fauna light-fear / light-hunt tags.
+| Ticket | Status |
+|--------|--------|
+| Terrain: `sealed` / `tripwire` / `brine_pool` / `scrub_nest` | Done |
+| Field craft (sample→filter/ration, shard→balm) | Done |
+| NPC agendas (ensign / tech / survey contact) | Done |
+| Quiet vs Probe doctrine tallies | Done |
+| Fauna `lightPrefer` dark/lit aggro | Done |
+
+**Exit gate:** unit + cohere + smoke + balance in band; optional content never required for extract.
 
 ## Wave 3 — Living Shelf (later)
 

@@ -7,7 +7,7 @@ import { addStatus, hasScar, hasStatus, scarStabilized, tickEnemyStatusEffects }
 import { randInt } from './rng';
 import { emAggroBonus } from './emStress';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
-import { inShadow } from './light';
+import { inShadow, isLit } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
 import type { Enemy, GameState, Pos } from './types';
 
@@ -32,6 +32,18 @@ function effectiveAggro(state: GameState, enemy: Enemy): number {
   if (state.player.jammerTurns > 0) {
     const shrink = hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 1 : 2;
     r = Math.max(1, r - shrink);
+  }
+  // Light mastery: dark-prefer fauna shy from lamps; lit-prefer hunt bright tiles
+  if (def.lightPrefer) {
+    const lit = isLit(state, state.player.x, state.player.y);
+    const dark = inShadow(state, state.player.x, state.player.y);
+    if (def.lightPrefer === 'dark') {
+      if (lit) r = Math.max(1, r - 1);
+      else if (dark) r += 1;
+    } else if (def.lightPrefer === 'lit') {
+      if (lit) r += 1;
+      else if (dark) r = Math.max(1, r - 1);
+    }
   }
   return r;
 }

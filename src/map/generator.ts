@@ -64,6 +64,18 @@ function rubble(): Tile {
 function vent(): Tile {
   return { kind: 'vent', walkable: true, transparent: true };
 }
+function sealed(): Tile {
+  return { kind: 'sealed', walkable: false, transparent: true };
+}
+function tripwire(): Tile {
+  return { kind: 'tripwire', walkable: true, transparent: true };
+}
+function brinePool(): Tile {
+  return { kind: 'brine_pool', walkable: true, transparent: true };
+}
+function scrubNest(blocksSight = true): Tile {
+  return { kind: 'scrub_nest', walkable: true, transparent: !blocksSight };
+}
 function exitTile(): Tile {
   return { kind: 'exit', walkable: true, transparent: true };
 }
@@ -283,6 +295,62 @@ function dressBiomeTerrain(
         if (tiles[y]?.[x]?.walkable && rng() < 0.55) tiles[y]![x] = vent();
       }
     }
+  }
+
+  // Wave 2 sparse features (walkable only here — sealed placed after path check)
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (tiles[y]![x]!.kind !== 'floor') continue;
+      const roll = rng();
+      if (id === 'brine' || id === 'flood') {
+        if (roll < 0.016) tiles[y]![x] = brinePool();
+      } else if (roll < 0.004) {
+        tiles[y]![x] = brinePool();
+      }
+      if (tiles[y]![x]!.kind !== 'floor') continue;
+      if (id === 'canopy' || id === 'spire' || id === 'reef') {
+        if (rng() < 0.012) tiles[y]![x] = scrubNest(true);
+      }
+      if (tiles[y]![x]!.kind !== 'floor') continue;
+      if (id === 'ash' || id === 'duct' || id === 'vault') {
+        if (rng() < 0.01) tiles[y]![x] = tripwire();
+      } else if (rng() < 0.003) {
+        tiles[y]![x] = tripwire();
+      }
+    }
+  }
+}
+
+/** Rare sealed hatches in mid-rooms — never break start→exit. */
+function dressSealedHatches(
+  tiles: Tile[][],
+  rooms: Room[],
+  start: Pos,
+  exit: Pos,
+  rng: Rng,
+): void {
+  const mid = rooms.filter((_, i) => i > 0 && i < rooms.length - 1);
+  if (mid.length === 0) return;
+  for (const room of mid) {
+    if (rng() > 0.22) continue;
+    const candidates: Pos[] = [];
+    for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+      for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+        if (tiles[y]![x]!.kind !== 'floor') continue;
+        if (x === start.x && y === start.y) continue;
+        if (x === exit.x && y === exit.y) continue;
+        if (x === room.cx && y === room.cy) continue;
+        candidates.push({ x, y });
+      }
+    }
+    if (!candidates.length) continue;
+    const p = pick(rng, candidates);
+    const prev = tiles[p.y]![p.x]!;
+    tiles[p.y]![p.x] = sealed();
+    if (!canReach(tiles, start, exit)) {
+      tiles[p.y]![p.x] = prev;
+    }
+    break; // at most one sealed hatch per sector
   }
 }
 
@@ -540,6 +608,8 @@ export function generateSectorMap(
     if (sector.isShuttle && shuttlePos) tiles[shuttlePos.y]![shuttlePos.x] = shuttleTile();
     else if (!sector.isShuttle) tiles[exit.y]![exit.x] = exitTile();
   }
+
+  dressSealedHatches(tiles, rooms, start, exit, rng);
 
   const specials: Pos[] = [exit];
   if (beaconPos) specials.push(beaconPos);

@@ -96,6 +96,7 @@ export const XP_POI = 6;
 export const XP_SECTOR_SURVEY = 10;
 export const XP_ELITE = 24;
 export const XP_BOSS = 40;
+export const XP_NPC_AGENDA = 5;
 
 /** First mid-room survey storm refund range. */
 export const STORM_ROOM_SURVEY = [2, 4] as const;

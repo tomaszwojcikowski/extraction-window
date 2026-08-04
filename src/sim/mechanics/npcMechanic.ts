@@ -1,19 +1,23 @@
 import { ALLIES, NPCS, type AllyKind } from '../../data/npcs';
 import { lore, type LoreId } from '../../data/lore';
-import { addItem } from '../inventory';
+import { XP_NPC_AGENDA } from '../../data/progression';
+import { addItem, hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
+import { gainXp } from '../progression';
 import { randInt } from '../rng';
+import { tryStabilizeScar } from '../status';
 import { allyAt, enemyAt, manhattan, npcAt } from '../spatial';
 import type { Action, Ally, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
 
-function nearNpc(state: GameState): FieldNpc | null {
+function nearHailNpc(state: GameState): FieldNpc | null {
   let best: FieldNpc | null = null;
   let bestD = 99;
   for (const n of state.npcs) {
-    if (n.talked) continue;
     const d = manhattan(state.player.x, state.player.y, n.x, n.y);
-    if (d <= 1 && d < bestD) {
+    if (d > 1 || d >= bestD) continue;
+    // First hail, or open unpaid agenda
+    if (!n.talked || (n.agendaOpen && !n.agendaDone)) {
       best = n;
       bestD = d;
     }
@@ -35,7 +39,6 @@ function openNeighbor(state: GameState, ox: number, oy: number): Pos | null {
     if (p.x === state.player.x && p.y === state.player.y) continue;
     if (enemyAt(state, p.x, p.y)) continue;
     if (allyAt(state, p.x, p.y)) continue;
-    // Allow the contact's own tile as a spawn fallback
     if (npcAt(state, p.x, p.y) && !(p.x === ox && p.y === oy)) continue;
     return p;
   }
@@ -89,7 +92,74 @@ function noticeVisibleNpcs(state: GameState): void {
   }
 }
 
+function agendaWantLog(npc: FieldNpc): LoreId {
+  switch (npc.kind) {
+    case 'stranded_ensign':
+      return 'LOG-AGENDA-WANT-MED';
+    case 'field_tech':
+      return 'LOG-AGENDA-WANT-QUIET';
+    case 'survey_contact':
+      return 'LOG-AGENDA-WANT-SURVEY';
+    default:
+      return 'LOG-AGENDA-NONE';
+  }
+}
+
+function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
+  if (!npc.agendaOpen || npc.agendaDone) return false;
+
+  let ok = false;
+  if (npc.kind === 'stranded_ensign') {
+    if (hasItem(state, 'med')) {
+      removeOne(state, 'med');
+      ok = true;
+    }
+  } else if (npc.kind === 'field_tech') {
+    if (state.player.jammerTurns > 0) {
+      ok = true;
+    } else if (hasItem(state, 'jammer')) {
+      removeOne(state, 'jammer');
+      ok = true;
+    }
+  } else if (npc.kind === 'survey_contact') {
+    if (state.surveyedRoomIds.length > 0 || hasItem(state, 'mapper')) {
+      if (state.surveyedRoomIds.length === 0 && hasItem(state, 'mapper')) {
+        removeOne(state, 'mapper');
+      }
+      ok = true;
+      // Matching Probe doctrine pays a little extra storm
+      if (state.doctrineProbe > state.doctrineQuiet) {
+        const extra = randInt(state.rng, 2, 4);
+        state.stormTurns += extra;
+        pushLog(state, 'LOG-AGENDA-PROBE-BONUS', `+${extra}`);
+      }
+    }
+  } else {
+    // archive_holo — no agenda
+    pushLog(state, 'LOG-AGENDA-NONE');
+    npc.agendaDone = true;
+    return true;
+  }
+
+  if (!ok) {
+    pushLog(state, agendaWantLog(npc));
+    return true;
+  }
+
+  const storm = randInt(state.rng, 4, 8);
+  state.stormTurns += storm;
+  gainXp(state, XP_NPC_AGENDA, 'agenda');
+  tryStabilizeScar(state);
+  npc.agendaDone = true;
+  pushLog(state, 'LOG-AGENDA-DONE', `+${storm}`);
+  return true;
+}
+
 function hailNpc(state: GameState, npc: FieldNpc): boolean {
+  if (npc.talked) {
+    return tryCompleteAgenda(state, npc);
+  }
+
   const def = NPCS[npc.kind];
   pushLog(state, 'LOG-NPC-HAIL', lore(def.loreName));
   grantNpcCodex(state, def.codex);
@@ -108,10 +178,15 @@ function hailNpc(state: GameState, npc: FieldNpc): boolean {
       `med+energy · ${lore(ALLIES[allyKind].loreName)}`,
     );
     spawnAlly(state, allyKind, { x: npc.x, y: npc.y });
+    npc.agendaOpen = true;
   } else if (npc.kind === 'field_tech') {
     const allyKind: AllyKind = 'probe_drone';
     pushLog(state, 'LOG-NPC-TECH', lore(ALLIES[allyKind].loreName));
     spawnAlly(state, allyKind, { x: npc.x, y: npc.y });
+    npc.agendaOpen = true;
+  } else if (npc.kind === 'survey_contact') {
+    pushLog(state, 'LOG-NPC-SURVEY');
+    npc.agendaOpen = true;
   }
 
   npc.talked = true;
@@ -119,7 +194,7 @@ function hailNpc(state: GameState, npc: FieldNpc): boolean {
 }
 
 export function tryHailNpc(state: GameState): boolean {
-  const npc = nearNpc(state);
+  const npc = nearHailNpc(state);
   if (!npc) return false;
   return hailNpc(state, npc);
 }
@@ -137,13 +212,18 @@ export const npcMechanic: Mechanic = {
   },
 
   contextHint(state: GameState): LoreId | null {
-    if (nearNpc(state)) return 'UI-HINT-NPC';
+    if (nearHailNpc(state)) return 'UI-HINT-NPC';
     return null;
   },
 
   autopilotHint(state: GameState): Action | null {
     if (state.player.hp < state.player.maxHp * 0.55) return null;
-    if (!nearNpc(state)) return null;
-    return { type: 'exit' };
+    // Only first hail — ignore agenda crafts so WR stays stable
+    for (const n of state.npcs) {
+      if (n.talked) continue;
+      const d = manhattan(state.player.x, state.player.y, n.x, n.y);
+      if (d <= 1) return { type: 'exit' };
+    }
+    return null;
   },
 };

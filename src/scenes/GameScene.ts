@@ -434,6 +434,7 @@ export class GameScene extends Phaser.Scene {
         if (
           kind !== 'hazard' &&
           kind !== 'vent' &&
+          kind !== 'brine_pool' &&
           kind !== 'poi' &&
           kind !== 'quest' &&
           kind !== 'beacon'
@@ -550,10 +551,18 @@ export class GameScene extends Phaser.Scene {
       }
       case 'hazard':
         return f === 0 ? 't_hazard' : f === 1 ? 't_hazard_1' : 't_hazard_2';
+      case 'brine_pool':
+        return f === 0 ? 't_brine_pool' : f === 1 ? 't_brine_pool_1' : 't_brine_pool_2';
       case 'scrub':
         return 't_scrub';
+      case 'scrub_nest':
+        return 't_scrub_nest';
       case 'rubble':
         return 't_rubble';
+      case 'sealed':
+        return 't_sealed';
+      case 'tripwire':
+        return 't_tripwire';
       case 'vent':
         return f === 0 ? 't_vent' : f === 1 ? 't_vent_1' : 't_vent_2';
       case 'exit':

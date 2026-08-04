@@ -1,6 +1,6 @@
 import type { LoreId } from './lore';
 
-export type NpcKind = 'archive_holo' | 'stranded_ensign' | 'field_tech';
+export type NpcKind = 'archive_holo' | 'stranded_ensign' | 'field_tech' | 'survey_contact';
 export type AllyKind = 'probe_drone' | 'away_escort';
 
 export interface NpcDef {
@@ -47,6 +47,13 @@ export const NPCS: Record<NpcKind, NpcDef> = {
     color: 0x88aa77,
     codex: 'CODEX-TECH',
   },
+  survey_contact: {
+    kind: 'survey_contact',
+    loreName: 'NPC-SURVEY',
+    glyph: 'C',
+    color: 0xaacc88,
+    codex: 'CODEX-SURVEY',
+  },
 };
 
 export const ALLIES: Record<AllyKind, AllyDef> = {
@@ -77,6 +84,7 @@ export const ALLIES: Record<AllyKind, AllyDef> = {
 /** Pick contact kind by sector depth. */
 export function npcKindForSector(index: number): NpcKind {
   if (index <= 4) return 'archive_holo';
+  if (index <= 7) return index % 2 === 0 ? 'survey_contact' : 'stranded_ensign';
   if (index <= 9) return 'stranded_ensign';
-  return 'field_tech';
+  return index % 2 === 0 ? 'survey_contact' : 'field_tech';
 }

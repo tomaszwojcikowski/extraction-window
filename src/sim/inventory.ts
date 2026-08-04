@@ -12,14 +12,15 @@ import type { SectorId } from '../data/encounters';
 import { playerAttack } from './combat';
 import { killEnemy } from './death';
 import { pushLog, recordLoreEvent } from './log';
-import { addStatus, hasStatus, tryStabilizeScar } from './status';
+import { addStatus, addPlayerMarked, hasStatus, tryStabilizeScar } from './status';
 import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
-import { gainXp, hasSkill } from './progression';
+import { gainXp, hasSkill, bumpDoctrine } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
+import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 
 const PLATE_REPAIR = 10;
 
@@ -304,6 +305,7 @@ export function useSelected(state: GameState): boolean {
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
       addEmStress(state, 4, 'array pulse');
+      bumpDoctrine(state, 'probe');
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
@@ -396,7 +398,7 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
       // Hunter notice: flaring while already in shadow
       if (shadowed && state.rng() < 0.22) {
-        addStatus(state.player, 'marked', 3);
+        addPlayerMarked(state, 3);
         pushLog(state, 'LOG-STATUS-MARKED');
       }
       break;
@@ -410,14 +412,52 @@ export function useSelected(state: GameState): boolean {
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
       addEmStress(state, 5, 'scrambler');
+      bumpDoctrine(state, 'quiet');
       pushLog(state, 'LOG-USE-JAMMER');
       pushLog(state, 'LOG-QUIET-ON');
       if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
     case 'salvage':
-    case 'sealed_crate':
-    case 'array_shard': {
+    case 'sealed_crate': {
       identifyUnknown(state, kind);
+      break;
+    }
+    case 'array_shard': {
+      if (hasItem(state, 'coolant')) {
+        removeOne(state, 'array_shard');
+        removeOne(state, 'coolant');
+        addItem(state, 'pattern_balm');
+        pushLog(state, 'LOG-CRAFT-BALM');
+        break;
+      }
+      identifyUnknown(state, kind);
+      break;
+    }
+    case 'field_sample': {
+      if (hasItem(state, 'sealant')) {
+        removeOne(state, 'field_sample');
+        removeOne(state, 'sealant');
+        addItem(state, 'filter');
+        pushLog(state, 'LOG-CRAFT-FILTER');
+      } else if (hasItem(state, 'energy')) {
+        removeOne(state, 'field_sample');
+        removeOne(state, 'energy');
+        addItem(state, 'ration');
+        pushLog(state, 'LOG-CRAFT-RATION');
+      } else {
+        pushLog(state, 'LOG-CRAFT-NEED');
+        return false;
+      }
+      break;
+    }
+    case 'pattern_balm': {
+      removeOne(state, kind);
+      if (state.patternDesync > 0) {
+        state.patternDesync = 0;
+        pushLog(state, 'LOG-PB-SYNC');
+      }
+      purgeEmStress(state, 10);
+      pushLog(state, 'LOG-USE-BALM');
       break;
     }
     case 'sealant': {
@@ -436,6 +476,10 @@ export function useSelected(state: GameState): boolean {
         purgeEmStress(state, state.paddMods.brineSeal ? 18 : 8);
         tryStabilizeScar(state);
         pushLog(state, 'LOG-USE-SEALANT');
+      } else if (tryOpenAdjacentSealed(state)) {
+        removeOne(state, kind);
+        purgeEmStress(state, 6);
+        tryStabilizeScar(state);
       } else {
         // Flush EM without sealing terrain
         removeOne(state, kind);
