@@ -71,8 +71,8 @@ flowchart TB
 | Ion fronts: mid/late temporary shear, EM/bus pressure, Quiet/filter/flare mitigation | Done |
 | Content fattening: `relay_chain` re-enabled midgame with pattern-buffer fail-safe favor | Done |
 | Deferred room quest: `calibrate` re-enabled late-mid/late with storm-shelter favor | Done |
+| Deferred room quest: `stabilize` re-enabled midgame with hazard-pass favor | Done |
 | Phaser Filters polish | Later |
-| Deferred room quest: `stabilize` | Later |
 
 **Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
 

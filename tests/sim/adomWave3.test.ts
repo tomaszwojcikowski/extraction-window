@@ -3,7 +3,13 @@ import { effectiveAggro } from '../../src/sim/ai';
 import { rebuildIllumination } from '../../src/sim/light';
 import { startIonFront } from '../../src/sim/mechanics/ionFront';
 import { mechanicsOnEndTurn } from '../../src/sim/mechanics';
-import { buildMultiRoomQuest, pickRoomQuestKind, tryRoomQuest } from '../../src/sim/roomQuest';
+import {
+  buildMultiRoomQuest,
+  buildSingleRoomQuest,
+  pickRoomQuestKind,
+  tryRoomQuest,
+  tryStabilizeQuest,
+} from '../../src/sim/roomQuest';
 import { combatArena, makeEnemy } from './fixtures';
 
 describe('ADOM Wave 3 — ion fronts', () => {
@@ -69,7 +75,7 @@ describe('ADOM Wave 3 — relay chain', () => {
 
 describe('ADOM Wave 3 — calibrate', () => {
   it('appears only in late-mid and late sector pools', () => {
-    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('relay_chain');
+    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('stabilize');
     expect(pickRoomQuestKind(() => 0.99, 7)).toBe('calibrate');
     expect(pickRoomQuestKind(() => 0.99, 12)).toBe('calibrate');
     expect(pickRoomQuestKind(() => 0.99, 13)).toBe('decode');
@@ -91,5 +97,31 @@ describe('ADOM Wave 3 — calibrate', () => {
 
     expect(st.roomQuest.done).toBe(true);
     expect(st.extractFavor).toEqual({ kind: 'storm_shelter' });
+  });
+});
+
+describe('ADOM Wave 3 — stabilize', () => {
+  it('appears only in its short, lower-weight midgame pool', () => {
+    expect(pickRoomQuestKind(() => 0.99, 4)).toBe('relay_chain');
+    expect(pickRoomQuestKind(() => 0.99, 5)).toBe('stabilize');
+    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('stabilize');
+    expect(pickRoomQuestKind(() => 0.99, 7)).toBe('calibrate');
+  });
+
+  it('grants a hazard pass after a cracked array node is stabilized', () => {
+    const st = combatArena();
+    const room = { x: 1, y: 1, w: 3, h: 3 };
+    st.roomQuest = buildSingleRoomQuest('stabilize', { x: 2, y: 2 }, room);
+    st.player.x = 2;
+    st.player.y = 2;
+    st.player.armor = 0;
+    st.emStress = 40;
+
+    expect(tryStabilizeQuest(st, 'sealant')).toBe(true);
+
+    expect(st.roomQuest.done).toBe(true);
+    expect(st.extractFavor).toEqual({ kind: 'hazard_pass' });
+    expect(st.player.armor).toBe(st.player.maxArmor);
+    expect(st.emStress).toBe(0);
   });
 });

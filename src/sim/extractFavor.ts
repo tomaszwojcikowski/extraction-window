@@ -5,7 +5,7 @@ const FAVOR_BY_QUEST = {
   salvage: 'storm_shelter',
   purge: 'hazard_pass',
   decode: 'pattern_fail_safe',
-  stabilize: 'storm_shelter',
+  stabilize: 'hazard_pass',
   relay_chain: 'pattern_fail_safe',
   calibrate: 'storm_shelter',
   vent_seal: 'hazard_pass',

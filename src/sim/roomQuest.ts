@@ -548,7 +548,10 @@ export function tryRoomQuest(state: GameState): boolean {
   return false;
 }
 
-/** Sealant/filter used on stabilize quest tile, or vent_seal step 0. */
+/**
+ * Repair a cracked array node with sealant or a spare filter. Unlike vent_seal,
+ * this is a single-site bus stabilization that grants a temporary hold charge.
+ */
 export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filter'): boolean {
   const rq = state.roomQuest;
   if (!rq || rq.done) return false;
@@ -585,6 +588,11 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
 
 const BASE_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
 const RELAY_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'relay_chain'];
+const STABILIZE_ROOM_QUEST_KINDS: RoomQuestKind[] = [
+  ...BASE_ROOM_QUEST_KINDS,
+  'relay_chain',
+  'stabilize',
+];
 const CALIBRATE_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'calibrate'];
 const DUAL_MAST_ROOM_QUEST_KINDS: RoomQuestKind[] = [
   ...BASE_ROOM_QUEST_KINDS,
@@ -594,14 +602,17 @@ const DUAL_MAST_ROOM_QUEST_KINDS: RoomQuestKind[] = [
 
 /**
  * Relay-chain is a midgame optional route investment. Dual-mast calibration
- * starts only after the beacon, when linked arrays fit the shelf fiction.
- * Stabilize keeps its save-compatible handler deferred until its polish pass.
+ * starts only after the beacon, when linked arrays fit the shelf fiction. Cracked
+ * array-node stabilization is a lower-weight, short midgame detour before the
+ * linked-array content becomes available.
  */
 export function pickRoomQuestKind(rng: () => number, sectorIndex: number): RoomQuestKind {
   const pool =
     sectorIndex >= 7 && sectorIndex <= 10
       ? DUAL_MAST_ROOM_QUEST_KINDS
-      : sectorIndex >= 4 && sectorIndex <= 6
+      : sectorIndex >= 5 && sectorIndex <= 6
+        ? STABILIZE_ROOM_QUEST_KINDS
+        : sectorIndex === 4
         ? RELAY_ROOM_QUEST_KINDS
         : sectorIndex >= 11 && sectorIndex <= 12
           ? CALIBRATE_ROOM_QUEST_KINDS

@@ -64,6 +64,7 @@ describe('map generator', () => {
   it('keeps linked room quests within their sector gates', () => {
     const base = new Set(['salvage', 'purge', 'vent_seal', 'decode']);
     const relay = new Set([...base, 'relay_chain']);
+    const stabilize = new Set([...relay, 'stabilize']);
     const dualMast = new Set([...relay, 'calibrate']);
     const calibrate = new Set([...base, 'calibrate']);
     for (const seed of [1, 7, 42, 99, 256, 777, 1337, 4096, 9999, 12345]) {
@@ -74,7 +75,9 @@ describe('map generator', () => {
         const allowed =
           i >= 7 && i <= 10
             ? dualMast
-            : i >= 4 && i <= 6
+            : i >= 5 && i <= 6
+              ? stabilize
+              : i === 4
               ? relay
               : i >= 11 && i <= 12
                 ? calibrate
