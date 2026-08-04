@@ -203,6 +203,12 @@ export class HudView {
     const badgeSpecs: { label: string; fill: number }[] = [];
     const stanceBadge = stanceBadgeSpec(st);
     if (stanceBadge) badgeSpecs.push(stanceBadge);
+    if (st.ionFrontTurns > 0) {
+      badgeSpecs.push({
+        label: lore(st.ionFrontTurns <= 1 ? 'UI-FRONT-CLEARING' : 'UI-ION-FRONT'),
+        fill: st.ionFrontTurns <= 1 ? Theme.phosphorMute : Theme.danger,
+      });
+    }
     if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });
     if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.ok });

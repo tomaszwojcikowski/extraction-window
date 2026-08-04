@@ -408,6 +408,10 @@ export function useSelected(state: GameState): boolean {
         life: state.player.equip.utility === 'flare_prism' ? 6 : 4,
         color: 0xccffff,
       });
+      if (state.ionFrontTurns > 0) {
+        state.ionFrontDampened = true;
+        pushLog(state, 'LOG-ION-DAMPEN');
+      }
       rebuildIllumination(state);
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
       // Hunter notice: flaring while already in shadow

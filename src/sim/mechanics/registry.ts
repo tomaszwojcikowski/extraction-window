@@ -11,6 +11,7 @@ import { surveyMechanic } from './survey';
 import { npcMechanic } from './npcMechanic';
 import { sealedHatchMechanic } from './sealedHatch';
 import { tutorialMechanic } from './tutorial';
+import { ionFrontMechanic } from './ionFront';
 
 /**
  * Ordered plug-ins.
@@ -29,6 +30,7 @@ const MECHANICS: Mechanic[] = [
   npcMechanic,
   sealedHatchMechanic,
   roomQuestMechanic,
+  ionFrontMechanic,
   scriptedEventsMechanic,
   surveyMechanic,
 ];

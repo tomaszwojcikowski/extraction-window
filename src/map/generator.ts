@@ -644,7 +644,7 @@ export function generateSectorMap(
   if (rooms.length >= 3) {
     const midRooms = rooms.filter((r, i) => i > 0 && i < rooms.length - 1 && r !== startRoom && r !== endRoom);
     const candidates = midRooms.length >= 1 ? midRooms : rooms.slice(1, -1);
-    const kind = pickRoomQuestKind(rng);
+    const kind = pickRoomQuestKind(rng, sectorSalt);
 
     if (isMultiSiteKind(kind) && candidates.length >= 2) {
       const multiKind = kind as 'relay_chain' | 'calibrate' | 'vent_seal';

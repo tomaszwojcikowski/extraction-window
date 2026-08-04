@@ -68,7 +68,10 @@ flowchart TB
 | Elite/boss readable brands + deterministic branded kit drops | Done |
 | Branded counter-kit: Flare Prism / Ward Weave / Shadow Lens | Done |
 | Companion field roles: drone lamp/intercept + escort cover | Done |
-| Ion fronts, content fattening, Phaser Filters polish | Later |
+| Ion fronts: mid/late temporary shear, EM/bus pressure, Quiet/filter/flare mitigation | Done |
+| Content fattening: `relay_chain` re-enabled midgame with pattern-buffer fail-safe favor | Done |
+| Phaser Filters polish | Later |
+| Deferred room quests: `calibrate` / `stabilize` | Later |
 
 **Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
 

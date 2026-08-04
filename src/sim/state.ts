@@ -136,6 +136,8 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     patternDesync: 0,
     scriptedFired: {},
     approachShearAcc: 0,
+    ionFrontTurns: 0,
+    ionFrontDampened: false,
     paddMods: {
       filterBonus: 0,
       fovBonus: 0,
@@ -223,6 +225,8 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.handshake = null;
   state.uplink = null;
   state.approachShearAcc = 0;
+  state.ionFrontTurns = 0;
+  state.ionFrontDampened = false;
   state.ui.aimingDart = false;
   state.ui.questFlash = 0;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);

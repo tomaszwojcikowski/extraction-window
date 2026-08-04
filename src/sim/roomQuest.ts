@@ -583,18 +583,19 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
   return true;
 }
 
-/**
- * Wave-1 active pick pool (salvage / purge / vent_seal / decode).
- * Deferred kinds (relay_chain, calibrate, stabilize) remain in
- * types + handlers for saves and later depth passes — they are not rolled here.
- */
-const V1_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
+const BASE_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
+const MIDGAME_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'relay_chain'];
 
-export function pickRoomQuestKind(rng: () => number): RoomQuestKind {
-  return V1_ROOM_QUEST_KINDS[Math.floor(rng() * V1_ROOM_QUEST_KINDS.length)]!;
+/**
+ * Relay-chain is a midgame optional route investment. Calibrate/stabilize keep
+ * their save-compatible handlers but remain deferred until their polish pass.
+ */
+export function pickRoomQuestKind(rng: () => number, sectorIndex: number): RoomQuestKind {
+  const pool = sectorIndex >= 4 && sectorIndex <= 10 ? MIDGAME_ROOM_QUEST_KINDS : BASE_ROOM_QUEST_KINDS;
+  return pool[Math.floor(rng() * pool.length)]!;
 }
 
-/** Multi-site builders — vent_seal is v1-active; relay/calibrate kept for saves. */
+/** Multi-site builders — relay-chain and vent-seal are active; calibrate is deferred. */
 export function isMultiSiteKind(kind: RoomQuestKind): boolean {
   return kind === 'relay_chain' || kind === 'calibrate' || kind === 'vent_seal';
 }

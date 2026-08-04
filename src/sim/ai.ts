@@ -46,6 +46,7 @@ export function effectiveAggro(state: GameState, enemy: Enemy): number {
       if (lit) r += 2;
       else if (dark) r = Math.max(1, r - 1);
     }
+    if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
   }
   return r;
 }

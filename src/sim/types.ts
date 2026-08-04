@@ -316,6 +316,10 @@ export interface GameState {
   scriptedFired: Record<string, boolean>;
   /** Turns accrued in approach for shear pulse cadence. */
   approachShearAcc: number;
+  /** Remaining turns in an ecology-wide ion shear front. */
+  ionFrontTurns: number;
+  /** A flare has buffered the next ion-front pulse. */
+  ionFrontDampened: boolean;
   /** In-run PADD modifiers from recovered pages. */
   paddMods: {
     filterBonus: number;
