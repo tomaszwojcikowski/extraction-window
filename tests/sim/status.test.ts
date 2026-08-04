@@ -82,6 +82,13 @@ describe('tickPlayerStatusEffects', () => {
 });
 
 describe('Wave-1 status effects', () => {
+  it('quiet stance trades two FOV tiles for reduced attention', () => {
+    const st = combatArena();
+    const clear = visionRadius(st);
+    st.player.jammerTurns = 5;
+    expect(visionRadius(st)).toBe(Math.max(3, clear - 2));
+  });
+
   it('blind shrinks FOV; sensor_rig softens the penalty', () => {
     const st = combatArena();
     const clear = visionRadius(st);

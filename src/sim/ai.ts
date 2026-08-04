@@ -18,7 +18,8 @@ function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: numbe
   return false;
 }
 
-function effectiveAggro(state: GameState, enemy: Enemy): number {
+/** Detection radius after player stance, light, and campaign modifiers. */
+export function effectiveAggro(state: GameState, enemy: Enemy): number {
   const def = ENEMIES[enemy.kind];
   let r = def.aggroRange;
   if (enemy.kind === 'mite' || enemy.kind === 'wasp' || enemy.kind === 'mastling' || enemy.kind === 'reef_skitter') {
@@ -28,9 +29,9 @@ function effectiveAggro(state: GameState, enemy: Enemy): number {
     if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
   }
   if (hasStatus(state.player, 'marked')) r += 2;
-  // Quiet stance (jammer): shrink interest radius — hunter_eye softens shrink
+  // Quiet stance (jammer): substantially shrink interest radius — hunter_eye softens shrink
   if (state.player.jammerTurns > 0) {
-    const shrink = hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 1 : 2;
+    const shrink = hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 2 : 3;
     r = Math.max(1, r - shrink);
   }
   // Light mastery: dark-prefer fauna shy from lamps; lit-prefer hunt bright tiles
@@ -38,10 +39,10 @@ function effectiveAggro(state: GameState, enemy: Enemy): number {
     const lit = isLit(state, state.player.x, state.player.y);
     const dark = inShadow(state, state.player.x, state.player.y);
     if (def.lightPrefer === 'dark') {
-      if (lit) r = Math.max(1, r - 1);
+      if (lit) r = Math.max(1, r - 2);
       else if (dark) r += 1;
     } else if (def.lightPrefer === 'lit') {
-      if (lit) r += 1;
+      if (lit) r += 2;
       else if (dark) r = Math.max(1, r - 1);
     }
   }

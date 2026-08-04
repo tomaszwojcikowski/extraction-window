@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
 import type { Action, Enemy, GameState } from '../../sim';
 import { sfx } from '../../audio/sfx';
-import { Theme } from '../../scenes/theme';
+import { Theme, ThemeCss } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { MOVE_MS } from '../GameHost';
 import type { LightView } from '../views/LightView';
@@ -15,6 +15,61 @@ export type EnemyView = {
 };
 
 export type FlashFn = (color: number, alpha: number) => void;
+
+export type ActionFloat = {
+  label: string;
+  color: string;
+};
+
+/**
+ * Select short, causal labels for recent events. The log remains the complete
+ * history; these are deliberately transient presentation cues.
+ */
+export function actionFloatLabels(
+  logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+): ActionFloat[] {
+  const labels: ActionFloat[] = [];
+  for (const log of logs) {
+    let next: ActionFloat | null = null;
+    switch (log.loreId) {
+      case 'LOG-ARMOR-ABSORB':
+        next = { label: `SHD ${log.detail ?? 'HIT'}`, color: ThemeCss.phosphorBright };
+        break;
+      case 'LOG-DRAIN':
+        next = { label: `BUS ${log.detail ?? '-2E'}`, color: '#ff9933' };
+        break;
+      case 'LOG-QUIET-ON':
+        next = { label: 'QUIET · FOV -2 · AGGRO -3', color: '#a8d0ff' };
+        break;
+      case 'LOG-QUIET-OFF':
+        next = { label: 'QUIET OFF', color: ThemeCss.phosphorDim };
+        break;
+      case 'LOG-SURVEY-ROOM':
+      case 'LOG-SURVEY-SECTOR':
+        next = { label: `WINDOW ${log.detail ?? '+'}`, color: ThemeCss.quest };
+        break;
+      case 'LOG-TELE-POUNCE':
+      case 'LOG-BOSS-TELE':
+        next = { label: 'POUNCE INCOMING', color: ThemeCss.danger };
+        break;
+      case 'LOG-SEALED-OPEN':
+      case 'LOG-SEALED-PRY':
+        next = { label: 'HATCH OPEN', color: '#44aa88' };
+        break;
+      case 'LOG-CRAFT-FILTER':
+        next = { label: 'CRAFT · FILTER', color: ThemeCss.quest };
+        break;
+      case 'LOG-CRAFT-RATION':
+        next = { label: 'CRAFT · RATION', color: ThemeCss.quest };
+        break;
+      case 'LOG-CRAFT-BALM':
+        next = { label: 'CRAFT · BALM', color: ThemeCss.quest };
+        break;
+    }
+    if (next) labels.push(next);
+  }
+  return labels.slice(-2);
+}
 
 /**
  * Emit ephemeral field lights from combat / kit / handshake lore events.

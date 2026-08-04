@@ -18,6 +18,7 @@ import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
+import { inShadow, isLit } from '../../sim/light';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 6;
@@ -181,6 +182,14 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
+    const stanceBadge = isQuietStance(st)
+      ? { label: 'QUIET', fill: Theme.phosphorMute }
+      : isLit(st, st.player.x, st.player.y)
+        ? { label: 'LIT', fill: Theme.energy }
+        : inShadow(st, st.player.x, st.player.y)
+          ? { label: 'SHADOW', fill: Theme.quest }
+          : null;
+    if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });
     if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.ok });

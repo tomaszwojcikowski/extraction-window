@@ -3,7 +3,7 @@ import { TILE_DRAW, enemyTextureKey, npcTextureKey, allyTextureKey, wallTextureK
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
-import { lore } from '../data/lore';
+import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { createScanRetrace, drawHudStripChrome } from './atmosphere';
 import { sfx } from '../audio/sfx';
@@ -14,6 +14,7 @@ import { contextHint } from '../game/presenters/ContextHints';
 import {
   bumpAttack,
   bumpMeleeAttackers,
+  actionFloatLabels,
   flashHit,
   flashScreen,
   playMoveAnims,
@@ -78,6 +79,9 @@ export class GameScene extends Phaser.Scene {
   private chevronGfx!: Phaser.GameObjects.Graphics;
   private goalMarker!: Phaser.GameObjects.Image;
   private goalPulseTween: Phaser.Tweens.Tween | null = null;
+  private readonly lightPreferenceHints = new Set<number>();
+  private preferenceHint: { id: 'UI-HINT-PREFER-DARK' | 'UI-HINT-PREFER-LIT'; until: number } | null =
+    null;
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -107,6 +111,8 @@ export class GameScene extends Phaser.Scene {
     this.enemyViews.clear();
     this.npcViews.clear();
     this.allyViews.clear();
+    this.lightPreferenceHints.clear();
+    this.preferenceHint = null;
   }
 
   create(): void {
@@ -668,6 +674,8 @@ export class GameScene extends Phaser.Scene {
       flash: (color, alpha) => this.flashFx(color, alpha),
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
+    this.queueLightPreferenceHint();
+    this.showActionFloats(this.state.log.slice(prevLogLen));
 
     if (fb.sectorChanged) {
       this.lightView.clearFx();
@@ -1065,6 +1073,51 @@ export class GameScene extends Phaser.Scene {
     flashHit(this.tweens, this.flash);
   }
 
+  private queueLightPreferenceHint(): void {
+    const enemy = this.state.enemies.find(
+      (en) =>
+        en.alive &&
+        !this.lightPreferenceHints.has(en.id) &&
+        (this.state.visible[en.y]?.[en.x] ?? false) &&
+        ENEMIES[en.kind].lightPrefer,
+    );
+    if (!enemy) return;
+
+    this.lightPreferenceHints.add(enemy.id);
+    this.preferenceHint = {
+      id: ENEMIES[enemy.kind].lightPrefer === 'dark' ? 'UI-HINT-PREFER-DARK' : 'UI-HINT-PREFER-LIT',
+      until: this.time.now + 1800,
+    };
+  }
+
+  private showActionFloats(logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>): void {
+    const labels = actionFloatLabels(logs);
+    const base = this.worldXY(this.state.player.x, this.state.player.y);
+    labels.forEach((label, index) => {
+      const text = this.add
+        .text(base.x, base.y - 14 - index * 12, label.label, {
+          fontFamily: FONT_DATA,
+          fontSize: '10px',
+          color: label.color,
+          fontStyle: 'bold',
+          stroke: ThemeCss.groundDeep,
+          strokeThickness: 2,
+        })
+        .setOrigin(0.5)
+        .setDepth(30);
+      this.entityLayer.add(text);
+      this.entityLayer.bringToTop(text);
+      this.tweens.add({
+        targets: text,
+        y: text.y - 12,
+        alpha: 0,
+        duration: 820,
+        ease: 'Quad.easeOut',
+        onComplete: () => text.destroy(),
+      });
+    });
+  }
+
   private flashFx(color: number, alpha: number): void {
     flashScreen(this.tweens, this.flash, color, alpha);
   }
@@ -1094,6 +1147,12 @@ export class GameScene extends Phaser.Scene {
       windowPulseTween: pulseBox,
     });
     this.windowPulseTween = pulseBox.current;
+    if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
+      this.hintText.setVisible(true);
+      this.hintText.setText(lore(this.preferenceHint.id));
+    } else {
+      this.preferenceHint = null;
+    }
 
     this.syncGoalVisuals(describeObjective(st).pos);
   }

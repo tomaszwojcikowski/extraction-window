@@ -6,7 +6,7 @@ import { hasItem } from '../inventory';
 
 /**
  * Sensor quiet stance — active while jammer timer runs.
- * FOV shrinks; field lamp dims (see light.playerLamp); fauna aggro shrinks.
+ * FOV shrinks by two tiles; field lamp dims (see light.playerLamp); fauna aggro shrinks.
  * At EM-HIGH, quiet also suppresses emAggroBonus (see emStress).
  * HUD shows SYS:Q.
  */
@@ -21,7 +21,7 @@ export const quietStanceMechanic: Mechanic = {
     if (!isQuietStance(state)) return base;
     // Deep Quiet doctrine: no FOV shrink while scrambled
     if (state.doctrineQuiet >= 5) return base;
-    return Math.max(3, base - 1);
+    return Math.max(3, base - 2);
   },
 
   contextHint(state: GameState): LoreId | null {

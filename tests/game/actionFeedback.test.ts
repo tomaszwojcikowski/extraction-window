@@ -1,12 +1,38 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGame } from '../../src/sim';
 import {
+  actionFloatLabels,
   combatFeedbackTiles,
   playActionSfx,
   type EnemySnap,
 } from '../../src/game/presenters/ActionFeedback';
 
 describe('ActionFeedback', () => {
+  it('turns causal log events into short floating labels', () => {
+    expect(
+      actionFloatLabels([
+        { loreId: 'LOG-ARMOR-ABSORB', detail: 'Rift Mite -2' },
+        { loreId: 'LOG-DRAIN', detail: 'Duct Drone -2E' },
+        { loreId: 'LOG-QUIET-ON' },
+      ]),
+    ).toEqual([
+      { label: 'BUS Duct Drone -2E', color: '#ff9933' },
+      { label: 'QUIET · FOV -2 · AGGRO -3', color: '#a8d0ff' },
+    ]);
+  });
+
+  it('includes hatch and craft feedback', () => {
+    expect(
+      actionFloatLabels([
+        { loreId: 'LOG-SEALED-PRY' },
+        { loreId: 'LOG-CRAFT-FILTER' },
+      ]),
+    ).toEqual([
+      { label: 'HATCH OPEN', color: '#44aa88' },
+      { label: 'CRAFT · FILTER', color: '#9999ff' },
+    ]);
+  });
+
   it('detects hit and spore tiles from enemy snaps', () => {
     const st = createGame(42);
     const target = st.enemies.find((e) => e.alive);

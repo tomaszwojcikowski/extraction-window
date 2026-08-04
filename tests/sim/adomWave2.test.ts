@@ -6,7 +6,7 @@ import { endPlayerTurn } from '../../src/sim/turn';
 import { tryPrySealed, tryOpenAdjacentSealed } from '../../src/sim/mechanics/sealedHatch';
 import { ENEMIES } from '../../src/data/enemies';
 import { makeEnemy, combatArena } from './fixtures';
-import { moveEnemies } from '../../src/sim/ai';
+import { effectiveAggro, moveEnemies } from '../../src/sim/ai';
 import { rebuildIllumination, isLit } from '../../src/sim/light';
 
 describe('ADOM Wave 2 — sealed hatch', () => {
@@ -113,6 +113,21 @@ describe('ADOM Wave 2 — doctrine', () => {
 });
 
 describe('ADOM Wave 2 — lightPrefer aggro', () => {
+  it('applies the stronger light and quiet stance modifiers', () => {
+    const st = combatArena(7);
+    const darkHunter = makeEnemy({ kind: 'stalker', x: st.player.x + 3, y: st.player.y });
+    const litHunter = makeEnemy({ kind: 'wasp', x: st.player.x + 3, y: st.player.y });
+    const neutral = makeEnemy({ kind: 'crawler', x: st.player.x + 3, y: st.player.y });
+
+    st.player.probeTurns = 20;
+    rebuildIllumination(st);
+    expect(effectiveAggro(st, darkHunter)).toBe(ENEMIES.stalker.aggroRange - 2);
+    expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 2);
+
+    st.player.jammerTurns = 5;
+    expect(effectiveAggro(st, neutral)).toBe(ENEMIES.crawler.aggroRange - 3);
+  });
+
   it('dark-prefer mite loses aggro when player is lit', () => {
     const st = combatArena(7);
     // Bright lamp on player
@@ -127,10 +142,10 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
       alerted: false,
     });
     st.enemies = [mite];
-    // Base mite aggro 2; lit → −1 → 1, so dist 2 should not engage melee path
+    // Base mite aggro 2; lit → −2 (clamped to 1), so dist 2 should not engage melee path
     const dist = 2;
     expect(ENEMIES.mite.lightPrefer).toBe('dark');
-    expect(dist).toBeGreaterThan(ENEMIES.mite.aggroRange - 1);
+    expect(dist).toBeGreaterThan(Math.max(1, ENEMIES.mite.aggroRange - 2));
 
     moveEnemies(st);
     // With aggro shrunk to 1, mite at dist 2 wanders rather than closing for sure —
@@ -153,7 +168,7 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
     st.enemies = [wasp];
     const x0 = wasp.x;
     moveEnemies(st);
-    // With +1 lit aggro, wasp at edge of base range should step in
+    // With +2 lit aggro, wasp at edge of base range should step in
     expect(Math.abs(wasp.x - st.player.x) + Math.abs(wasp.y - st.player.y)).toBeLessThanOrEqual(
       Math.abs(x0 - st.player.x) + Math.abs(wasp.y - st.player.y),
     );

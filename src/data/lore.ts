@@ -94,6 +94,8 @@ export const LORE = {
   'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
   'UI-HINT-TELE': 'Hostile windup — step back or strike before the pounce',
+  'UI-HINT-PREFER-DARK': 'Fauna favors shadow — stay lit to reduce its interest',
+  'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
   'UI-HINT-NPC': 'Field contact nearby — press > to hail',
   'UI-TUT-MOVE': 'WASD / arrows — one tile per turn',
