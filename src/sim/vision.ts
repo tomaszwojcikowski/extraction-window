@@ -1,14 +1,22 @@
 import { computeFov, playerFovRadius } from './fov';
 import { rebuildIllumination, tickLightSources } from './light';
 import { mechanicsModifyFov } from './mechanics';
+import { hasScar, hasStatus } from './status';
 import type { GameState } from './types';
 
 export function visionRadius(state: GameState): number {
-  const base =
+  let base =
     playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
     state.paddMods.fovBonus +
     (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
-  return mechanicsModifyFov(state, base);
+  // hunter_eye: +1 FOV; quiet modifyFov still applies after
+  if (hasScar(state, 'hunter_eye')) base += 1;
+  let r = mechanicsModifyFov(state, base);
+  if (hasStatus(state.player, 'blind')) {
+    const pen = state.player.equip.utility === 'sensor_rig' ? 1 : 2;
+    r = Math.max(2, r - pen);
+  }
+  return r;
 }
 
 /** Recompute FOV then illumination grid (call after moves / sector load). */

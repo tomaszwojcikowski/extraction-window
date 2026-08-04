@@ -8,15 +8,16 @@ import {
 } from '../data/items';
 import { STORM_SURPLUS_SALVAGE, XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
+import type { SectorId } from '../data/encounters';
 import { playerAttack } from './combat';
 import { killEnemy } from './death';
 import { pushLog, recordLoreEvent } from './log';
-import { addStatus } from './status';
+import { addStatus, hasStatus, tryStabilizeScar } from './status';
 import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
-import { addLightSource, isLit, rebuildIllumination } from './light';
+import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 
@@ -47,6 +48,45 @@ const TIMER_KEYS: TimerKey[] = [
   'lensTurns',
   'mapperTurns',
 ];
+
+type UnknownKind = 'salvage' | 'sealed_crate' | 'array_shard';
+
+const ID_CATEGORIES: Record<string, { label: string; items: ItemKind[] }> = {
+  power: { label: 'power kit', items: ['energy', 'coolant', 'filter', 'probe'] },
+  combat: { label: 'combat kit', items: ['stim', 'dart', 'plate', 'blade'] },
+  field: { label: 'field kit', items: ['med', 'ration', 'sealant', 'patch', 'flare'] },
+};
+
+function biomeIdTable(sectorId: SectorId, scav: boolean): ItemKind[] {
+  const early: SectorId[] = ['plains', 'flood', 'canopy', 'reef'];
+  const mid: SectorId[] = ['spire', 'ruin', 'beacon', 'trench', 'duct'];
+  if (early.includes(sectorId)) {
+    return scav
+      ? ['coolant', 'plate', 'med', 'filter', 'lens', 'dart', 'stim', 'flare']
+      : ['energy', 'med', 'ration', 'dart', 'sealant', 'patch', 'flare', 'plate'];
+  }
+  if (mid.includes(sectorId)) {
+    return scav
+      ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig', 'jammer']
+      : ['energy', 'med', 'filter', 'dart', 'sealant', 'plate', 'coolant', 'stim'];
+  }
+  // deep / ashward
+  return scav
+    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig', 'eps_coupler']
+    : ['coolant', 'med', 'filter', 'plate', 'sealant', 'jammer', 'lens', 'stim'];
+}
+
+function failChanceFor(kind: UnknownKind, scav: boolean): number {
+  if (kind === 'salvage') return scav ? 0.08 : 0.18;
+  if (kind === 'sealed_crate') return scav ? 0.16 : 0.28;
+  return scav ? 0.24 : 0.38;
+}
+
+function backlashEm(kind: UnknownKind): number {
+  if (kind === 'salvage') return 15;
+  if (kind === 'sealed_crate') return 20;
+  return 28;
+}
 
 /** Soft cap: at most 3 concurrent kit timers (keep the one being applied). */
 function capActiveSystems(state: GameState, keep: TimerKey): void {
@@ -79,6 +119,10 @@ export function hasItem(state: GameState, kind: ItemKind): boolean {
   return findSlot(state, kind) >= 0;
 }
 
+function isUnknownKind(kind: ItemKind): kind is UnknownKind {
+  return kind === 'salvage' || kind === 'sealed_crate' || kind === 'array_shard';
+}
+
 export function addItem(state: GameState, kind: ItemKind): boolean {
   // Battery merged into coolant tier — keep kind for legacy drops, stack as coolant
   if (kind === 'battery') kind = 'coolant';
@@ -91,7 +135,7 @@ export function addItem(state: GameState, kind: ItemKind): boolean {
     }
   }
   if (state.inventory.length >= INVENTORY_SLOTS) {
-    if (kind === 'salvage') {
+    if (isUnknownKind(kind)) {
       const storm = randInt(state.rng, STORM_SURPLUS_SALVAGE[0], STORM_SURPLUS_SALVAGE[1]);
       state.stormTurns += storm;
       pushLog(state, 'LOG-SURPLUS-STORM', `+${storm}`);
@@ -175,31 +219,44 @@ export function tryEquipItem(state: GameState, kind: ItemKind): void {
   if (logId) pushLog(state, logId);
 }
 
-/** ADOM unidentified loot — scan unknown salvage into a known kit item (or backlash). */
-function identifySalvage(state: GameState): void {
-  if (!removeOne(state, 'salvage')) {
+function applyIdentifyBacklash(state: GameState, kind: UnknownKind): void {
+  addEmStress(state, backlashEm(kind), `unstable ${kind}`);
+  addStatus(state.player, 'ion_burn', kind === 'array_shard' ? 3 : 2);
+  state.lootTakenThisSector = true;
+  for (const en of state.enemies) {
+    if (!en.alive) continue;
+    if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 5) {
+      en.alerted = true;
+    }
+  }
+  pushLog(state, 'LOG-SALVAGE-BAD');
+}
+
+/** ADOM unidentified loot — scan unknown into a known kit item (or backlash). */
+function identifyUnknown(state: GameState, kind: UnknownKind): void {
+  if (!removeOne(state, kind)) {
     pushLog(state, 'LOG-USE-FAIL');
     return;
   }
-  const roll = state.rng();
   const scav = hasSkill(state, 'scavenger');
-  const failChance = scav ? 0.08 : 0.18;
-  if (roll < failChance) {
-    addEmStress(state, 15, 'unstable salvage');
-    addStatus(state.player, 'ion_burn', 2);
-    state.lootTakenThisSector = true;
-    for (const en of state.enemies) {
-      if (!en.alive) continue;
-      if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 5) {
-        en.alerted = true;
-      }
-    }
-    pushLog(state, 'LOG-SALVAGE-BAD');
+  const failChance = failChanceFor(kind, scav);
+  if (state.rng() < failChance) {
+    applyIdentifyBacklash(state, kind);
     return;
   }
-  const table: ItemKind[] = scav
-    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig']
-    : ['energy', 'med', 'ration', 'dart', 'sealant', 'patch', 'flare', 'plate'];
+
+  // Partial ID: ~20% on array_shard with scavenger — log category then roll within it
+  if (kind === 'array_shard' && scav && state.rng() < 0.2) {
+    const catKey = pick(state.rng, Object.keys(ID_CATEGORIES));
+    const cat = ID_CATEGORIES[catKey]!;
+    pushLog(state, 'LOG-ID-PARTIAL', cat.label);
+    const idKind = pick(state.rng, cat.items);
+    addItem(state, idKind);
+    pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[idKind].loreName));
+    return;
+  }
+
+  const table = biomeIdTable(state.sectorId, scav);
   const idKind = pick(state.rng, table);
   addItem(state, idKind);
   pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[idKind].loreName));
@@ -239,6 +296,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-RATION');
       break;
     case 'probe':
+      if (hasStatus(state.player, 'jam')) {
+        pushLog(state, 'LOG-JAM-BLOCK');
+        return false;
+      }
       capActiveSystems(state, 'probeTurns');
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
@@ -276,6 +337,7 @@ export function useSelected(state: GameState): boolean {
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
+      tryStabilizeScar(state);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'battery':
@@ -287,6 +349,7 @@ export function useSelected(state: GameState): boolean {
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
+      tryStabilizeScar(state);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'patch':
@@ -309,6 +372,7 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-MAPPER');
       break;
     case 'flare': {
+      const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
       let hits = 0;
       for (const en of state.enemies) {
@@ -330,9 +394,18 @@ export function useSelected(state: GameState): boolean {
       });
       rebuildIllumination(state);
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
+      // Hunter notice: flaring while already in shadow
+      if (shadowed && state.rng() < 0.22) {
+        addStatus(state.player, 'marked', 3);
+        pushLog(state, 'LOG-STATUS-MARKED');
+      }
       break;
     }
     case 'jammer':
+      if (hasStatus(state.player, 'jam')) {
+        pushLog(state, 'LOG-JAM-BLOCK');
+        return false;
+      }
       capActiveSystems(state, 'jammerTurns');
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
@@ -341,8 +414,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-QUIET-ON');
       if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
-    case 'salvage': {
-      identifySalvage(state);
+    case 'salvage':
+    case 'sealed_crate':
+    case 'array_shard': {
+      identifyUnknown(state, kind);
       break;
     }
     case 'sealant': {
@@ -359,11 +434,13 @@ export function useSelected(state: GameState): boolean {
         };
         removeOne(state, kind);
         purgeEmStress(state, state.paddMods.brineSeal ? 18 : 8);
+        tryStabilizeScar(state);
         pushLog(state, 'LOG-USE-SEALANT');
       } else {
         // Flush EM without sealing terrain
         removeOne(state, kind);
         purgeEmStress(state, 20);
+        tryStabilizeScar(state);
         pushLog(state, 'LOG-EM-PURGE', 'sealant flush');
       }
       break;

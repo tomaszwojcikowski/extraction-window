@@ -2,18 +2,20 @@ import { getSector } from '../data/encounters';
 import { progressEnergyTax, progressStormTax } from '../data/difficulty';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { XP_SECTOR } from '../data/progression';
+import { equipCancelsFatigueTax } from '../data/items';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { moveAllies } from './allyAi';
-import { addStatus, tickPlayerStatusEffects } from './status';
+import { addStatus, hasScar, hasStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, emEnergyTax } from './emStress';
+import { addEmStress, emEnergyTax, EM_HIGH, SCAR_STREAK_TURNS } from './emStress';
 import { mechanicsOnEndTurn } from './mechanics';
 import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
-import type { GameState } from './types';
+import type { GameState, ScanScarId } from './types';
+import { pick } from './rng';
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
@@ -43,6 +45,29 @@ export function finishSectorTransition(state: GameState): void {
   refreshVision(state);
   syncObjectiveFlags(state);
   checkLose(state);
+}
+
+function tickScanScars(state: GameState): void {
+  if (state.emStress >= EM_HIGH) {
+    state.emHighStreak += 1;
+    // Soft fatigue pressure while hot and not quiet
+    if (state.player.jammerTurns <= 0 && state.rng() < 0.06) {
+      addStatus(state.player, 'fatigue', 3);
+      pushLog(state, 'LOG-STATUS-FATIGUE');
+    }
+  } else {
+    state.emHighStreak = 0;
+  }
+
+  if (state.emHighStreak < SCAR_STREAK_TURNS || state.scanScars.length >= 2) return;
+  const pool: ScanScarId[] = (['array_bleed', 'hunter_eye'] as ScanScarId[]).filter(
+    (id) => !hasScar(state, id),
+  );
+  if (pool.length === 0) return;
+  const id = pick(state.rng, pool);
+  state.scanScars.push({ id, stabilized: false });
+  state.emHighStreak = 0;
+  pushLog(state, id === 'array_bleed' ? 'LOG-SCAR-ARRAY' : 'LOG-SCAR-EYE');
 }
 
 function tickEnvironment(state: GameState): void {
@@ -78,6 +103,11 @@ function tickEnvironment(state: GameState): void {
   if (coupler) drain = Math.max(0, drain - 1);
   state.player.energy -= drain;
 
+  // Fatigue status: +1 energy tax / turn unless harness worn
+  if (hasStatus(state.player, 'fatigue') && !equipCancelsFatigueTax(state.player.equip.armor)) {
+    state.player.energy -= 1;
+  }
+
   const tile = state.tiles[state.player.y]![state.player.x]!;
   if (tile.kind === 'hazard') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
@@ -89,6 +119,15 @@ function tickEnvironment(state: GameState): void {
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter || coupler ? 0 : 1;
     if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
+    // Vent step: chance jam (1) or fatigue
+    const ventRoll = state.rng();
+    if (ventRoll < 0.12) {
+      addStatus(state.player, 'jam', 1);
+      pushLog(state, 'LOG-STATUS-JAM');
+    } else if (ventRoll < 0.22) {
+      addStatus(state.player, 'fatigue', 2);
+      pushLog(state, 'LOG-STATUS-FATIGUE');
+    }
   }
   // scrub is a sight-blocker only — no energy tax
 
@@ -104,6 +143,7 @@ function tickEnvironment(state: GameState): void {
   if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
 
   tickPlayerStatusEffects(state);
+  tickScanScars(state);
   mechanicsOnEndTurn(state);
 }
 

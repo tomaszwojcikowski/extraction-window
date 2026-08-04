@@ -60,9 +60,26 @@ export interface InventorySlot {
   count: number;
 }
 
-export type StatusId = 'stun' | 'bleed' | 'ion_burn' | 'expose';
+export type StatusId =
+  | 'stun'
+  | 'bleed'
+  | 'ion_burn'
+  | 'expose'
+  | 'blind'
+  | 'jam'
+  | 'fatigue'
+  | 'marked';
 
 export type StatusMap = Partial<Record<StatusId, number>>;
+
+/** Sustained EM-HIGH scars (ADOM corruption-lite brands). */
+export type ScanScarId = 'array_bleed' | 'hunter_eye';
+
+export interface ScanScar {
+  id: ScanScarId;
+  /** Coolant/sealant can stabilize without removing the scar. */
+  stabilized: boolean;
+}
 
 export interface Enemy {
   id: number;
@@ -243,6 +260,10 @@ export interface GameState {
   codexLog: LoreId[];
   /** EM contamination 0–100 (ADOM corruption-lite). */
   emStress: number;
+  /** Consecutive end-turns at EM-HIGH (resets below EM_HIGH). */
+  emHighStreak: number;
+  /** Sustained scan scars from prolonged EM-HIGH (max 2). */
+  scanScars: ScanScar[];
   /** Beacon multi-turn handshake (null when idle / not on beacon sector). */
   handshake: BeaconHandshake | null;
   /** Nav Core pattern-buffer desync; shuttle rejects while > 0. */

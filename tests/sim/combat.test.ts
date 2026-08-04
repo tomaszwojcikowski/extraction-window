@@ -100,7 +100,7 @@ describe('playerAttack / enemyAttack', () => {
     st.enemies = [foe];
     playerAttack(st, foe, 0);
     expect(foe.alive).toBe(true);
-    expect(foe.statuses.stun).toBe(1);
+    expect(foe.statuses.stun).toBe(2);
   });
 
   it('drain fauna siphons bus and logs source', () => {

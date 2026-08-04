@@ -578,11 +578,11 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
 }
 
 /**
- * v1 active pick pool (salvage / purge / vent_seal).
- * Deferred kinds (relay_chain, calibrate, decode, stabilize) remain in
- * types + handlers for saves and depth-pass code — they are not rolled here.
+ * Wave-1 active pick pool (salvage / purge / vent_seal / decode).
+ * Deferred kinds (relay_chain, calibrate, stabilize) remain in
+ * types + handlers for saves and later depth passes — they are not rolled here.
  */
-const V1_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal'];
+const V1_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
 
 export function pickRoomQuestKind(rng: () => number): RoomQuestKind {
   return V1_ROOM_QUEST_KINDS[Math.floor(rng() * V1_ROOM_QUEST_KINDS.length)]!;

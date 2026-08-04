@@ -1,0 +1,73 @@
+# Extraction Window — ADOM Depth (post-v1)
+
+Roadmap to deepen toward ADOM feature richness **inside** the 15-sector extract spine. No towns, shops, overland, deity alignment, or cross-run meta.
+
+**Canon:** [`V1.md`](V1.md) pillars · [`WORLD.md`](WORLD.md) ecology (scan pressure → EM → fauna) · [`ARCHITECTURE.md`](ARCHITECTURE.md) mechanic registry.
+
+Each wave ships behind autopilot **55–85% WR**.
+
+```mermaid
+flowchart TB
+  pillars[Existing pillars]
+  wave1[Wave1 deepen]
+  wave2[Wave2 ADOM analogues]
+  wave3[Wave3 living shelf]
+  pillars --> wave1 --> wave2 --> wave3
+```
+
+---
+
+## ADOM → Meridian mapping
+
+| ADOM classic | EW today | Richness target |
+|--------------|----------|-----------------|
+| Corruption | EM 0–100 + quiet | **Scan scars** at sustained EM-HIGH |
+| Hunger | Bus drip | Keep bus primary; fatigue status as soft pressure |
+| Identification | Single salvage | Tiered unknowns + biome/scavenger tables |
+| Statuses | 4 | 8 with fauna/terrain/EM sources |
+| Skills | 3×2 forks | Readable forks; later mastery track |
+| Terrain | hazard/vent/scrub | Wave 2: traps, sealed hatches, pools |
+| NPC quests | Hail + ally | Wave 2: agendas |
+| Crafting | None | Wave 2: 2–3 field recipes |
+| Brands | Flat equip | Situational equip tags (Wave 1) |
+| Gods / alignment | Out | Soft doctrine later — not deities |
+| Weather | Deferred | Wave 3 ion fronts |
+
+---
+
+## Wave 1 — Deepen without new pillars (this pass)
+
+| Ticket | Status |
+|--------|--------|
+| Status pack: `blind` / `jam` / `fatigue` / `marked` | Done |
+| Tiered salvage ID (`salvage` / `sealed_crate` / `array_shard`) | Done |
+| Sustained EM-HIGH → scan scars | Done |
+| Situational equip tags | Done |
+| Re-enable `decode` in room-quest pool | Done |
+
+**Exit gate:** unit + cohere + smoke + balance in band; scars/ID readable in log/HUD.
+
+---
+
+## Wave 2 — Mid-systems (later)
+
+Terrain features, field craft (2–3 recipes), NPC agendas, Quiet vs Probe doctrine tallies, fauna light-fear / light-hunt tags.
+
+## Wave 3 — Living Shelf (later)
+
+Ion fronts, elite/boss branded drops, companion depth, content fattening, Phaser Filters polish.
+
+**Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
+
+---
+
+## Guardrails
+
+| Rule | Why |
+|------|-----|
+| `sim/` never imports Phaser | Keep oracle |
+| No new Action per gimmick | ARCHITECTURE |
+| Autopilot + `test:balance` 55–85% | Don't drown the policy |
+| Optional content never required for extract | Causal spine stays clean |
+| Lore IDs for every player string | LORE discipline |
+| Deepen EM/light/kit before weather | Ecology thesis |

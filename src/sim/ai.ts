@@ -3,7 +3,7 @@ import { lore } from '../data/lore';
 import { applyPlayerDamage, enemyAttack } from './combat';
 import { pushLog } from './log';
 import { bfsPath } from './fov';
-import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
+import { addStatus, hasScar, hasStatus, scarStabilized, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
 import { emAggroBonus } from './emStress';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
@@ -27,8 +27,12 @@ function effectiveAggro(state: GameState, enemy: Enemy): number {
   if (state.sectorId === 'vault' && state.lootTakenThisSector && !state.paddMods.quietVault) {
     if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
   }
-  // Quiet stance (jammer): shrink interest radius
-  if (state.player.jammerTurns > 0) r = Math.max(1, r - 2);
+  if (hasStatus(state.player, 'marked')) r += 2;
+  // Quiet stance (jammer): shrink interest radius — hunter_eye softens shrink
+  if (state.player.jammerTurns > 0) {
+    const shrink = hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 1 : 2;
+    r = Math.max(1, r - shrink);
+  }
   return r;
 }
 
@@ -271,6 +275,8 @@ export function moveEnemies(state: GameState): void {
               });
               addStatus(state.player, 'ion_burn', 3);
               addStatus(state.player, 'expose', 2);
+              addStatus(state.player, 'blind', 2);
+              pushLog(state, 'LOG-STATUS-BLIND');
             }
             enemy.alive = false;
             enemy.hp = 0;

@@ -25,7 +25,9 @@ export type ItemKind =
   | 'patch'
   | 'lens'
   | 'mapper'
-  | 'salvage';
+  | 'salvage'
+  | 'sealed_crate'
+  | 'array_shard';
 
 export type EquipSlotId = 'tool' | 'armor' | 'utility';
 
@@ -37,6 +39,30 @@ export interface ItemDef {
   stackable: boolean;
   /** Worn loadout slot — use toggles equip / stow. */
   equipSlot?: EquipSlotId;
+}
+
+/** Situational equip tags (Wave 1 ADOM brands). */
+export const EQUIP_TAGS = {
+  blade: { onHitBleed: 1 },
+  pulse_baton: { onHitStun: 2 },
+  ablative_vest: { bleedDamage: 1 },
+  eps_coupler: { emEnergyTaxZero: true },
+  sensor_rig: { blindFovPenalty: 1 },
+  harness: { cancelFatigueTax: true },
+} as const;
+
+export function equipOnHitBleed(tool: ItemKind | null): number {
+  if (tool === 'blade') return EQUIP_TAGS.blade.onHitBleed;
+  return 0;
+}
+
+export function equipOnHitStun(tool: ItemKind | null): number {
+  if (tool === 'pulse_baton') return EQUIP_TAGS.pulse_baton.onHitStun;
+  return 0;
+}
+
+export function equipCancelsFatigueTax(armor: ItemKind | null): boolean {
+  return armor === 'harness';
 }
 
 export const ITEMS: Record<ItemKind, ItemDef> = {
@@ -218,6 +244,20 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'salvage',
     loreName: 'ITEM-SALVAGE',
     loreDesc: 'ITEM-SALVAGE-DESC',
+    quest: false,
+    stackable: true,
+  },
+  sealed_crate: {
+    kind: 'sealed_crate',
+    loreName: 'ITEM-CRATE',
+    loreDesc: 'ITEM-CRATE-DESC',
+    quest: false,
+    stackable: true,
+  },
+  array_shard: {
+    kind: 'array_shard',
+    loreName: 'ITEM-SHARD',
+    loreDesc: 'ITEM-SHARD-DESC',
     quest: false,
     stackable: true,
   },

@@ -1,9 +1,9 @@
 import { ENEMIES } from '../data/enemies';
 import { lore } from '../data/lore';
-import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS } from '../data/items';
+import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS, equipOnHitBleed, equipOnHitStun } from '../data/items';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
-import { addStatus, hasStatus } from './status';
+import { addStatus, hasScar, hasStatus } from './status';
 import { hasSkill } from './progression';
 import type { DamageType, Enemy, GameState } from './types';
 
@@ -77,22 +77,29 @@ export function applyPlayerDamage(
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
   const overcharge =
     hasSkill(state, 'overcharge') && state.player.hp <= state.player.maxHp * 0.5 ? 1 : 0;
+  const scarAtk = hasScar(state, 'array_bleed') ? 1 : 0;
   const atk =
     state.player.atk +
     toolAtkBonus(state) +
     (state.player.probeTurns > 0 ? 2 : 0) +
     (state.player.stimTurns > 0 ? 3 : 0) +
     (hasStatus(enemy, 'expose') ? 4 : 0) +
-    overcharge;
+    overcharge +
+    scarAtk;
   const def = enemy.def - (hasStatus(enemy, 'expose') ? 2 : 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
   const name = lore(ENEMIES[enemy.kind].loreName);
   pushLog(state, 'LOG-HIT', formatCombatDetail(name, dmg, rem, enemy.maxHp));
-  if (state.player.equip.tool === 'pulse_baton' && enemy.alive && enemy.hp > 0) {
-    addStatus(enemy, 'stun', 1);
-    enemy.windup = 0;
+  if (enemy.alive && enemy.hp > 0) {
+    const stunTurns = equipOnHitStun(state.player.equip.tool);
+    if (stunTurns > 0) {
+      addStatus(enemy, 'stun', stunTurns);
+      enemy.windup = 0;
+    }
+    const bleedTurns = equipOnHitBleed(state.player.equip.tool);
+    if (bleedTurns > 0) addStatus(enemy, 'bleed', bleedTurns);
   }
   if (enemy.hp <= 0) {
     killEnemy(state, enemy);
@@ -129,6 +136,16 @@ export function enemyAttack(
     enemy.kind === 'skitter'
   ) {
     addStatus(state.player, 'bleed', 3);
+  }
+  // Wasp / skitter: chance to mark the surveyor (hunter notice)
+  if (enemy.kind === 'wasp' || enemy.kind === 'skitter' || enemy.kind === 'reef_skitter') {
+    if (state.rng() < 0.28) {
+      addStatus(state.player, 'marked', 4);
+      pushLog(state, 'LOG-STATUS-MARKED');
+    }
+  }
+  if (enemy.kind === 'wasp' && state.rng() < 0.18) {
+    addStatus(state.player, 'bleed', 2);
   }
   if (enemy.kind === 'rift') {
     addStatus(state.player, 'expose', 4);

@@ -61,8 +61,8 @@ describe('map generator', () => {
     }
   });
 
-  it('v1 room-quest pick pool is salvage | purge | vent_seal only', () => {
-    const allowed = new Set(['salvage', 'purge', 'vent_seal']);
+  it('v1 room-quest pick pool is salvage | purge | vent_seal | decode', () => {
+    const allowed = new Set(['salvage', 'purge', 'vent_seal', 'decode']);
     for (const seed of [1, 7, 42, 99, 256, 777, 1337, 4096, 9999, 12345]) {
       for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
         const sector = getSector(i);

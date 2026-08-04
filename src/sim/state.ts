@@ -111,6 +111,8 @@ export function createGame(seed: number): GameState {
     codexPages: 0,
     codexLog: [],
     emStress: 0,
+    emHighStreak: 0,
+    scanScars: [],
     handshake: null,
     patternDesync: 0,
     scriptedFired: {},

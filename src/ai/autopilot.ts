@@ -128,9 +128,11 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  // Identify unknown salvage when kit has space and not in combat crisis
+  // Identify unknown salvage / crate / shard when kit has space and not in combat crisis
   if (state.player.hp > state.player.maxHp * 0.55 && state.emStress < 50) {
-    const sIdx = state.inventory.findIndex((s) => s.kind === 'salvage');
+    const sIdx = state.inventory.findIndex(
+      (s) => s.kind === 'salvage' || s.kind === 'sealed_crate' || s.kind === 'array_shard',
+    );
     if (sIdx >= 0 && state.inventory.length < INVENTORY_SLOTS - 1) {
       state.ui.selectedSlot = sIdx;
       return { type: 'use' };

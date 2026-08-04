@@ -245,6 +245,12 @@ export const LORE = {
   'ITEM-SALVAGE': 'Unknown Salvage',
   'ITEM-SALVAGE-DESC':
     'Unidentified crate — stow with g, then use (u) in the kit to array-scan. May backlash.',
+  'ITEM-CRATE': 'Sealed Crate',
+  'ITEM-CRATE-DESC':
+    'Hard-sealed unknown — higher ID risk than salvage. Use (u) to array-scan.',
+  'ITEM-SHARD': 'Array Shard',
+  'ITEM-SHARD-DESC':
+    'Unstable field-array fragment — highest ID backlash. Scavenger may get a partial category read.',
 
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
@@ -353,6 +359,15 @@ export const LORE = {
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
   'LOG-STATUS-BLEED': 'Bleed tick',
   'LOG-STATUS-ION': 'Plasma burn',
+  'LOG-STATUS-BLIND': 'Optics washed — vision narrowed.',
+  'LOG-STATUS-JAM': 'Kit jammed — probe/scrambler blocked.',
+  'LOG-JAM-BLOCK': 'Systems jammed — cannot apply probe or scrambler.',
+  'LOG-STATUS-FATIGUE': 'Fatigue — bus tax until it clears (harness cancels).',
+  'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
+  'LOG-SCAR-ARRAY': 'Scan scar: array bleed — melee sharper, EM bus bite harder.',
+  'LOG-SCAR-EYE': 'Scan scar: hunter eye — ranging up; quiet aggro shrink softens.',
+  'LOG-SCAR-STABLE': 'Scan scar stabilized — downside muted.',
+  'LOG-ID-PARTIAL': 'Partial array ID — category locked.',
   'LOG-POI-CONSOLE': 'Dead survey console — partial shear-window refund and salvage.',
   'LOG-POI-NEST': 'Disturbed EM nest — sensor wake and plasma burn.',
   'LOG-POI-CACHE': 'Cache scar cracked — field kit recovered.',

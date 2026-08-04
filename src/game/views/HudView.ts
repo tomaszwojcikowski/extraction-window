@@ -4,7 +4,7 @@ import { shortEquipName } from '../../data/items';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import { describeObjective, stickyMilestone, type GameState } from '../../sim';
-import { statusHud } from '../../sim/status';
+import { scarHud, statusHud } from '../../sim/status';
 import { armorDefBonus, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import {
@@ -149,14 +149,17 @@ export class HudView {
       ? `  ${lore('UI-EQUIP-UTIL')}:${shortEquipName(st.player.equip.utility)}`
       : '';
     const statuses = statusHud(st.player.statuses);
+    const scars = scarHud(st.scanScars);
     const statusLine = statuses ? `  ${statuses}` : '';
+    const scarLine = scars ? `  SCAR:${scars}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
-      (st.player.stimTurns > 0 ? 3 : 0);
+      (st.player.stimTurns > 0 ? 3 : 0) +
+      (st.scanScars.some((s) => s.id === 'array_bleed') ? 1 : 0);
     const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${utilEq}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
