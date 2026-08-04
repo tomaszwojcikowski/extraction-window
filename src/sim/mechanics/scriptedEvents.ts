@@ -2,7 +2,7 @@ import type { LoreId } from '../../data/lore';
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
 import { spawnRelayAmbushNearStep, activeQuestStep } from '../roomQuest';
-import type { GameState, Pos } from '../types';
+import type { GameState } from '../types';
 import type { Mechanic } from './types';
 
 /** File a prior-crew PADD without quest XP / paddMods (texture only). */
@@ -36,25 +36,20 @@ function markQuestOnMap(state: GameState): void {
   if (state.explored[step.pos.y]) state.explored[step.pos.y]![step.pos.x] = true;
 }
 
+/** Soft dual-clock tax on approach — no floor→vent ring (gimmick noise). */
 function shearPulse(state: GameState): void {
   pushLog(state, 'LOG-EVT-SHEAR');
   state.player.energy -= 1;
-  const dirs: Pos[] = [
-    { x: state.player.x + 1, y: state.player.y },
-    { x: state.player.x - 1, y: state.player.y },
-    { x: state.player.x, y: state.player.y + 1 },
-    { x: state.player.x, y: state.player.y - 1 },
-  ];
-  for (const p of dirs) {
-    const t = state.tiles[p.y]?.[p.x];
-    if (t?.kind === 'floor' && state.rng() < 0.5) {
-      state.tiles[p.y]![p.x] = { kind: 'vent', walkable: true, transparent: true };
-    }
-  }
 }
 
 /**
- * Sector scripted beats — logs, light FOV, EM, shear, quest ambush.
+ * Sector scripted beats — prior-crew conflict + pillar-teaching pulses.
+ *
+ * Kept: drop EM afterglow, flood prior-map conflict, quest-room reveal,
+ * survey mapper pulse (reef/ruin), beacon handshake teach, vault pattern hook,
+ * approach storm pressure (soft bus tax), elite contact tell,
+ * legacy relay ambush for deferred relay_chain saves.
+ * Softened: approach shear no longer spawns vent rings around the player.
  */
 export const scriptedEventsMechanic: Mechanic = {
   id: 'scripted_events',
@@ -142,6 +137,6 @@ export const scriptedEventsMechanic: Mechanic = {
 /** Mild pattern stress when Nav Core is first secured. */
 export function onNavCoreAcquired(state: GameState): void {
   if (!once(state, 'core_pattern_seed')) return;
-  // Lore beat only — do not force desync (keeps coolant for Type-9)
+  // Lore beat only — do not force desync (keeps coolant for skiff lock)
   pushLog(state, 'LOG-PB-STRESS');
 }

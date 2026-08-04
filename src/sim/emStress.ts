@@ -26,7 +26,7 @@ export function purgeEmStress(state: GameState, amount: number): void {
   }
 }
 
-/** Extra EPS drip while EM-stressed (ADOM hunger/corruption pressure). */
+/** Extra bus drip while EM-stressed (ADOM hunger/corruption pressure). */
 export function emEnergyTax(state: GameState): number {
   if (state.emStress >= EM_HIGH) return 1;
   return 0;

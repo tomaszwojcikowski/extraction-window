@@ -15,7 +15,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 
 **OBJ-NAVCORE** — Spare **Nav Lattice** stored inland at Contingency Cache (Halcyon depot).
 **OBJ-RELAYKEY** — Emergency Beacon inland seal requires **Splice Key** recovered from Crash Wreck Belt caches.
-**HAZ-STORM** — Shear window: hard turn budget. Bus / life-support reserve drains under ion stress (slow drip + hazards; Radiogenic Ash adds baseline drain).
+**HAZ-STORM** — Shear window: hard turn budget. Bus / life-support reserve drains under ion stress (slow drip + hazards; Shear Ash Fields adds baseline drain).
 
 ---
 
@@ -36,19 +36,19 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 |----|------|-------|
 | SEC-PLAINS | Relay Scar Flats | Drop flats; residual array afterglow; scar mites |
 | SEC-FLOOD | Shearwash Basin | Standing shear-water; elevated hazard tiles |
-| SEC-CANOPY | Canopy Sector | Dense EM scatter; hunters *(Phase 2 rename)* |
-| SEC-REEF | Nucleonic Reef | Crystal scrub; reef skitters; early multiroom calibrate |
-| SEC-SPIRE | Sensor Mast Reach | Abandoned survey arrays; EM intensifies |
+| SEC-CANOPY | Shear Canopy | Dense EM scatter; hunters |
+| SEC-REEF | Crystal Pulse Reef | Crystal scrub; reef skitters; early multiroom calibrate |
+| SEC-SPIRE | Array Mast Reach | Abandoned survey arrays; EM intensifies |
 | SEC-RUIN | Crash Wreck Belt | Prior wreckage; Splice Key in caches (guaranteed) |
 | SEC-BEACON | Emergency Beacon | Sustained splice handshake opens inland path |
-| SEC-TRENCH | Fault Corridor | Inland after seal; deep fauna |
-| SEC-DUCT | EPS Conduit Warren | Vent spines; duct drones *(Phase 2: bus warren)* |
-| SEC-ASH | Radiogenic Ash | Baseline radiation bus drain |
-| SEC-BRINE | Nucleonic Brine | Ion-brine pools before cache |
+| SEC-TRENCH | Inland Fault Cut | Inland after seal; deep fauna |
+| SEC-DUCT | Bus Conduit Warren | Vent spines; duct drones |
+| SEC-ASH | Shear Ash Fields | Baseline radiation bus drain |
+| SEC-BRINE | Pulse Brine Flats | Ion-brine pools before cache |
 | SEC-VAULT | Contingency Cache | Halcyon depot; spare Nav Lattice; pattern-buffer hook |
-| SEC-FISSURE | Gravimetric Fissure | Storm pressure climb toward the pad |
-| SEC-APPROACH | Pad Approach | Compact choke; storm shear; pattern stress |
-| SEC-RIDGE | Shuttle Ridge | Drop skiff pad; win with synced Lattice before window = 0 |
+| SEC-FISSURE | Shear Fissure | Storm pressure climb toward the pad |
+| SEC-APPROACH | Skiff Approach | Compact choke; storm shear; pattern stress |
+| SEC-RIDGE | Drop Skiff Ridge | Drop skiff pad; win with synced Lattice before window = 0 |
 
 **Crash Wreck Belt** — Remains of an earlier Halcyon ground survey that lost array lock and was abandoned. Contingency caches still hold Splice Keys for beacon authorization.
 

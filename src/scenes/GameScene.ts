@@ -3,21 +3,24 @@ import { TILE_DRAW, enemyTextureKey, npcTextureKey, allyTextureKey, wallTextureK
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
-import { lore, type LoreId } from '../data/lore';
+import { lore } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { createScanRetrace, drawHudStripChrome } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
-import { HUD_BOTTOM, HUD_TOP, MOVE_MS } from '../game/GameHost';
-import {
-  actionFromKey,
-  chromeFromKey,
-  isHelpDismissKey,
-  isPagesDismissKey,
-  slotIndexFromKey,
-} from '../game/input/Keymap';
+import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
+import { handleGameKey } from '../game/input/InputController';
 import { contextHint } from '../game/presenters/ContextHints';
-import { emitActionLights } from '../game/presenters/ActionFeedback';
+import {
+  bumpAttack,
+  bumpMeleeAttackers,
+  flashHit,
+  flashScreen,
+  playMoveAnims,
+  presentActionFeedback,
+  tintVisibleEnemies,
+  type EnemyView,
+} from '../game/presenters/ActionFeedback';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
@@ -28,13 +31,6 @@ const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
 const BAR_SLOTS = HUD_BAR_SLOTS;
 const BADGE_SLOTS = HUD_BADGE_SLOTS;
-
-type EnemyView = {
-  img: Phaser.GameObjects.Image;
-  label: Phaser.GameObjects.Text;
-  gx: number;
-  gy: number;
-};
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -369,7 +365,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.drawChrome();
-    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
+    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.handleKey(e));
     this.syncItems();
     this.syncActors(true);
     this.redrawTilesAndHud();
@@ -579,139 +575,51 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private onKey(e: KeyboardEvent): void {
-    sfx.unlock();
-
-    // While tweens run, accept mute + one-deep gameplay queue — drop other input.
-    if (this.animating) {
-      const chrome = chromeFromKey(e);
-      if (chrome?.kind === 'mute') {
-        sfx.toggleMute();
-        this.syncFieldAudio(true);
-        return;
-      }
-      const queued = actionFromKey(e);
-      if (queued && this.isQueueableAction(queued)) this.queuedAction = queued;
-      return;
-    }
-
-    const chrome = chromeFromKey(e);
-    if (chrome?.kind === 'mute') {
-      sfx.toggleMute();
-      this.syncFieldAudio(true);
-      this.hintText.setVisible(true);
-      this.hintText.setText(sfx.isMuted() ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
-      this.time.delayedCall(900, () => {
-        const hint = contextHint(this.state);
-        if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
-          this.hintText.setText(lore(hint));
-        } else {
-          this.hintText.setVisible(false);
-        }
-      });
-      return;
-    }
-
-    if (this.state.status !== 'playing') {
-      this.scene.start('End', {
-        status: this.state.status,
-        loseReason: this.state.loseReason,
-        seed: this.state.seed,
-        turn: this.state.turn,
-        level: this.state.level,
-        skills: this.state.skills,
-        objective: lore(describeObjective(this.state).campaign),
-      });
-      return;
-    }
-
-    if (chrome?.kind === 'toggle_help') {
-      this.toggleHelp();
-      sfx.play('ui');
-      return;
-    }
-    if (chrome?.kind === 'toggle_pages') {
-      if (this.helpOpen) this.toggleHelp(false);
-      this.togglePages();
-      sfx.play('ui');
-      return;
-    }
-    if (this.pagesOpen) {
-      if (isPagesDismissKey(e)) {
-        this.togglePages(false);
-        sfx.play('ui');
-      }
-      return;
-    }
-    if (this.helpOpen) {
-      if (isHelpDismissKey(e)) {
-        this.toggleHelp(false);
-        sfx.play('ui');
-      }
-      return;
-    }
-
-    if (this.state.skillPick) {
-      if (e.key === '1' || e.key === '2') {
-        const idx = parseInt(e.key, 10) - 1;
-        const id = this.state.skillPick[idx];
-        if (id) {
-          applyAction(this.state, { type: 'pick_skill', id });
-          sfx.play('ui');
-          this.redrawTilesAndHud();
-        }
-        return;
-      }
-      // Movement / kit locked until a fork is chosen — keep the skill hint visible
-      this.hintText.setVisible(true);
-      this.hintText.setText(lore('UI-HINT-SKILL'));
-      return;
-    }
-
-    const slotIdx = slotIndexFromKey(e);
-    if (slotIdx !== null) {
-      applyAction(this.state, { type: 'select_slot', index: slotIdx });
-      if (!this.state.ui.inventoryOpen) applyAction(this.state, { type: 'toggle_inventory' });
-      sfx.play('ui');
-      this.redrawTilesAndHud();
-      this.syncItems();
-      return;
-    }
-
-    const action = actionFromKey(e);
-    if (!action) return;
-
-    // Escape opens help when kit is closed (actionFromKey maps Escape → close_ui)
-    if (action.type === 'close_ui' && !this.state.ui.inventoryOpen) {
-      if (this.pagesOpen) {
-        this.togglePages(false);
-        sfx.play('ui');
-        return;
-      }
-      this.toggleHelp(true);
-      sfx.play('ui');
-      return;
-    }
-
-    if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
-      applyAction(this.state, action);
-      sfx.play('ui');
-      this.redrawTilesAndHud();
-      return;
-    }
-
-    this.commitTurnAction(action);
-  }
-
-  private isQueueableAction(action: Action): boolean {
-    return (
-      action.type === 'move' ||
-      action.type === 'wait' ||
-      action.type === 'get' ||
-      action.type === 'use' ||
-      action.type === 'exit' ||
-      action.type === 'aim'
-    );
+  private handleKey(e: KeyboardEvent): void {
+    handleGameKey(e, {
+      getState: () => this.state,
+      isAnimating: () => this.animating,
+      isHelpOpen: () => this.helpOpen,
+      isPagesOpen: () => this.pagesOpen,
+      queueAction: (action) => {
+        this.queuedAction = action;
+      },
+      syncFieldAudio: (force) => this.syncFieldAudio(force),
+      showMuteHint: (muted) => {
+        this.hintText.setVisible(true);
+        this.hintText.setText(muted ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
+        this.time.delayedCall(900, () => {
+          const hint = contextHint(this.state);
+          if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
+            this.hintText.setText(lore(hint));
+          } else {
+            this.hintText.setVisible(false);
+          }
+        });
+      },
+      startEndScene: () => {
+        this.scene.start('End', {
+          status: this.state.status,
+          loseReason: this.state.loseReason,
+          seed: this.state.seed,
+          turn: this.state.turn,
+          level: this.state.level,
+          skills: this.state.skills,
+          objective: lore(describeObjective(this.state).campaign),
+        });
+      },
+      toggleHelp: (force) => this.toggleHelp(force),
+      togglePages: (force) => this.togglePages(force),
+      afterUiChrome: (opts) => {
+        this.redrawTilesAndHud();
+        if (opts?.syncItems) this.syncItems();
+      },
+      showSkillHint: () => {
+        this.hintText.setVisible(true);
+        this.hintText.setText(lore('UI-HINT-SKILL'));
+      },
+      commitTurnAction: (action) => this.commitTurnAction(action),
+    });
   }
 
   private flushQueuedAction(): void {
@@ -727,9 +635,6 @@ export class GameScene extends Phaser.Scene {
     const prevLogLen = this.state.log.length;
     const prevAlive = this.state.enemies.filter((en) => en.alive).length;
     const fromPlayer = { x: this.state.player.x, y: this.state.player.y };
-    const fromEnemies = new Map(
-      this.state.enemies.filter((en) => en.alive).map((en) => [en.id, { x: en.x, y: en.y }]),
-    );
     const prevEnemySnap = this.state.enemies.map((en) => ({
       id: en.id,
       x: en.x,
@@ -740,37 +645,22 @@ export class GameScene extends Phaser.Scene {
     }));
 
     applyAction(this.state, action);
-    this.playActionSfx({
+
+    const fb = presentActionFeedback({
+      state: this.state,
       action,
       prevSector,
       prevHp,
       prevLogLen,
       prevAlive,
       fromPlayer,
+      prevEnemySnap,
+      lights: this.lightView,
+      flash: (color, alpha) => this.flashFx(color, alpha),
+      tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
 
-    const newLogs = this.state.log.slice(prevLogLen).map((l) => l.loreId);
-    const hitTiles: { x: number; y: number }[] = [];
-    const sporeTiles: { x: number; y: number }[] = [];
-    for (const prev of prevEnemySnap) {
-      const cur = this.state.enemies.find((e) => e.id === prev.id);
-      if (!prev.alive || !cur) continue;
-      if (cur.hp < prev.hp || (!cur.alive && prev.alive)) {
-        hitTiles.push({ x: cur.x, y: cur.y });
-      }
-      if (prev.alive && !cur.alive && prev.kind === 'spore') {
-        sporeTiles.push({ x: prev.x, y: prev.y });
-      }
-    }
-    emitActionLights(this.lightView, {
-      newLogs,
-      player: { x: this.state.player.x, y: this.state.player.y },
-      hitTiles,
-      sporeTiles,
-      beaconPos: this.state.beaconPos,
-    });
-
-    if (this.state.sectorIndex !== prevSector) {
+    if (fb.sectorChanged) {
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -790,33 +680,6 @@ export class GameScene extends Phaser.Scene {
       inCombat: this.threatNearby(),
     });
 
-    const flareOrBurst =
-      this.state.log.slice(prevLogLen).some(
-        (l) => l.loreId === 'LOG-USE-FLARE' || l.loreId === 'LOG-SPORE-BURST',
-      );
-    if (flareOrBurst) this.flashFx(Theme.ionHazard, 0.22);
-
-    if (this.state.player.hp < prevHp) this.flashHit();
-
-    // Brief hit flash on visible enemies that took damage this action
-    if (this.state.log.slice(prevLogLen).some((l) => l.loreId === 'LOG-HIT' || l.loreId === 'LOG-KILL')) {
-      for (const view of this.enemyViews.values()) {
-        if (!view.img.visible) continue;
-        view.img.setTint(0xffffff);
-        this.time.delayedCall(80, () => {
-          if (view.img.active) view.img.clearTint();
-        });
-      }
-    }
-
-    const playerMoved =
-      fromPlayer.x !== this.state.player.x || fromPlayer.y !== this.state.player.y;
-    const enemyMoved = this.state.enemies.some((en) => {
-      if (!en.alive) return false;
-      const prev = fromEnemies.get(en.id);
-      return !prev || prev.x !== en.x || prev.y !== en.y;
-    });
-
     // Light/FOV at the new tile immediately so the lamp isn't left behind the tween.
     // Full HUD (bars, log, hints) still waits for afterPresent.
     this.applyFieldLighting();
@@ -829,265 +692,47 @@ export class GameScene extends Phaser.Scene {
       this.flushQueuedAction();
     };
 
-    if (playerMoved || enemyMoved) {
-      this.playMoveAnims(fromPlayer, fromEnemies, afterPresent);
+    if (fb.playerMoved || fb.enemyMoved) {
+      playMoveAnims(this.moveAnimHost(), fromPlayer, fb.fromEnemies, afterPresent);
       return;
     }
 
     if (action.type === 'move') {
-      this.bumpAttack(action.dx, action.dy);
+      bumpAttack(
+        this.tweens,
+        this.playerSprite,
+        (gx, gy) => this.worldXY(gx, gy),
+        { x: this.state.player.x, y: this.state.player.y },
+        action.dx,
+        action.dy,
+      );
     }
     // Enemy melee bump when they struck without relocating
     if (this.state.player.hp < prevHp) {
-      this.bumpMeleeAttackers(fromEnemies);
+      bumpMeleeAttackers(this.tweens, {
+        state: this.state,
+        fromEnemies: fb.fromEnemies,
+        enemyViews: this.enemyViews,
+        worldXY: (gx, gy) => this.worldXY(gx, gy),
+      });
     }
     afterPresent();
   }
 
-  private playActionSfx(prev: {
-    action: Action;
-    prevSector: number;
-    prevHp: number;
-    prevLogLen: number;
-    prevAlive: number;
-    fromPlayer: { x: number; y: number };
-  }): void {
-    const st = this.state;
-    const newLogs = st.log.slice(prev.prevLogLen).map((l) => l.loreId);
-    const has = (id: LoreId) => newLogs.includes(id);
-
-    if (st.status === 'won') {
-      // End scene plays win fanfare
-      return;
-    }
-    if (st.status === 'lost') return;
-
-    if (st.sectorIndex !== prev.prevSector) {
-      sfx.play('sector');
-      return;
-    }
-    if (has('LOG-USED-KEY')) {
-      sfx.play('beacon');
-      this.flashFx(Theme.quest, 0.28);
-      return;
-    }
-    if (has('LOG-GOT-KEY') || has('LOG-GOT-CORE')) {
-      sfx.play('quest');
-      this.flashFx(Theme.quest, 0.3);
-      return;
-    }
-    if (has('LOG-LEVEL')) {
-      sfx.play('level');
-      this.flashFx(Theme.phosphorBright, 0.22);
-      return;
-    }
-    if (has('LOG-EXTRACT')) {
-      sfx.play('extract');
-      this.flashFx(Theme.ok, 0.35);
-      return;
-    }
-    if (has('LOG-STORM-WARN')) {
-      sfx.play('warn');
-    }
-    if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT')) {
-      sfx.play('armor');
-    }
-    if (st.player.hp < prev.prevHp || has('LOG-HURT')) {
-      sfx.play('hurt');
-    }
-    const alive = st.enemies.filter((en) => en.alive).length;
-    if (alive < prev.prevAlive || has('LOG-KILL')) {
-      sfx.play('kill');
-      return;
-    }
-    if (has('LOG-HIT')) {
-      sfx.play('hit');
-      return;
-    }
-    if (
-      has('LOG-USE-MED') ||
-      has('LOG-USE-ENERGY') ||
-      has('LOG-USE-RATION') ||
-      has('LOG-USE-PROBE') ||
-      has('LOG-USE-STIM') ||
-      has('LOG-USE-PLATE') ||
-      has('LOG-USE-FLARE') ||
-      has('LOG-USE-FILTER') ||
-      has('LOG-USE-COOLANT') ||
-      has('LOG-USE-BLADE') ||
-      has('LOG-USE-BATON') ||
-      has('LOG-USE-HARNESS') ||
-      has('LOG-USE-VEST') ||
-      has('LOG-USE-SENSOR') ||
-      has('LOG-USE-COUPLER') ||
-      has('LOG-UNEQUIP') ||
-      has('LOG-USE-DART') ||
-      has('LOG-USE-JAMMER') ||
-      has('LOG-USE-SEALANT')
-    ) {
-      sfx.play('use');
-      return;
-    }
-    if (has('LOG-PICKUP')) {
-      sfx.play('pickup');
-      return;
-    }
-    if (has('LOG-MOVE-BLOCKED') || has('LOG-EXIT-BLOCKED') || has('LOG-NEED-KEY') || has('LOG-NEED-CORE')) {
-      sfx.play('blocked');
-      return;
-    }
-    if (
-      prev.action.type === 'move' &&
-      (prev.fromPlayer.x !== st.player.x || prev.fromPlayer.y !== st.player.y)
-    ) {
-      sfx.play('move');
-      return;
-    }
-    if (prev.action.type === 'wait') {
-      sfx.play('ui');
-    }
-  }
-
-  private bumpAttack(dx: number, dy: number): void {
-    const base = this.worldXY(this.state.player.x, this.state.player.y);
-    this.playerSprite.setPosition(base.x, base.y);
-    this.tweens.add({
-      targets: this.playerSprite,
-      x: base.x + dx * 6,
-      y: base.y + dy * 6,
-      duration: 50,
-      yoyo: true,
-      ease: 'Quad.easeOut',
-    });
-  }
-
-  /** Nudge adjacent enemies that struck the player without moving. */
-  private bumpMeleeAttackers(fromEnemies: Map<number, { x: number; y: number }>): void {
-    const px = this.state.player.x;
-    const py = this.state.player.y;
-    for (const en of this.state.enemies) {
-      if (!en.alive) continue;
-      const prev = fromEnemies.get(en.id);
-      if (!prev || prev.x !== en.x || prev.y !== en.y) continue;
-      if (Math.abs(en.x - px) + Math.abs(en.y - py) !== 1) continue;
-      const view = this.enemyViews.get(en.id);
-      if (!view?.img.visible) continue;
-      const base = this.worldXY(en.x, en.y);
-      const dx = Math.sign(px - en.x);
-      const dy = Math.sign(py - en.y);
-      view.img.setPosition(base.x, base.y);
-      this.tweens.add({
-        targets: view.img,
-        x: base.x + dx * 5,
-        y: base.y + dy * 5,
-        duration: 45,
-        yoyo: true,
-        ease: 'Quad.easeOut',
-        onUpdate: () => {
-          if (view.label.active) view.label.setPosition(view.img.x - 6, view.img.y - 10);
-        },
-      });
-    }
-  }
-
-  /**
-   * Stage player move, then enemy moves, then invoke onDone (FOV/HUD redraw + queue flush).
-   */
-  private playMoveAnims(
-    fromPlayer: { x: number; y: number },
-    fromEnemies: Map<number, { x: number; y: number }>,
-    onDone: () => void,
-  ): void {
-    this.animating = true;
-    let finished = false;
-    const complete = () => {
-      if (finished) return;
-      finished = true;
-      this.animating = false;
-      onDone();
+  private moveAnimHost() {
+    return {
+      setAnimating: (v: boolean) => {
+        this.animating = v;
+      },
+      worldXY: (gx: number, gy: number) => this.worldXY(gx, gy),
+      tweens: this.tweens,
+      time: this.time,
+      playerSprite: this.playerSprite,
+      enemyViews: this.enemyViews,
+      state: this.state,
+      syncActors: (snap: boolean) => this.syncActors(snap),
+      snapImg: (img: Phaser.GameObjects.Image, gx: number, gy: number) => this.snapImg(img, gx, gy),
     };
-
-    const tweenActor = (
-      img: Phaser.GameObjects.Image,
-      label: Phaser.GameObjects.Text | null,
-      from: { x: number; y: number },
-      to: { x: number; y: number },
-      done: () => void,
-    ) => {
-      const a = this.worldXY(from.x, from.y);
-      const b = this.worldXY(to.x, to.y);
-      img.setPosition(a.x, a.y);
-      if (label) label.setPosition(a.x - 6, a.y - 10);
-      this.tweens.add({
-        targets: img,
-        x: b.x,
-        y: b.y,
-        duration: MOVE_MS,
-        ease: 'Cubic.easeOut',
-        onUpdate: () => {
-          if (label && label.active) label.setPosition(img.x - 6, img.y - 10);
-        },
-        onComplete: () => {
-          if (img.active) img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-          done();
-        },
-      });
-    };
-
-    this.syncActors(false);
-
-    const px = this.state.player.x;
-    const py = this.state.player.y;
-    const playerMoved = fromPlayer.x !== px || fromPlayer.y !== py;
-
-    const runEnemyPhase = () => {
-      let pending = 0;
-      let phaseDone = false;
-      const finishEnemy = () => {
-        pending -= 1;
-        if (pending > 0 || phaseDone) return;
-        phaseDone = true;
-        complete();
-      };
-
-      for (const en of this.state.enemies) {
-        if (!en.alive) continue;
-        const view = this.enemyViews.get(en.id);
-        if (!view) continue;
-        const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
-        if (prev.x !== en.x || prev.y !== en.y) {
-          pending += 1;
-          tweenActor(view.img, view.label, prev, { x: en.x, y: en.y }, finishEnemy);
-          view.gx = en.x;
-          view.gy = en.y;
-        }
-      }
-
-      if (pending === 0) {
-        complete();
-        return;
-      }
-
-      this.time.delayedCall(MOVE_MS + 120, () => {
-        if (!phaseDone) {
-          phaseDone = true;
-          complete();
-        }
-      });
-    };
-
-    if (playerMoved) {
-      tweenActor(this.playerSprite, null, fromPlayer, { x: px, y: py }, runEnemyPhase);
-      this.time.delayedCall(MOVE_MS * 2 + 160, () => {
-        if (!finished) complete();
-      });
-    } else {
-      this.snapImg(this.playerSprite, px, py);
-      runEnemyPhase();
-      this.time.delayedCall(MOVE_MS + 120, () => {
-        if (!finished) complete();
-      });
-    }
   }
 
   private maybeEnd(): void {
@@ -1408,13 +1053,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private flashHit(): void {
-    this.flashFx(Theme.phosphorBright, 0.35);
+    flashHit(this.tweens, this.flash);
   }
 
   private flashFx(color: number, alpha: number): void {
-    this.flash.setFillStyle(color, 1);
-    this.flash.setAlpha(alpha);
-    this.tweens.add({ targets: this.flash, alpha: 0, duration: 120 });
+    flashScreen(this.tweens, this.flash, color, alpha);
   }
 
   private applyFieldLighting(): void {

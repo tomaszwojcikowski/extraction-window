@@ -135,7 +135,7 @@ export const LORE = {
   'OBJ-NAVCORE': 'Recover spare Nav Lattice from inland Contingency Cache.',
   'OBJ-RELAYKEY': 'Secure Splice Key from Crash Wreck Belt — prior Halcyon wreckage.',
   'OBJ-BEACON': 'Authorize Emergency Beacon with Splice Key to open inland path.',
-  'OBJ-SHUTTLE': 'Reach Shuttle Ridge drop skiff pad with Nav Lattice.',
+  'OBJ-SHUTTLE': 'Reach Drop Skiff Ridge pad with Nav Lattice.',
   'OBJ-LOCAL-EXIT': '→ Sector hatch',
   'OBJ-LOCAL-KEY': '→ Splice Key',
   'OBJ-LOCAL-BEACON': '→ Beacon console',
@@ -148,19 +148,19 @@ export const LORE = {
   // Sectors
   'SEC-PLAINS': 'Relay Scar Flats',
   'SEC-FLOOD': 'Shearwash Basin',
-  'SEC-CANOPY': 'Canopy Sector',
-  'SEC-REEF': 'Nucleonic Reef',
-  'SEC-SPIRE': 'Sensor Mast Reach',
+  'SEC-CANOPY': 'Shear Canopy',
+  'SEC-REEF': 'Crystal Pulse Reef',
+  'SEC-SPIRE': 'Array Mast Reach',
   'SEC-RUIN': 'Crash Wreck Belt',
   'SEC-BEACON': 'Emergency Beacon',
-  'SEC-TRENCH': 'Fault Corridor',
-  'SEC-DUCT': 'EPS Conduit Warren',
-  'SEC-ASH': 'Radiogenic Ash',
-  'SEC-BRINE': 'Nucleonic Brine',
+  'SEC-TRENCH': 'Inland Fault Cut',
+  'SEC-DUCT': 'Bus Conduit Warren',
+  'SEC-ASH': 'Shear Ash Fields',
+  'SEC-BRINE': 'Pulse Brine Flats',
   'SEC-VAULT': 'Contingency Cache',
-  'SEC-FISSURE': 'Gravimetric Fissure',
-  'SEC-APPROACH': 'Pad Approach',
-  'SEC-RIDGE': 'Shuttle Ridge',
+  'SEC-FISSURE': 'Shear Fissure',
+  'SEC-APPROACH': 'Skiff Approach',
+  'SEC-RIDGE': 'Drop Skiff Ridge',
 
   // Codex (in-run PADD pages)
   'CODEX-SPIRE':
@@ -168,13 +168,13 @@ export const LORE = {
   'CODEX-TRENCH':
     'Corridor note: beacon seal lift exposed fault fauna nesting in cut rock inland.',
   'CODEX-BRINE':
-    'Brine sample: nucleonic salts amplify hazard tiles; plasma filters buy minutes, not hours.',
+    'Brine sample: pulse salts amplify hazard tiles; plasma filters buy minutes, not hours.',
   'CODEX-FISSURE':
-    'Fissure brief: ion shear widens cracks — pad approach under rising window tax.',
+    'Fissure brief: ion shear widens cracks — skiff approach under rising window tax.',
   'CODEX-VAULT':
     'Cache scrap: spare nav lattices were contingency for long-range array blackout events.',
   'CODEX-REEF':
-    'Reef survey: nucleonic crystal banks scatter array returns — hunters ride the pulse.',
+    'Reef survey: pulse-crystal banks scatter array returns — hunters ride the pulse.',
   'CODEX-DUCT':
     'Conduit memo: abandoned bus junctions still vent; duct drones patrol seal points.',
   'CODEX-APPROACH':
@@ -185,7 +185,7 @@ export const LORE = {
   'CODEX-ENSIGN':
     'Stranded ensign: escort protocol armed — temporary ally will expire when power fades.',
   'CODEX-TECH':
-    'Field tech: Type-8 probe drone reboot successful — short combat assist only.',
+    'Field tech: Halcyon probe reboot successful — short combat assist only.',
   'CODEX-PRIOR-MAP':
     'Prior PADD: hatch bearing due inland-east from drop. Array reported cold — safe for survey.',
   'CODEX-PRIOR-ARRAY':
@@ -251,7 +251,7 @@ export const LORE = {
   'ENEMY-SPORE': 'Wash Spore',
   'ENEMY-WASP': 'Pulse Wasp',
   'ENEMY-STALKER': 'Canopy Hunter',
-  'ENEMY-LEECH': 'Ion Leech',
+  'ENEMY-LEECH': 'Shear Leech',
   'ENEMY-CRAWLER': 'Ash Crawler',
   'ENEMY-SENTINEL': 'Cache Sentinel',
   'ENEMY-SERPENT': 'Plasma Serpent',
@@ -266,13 +266,13 @@ export const LORE = {
   'ENEMY-ELITE-SKIRM': 'Prime Skirmisher',
   'ENEMY-ELITE-WARD': 'Cache Warden',
   'ENEMY-ELITE-APEX': 'Apex Hunter',
-  'ENEMY-WARDEN': 'Isolinear Warden',
+  'ENEMY-WARDEN': 'Splice Warden',
   'ENEMY-CUSTODIAN': 'Pattern Custodian',
   'ENEMY-SOVEREIGN': 'Shear Sovereign',
   'NPC-HOLO': 'Archive Holo',
   'NPC-ENSIGN': 'Stranded Ensign',
   'NPC-TECH': 'Field Tech',
-  'ALLY-DRONE': 'Type-8 Probe',
+  'ALLY-DRONE': 'Halcyon Probe',
   'ALLY-ESCORT': 'Survey Escort',
   'ENEMY-MITE-NOTE': 'Grazes residual field-array bleed — packs thicken near warm gear.',
   'ENEMY-SPORE-NOTE': 'Blooms on stirred shear-water EM — swells, then bursts.',
@@ -300,7 +300,7 @@ export const LORE = {
   'LOG-NPC-SIGHT': 'Field contact on sensors.',
   'LOG-NPC-HOLO': 'Archive dump — shear-window refund.',
   'LOG-NPC-ENSIGN': 'Ensign transfers kit scrap and escort protocol.',
-  'LOG-NPC-TECH': 'Tech reboots a Type-8 probe for temporary assist.',
+  'LOG-NPC-TECH': 'Tech reboots a Halcyon probe for temporary assist.',
   'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with > or step around.',
   'LOG-ALLY-UP': 'Ally online.',
   'LOG-ALLY-HIT': 'Ally strikes',
@@ -361,7 +361,7 @@ export const LORE = {
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Contingency Cache holds spare Nav Lattice.',
   'LOG-NEED-KEY': 'Beacon sealed. Splice Key required.',
-  'LOG-GOT-CORE': 'Nav Lattice secured from Contingency Cache. Return to Shuttle Ridge pad.',
+  'LOG-GOT-CORE': 'Nav Lattice secured from Contingency Cache. Return to Drop Skiff Ridge pad.',
   'LOG-NEED-CORE': 'Drop skiff refuses lock — Nav Lattice missing.',
   'LOG-SECTOR': 'Sector boundary crossed.',
   'LOG-SEC-PLAINS':
@@ -369,28 +369,28 @@ export const LORE = {
   'LOG-SEC-FLOOD':
     'Shearwash Basin. Standing shear-water sheets the shelf — bus will feel every step; wash spores bloom in the wet EM.',
   'LOG-SEC-CANOPY':
-    'Canopy Sector. Dense EM scatter under the leaf decks — hunters stalk warm gear.',
+    'Shear Canopy. Dense EM scatter under the leaf decks — hunters stalk warm gear.',
   'LOG-SEC-REEF':
-    'Nucleonic Reef. Crystal scatter and scrub banks — EM hunters ride the reef pulse.',
+    'Crystal Pulse Reef. Crystal scatter and scrub banks — EM hunters ride the reef pulse.',
   'LOG-SEC-SPIRE':
-    'Sensor Mast Reach. Abandoned survey arrays still hum — array feeders drink residual EM.',
+    'Array Mast Reach. Abandoned survey arrays still hum — array feeders drink residual EM.',
   'LOG-SEC-RUIN':
     'Crash Wreck Belt. Prior survey wreckage — Splice Key in local caches.',
   'LOG-SEC-BEACON': 'Emergency Beacon hub. Authorize with Splice Key to unseal inland path.',
   'LOG-SEC-TRENCH':
-    'Fault Corridor. Inland after seal — cut rock, deep fauna, no ship cover.',
+    'Inland Fault Cut. Inland after seal — cut rock, deep fauna, no ship cover.',
   'LOG-SEC-DUCT':
-    'EPS Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
-  'LOG-SEC-ASH': 'Radiogenic Ash. Baseline radiation — bus drain elevated.',
+    'Bus Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
+  'LOG-SEC-ASH': 'Shear Ash Fields. Baseline radiation — bus drain elevated.',
   'LOG-SEC-BRINE':
-    'Nucleonic Brine. Ion-brine pools lace the shelf — hazard density spikes before the cache.',
+    'Pulse Brine Flats. Ion-brine pools lace the shelf — hazard density spikes before the cache.',
   'LOG-SEC-VAULT':
     'Contingency Cache. Halcyon depot. Sentinels are site defense — EM-corrupted, still hostile.',
   'LOG-SEC-FISSURE':
-    'Gravimetric Fissure. Ion shear opens the rock — window tax rising; pad still inland.',
+    'Shear Fissure. Ion shear opens the rock — window tax rising; pad still inland.',
   'LOG-SEC-APPROACH':
-    'Pad Approach. Storm shear over the final choke — drop skiff ridge ahead.',
-  'LOG-SEC-RIDGE': 'Shuttle Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
+    'Skiff Approach. Storm shear over the final choke — Drop Skiff Ridge ahead.',
+  'LOG-SEC-RIDGE': 'Drop Skiff Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
   'LOG-EXIT-BLOCKED': 'Hatch sealed.',
   'LOG-HAZARD': 'Ion hazard — bus drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
@@ -434,8 +434,8 @@ export const LORE = {
   'LOG-EVT-BEACON-TEACH':
     'Beacon note: Splice authorization is a sustained handshake — do not leave the pad.',
   'LOG-EVT-PATTERN-HOOK': 'Cache warning: Nav Lattice pattern buffers hate plasma vents and EM.',
-  'LOG-EVT-APPROACH': 'Pad approach — storm shear will pulse; watch the pattern buffer.',
-  'LOG-EVT-SHEAR': 'Storm shear pulse — vent band and bus tax.',
+  'LOG-EVT-APPROACH': 'Pad approach — storm shear will pulse the bus; watch the pattern buffer.',
+  'LOG-EVT-SHEAR': 'Storm shear pulse — bus tax under pad approach pressure.',
   'LOG-EVT-PRIOR-WASH':
     'Wash note: prior map marked this basin dry shelf — standing shear-water disagrees.',
   'LOG-XP': 'Survey proficiency gained.',

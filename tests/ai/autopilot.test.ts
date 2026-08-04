@@ -27,7 +27,7 @@ describe('autopilot chooseAction', () => {
     expect(st.ui.selectedSlot).toBe(medIdx);
   });
 
-  it('uses energy/coolant when EPS is low', () => {
+  it('uses energy/coolant when bus is low', () => {
     const st = createGame(42);
     st.player.hp = st.player.maxHp;
     st.player.energy = Math.floor(st.player.maxEnergy * 0.3);

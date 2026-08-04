@@ -51,3 +51,15 @@ export function actionFromKey(e: KeyboardEvent): Action | null {
   if (k === 'ArrowRight' || k === 'd' || k === 'D') return { type: 'move', dx: 1, dy: 0 };
   return null;
 }
+
+/** Actions that may be buffered one-deep while move tweens run. */
+export function isQueueableAction(action: Action): boolean {
+  return (
+    action.type === 'move' ||
+    action.type === 'wait' ||
+    action.type === 'get' ||
+    action.type === 'use' ||
+    action.type === 'exit' ||
+    action.type === 'aim'
+  );
+}

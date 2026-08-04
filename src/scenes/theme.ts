@@ -1,6 +1,6 @@
 import type { SectorId } from '../data/encounters';
 
-/** Voyager LCARS-adjacent theme — orange/peach on deep space black (not olive phosphor). */
+/** Halcyon survey chrome — orange/peach on deep space black (not olive phosphor). */
 
 export const FONT_DATA = '"IBM Plex Mono", "Courier New", monospace';
 export const FONT_DISPLAY = '"Share Tech Mono", "IBM Plex Mono", monospace';

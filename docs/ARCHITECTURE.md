@@ -87,13 +87,16 @@ export interface Mechanic {
 
 ## Presentation split
 
+L4 shell runs **Phaser 4** (`phaser@^4.2.1`). Field light is sim illumination → `LightView` (tint / bloom graphics), not Phaser Light2D / Filters.
+
 `scenes/GameScene.ts` is the Phaser `Scene` host. It should shrink toward an orchestrator; logic lives in:
 
 | Module | Role |
 |--------|------|
 | `game/input/Keymap.ts` | Pure key → action / chrome commands |
+| `game/input/InputController.ts` | Keydown switchboard (mute / overlays / slots / commit) |
 | `game/presenters/ContextHints.ts` | State → lore hint |
-| `game/presenters/ActionFeedback.ts` | SFX, flashes, move tweens (target) |
+| `game/presenters/ActionFeedback.ts` | SFX, flashes, move / bump tweens, action lights |
 | `game/views/HudView.ts` | Bars, badges, log, objective |
 | `game/views/MapView.ts` | FOV frame / map chrome |
 | `game/views/overlays/*` | Kit / PADD / Help panels |
@@ -105,9 +108,10 @@ export interface Mechanic {
 | Step | Status | Notes |
 |------|--------|--------|
 | PR1 — Extract `game/` views / keymap / hints | Done | Behavior-identical; playtests green |
-| PR2 — `InputController` + `ActionFeedback` | Next | Move `onKey` / SFX / tweens out of GameScene |
+| PR2 — `InputController` + `ActionFeedback` | Done | `onKey` → `InputController`; SFX / flashes / move tweens in `ActionFeedback` |
 | PR3 — Mechanic registry + room quest behind hooks | Done | Multiroom quests + trio + scripted events |
 | PR4 — First new mechanic (beacon handshake) | Done | Multi-turn sync; interrupt on leave |
+| Phaser 3 → 4 | Done | `phaser@4.2.1`; no pipeline/FX rewrites; LightView unchanged |
 
 Each step: `npm run build && npm run playtest:smoke` (full `playtest` before merge).
 

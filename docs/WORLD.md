@@ -61,13 +61,25 @@ Early food chain (sectors 0–1 voice):
 
 ## Sector arc (15 beats)
 
-Phase 1 authored voice for **0–1**. **v1** finishes Meridian names for 2–14 — targets listed in [`docs/V1.md`](V1.md) fiction audit.
+All 15 sectors use Meridian names (Phase 2 fiction complete). Role/spine unchanged.
 
-| # | ID | Current / Phase 1 name | Role |
-|---|-----|------------------------|------|
+| # | ID | Name | Role |
+|---|-----|------|------|
 | 0 | plains | Relay Scar Flats | Drop; afterglow EM; scar mites |
 | 1 | flood | Shearwash Basin | Standing shear-water; bus tax |
-| 2–14 | … | See V1 fiction audit | Same spine: canopy → reef → mast → wreck → beacon → inland → vault → pad |
+| 2 | canopy | Shear Canopy | Dense EM scatter; hunters |
+| 3 | reef | Crystal Pulse Reef | Crystal scrub; reef skitters |
+| 4 | spire | Array Mast Reach | Abandoned survey arrays |
+| 5 | ruin | Crash Wreck Belt | Splice Key caches |
+| 6 | beacon | Emergency Beacon | Splice handshake inland seal |
+| 7 | trench | Inland Fault Cut | Inland after seal; deep fauna |
+| 8 | duct | Bus Conduit Warren | Vent spines; duct drones |
+| 9 | ash | Shear Ash Fields | Baseline radiation bus drain |
+| 10 | brine | Pulse Brine Flats | Ion-brine pools before cache |
+| 11 | vault | Contingency Cache | Spare Nav Lattice |
+| 12 | fissure | Shear Fissure | Storm pressure climb |
+| 13 | approach | Skiff Approach | Compact choke; pattern stress |
+| 14 | ridge | Drop Skiff Ridge | Drop skiff pad; legal win |
 
 ---
 

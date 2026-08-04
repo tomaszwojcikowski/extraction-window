@@ -103,7 +103,7 @@ describe('playerAttack / enemyAttack', () => {
     expect(foe.statuses.stun).toBe(1);
   });
 
-  it('drain fauna siphons EPS and logs source', () => {
+  it('drain fauna siphons bus and logs source', () => {
     const st = combatArena();
     st.player.hp = 20;
     st.player.maxHp = 20;

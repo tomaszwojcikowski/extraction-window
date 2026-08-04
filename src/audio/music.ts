@@ -34,7 +34,7 @@ const SECTOR_NOTES: Record<SectorId, number[]> = {
   trench: [139, 165, 185, 220], // deep cut
   duct: [147, 175, 196, 233], // conduit hum
   ash: [147, 175, 208, 247], // radiogenic dust
-  brine: [165, 196, 233, 277], // nucleonic salt
+  brine: [165, 196, 233, 277], // pulse brine
   vault: [175, 208, 262, 311], // depot chill
   fissure: [185, 208, 247, 294], // shear tension
   approach: [196, 233, 277, 330], // pad shear

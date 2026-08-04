@@ -197,7 +197,7 @@ function drawFloor(g: G, T: number, sector: SectorId, variant: number): void {
       g.fillRect(11 + v, 12, 5, 2);
       break;
     case 'vault':
-      // Isolinear grid tiles
+      // Cache lattice grid tiles
       ink(g, Theme.phosphorMute, 0.5);
       for (let y = 4; y < T - 4; y += 5) {
         for (let x = 4 + (((y / 5) | 0) + v) % 2 * 2; x < T - 4; x += 5) {
@@ -803,7 +803,7 @@ function drawEnemy(g: G, T: number, kind: EnemyKind): void {
   }
 }
 
-/** Cartographic / LCARS tile grammar — hatches & stamps for Delta survey ops. */
+/** Cartographic tile grammar — hatches & stamps for Halcyon survey ops. */
 export function registerTextures(scene: Phaser.Scene): void {
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   const T = TILE;

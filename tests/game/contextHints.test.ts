@@ -10,7 +10,7 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).toBe('UI-HINT-SKILL');
   });
 
-  it('skips med tip when kit has no hypospray', () => {
+  it('skips med tip when kit has no field hypo', () => {
     const st = createGame(42);
     st.player.hp = 5;
     st.inventory = st.inventory.filter((s) => s.kind !== 'med' && s.kind !== 'ration');
@@ -18,7 +18,7 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).not.toBe('UI-HINT-USE-MED');
   });
 
-  it('hints med when critical and hypospray available', () => {
+  it('hints med when critical and field hypo available', () => {
     const st = createGame(42);
     st.player.hp = 5;
     // Clear tile/item tips
@@ -62,7 +62,7 @@ describe('kit use failure clarity', () => {
     expect(st.log.some((l) => l.loreId === 'LOG-USE-EMPTY')).toBe(true);
   });
 
-  it('logs LOG-USE-QUEST for Isolinear Key', () => {
+  it('logs LOG-USE-QUEST for Splice Key', () => {
     const st = createGame(42);
     st.inventory = [{ kind: 'relay_key', count: 1 }];
     st.ui.selectedSlot = 0;

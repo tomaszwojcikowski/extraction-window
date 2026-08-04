@@ -48,5 +48,5 @@ npm run playtest     # full seed suite → playtest-report.json
 ## Stack (v1)
 
 - **Rules:** headless TypeScript `src/sim/` (no Phaser)
-- **Presentation:** Phaser 3 → migrate to Phaser 4 for v1 polish (see [docs/V1.md](./docs/V1.md))
+- **Presentation:** Phaser **4.2.1** + Vite (see [docs/V1.md](./docs/V1.md))
 - Vite + Vitest; keyboard-only; seeded runs

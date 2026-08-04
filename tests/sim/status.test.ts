@@ -32,20 +32,20 @@ describe('tickPlayerStatusEffects', () => {
     expect(st.player.statuses.bleed).toBe(1);
   });
 
-  it('ion burn drains EPS; filter softens', () => {
+  it('ion burn drains bus; filter softens', () => {
     const st = combatArena();
     st.player.energy = 30;
     addStatus(st.player, 'ion_burn', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.energy).toBe(27);
-    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-3E · 27 EPS');
+    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-3E · 27 bus');
 
     st.log = [];
     st.player.filterTurns = 2;
     addStatus(st.player, 'ion_burn', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.energy).toBe(26);
-    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-1E · 26 EPS');
+    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-1E · 26 bus');
   });
 });
 

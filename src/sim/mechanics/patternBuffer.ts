@@ -75,6 +75,13 @@ export const patternBufferMechanic: Mechanic = {
     if (state.patternDesync <= 0) return null;
     const tile = state.tiles[state.player.y]![state.player.x]!;
     if (tile.kind === 'shuttle') return 'UI-HINT-DESYNC';
+    // Thin pillar coaching when buffer is climbing and coolant is available
+    if (
+      state.patternDesync >= 2 &&
+      (hasItem(state, 'coolant') || hasItem(state, 'battery'))
+    ) {
+      return 'UI-HINT-DESYNC';
+    }
     return null;
   },
 
@@ -82,7 +89,7 @@ export const patternBufferMechanic: Mechanic = {
     if (state.patternDesync <= 0) return null;
     const cIdx = state.inventory.findIndex((s) => s.kind === 'coolant' || s.kind === 'battery');
     if (cIdx < 0) return null;
-    // Only clear when extracting or desync is climbing — preserve coolant for EPS
+    // Only clear when extracting or desync is climbing — preserve coolant for bus
     if (state.sectorId === 'ridge' || state.sectorId === 'approach' || state.patternDesync >= 2) {
       state.ui.selectedSlot = cIdx;
       return { type: 'use' };

@@ -632,7 +632,7 @@ export function generateSectorMap(
         !(pos.x === start.x && pos.y === start.y)
       ) {
         const singleKind = isMultiSiteKind(kind)
-          ? pick(rng, ['salvage', 'purge', 'decode', 'stabilize'] as const)
+          ? pick(rng, ['salvage', 'purge'] as const)
           : kind;
         tiles[pos.y]![pos.x] = questTile();
         specials.push(pos);

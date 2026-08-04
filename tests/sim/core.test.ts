@@ -66,7 +66,7 @@ describe('sim actions', () => {
     expect(st.ui.inventoryOpen).toBe(false);
   });
 
-  it('use energy cell restores EPS when selected', () => {
+  it('use energy cell restores bus when selected', () => {
     const st = createGame(42);
     const idx = st.inventory.findIndex((s) => s.kind === 'energy');
     expect(idx).toBeGreaterThanOrEqual(0);
