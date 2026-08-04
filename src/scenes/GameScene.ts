@@ -646,6 +646,9 @@ export class GameScene extends Phaser.Scene {
 
   private commitTurnAction(action: Action): void {
     const prevSector = this.state.sectorIndex;
+    const prevTutorialActive = this.state.tutorialActive;
+    const prevMapWidth = this.state.width;
+    const prevMapHeight = this.state.height;
     const prevHp = this.state.player.hp;
     const prevLogLen = this.state.log.length;
     const prevAlive = this.state.enemies.filter((en) => en.alive).length;
@@ -665,6 +668,9 @@ export class GameScene extends Phaser.Scene {
       state: this.state,
       action,
       prevSector,
+      prevTutorialActive,
+      prevMapWidth,
+      prevMapHeight,
       prevHp,
       prevLogLen,
       prevAlive,
@@ -677,7 +683,7 @@ export class GameScene extends Phaser.Scene {
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
-    if (fb.sectorChanged) {
+    if (fb.mapReloaded) {
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();

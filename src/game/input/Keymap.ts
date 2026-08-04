@@ -46,12 +46,17 @@ export function actionFromKey(e: KeyboardEvent): Action | null {
   if (k === 'r' || k === 'R') return { type: 'retreat' };
   if (k === 'g' || k === 'G') return { type: 'get' };
   if (k === '.' && !e.shiftKey) return { type: 'wait' };
-  // Hatch / interact — `>` needs Shift on many layouts; `=` and Enter are reliable fallbacks.
+  // Hatch / interact — `>` needs Shift on many layouts; `=` / Enter / Space are reliable.
   if (
     k === '>' ||
     k === '=' ||
     k === 'Enter' ||
     k === 'NumpadEnter' ||
+    k === ' ' ||
+    e.code === 'Enter' ||
+    e.code === 'NumpadEnter' ||
+    e.code === 'Space' ||
+    e.code === 'Equal' ||
     (e.code === 'Period' && e.shiftKey) ||
     (e.code === 'Comma' && e.shiftKey && k === '>')
   ) {

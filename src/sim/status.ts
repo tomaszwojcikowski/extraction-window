@@ -35,16 +35,19 @@ export function playerBleedDamage(state: GameState): number {
 /** Apply end-of-turn status damage/effects to the player. */
 export function tickPlayerStatusEffects(state: GameState): void {
   const p = state.player;
-  if (hasStatus(p, 'bleed')) {
-    const dmg = playerBleedDamage(state);
-    p.hp -= dmg;
-    const rem = Math.max(0, p.hp);
-    pushLog(state, 'LOG-STATUS-BLEED', formatCombatDetail('bleed', dmg, rem, p.maxHp));
-  }
-  if (hasStatus(p, 'ion_burn')) {
-    const drain = p.filterTurns > 0 ? 1 : 3;
-    p.energy -= drain;
-    pushLog(state, 'LOG-STATUS-ION', `-${drain}E · ${Math.max(0, p.energy)} bus`);
+  // Drill bay: keep teaching calm — statuses may exist after the stalker, but don't bleed out.
+  if (!state.tutorialActive) {
+    if (hasStatus(p, 'bleed')) {
+      const dmg = playerBleedDamage(state);
+      p.hp -= dmg;
+      const rem = Math.max(0, p.hp);
+      pushLog(state, 'LOG-STATUS-BLEED', formatCombatDetail('bleed', dmg, rem, p.maxHp));
+    }
+    if (hasStatus(p, 'ion_burn')) {
+      const drain = p.filterTurns > 0 ? 1 : 3;
+      p.energy -= drain;
+      pushLog(state, 'LOG-STATUS-ION', `-${drain}E · ${Math.max(0, p.energy)} bus`);
+    }
   }
   tickStatuses(p);
 }

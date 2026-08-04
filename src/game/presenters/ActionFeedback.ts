@@ -252,6 +252,10 @@ export function playActionSfx(
     sfx.play('sector');
     return;
   }
+  if (has('LOG-TUT-DONE')) {
+    sfx.play('sector');
+    return;
+  }
   if (has('LOG-USED-KEY')) {
     sfx.play('beacon');
     flash(Theme.quest, 0.28);
@@ -376,6 +380,9 @@ export function presentActionFeedback(opts: {
   state: GameState;
   action: Action;
   prevSector: number;
+  prevTutorialActive: boolean;
+  prevMapWidth: number;
+  prevMapHeight: number;
   prevHp: number;
   prevLogLen: number;
   prevAlive: number;
@@ -388,6 +395,7 @@ export function presentActionFeedback(opts: {
 }): {
   newLogs: LoreId[];
   sectorChanged: boolean;
+  mapReloaded: boolean;
   playerMoved: boolean;
   enemyMoved: boolean;
   fromEnemies: Map<number, { x: number; y: number }>;
@@ -396,6 +404,9 @@ export function presentActionFeedback(opts: {
     state,
     action,
     prevSector,
+    prevTutorialActive,
+    prevMapWidth,
+    prevMapHeight,
     prevHp,
     prevLogLen,
     prevAlive,
@@ -427,7 +438,13 @@ export function presentActionFeedback(opts: {
   });
 
   const sectorChanged = state.sectorIndex !== prevSector;
-  if (!sectorChanged) {
+  // Tutorial→plains keeps sectorIndex 0 but swaps the whole map (24→~40).
+  const mapReloaded =
+    sectorChanged ||
+    state.tutorialActive !== prevTutorialActive ||
+    state.width !== prevMapWidth ||
+    state.height !== prevMapHeight;
+  if (!mapReloaded) {
     const flareOrBurst = newLogs.some(
       (id) =>
         id === 'LOG-USE-FLARE' ||
@@ -449,7 +466,7 @@ export function presentActionFeedback(opts: {
     return !prev || prev.x !== en.x || prev.y !== en.y;
   });
 
-  return { newLogs, sectorChanged, playerMoved, enemyMoved, fromEnemies };
+  return { newLogs, sectorChanged, mapReloaded, playerMoved, enemyMoved, fromEnemies };
 }
 
 export function bumpAttack(

@@ -24,6 +24,19 @@ import { triggerOverwatch, triggerOverwatchOnAttack } from './ai';
 import type { Action, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
+function onExitTile(state: GameState): boolean {
+  const tile = state.tiles[state.player.y]?.[state.player.x];
+  return tile?.kind === 'exit';
+}
+
+/** Drill bay → real plains. Shared by `>` / walk-on / wait-on-hatch. */
+function completeTutorialExit(state: GameState): void {
+  checkLose(state);
+  if (state.status !== 'playing') return;
+  finishTutorial(state);
+  finishSectorTransition(state);
+}
+
 function tryMove(state: GameState, dx: number, dy: number): void {
   if (state.ui.aimingDart) {
     fireDart(state, dx, dy);
@@ -82,6 +95,13 @@ function tryMove(state: GameState, dx: number, dy: number): void {
       tryPickup(state);
     }
   }
+
+  // Drill bay: stepping onto the hatch starts the real drop (no extra key).
+  if (state.tutorialActive && tile.kind === 'exit') {
+    completeTutorialExit(state);
+    return;
+  }
+
   endPlayerTurn(state);
 }
 
@@ -238,8 +258,7 @@ function tryExit(state: GameState): void {
     checkLose(state);
     if (state.status !== 'playing') return;
     if (state.tutorialActive) {
-      finishTutorial(state);
-      finishSectorTransition(state);
+      completeTutorialExit(state);
       return;
     }
     if (!advanceSector(state)) {
@@ -309,6 +328,11 @@ export function applyAction(state: GameState, action: Action): GameState {
       if (state.ui.aimingDart) {
         state.ui.aimingDart = false;
         pushLog(state, 'LOG-AIM-MISS');
+      }
+      // Already on the drill hatch — waiting also commits the drop (recover stuck players).
+      if (state.tutorialActive && onExitTile(state)) {
+        completeTutorialExit(state);
+        return state;
       }
       pushLog(state, 'LOG-WAIT');
       endPlayerTurn(state);

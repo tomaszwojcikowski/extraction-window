@@ -32,6 +32,8 @@ describe('Keymap', () => {
     expect(actionFromKey(key('='))).toEqual({ type: 'exit' });
     expect(actionFromKey(key('Enter'))).toEqual({ type: 'exit' });
     expect(actionFromKey(key('NumpadEnter'))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key(' '))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key('x', { code: 'Space' }))).toEqual({ type: 'exit' });
     expect(actionFromKey(key('.', { shiftKey: true, code: 'Period' }))).toEqual({
       type: 'exit',
     });

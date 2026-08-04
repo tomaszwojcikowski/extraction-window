@@ -86,4 +86,25 @@ describe('drill bay tutorial', () => {
     st.player.y = st.exitPos!.y;
     expect(contextHint(st)).toBe('UI-TUT-EXIT');
   });
+
+  it('walking onto the drill hatch finishes the tutorial', () => {
+    const st = createGame(42, { skipTutorial: false });
+    for (const e of st.enemies) e.alive = false;
+    const exit = st.exitPos!;
+    st.player.x = exit.x - 1;
+    st.player.y = exit.y;
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    expect(st.tutorialActive).toBe(false);
+    expect(st.width).toBeGreaterThan(24);
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-DONE')).toBe(true);
+  });
+
+  it('waiting while already on the drill hatch finishes the tutorial', () => {
+    const st = createGame(42, { skipTutorial: false });
+    st.player.x = st.exitPos!.x;
+    st.player.y = st.exitPos!.y;
+    applyAction(st, { type: 'wait' });
+    expect(st.tutorialActive).toBe(false);
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-DONE')).toBe(true);
+  });
 });
