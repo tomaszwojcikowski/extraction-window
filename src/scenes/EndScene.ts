@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
-import { drawMenuChrome } from './atmosphere';
+import { addCameraAtmosphere, drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 import { SKILLS, type SkillId } from '../data/progression';
 
@@ -69,6 +69,7 @@ export class EndScene extends Phaser.Scene {
       }
     }
 
+    const cameraAtmosphere = addCameraAtmosphere(this, won ? 0.045 : 0.08);
     const g = this.add.graphics();
     drawMenuChrome(this, g, width, height, accent);
 
@@ -150,6 +151,7 @@ export class EndScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => {
       music.stop();
+      cameraAtmosphere?.destroy();
     });
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => {

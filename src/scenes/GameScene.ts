@@ -5,7 +5,12 @@ import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
-import { createScanRetrace, drawHudStripChrome } from './atmosphere';
+import {
+  addCameraAtmosphere,
+  createScanRetrace,
+  drawHudStripChrome,
+  type CameraAtmosphere,
+} from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
@@ -52,6 +57,7 @@ export class GameScene extends Phaser.Scene {
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
   private atmo: Phaser.GameObjects.Rectangle | null = null;
+  private cameraAtmosphere: CameraAtmosphere | null = null;
   private animFrame = 0;
   private animAccum = 0;
   private fovVignette!: Phaser.GameObjects.Graphics;
@@ -117,6 +123,7 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
+    this.cameraAtmosphere = addCameraAtmosphere(this);
     this.mapLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
@@ -383,6 +390,8 @@ export class GameScene extends Phaser.Scene {
       ambient.stop();
       music.stop();
       this.atmo?.destroy();
+      this.cameraAtmosphere?.destroy();
+      this.cameraAtmosphere = null;
       this.lightView?.destroy();
     });
   }
@@ -680,6 +689,7 @@ export class GameScene extends Phaser.Scene {
       flash: (color, alpha) => this.flashFx(color, alpha),
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
+    this.pulseCameraAtmosphere(fb.newLogs);
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
@@ -1126,6 +1136,24 @@ export class GameScene extends Phaser.Scene {
 
   private flashFx(color: number, alpha: number): void {
     flashScreen(this.tweens, this.flash, color, alpha);
+  }
+
+  /** Lore-driven camera cues are cosmetic; filters never affect sim light/FOV. */
+  private pulseCameraAtmosphere(logs: readonly LoreId[]): void {
+    const has = (id: LoreId) => logs.includes(id);
+    if (has('LOG-ION-FRONT') || has('LOG-ION-PULSE')) {
+      this.cameraAtmosphere?.pulse(0.18, 240);
+      this.cameras.main.shake(140, 0.0015);
+      return;
+    }
+    if (has('LOG-USE-FLARE')) {
+      this.cameraAtmosphere?.pulse(0.13, 160);
+      this.cameras.main.shake(90, 0.001);
+      return;
+    }
+    if (has('LOG-EXTRACT')) {
+      this.cameraAtmosphere?.pulse(0.14, 280);
+    }
   }
 
   private applyFieldLighting(): void {

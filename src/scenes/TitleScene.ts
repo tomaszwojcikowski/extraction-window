@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
-import { drawMenuChrome } from './atmosphere';
+import { addCameraAtmosphere, drawMenuChrome } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
 export class TitleScene extends Phaser.Scene {
@@ -17,6 +17,7 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
+    const cameraAtmosphere = addCameraAtmosphere(this, 0.05);
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
@@ -116,6 +117,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
+    this.events.once('shutdown', () => cameraAtmosphere?.destroy());
     // Do not stop music/ambient here — GameScene takes over beds.
     // Stopping on shutdown races Phaser start order and kills newly started field music.
   }

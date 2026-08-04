@@ -1,6 +1,41 @@
 import Phaser from 'phaser';
 import { Theme } from './theme';
 
+/**
+ * Optional WebGL-only camera atmosphere. Gameplay lighting and FOV remain
+ * ordinary scene objects, so Canvas/headless renderers retain full readability.
+ */
+export type CameraAtmosphere = {
+  pulse(strength: number, duration: number): void;
+  destroy(): void;
+};
+
+export function addCameraAtmosphere(
+  scene: Phaser.Scene,
+  strength = 0.07,
+): CameraAtmosphere | null {
+  const filters = scene.cameras.main.filters?.external;
+  if (!filters || typeof filters.addVignette !== 'function') return null;
+
+  const vignette = filters.addVignette(0.5, 0.5, 0.72, strength, Theme.groundDeep);
+  return {
+    pulse(pulseStrength: number, duration: number): void {
+      scene.tweens.killTweensOf(vignette);
+      scene.tweens.add({
+        targets: vignette,
+        strength: pulseStrength,
+        duration: duration / 2,
+        yoyo: true,
+        ease: 'Sine.easeOut',
+      });
+    },
+    destroy(): void {
+      scene.tweens.killTweensOf(vignette);
+      filters.remove(vignette);
+    },
+  };
+}
+
 /** LCARS-style menu chrome — black field, orange rules, elbow accents. */
 export function drawMenuChrome(
   _scene: Phaser.Scene,

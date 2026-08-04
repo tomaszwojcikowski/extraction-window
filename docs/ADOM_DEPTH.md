@@ -72,9 +72,12 @@ flowchart TB
 | Content fattening: `relay_chain` re-enabled midgame with pattern-buffer fail-safe favor | Done |
 | Deferred room quest: `calibrate` re-enabled late-mid/late with storm-shelter favor | Done |
 | Deferred room quest: `stabilize` re-enabled midgame with hazard-pass favor | Done |
-| Phaser Filters polish | Later |
+| Phaser Filters polish: optional built-in camera vignette + flare/ion/extract pulses | Done |
 
 **Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
+
+**Wave 3 complete.** Camera filters are WebGL-only atmosphere; unsupported renderers keep the existing
+Graphics/tint/light presentation. Sim light and FOV remain the gameplay source of truth.
 
 ---
 
