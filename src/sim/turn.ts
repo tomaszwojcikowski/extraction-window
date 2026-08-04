@@ -17,6 +17,7 @@ import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
+import { consumeExtractFavor } from './extractFavor';
 import type { Enemy, GameState, ScanScarId } from './types';
 import { pick } from './rng';
 
@@ -173,7 +174,11 @@ function tickEnvironment(state: GameState): void {
   }
 
   const tile = state.tiles[state.player.y]![state.player.x]!;
-  if (tile.kind === 'hazard') {
+  const hazardCrossing =
+    tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
+  if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
+    pushLog(state, 'LOG-FAVOR-HAZARD');
+  } else if (tile.kind === 'hazard') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     let hazardDrain = (filter ? 1 : 2) + brineExtra;
     if (coupler) hazardDrain = Math.max(0, hazardDrain - 1);

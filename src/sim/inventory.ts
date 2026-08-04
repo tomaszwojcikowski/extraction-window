@@ -20,6 +20,7 @@ import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
+import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 import { cancelOverwatch } from './ai';
 
@@ -333,6 +334,10 @@ export function useSelected(state: GameState): boolean {
       break;
     }
     case 'coolant':
+      if (tryUseUplinkAid(state, 'coolant')) {
+        removeOne(state, kind);
+        break;
+      }
       if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
         state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
         break;
@@ -375,6 +380,10 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-MAPPER');
       break;
     case 'flare': {
+      if (tryUseUplinkAid(state, 'flare')) {
+        removeOne(state, kind);
+        break;
+      }
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
       cancelOverwatch(state);

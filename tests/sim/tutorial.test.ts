@@ -22,7 +22,9 @@ describe('drill bay tutorial', () => {
     expect(st.height).toBe(16);
     expect(st.exitPos).not.toBeNull();
     expect(st.enemies.filter((e) => e.alive).length).toBeLessThanOrEqual(1);
-    expect(st.items.length).toBe(1);
+    expect(st.items.length).toBe(2);
+    expect(st.items.some((item) => item.kind === 'flare')).toBe(true);
+    expect(st.enemies.some((enemy) => enemy.kind === 'stalker')).toBe(true);
     expect(st.roomQuest).toBeNull();
     expect(st.npcs.length).toBe(0);
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-WELCOME')).toBe(true);
@@ -38,6 +40,17 @@ describe('drill bay tutorial', () => {
     applyAction(st, { type: 'wait' });
     expect(st.stormTurns).toBe(storm);
     expect(st.player.energy).toBe(energy);
+  });
+
+  it('shows the stalker windup beat with a flare available', () => {
+    const st = createGame(7, { skipTutorial: false });
+    const stalker = st.enemies.find((enemy) => enemy.kind === 'stalker')!;
+    st.turn = 2;
+    stalker.windup = 1;
+    st.visible[stalker.y]![stalker.x] = true;
+
+    expect(st.inventory.some((item) => item.kind === 'flare')).toBe(true);
+    expect(contextHint(st)).toBe('UI-TUT-STALKER');
   });
 
   it('exit hatch finishes tutorial into real plains without XP_SECTOR', () => {

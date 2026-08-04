@@ -7,6 +7,7 @@ import { XP_ROOM_QUEST } from '../data/progression';
 import { pushLog } from './log';
 import { gainXp } from './progression';
 import { pick, randInt } from './rng';
+import { favorForQuest, grantExtractFavor } from './extractFavor';
 import type { GameState, Pos, QuestStep, RoomQuest, RoomQuestKind } from './types';
 
 const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
@@ -337,6 +338,7 @@ function finishQuestLoot(state: GameState, better: boolean): void {
   pushLog(state, 'LOG-PICKUP', names.join(', '));
   grantQuestPayoff(state, better ? 'good' : 'basic');
   grantCodex(state);
+  grantExtractFavor(state, favorForQuest(state));
 }
 
 function flashQuestStep(state: GameState): void {
@@ -453,6 +455,7 @@ function completeDecode(state: GameState): void {
   pushLog(state, 'LOG-RQ-DECODE');
   grantQuestPayoff(state, 'good');
   grantCodex(state);
+  grantExtractFavor(state, favorForQuest(state));
   clearAllQuestTiles(state);
 }
 
@@ -574,6 +577,7 @@ export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filte
   pushLog(state, 'LOG-EM-PURGE', '-35');
   grantQuestPayoff(state, 'good');
   grantCodex(state);
+  grantExtractFavor(state, favorForQuest(state));
   clearAllQuestTiles(state);
   void withKind;
   return true;

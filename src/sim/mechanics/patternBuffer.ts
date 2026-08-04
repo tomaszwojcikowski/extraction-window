@@ -1,6 +1,7 @@
 import { hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { purgeEmStress } from '../emStress';
+import { consumeExtractFavor } from '../extractFavor';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
@@ -50,6 +51,10 @@ export const patternBufferMechanic: Mechanic = {
     if (tile.kind === 'vent' && state.emStress >= 40) spike += 1;
     if (state.emStress >= 70) spike += 1;
     if (spike > 0) {
+      if (consumeExtractFavor(state, 'pattern_fail_safe')) {
+        pushLog(state, 'LOG-FAVOR-PATTERN');
+        return;
+      }
       const prev = state.patternDesync;
       state.patternDesync = Math.min(5, state.patternDesync + spike);
       if (prev === 0 && state.patternDesync > 0) {

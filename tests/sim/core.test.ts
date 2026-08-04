@@ -204,6 +204,10 @@ describe('expansion phase 2 mechanics', () => {
     applyAction(st, { type: 'use' });
     expect(st.patternDesync).toBe(0);
     applyAction(st, { type: 'exit' });
+    expect(st.status).toBe('playing');
+    expect(st.uplink?.progress).toBe(1);
+    applyAction(st, { type: 'wait' });
+    applyAction(st, { type: 'wait' });
     expect(st.status).toBe('won');
   });
 });

@@ -11,6 +11,7 @@ import { syncObjectiveFlags } from './inventory';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
 import { refreshVision } from './vision';
+import { applyStormShelterOnSectorEntry } from './extractFavor';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   plains: 'LOG-SEC-PLAINS',
   flood: 'LOG-SEC-FLOOD',
@@ -129,6 +130,8 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     doctrineQuiet: 0,
     doctrineProbe: 0,
     handshake: null,
+    extractFavor: null,
+    uplink: null,
     patternDesync: 0,
     scriptedFired: {},
     approachShearAcc: 0,
@@ -217,6 +220,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   );
   state.lootTakenThisSector = false;
   state.handshake = null;
+  state.uplink = null;
   state.approachShearAcc = 0;
   state.ui.aimingDart = false;
   state.ui.questFlash = 0;
@@ -235,6 +239,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   if (sectorIndex > 0 && hasSkill(state, 'triage')) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);
   }
+  applyStormShelterOnSectorEntry(state);
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);

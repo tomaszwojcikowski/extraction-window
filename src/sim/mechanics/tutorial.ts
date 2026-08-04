@@ -49,6 +49,10 @@ export const tutorialMechanic: Mechanic = {
       (e) => e.alive && (state.visible[e.y]?.[e.x] ?? false),
     );
     if (hostileVisible) {
+      const stalkerWinding = state.enemies.some(
+        (e) => e.alive && e.kind === 'stalker' && e.windup > 0 && (state.visible[e.y]?.[e.x] ?? false),
+      );
+      if (stalkerWinding) return 'UI-TUT-STALKER';
       if (inShadow(state, state.player.x, state.player.y) && hasItem(state, 'flare')) {
         return 'UI-HINT-FLARE';
       }

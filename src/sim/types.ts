@@ -203,6 +203,21 @@ export interface BeaconHandshake {
   active: boolean;
 }
 
+/** One optional room-quest payoff that changes the route to extraction. */
+export type ExtractFavorKind = 'storm_shelter' | 'hazard_pass' | 'pattern_fail_safe';
+
+export interface ExtractFavor {
+  kind: ExtractFavorKind;
+}
+
+/** Final-pad launch sequence. Progress is counted at the end of each held turn. */
+export interface ExtractionUplink {
+  progress: number;
+  active: boolean;
+  accelerated: boolean;
+  repelled: boolean;
+}
+
 export interface EquipSlots {
   tool: ItemKind | null;
   armor: ItemKind | null;
@@ -287,6 +302,10 @@ export interface GameState {
   doctrineProbe: number;
   /** Beacon multi-turn handshake (null when idle / not on beacon sector). */
   handshake: BeaconHandshake | null;
+  /** Optional room-quest extraction favor; only one can be carried. */
+  extractFavor: ExtractFavor | null;
+  /** Final ridge pad multi-turn uplink. */
+  uplink: ExtractionUplink | null;
   /** Nav Core pattern-buffer desync; shuttle rejects while > 0. */
   patternDesync: number;
   /** Scripted event once-flags (event id → fired). */

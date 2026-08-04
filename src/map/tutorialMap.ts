@@ -26,7 +26,7 @@ function carveRect(tiles: Tile[][], x0: number, y0: number, x1: number, y1: numb
 }
 
 /**
- * Hand-authored ~24×16 drill bay — west start, east hatch, one pickup, one mite.
+ * Hand-authored ~24×16 drill bay — west start, east hatch, flare-ready stalker beat.
  * Not a campaign sector; used only while `tutorialActive`.
  */
 export function generateTutorialMap(seed: number): GeneratedMap {
@@ -41,6 +41,8 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   carveRect(tiles, 1, 4, 7, 11);
   // Mid corridor
   carveRect(tiles, 7, 6, 16, 9);
+  // Small south alcove gives a quiet route around the contact.
+  carveRect(tiles, 9, 9, 15, 11);
   // East chamber (hatch)
   carveRect(tiles, 16, 5, 22, 10);
 
@@ -54,17 +56,18 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   const itemKind = rng() < 0.5 ? 'salvage' : 'field_sample';
   const items: GroundItem[] = [
     { id: 1, kind: itemKind, x: 3, y: 8 },
+    { id: 2, kind: 'flare', x: 10, y: 9 },
   ];
 
-  // Weak mite mid-map — not adjacent to start
-  const mitePos: Pos = { x: 13, y: 8 };
-  const def = ENEMIES.mite;
+  // Stalker closes at the corridor mouth; its normal pounce windup is the drill beat.
+  const stalkerPos: Pos = { x: 13, y: 8 };
+  const def = ENEMIES.stalker;
   const enemies: Enemy[] = [
     {
-      id: 2,
-      kind: 'mite',
-      x: mitePos.x,
-      y: mitePos.y,
+      id: 3,
+      kind: 'stalker',
+      x: stalkerPos.x,
+      y: stalkerPos.y,
       hp: def.hp,
       maxHp: def.hp,
       atk: def.atk,
@@ -73,8 +76,8 @@ export function generateTutorialMap(seed: number): GeneratedMap {
       statuses: {},
       alerted: false,
       swellTurns: 0,
-      homeX: mitePos.x,
-      homeY: mitePos.y,
+      homeX: stalkerPos.x,
+      homeY: stalkerPos.y,
       skirmishRetreat: false,
       windup: 0,
       beamCooldown: 0,
@@ -106,6 +109,6 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     poiPos: null,
     poiKind: null,
     roomQuest: null,
-    nextEntityId: 3,
+    nextEntityId: 4,
   };
 }

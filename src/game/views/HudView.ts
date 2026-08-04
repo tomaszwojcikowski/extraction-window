@@ -195,6 +195,17 @@ export class HudView {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.ok });
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.quest });
+    if (st.extractFavor) {
+      const label = {
+        storm_shelter: 'SHELTER',
+        hazard_pass: 'SAFE STEP',
+        pattern_fail_safe: 'BUFFER',
+      }[st.extractFavor.kind];
+      badgeSpecs.push({ label, fill: Theme.ok });
+    }
+    if (st.uplink?.active) {
+      badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.storm });
+    }
     if (st.codexPages > 0) {
       badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });
     }

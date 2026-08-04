@@ -5,6 +5,7 @@ import { roomQuestMechanic } from './roomQuestMechanic';
 import { beaconHandshakeMechanic } from './beaconHandshake';
 import { quietStanceMechanic } from './quietStance';
 import { patternBufferMechanic } from './patternBuffer';
+import { extractionUplinkMechanic } from './extractionUplink';
 import { scriptedEventsMechanic } from './scriptedEvents';
 import { surveyMechanic } from './survey';
 import { npcMechanic } from './npcMechanic';
@@ -23,6 +24,7 @@ const MECHANICS: Mechanic[] = [
   tutorialMechanic,
   beaconHandshakeMechanic,
   patternBufferMechanic,
+  extractionUplinkMechanic,
   quietStanceMechanic,
   npcMechanic,
   sealedHatchMechanic,
