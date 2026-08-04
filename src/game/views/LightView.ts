@@ -1,22 +1,15 @@
 import Phaser from 'phaser';
-import type { GameState, TileKind } from '../../sim/types';
-import { isQuietStance } from '../../sim/mechanics/quietStance';
+import type { FieldLightSource, GameState } from '../../sim/types';
+import {
+  accumulateLight,
+  collectLightSources,
+  tileBrightness,
+  toneMap,
+} from '../../sim/light';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
-import { accumulateLight, irradiance, toneMap } from './lightPhysics';
 
-export type LightSource = {
-  x: number;
-  y: number;
-  /** Soft clip radius in tiles (Euclidean). */
-  radius: number;
-  /** Phaser tint color (spectral tint of the emitter). */
-  color: number;
-  /** Peak luminous intensity (relative). */
-  intensity: number;
-  /** Turns remaining; omit for permanent world lights. */
-  life?: number;
-};
+export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
@@ -45,9 +38,13 @@ function blendTowardWhite(base: number, amount: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
+function withColor(s: FieldLightSource, fallback = 0xffd0a0): LightSource {
+  return { ...s, color: s.color ?? fallback };
+}
+
 /**
- * Field lighting — inverse-square + LOS occlusion via tint/alpha.
- * Presentation-only; respects FOV (no light in fog; memory stays dim).
+ * Field lighting — draws from sim illumination grid + shared emitters.
+ * FOV still gates fog; brightness matches gameplay `isLit` / lamp quiet dim.
  */
 export class LightView {
   private fx: LightSource[] = [];
@@ -56,7 +53,6 @@ export class LightView {
 
   constructor(scene: Phaser.Scene, parent: Phaser.GameObjects.Container) {
     this.lightsGfx = scene.add.graphics();
-    // Within lightLayer (already above entities); keep local draw order stable.
     this.lightsGfx.setDepth(1);
     parent.add(this.lightsGfx);
   }
@@ -75,7 +71,7 @@ export class LightView {
     this.trimSources();
   }
 
-  /** Decay turn-lived FX when the sim turn advances. */
+  /** Keep presentation FX in sync with turn; sim owns flare life separately. */
   syncTurn(turn: number): void {
     if (this.lastTurn < 0) {
       this.lastTurn = turn;
@@ -96,10 +92,6 @@ export class LightView {
     this.fx = next;
   }
 
-  /**
-   * Bloom discs sized by inverse-square core — brighter near the emitter.
-   * Only drawn for visible tiles (no fog reveal).
-   */
   drawBloom(sources: LightSource[], visible: boolean[][]): void {
     this.lightsGfx.clear();
     for (const s of sources) {
@@ -107,7 +99,6 @@ export class LightView {
       if (!row?.[s.x]) continue;
       const wx = s.x * TILE_DRAW + TILE_DRAW / 2;
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
-      // Core radius from near-field strength; outer halo from soft clip radius
       const core = Math.max(6, TILE_DRAW * 0.55 * Math.sqrt(s.intensity));
       const halo = Math.max(core + 4, s.radius * TILE_DRAW * 0.4);
       const aCore = Math.min(0.28, 0.1 + s.intensity * 0.18);
@@ -119,70 +110,23 @@ export class LightView {
     }
   }
 
-  collectWorldSources(st: GameState, animFrame: number): LightSource[] {
-    const sources: LightSource[] = [];
-    if (st.status === 'playing') {
-      let radius = 4.2;
-      let intensity = 1.1;
-      if (st.player.probeTurns > 0 || st.player.lensTurns > 0) {
-        radius = 6.5;
-        intensity = 1.45;
-      }
-      if (isQuietStance(st)) {
-        radius = Math.max(2.8, radius - 1.2);
-        intensity *= 0.75;
-      }
-      sources.push({
-        x: st.player.x,
-        y: st.player.y,
-        radius,
-        color: 0xffd0a0,
-        intensity,
-      });
-      if (st.patternDesync > 0) {
-        sources.push({
-          x: st.player.x,
-          y: st.player.y,
-          radius: 2.5,
-          color: 0xcc88ff,
-          intensity: 0.55 + (st.patternDesync % 2) * 0.25,
-        });
-      }
-    }
-
+  /**
+   * Bloom sources: sim emitters (lamp/quiet/flare/world) + brief presentation FX.
+   */
+  allSources(st: GameState, animFrame: number): LightSource[] {
     const pulse = 0.85 + (animFrame % 3) * 0.08;
-    for (let y = 0; y < st.height; y++) {
-      for (let x = 0; x < st.width; x++) {
-        if (!st.explored[y]![x]) continue;
-        const kind = st.tiles[y]![x]!.kind;
-        const light = tileLight(kind, pulse);
-        if (light) sources.push({ x, y, ...light });
+    const sim = collectLightSources(st).map((s) => {
+      const colored = withColor(s);
+      // Soft pulse on hazard/quest radiators that have no life
+      if (s.life === undefined && (s.color === Theme.ionHazard || s.color === Theme.quest || s.color === Theme.storm)) {
+        return { ...colored, intensity: colored.intensity * pulse };
       }
-    }
-
-    for (const item of st.items) {
-      if (item.kind === 'nav_core') {
-        sources.push({
-          x: item.x,
-          y: item.y,
-          radius: 2.5,
-          color: 0xb088ff,
-          intensity: 0.85,
-        });
-      } else if (item.kind === 'relay_key') {
-        sources.push({
-          x: item.x,
-          y: item.y,
-          radius: 2.2,
-          color: 0x9999ff,
-          intensity: 0.7,
-        });
-      }
-    }
+      return colored;
+    });
 
     for (const en of st.enemies) {
       if (!en.alive || en.tier !== 'boss') continue;
-      sources.push({
+      sim.push({
         x: en.x,
         y: en.y,
         radius: 3.2,
@@ -191,29 +135,21 @@ export class LightView {
       });
     }
 
-    if (st.objectives.hasNavCore) {
-      sources.push({
+    if (st.patternDesync > 0) {
+      sim.push({
         x: st.player.x,
         y: st.player.y,
-        radius: 2.4,
-        color: 0xb088ff,
-        intensity: 0.65,
+        radius: 2.5,
+        color: 0xcc88ff,
+        intensity: 0.55 + (st.patternDesync % 2) * 0.25,
       });
     }
 
-    if (st.handshake?.active) {
-      const hx = st.beaconPos?.x ?? st.player.x;
-      const hy = st.beaconPos?.y ?? st.player.y;
-      sources.push({
-        x: hx,
-        y: hy,
-        radius: 5,
-        color: Theme.storm,
-        intensity: 1.1 + (st.handshake.progress % 2) * 0.2,
-      });
-    }
-
-    return sources;
+    const combined = [...sim, ...this.fx];
+    if (combined.length <= MAX_SOURCES) return combined;
+    const fxSorted = [...this.fx].sort((a, b) => b.intensity - a.intensity);
+    const room = Math.max(0, MAX_SOURCES - sim.length);
+    return [...sim.slice(0, MAX_SOURCES), ...fxSorted.slice(0, room)].slice(0, MAX_SOURCES);
   }
 
   private trimSources(): void {
@@ -222,33 +158,21 @@ export class LightView {
     this.fx = this.fx.slice(0, MAX_SOURCES);
   }
 
-  allSources(st: GameState, animFrame: number): LightSource[] {
-    const world = this.collectWorldSources(st, animFrame);
-    const combined = [...world, ...this.fx];
-    if (combined.length <= MAX_SOURCES) return combined;
-    const permanent = world;
-    const fxSorted = [...this.fx].sort((a, b) => b.intensity - a.intensity);
-    const room = Math.max(0, MAX_SOURCES - permanent.length);
-    return [...permanent, ...fxSorted.slice(0, room)];
-  }
-
-  private sampleHdr(
+  private sampleColor(
     st: GameState,
     x: number,
     y: number,
     sources: LightSource[],
-  ): { hdr: number; colorAcc: number; colorPull: number } {
-    let hdr = 0;
+  ): { colorAcc: number; colorPull: number } {
     let colorPull = 0;
     let colorAcc = BIOME_AMBIENT[st.sectorId].tint;
     for (const s of sources) {
       const E = accumulateLight(st.tiles, s.x, s.y, x, y, s.radius, s.intensity);
       if (E <= 0.001) continue;
-      hdr += E;
       colorPull += E;
       colorAcc = multiplyTint(colorAcc, s.color, Math.min(1, E * 0.9));
     }
-    return { hdr, colorAcc, colorPull };
+    return { colorAcc, colorPull };
   }
 
   applyTileLighting(
@@ -279,9 +203,12 @@ export class LightView {
           continue;
         }
 
-        const { hdr, colorAcc, colorPull } = this.sampleHdr(st, x, y, sources);
-        // Ambient as base luminous exitance + direct irradiance
-        const brightness = toneMap(biome.ambient * 0.85 + hdr);
+        // Prefer sim illumination grid so quiet/flare/EM match gameplay
+        const brightness =
+          st.illumination?.[y]?.[x] !== undefined
+            ? tileBrightness(st, x, y)
+            : toneMap(biome.ambient * 0.85);
+        const { colorAcc, colorPull } = this.sampleColor(st, x, y, sources);
 
         const isTerrain = kind === 'floor' || kind === 'scrub' || kind === 'rubble';
         let tint = isTerrain ? floorTint : 0xffffff;
@@ -300,16 +227,11 @@ export class LightView {
     st: GameState,
     playerSprite: Phaser.GameObjects.Image,
     enemyViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
-    sources: LightSource[],
+    _sources: LightSource[],
   ): void {
-    const biome = BIOME_AMBIENT[st.sectorId];
     const litAlpha = (x: number, y: number): number => {
       if (!st.visible[y]?.[x]) return 0;
-      let hdr = biome.ambient * 0.85;
-      for (const s of sources) {
-        hdr += accumulateLight(st.tiles, s.x, s.y, x, y, s.radius, s.intensity);
-      }
-      return 0.5 + 0.5 * toneMap(hdr);
+      return 0.5 + 0.5 * tileBrightness(st, x, y);
     };
 
     playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));
@@ -326,28 +248,5 @@ export class LightView {
   }
 }
 
-function tileLight(
-  kind: TileKind,
-  pulse: number,
-): Omit<LightSource, 'x' | 'y'> | null {
-  switch (kind) {
-    case 'beacon':
-      return { radius: 5, color: Theme.storm, intensity: 1.2 * pulse };
-    case 'shuttle':
-      return { radius: 6, color: 0xffcc66, intensity: 1.15 };
-    case 'exit':
-      return { radius: 2.5, color: 0x66aa88, intensity: 0.7 };
-    case 'poi':
-      return { radius: 3, color: Theme.quest, intensity: 0.8 * pulse };
-    case 'quest':
-      return { radius: 3.5, color: Theme.storm, intensity: 0.95 * pulse };
-    case 'hazard':
-    case 'vent':
-      return { radius: 2.4, color: Theme.ionHazard, intensity: 0.65 * pulse };
-    default:
-      return null;
-  }
-}
-
-// Re-export for tests / bloom tuning
-export { irradiance };
+// Re-export for bloom tuning / tests
+export { irradiance } from '../../sim/light';

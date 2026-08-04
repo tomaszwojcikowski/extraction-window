@@ -1,7 +1,7 @@
 import { getSector } from '../data/encounters';
+import { progressEnergyTax, progressStormTax } from '../data/difficulty';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { XP_SECTOR } from '../data/progression';
-import { computeFov, playerFovRadius } from './fov';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
@@ -10,17 +10,10 @@ import { moveAllies } from './allyAi';
 import { addStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax } from './emStress';
-import { mechanicsOnEndTurn, mechanicsModifyFov } from './mechanics';
+import { mechanicsOnEndTurn } from './mechanics';
 import { grantSectorSurveyBonus } from './mechanics/survey';
+import { refreshVision, refreshVisionAfterTurn } from './vision';
 import type { GameState } from './types';
-
-function fovR(state: GameState): number {
-  const base =
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
-    state.paddMods.fovBonus +
-    (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
-  return mechanicsModifyFov(state, base);
-}
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
@@ -47,14 +40,7 @@ export function finishSectorTransition(state: GameState): void {
   if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
     pushLog(state, 'LOG-STORM-WARN');
   }
-  computeFov(
-    state.tiles,
-    state.explored,
-    state.visible,
-    state.player.x,
-    state.player.y,
-    fovR(state),
-  );
+  refreshVision(state);
   syncObjectiveFlags(state);
   checkLose(state);
 }
@@ -72,6 +58,10 @@ function tickEnvironment(state: GameState): void {
   if (sector.index >= 11) {
     state.stormTurns -= 1;
   }
+  // Leveled runs feel the clock sooner inland
+  if (progressStormTax(state.level, sector.index, state.turn)) {
+    state.stormTurns -= 1;
+  }
 
   const filter = state.player.filterTurns > 0;
   const coupler = state.player.equip.utility === 'eps_coupler';
@@ -83,6 +73,7 @@ function tickEnvironment(state: GameState): void {
     }
   }
   state.player.energy -= emEnergyTax(state);
+  state.player.energy -= progressEnergyTax(state.level, state.turn, filter);
   let drain = filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
   if (coupler) drain = Math.max(0, drain - 1);
   state.player.energy -= drain;
@@ -120,26 +111,12 @@ export function endPlayerTurn(state: GameState): void {
   if (state.status !== 'playing') return;
   state.turn += 1;
   tickEnvironment(state);
-  // FOV from the player's new tile before AI so ambush/FOV checks see current vision.
-  computeFov(
-    state.tiles,
-    state.explored,
-    state.visible,
-    state.player.x,
-    state.player.y,
-    fovR(state),
-  );
+  // FOV + light from the player's new tile before AI so ambush/FOV checks see current vision.
+  refreshVisionAfterTurn(state);
   moveEnemies(state);
   moveAllies(state);
-  // Recompute after enemy moves so presentation matches final visibility.
-  computeFov(
-    state.tiles,
-    state.explored,
-    state.visible,
-    state.player.x,
-    state.player.y,
-    fovR(state),
-  );
+  // Recompute after enemy moves so presentation matches final visibility / light.
+  refreshVision(state);
   syncObjectiveFlags(state);
   checkLose(state);
 }

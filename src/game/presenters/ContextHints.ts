@@ -5,6 +5,7 @@ import {
 } from '../../data/progression';
 import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
+import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
 
@@ -36,6 +37,17 @@ export function contextHint(st: GameState): LoreId | null {
   // Situation coaching — only when the kit actually has the tool
   if ((tile.kind === 'hazard' || tile.kind === 'vent') && hasItem(st, 'sealant')) {
     return 'UI-HINT-USE-SEALANT';
+  }
+  if (
+    inShadow(st, st.player.x, st.player.y) &&
+    hasItem(st, 'flare') &&
+    st.enemies.some(
+      (e) =>
+        e.alive &&
+        Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) <= 3,
+    )
+  ) {
+    return 'UI-HINT-FLARE';
   }
   if ((st.player.statuses.bleed ?? 0) > 0 && hasItem(st, 'patch')) {
     return 'UI-HINT-USE-PATCH';

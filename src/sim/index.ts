@@ -15,9 +15,23 @@ export type {
 export { createGame, loadSector } from './state';
 export { applyAction } from './actions';
 export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS } from './fov';
+export {
+  irradiance,
+  lightTransmittance,
+  toneMap,
+  accumulateLight,
+  rebuildIllumination,
+  isLit,
+  inShadow,
+  addLightSource,
+  collectLightSources,
+  LIT_THRESHOLD,
+  SHADOW_THRESHOLD,
+} from './light';
+export { refreshVision } from './vision';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
-export { hasItem, syncObjectiveFlags, tryEquipItem } from './inventory';
+export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
 export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack } from './combat';
 export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';

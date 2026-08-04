@@ -2,6 +2,7 @@ import type { LoreId } from '../data/lore';
 import { lore } from '../data/lore';
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES } from '../data/enemies';
+import { scaleEnemyCombat } from '../data/difficulty';
 import { XP_ROOM_QUEST } from '../data/progression';
 import { pushLog } from './log';
 import { gainXp } from './progression';
@@ -280,6 +281,7 @@ function spawnPurgeHostiles(state: GameState): void {
   for (let i = 0; i < n; i++) {
     const kind = pick(state.rng, [...kinds]);
     const def = ENEMIES[kind];
+    const scaled = scaleEnemyCombat(def, state.sectorIndex, state.level, 'normal');
     const x = Math.min(rq.room.x + rq.room.w - 2, Math.max(rq.room.x + 1, rq.pos.x + (i === 0 ? 1 : -1)));
     const y = rq.pos.y;
     const id = state.nextEntityId++;
@@ -288,10 +290,10 @@ function spawnPurgeHostiles(state: GameState): void {
       kind,
       x,
       y,
-      hp: def.hp,
-      maxHp: def.hp,
-      atk: def.atk,
-      def: def.def,
+      hp: scaled.hp,
+      maxHp: scaled.hp,
+      atk: scaled.atk,
+      def: scaled.def,
       alive: true,
       statuses: {},
       alerted: true,
@@ -376,6 +378,7 @@ export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
   for (let i = 0; i < n; i++) {
     const kind = pick(state.rng, [...kinds]);
     const def = ENEMIES[kind];
+    const scaled = scaleEnemyCombat(def, state.sectorIndex, state.level, 'normal');
     const ox = i === 0 ? 1 : -1;
     const x = Math.max(1, Math.min(state.width - 2, near.x + ox));
     const y = near.y;
@@ -385,10 +388,10 @@ export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
       kind,
       x,
       y,
-      hp: def.hp,
-      maxHp: def.hp,
-      atk: def.atk,
-      def: def.def,
+      hp: scaled.hp,
+      maxHp: scaled.hp,
+      atk: scaled.atk,
+      def: scaled.def,
       alive: true,
       statuses: {},
       alerted: true,

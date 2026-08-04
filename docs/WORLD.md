@@ -71,6 +71,21 @@ Phase 1 authors voice for **0–1 only**. Later biomes keep mechanical roles; na
 
 ---
 
+## Field light (sim mechanic)
+
+Illumination is a sim grid (`state.illumination`), not presentation-only:
+
+| Source | Rules |
+|--------|--------|
+| Field lamp | Radius ≈ FOV×0.55; probe/sensor boost; **quiet ×0.45 intensity** |
+| Plasma flare | Timed radiator (`life` ≈ stun window) |
+| Beacon / skiff / hatch / quest | Small static radiators when explored |
+| Biome ambient | Soft floor; ash/duct darker; **EM-HIGH** +scan wash |
+
+**Gameplay:** `isLit` (≥0.12 tone-mapped) for microdart clear shots; soft **shadow** band for ambush preference and flare hints. FOV/explore memory stays binary. `LightView` draws from the same grid.
+
+---
+
 ## Explicit do not
 
 - Towns, shops, meta unlocks, overland map  

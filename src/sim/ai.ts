@@ -7,6 +7,7 @@ import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
 import { emAggroBonus } from './emStress';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
+import { inShadow } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
 import type { Enemy, GameState, Pos } from './types';
 
@@ -139,6 +140,11 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
       const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
       if (d2 === 1) tryMelee(state, enemy, 3);
     }
+    return;
+  }
+  // Soft-shadow player (quiet lamp / dark tile): skip telegraph and strike if adjacent
+  if (dist === 1 && inShadow(state, state.player.x, state.player.y)) {
+    tryMelee(state, enemy, 3);
     return;
   }
   if (dist <= 2) {
@@ -291,10 +297,18 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'ambush': {
+        const playerDark = inShadow(state, state.player.x, state.player.y);
         if (!enemy.alerted) {
-          if (dist <= 1 || inFov) {
+          if (dist <= 1 || inFov || (playerDark && dist <= aggro)) {
             enemy.alerted = true;
-            pushLog(state, 'LOG-AMBUSH');
+            pushLog(
+              state,
+              playerDark && !inFov ? 'LOG-AMBUSH-DARK' : 'LOG-AMBUSH',
+            );
+            if (playerDark && dist === 1) {
+              tryMelee(state, enemy, 3);
+              break;
+            }
           } else {
             break;
           }

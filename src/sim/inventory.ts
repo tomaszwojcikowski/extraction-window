@@ -16,6 +16,7 @@ import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
+import { addLightSource, isLit, rebuildIllumination } from './light';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 
@@ -319,6 +320,15 @@ export function useSelected(state: GameState): boolean {
         hits += 1;
         if (en.hp <= 0) killEnemy(state, en);
       }
+      addLightSource(state, {
+        x: state.player.x,
+        y: state.player.y,
+        radius: 5.5,
+        intensity: 1.35,
+        life: 4,
+        color: 0xccffff,
+      });
+      rebuildIllumination(state);
       pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
       break;
     }
@@ -372,7 +382,7 @@ export function useSelected(state: GameState): boolean {
   return true;
 }
 
-/** Fire dart in a direction (Chebyshev range ≤3, needs FOV). */
+/** Fire dart in a direction (Chebyshev range ≤3, needs FOV + lit target). */
 export function fireDart(state: GameState, dx: number, dy: number): void {
   state.ui.aimingDart = false;
   if (!hasItem(state, 'dart')) {
@@ -386,6 +396,7 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
   const sx = Math.sign(dx);
   const sy = Math.sign(dy);
   let hit = false;
+  let darkBlock = false;
   for (let i = 1; i <= 3; i++) {
     const x = state.player.x + sx * i;
     const y = state.player.y + sy * i;
@@ -394,6 +405,10 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
     if (!state.visible[y]![x]) break;
     const en = state.enemies.find((e) => e.alive && e.x === x && e.y === y);
     if (en) {
+      if (!isLit(state, x, y)) {
+        darkBlock = true;
+        break;
+      }
       removeOne(state, 'dart');
       addStatus(en, 'expose', 4);
       playerAttack(state, en, randInt(state.rng, 0, 1));
@@ -404,7 +419,7 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
   }
   if (!hit) {
     removeOne(state, 'dart');
-    pushLog(state, 'LOG-AIM-MISS');
+    pushLog(state, 'LOG-AIM-MISS', darkBlock ? 'target in shadow' : undefined);
   }
 }
 

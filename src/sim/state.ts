@@ -3,14 +3,13 @@ import { getSector, type SectorId } from '../data/encounters';
 import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
 import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
-import { computeFov, playerFovRadius } from './fov';
 import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
-
+import { refreshVision } from './vision';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   plains: 'LOG-SEC-PLAINS',
   flood: 'LOG-SEC-FLOOD',
@@ -105,6 +104,10 @@ export function createGame(seed: number): GameState {
     rooms: map.rooms.map((r) => ({ ...r })),
     surveyedRoomIds: [],
     noticedNpcIds: [],
+    illumination: Array.from({ length: map.height }, () =>
+      Array.from({ length: map.width }, () => 0),
+    ),
+    lightSources: [],
     codexPages: 0,
     codexLog: [],
     emStress: 0,
@@ -136,20 +139,12 @@ export function createGame(seed: number): GameState {
     loreEvents: [],
   };
 
-  computeFov(
-    state.tiles,
-    state.explored,
-    state.visible,
-    state.player.x,
-    state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
-      state.paddMods.fovBonus +
-      (state.player.equip.utility === 'sensor_rig' ? 1 : 0),
-  );
+  refreshVision(state);
   pushLog(state, 'LOG-DROP');
   pushLog(state, 'LOG-SEC-PLAINS');
   syncObjectiveFlags(state);
   mechanicsOnSectorEnter(state);
+  refreshVision(state);
   return state;
 }
 
@@ -157,6 +152,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   const sector = getSector(sectorIndex);
   const map = generateSectorMap(sector, state.seed, sectorIndex, {
     beaconAlreadyOpen: state.objectives.beaconOpen,
+    playerLevel: state.level,
   });
 
   state.sectorIndex = sectorIndex;
@@ -185,6 +181,10 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.roomQuest = map.roomQuest;
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.surveyedRoomIds = [];
+  state.lightSources = [];
+  state.illumination = Array.from({ length: map.height }, () =>
+    Array.from({ length: map.width }, () => 0),
+  );
   state.lootTakenThisSector = false;
   state.handshake = null;
   state.approachShearAcc = 0;
@@ -201,16 +201,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     };
   }
 
-  computeFov(
-    state.tiles,
-    state.explored,
-    state.visible,
-    state.player.x,
-    state.player.y,
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
-      state.paddMods.fovBonus +
-      (state.player.equip.utility === 'sensor_rig' ? 1 : 0),
-  );
+  refreshVision(state);
   if (sectorIndex > 0 && hasSkill(state, 'triage')) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);
   }
@@ -218,4 +209,5 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);
   mechanicsOnSectorEnter(state);
+  refreshVision(state);
 }

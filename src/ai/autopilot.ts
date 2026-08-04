@@ -9,6 +9,7 @@ import {
 } from '../sim';
 import { INVENTORY_SLOTS } from '../data/items';
 import { EM_HIGH } from '../sim/emStress';
+import { inShadow, isLit } from '../sim/light';
 
 function dartAim(
   state: GameState,
@@ -19,6 +20,7 @@ function dartAim(
   const d = Math.max(Math.abs(dx), Math.abs(dy));
   if (d < 1 || d > 3) return null;
   if (!state.visible[en.y]?.[en.x]) return null;
+  if (!isLit(state, en.x, en.y)) return null;
   // Must lie on a cardinal or diagonal ray
   if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return null;
   return { dx: Math.sign(dx), dy: Math.sign(dy) };
@@ -185,12 +187,20 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  // Flare when adjacent hostiles
+  // Flare when adjacent hostiles, or standing dark with hostiles nearby
   const adjHostile = state.enemies.some(
     (e) =>
       e.alive && Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) === 1,
   );
-  if (adjHostile && state.player.hp <= state.player.maxHp * 0.7) {
+  const nearHostile = state.enemies.some(
+    (e) =>
+      e.alive && Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) <= 3,
+  );
+  const playerDark = inShadow(state, state.player.x, state.player.y);
+  if (
+    (adjHostile && state.player.hp <= state.player.maxHp * 0.7) ||
+    (playerDark && nearHostile)
+  ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'flare');
     if (fIdx >= 0) {
       state.ui.selectedSlot = fIdx;

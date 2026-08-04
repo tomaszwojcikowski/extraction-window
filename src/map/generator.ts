@@ -1,5 +1,9 @@
 import type { SectorDef } from '../data/encounters';
 import { ENEMIES, type EnemyKind } from '../data/enemies';
+import {
+  enemyCountBonus,
+  scaleEnemyCombat,
+} from '../data/difficulty';
 import type { ItemKind } from '../data/items';
 import type { Enemy, EnemyTier, FieldNpc, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
 import { npcKindForSector } from '../data/npcs';
@@ -82,21 +86,20 @@ function makeEnemy(
   p: Pos,
   sectorIndex: number,
   tier: EnemyTier = 'normal',
+  playerLevel = 1,
 ): Enemy {
   const def = ENEMIES[kind];
-  const depth = 1 + sectorIndex * 0.035;
   // Soft elite/boss curve — kill refunds still pay; keep autopilot WR in band
-  const hpMul = tier === 'elite' ? 1.4 : tier === 'boss' ? 2.1 : 1;
-  const hp = Math.ceil(def.hp * depth * hpMul);
+  const scaled = scaleEnemyCombat(def, sectorIndex, playerLevel, tier);
   return {
     id,
     kind,
     x: p.x,
     y: p.y,
-    hp,
-    maxHp: hp,
-    atk: Math.ceil(def.atk * depth),
-    def: def.def,
+    hp: scaled.hp,
+    maxHp: scaled.hp,
+    atk: scaled.atk,
+    def: scaled.def,
     alive: true,
     statuses: {},
     alerted: false,
@@ -400,8 +403,9 @@ export function generateSectorMap(
   sector: SectorDef,
   seed: number,
   sectorSalt: number,
-  opts: { beaconAlreadyOpen?: boolean } = {},
+  opts: { beaconAlreadyOpen?: boolean; playerLevel?: number } = {},
 ): GeneratedMap {
+  const playerLevel = opts.playerLevel ?? 1;
   const rng = mulberry32((seed ^ (sectorSalt * 0x9e3779b9)) >>> 0);
   const width = sector.width;
   const height = sector.height;
@@ -679,8 +683,10 @@ export function generateSectorMap(
     placed++;
   }
 
-  // Enemies — keep packs sparse
-  const enemyN = randInt(rng, sector.enemyCount[0], sector.enemyCount[1]);
+  // Enemies — keep packs sparse; level adds light density
+  const enemyN =
+    randInt(rng, sector.enemyCount[0], sector.enemyCount[1]) +
+    enemyCountBonus(playerLevel);
   let ePlaced = 0;
   for (const p of floors) {
     if (ePlaced >= enemyN) break;
@@ -689,7 +695,7 @@ export function generateSectorMap(
     if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < 5) continue;
     if (rng() > 0.28) continue;
     const kind = pick(rng, sector.enemyTable);
-    enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'normal'));
+    enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'normal', playerLevel));
     ePlaced++;
   }
 
@@ -722,7 +728,9 @@ export function generateSectorMap(
       });
       if (!candidates.length) continue;
       const p = candidates[0]!;
-      enemies.push(makeEnemy(nextEntityId++, eliteKindForSector(sector.index), p, sector.index, 'elite'));
+      enemies.push(
+        makeEnemy(nextEntityId++, eliteKindForSector(sector.index), p, sector.index, 'elite', playerLevel),
+      );
       break;
     }
   }
@@ -757,7 +765,7 @@ export function generateSectorMap(
       if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) continue;
       if (shuttlePos && p.x === shuttlePos.x && p.y === shuttlePos.y) continue;
       if (!canReach(tiles, start, p)) continue;
-      enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'boss'));
+      enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'boss', playerLevel));
       return;
     }
   };

@@ -6,7 +6,7 @@ import { hasItem } from '../inventory';
 
 /**
  * Sensor quiet stance — active while jammer timer runs.
- * FOV shrinks; fauna aggro shrinks (see ai.effectiveAggro).
+ * FOV shrinks; field lamp dims (see light.playerLamp); fauna aggro shrinks.
  * At EM-HIGH, quiet also suppresses emAggroBonus (see emStress).
  * HUD shows SYS:Q.
  */
@@ -23,7 +23,7 @@ export const quietStanceMechanic: Mechanic = {
   },
 
   contextHint(state: GameState): LoreId | null {
-    if (isQuietStance(state)) return null;
+    if (isQuietStance(state)) return 'UI-HINT-QUIET';
     if (state.emStress < EM_HIGH) return null;
     if (!hasItem(state, 'jammer')) return null;
     return 'UI-HINT-QUIET-EM';

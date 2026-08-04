@@ -27,6 +27,18 @@ export type TileKind =
 
 export type EnemyTier = 'normal' | 'elite' | 'boss';
 
+/** Ephemeral / world light emitters owned by the sim. */
+export interface FieldLightSource {
+  x: number;
+  y: number;
+  radius: number;
+  intensity: number;
+  /** Turns remaining; omit for permanent. */
+  life?: number;
+  /** Presentation tint (optional). */
+  color?: number;
+}
+
 /** Room bounds from the sector map generator (survey / quest pulse). */
 export interface MapRoom {
   x: number;
@@ -222,6 +234,10 @@ export interface GameState {
   surveyedRoomIds: number[];
   /** Field NPCs already logged as sighted this run. */
   noticedNpcIds: number[];
+  /** Per-tile HDR illumination (ambient + emitters); rebuilt with FOV. */
+  illumination: number[][];
+  /** Ephemeral light emitters (flares, etc.). */
+  lightSources: FieldLightSource[];
   codexPages: number;
   /** Collected CODEX-* lore ids for this run (Pages panel). */
   codexLog: LoreId[];

@@ -20,12 +20,13 @@ export function emitActionLights(
   const has = (id: LoreId) => newLogs.includes(id);
 
   if (has('LOG-USE-FLARE')) {
+    // Presentation bloom — sim already owns the lasting lightSource
     lights.addFxLight({
       x: player.x,
       y: player.y,
-      radius: 5,
+      radius: 5.5,
       color: 0xccffff,
-      intensity: 0.95,
+      intensity: 1.35,
       life: 4,
     });
   }
