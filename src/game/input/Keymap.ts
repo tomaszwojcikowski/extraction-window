@@ -46,7 +46,17 @@ export function actionFromKey(e: KeyboardEvent): Action | null {
   if (k === 'r' || k === 'R') return { type: 'retreat' };
   if (k === 'g' || k === 'G') return { type: 'get' };
   if (k === '.' && !e.shiftKey) return { type: 'wait' };
-  if (k === '>' || k === '=' || (e.code === 'Period' && e.shiftKey)) return { type: 'exit' };
+  // Hatch / interact — `>` needs Shift on many layouts; `=` and Enter are reliable fallbacks.
+  if (
+    k === '>' ||
+    k === '=' ||
+    k === 'Enter' ||
+    k === 'NumpadEnter' ||
+    (e.code === 'Period' && e.shiftKey) ||
+    (e.code === 'Comma' && e.shiftKey && k === '>')
+  ) {
+    return { type: 'exit' };
+  }
   if (k === 'ArrowUp' || k === 'w' || k === 'W') return { type: 'move', dx: 0, dy: -1 };
   if (k === 'ArrowDown' || k === 's' || k === 'S') return { type: 'move', dx: 0, dy: 1 };
   if (k === 'ArrowLeft' || k === 'a' || k === 'A') return { type: 'move', dx: -1, dy: 0 };

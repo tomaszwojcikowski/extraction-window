@@ -41,7 +41,7 @@ npm run playtest     # full seed suite → playtest-report.json
 | `u` | Use selected item |
 | `1`–`9` | Select kit slot |
 | `p` | Mission PADD pages |
-| `>` / `=` | Hatch / beacon / skiff |
+| `>` / `=` / Enter | Hatch / beacon / skiff |
 | `?` | Field manual |
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |

@@ -59,7 +59,12 @@ export const tutorialMechanic: Mechanic = {
       return 'UI-TUT-FIGHT';
     }
 
-    return 'UI-TUT-EXIT';
+    const onHatch =
+      state.tiles[state.player.y]?.[state.player.x]?.kind === 'exit' ||
+      (state.exitPos !== null &&
+        state.player.x === state.exitPos.x &&
+        state.player.y === state.exitPos.y);
+    return onHatch ? 'UI-TUT-EXIT' : 'UI-TUT-GOTO-HATCH';
   },
 
   autopilotHint(state: GameState): Action | null {

@@ -27,6 +27,16 @@ describe('Keymap', () => {
     expect(isPagesDismissKey(key('P'))).toBe(true);
   });
 
+  it('maps hatch exit keys including Enter and =', () => {
+    expect(actionFromKey(key('>'))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key('='))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key('Enter'))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key('NumpadEnter'))).toEqual({ type: 'exit' });
+    expect(actionFromKey(key('.', { shiftKey: true, code: 'Period' }))).toEqual({
+      type: 'exit',
+    });
+  });
+
   it('maps gameplay actions', () => {
     expect(actionFromKey(key('ArrowUp'))).toEqual({ type: 'move', dx: 0, dy: -1 });
     expect(actionFromKey(key('w'))).toEqual({ type: 'move', dx: 0, dy: -1 });

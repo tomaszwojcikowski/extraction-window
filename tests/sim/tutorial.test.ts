@@ -74,4 +74,16 @@ describe('drill bay tutorial', () => {
     expect(st.stormTurns).toBe(stormBefore + 2 - 1);
     expect(st.stormTurns).toBeLessThanOrEqual(STORM_TURNS + 2);
   });
+
+  it('hints walk-to-hatch until standing on exit, then press-to-exit', () => {
+    const st = createGame(7, { skipTutorial: false });
+    st.turn = 2;
+    // Clear hostiles so exit coaching shows
+    for (const e of st.enemies) e.alive = false;
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
+
+    st.player.x = st.exitPos!.x;
+    st.player.y = st.exitPos!.y;
+    expect(contextHint(st)).toBe('UI-TUT-EXIT');
+  });
 });

@@ -30,12 +30,12 @@ export const LORE = {
   'UI-HELP': 'Survey team manual',
   'UI-HELP-TUT':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, > exit.\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
     'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
     '\n',
   'UI-HELP-BODY':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, > exit.\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
     'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
     '\n' +
     'MOVE    WASD or arrow keys — one tile per turn\n' +
@@ -45,7 +45,7 @@ export const LORE = {
     'GET     g — pick up salvage under your boots\n' +
     'KIT     i — open field kit; ↑↓ or 1–9 to select; esc closes\n' +
     'USE     u — use consumables, or equip/stow tool·suit·utility gear\n' +
-    'EXIT    > or = — hatch, beacon, drop skiff pad, anomaly, or hail a field contact\n' +
+    'EXIT    > / = / Enter — hatch, beacon, drop skiff pad, anomaly, or hail a field contact\n' +
     'PADD    p — mission notes recovered this run\n' +
     'SKILL   1 or 2 — choose a field skill when prompted (move locked until then)\n' +
     'DART    u on Microdart, then a direction — hits a seen target within 3 tiles\n' +
@@ -71,10 +71,10 @@ export const LORE = {
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-KIT-PURPOSE':
     'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
-  'UI-CONTROLS': 'WASD · b brace · r retreat · g get · i kit · u use · > hatch · ? help',
+  'UI-CONTROLS': 'WASD · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
-  'UI-HINT-EXIT': 'Stand on hatch — press > to advance',
+  'UI-HINT-EXIT': 'On hatch — press > / = / Enter to advance',
   'UI-HINT-BEACON': 'Emergency beacon — press > to start splice handshake',
   'UI-HINT-HANDSHAKE': 'Handshake syncing — hold position on the beacon',
   'UI-HINT-SHUTTLE': 'Drop skiff pad — press > with Nav Lattice',
@@ -108,7 +108,8 @@ export const LORE = {
   'UI-TUT-KIT': 'i kit · u use',
   'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
   'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip past through the side alcove',
-  'UI-TUT-EXIT': '> on hatch — begin the survey',
+  'UI-TUT-GOTO-HATCH': 'Walk east to the hatch tile',
+  'UI-TUT-EXIT': 'On hatch — press > / = / Enter to begin survey',
   'UI-SURVEY': 'SRV',
   'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
