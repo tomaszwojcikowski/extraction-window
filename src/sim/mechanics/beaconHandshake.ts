@@ -1,6 +1,6 @@
 import { XP_BEACON } from '../../data/progression';
 import { hasItem, removeOne, syncObjectiveFlags } from '../inventory';
-import { pushLog, recordLoreEvent } from '../combat';
+import { pushLog, recordLoreEvent } from '../log';
 import { gainXp } from '../progression';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';

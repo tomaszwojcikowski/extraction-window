@@ -7,16 +7,19 @@ import { quietStanceMechanic } from './quietStance';
 import { patternBufferMechanic } from './patternBuffer';
 import { scriptedEventsMechanic } from './scriptedEvents';
 import { surveyMechanic } from './survey';
+import { npcMechanic } from './npcMechanic';
 
 /**
  * Ordered plug-ins.
  * Handshake + pattern buffer claim actions / autopilot before optional room quests
  * so mid-handshake or desync clear is not interrupted by side-quest pathing.
+ * Field NPCs hail before room quests when both claim `>`.
  */
 const MECHANICS: Mechanic[] = [
   beaconHandshakeMechanic,
   patternBufferMechanic,
   quietStanceMechanic,
+  npcMechanic,
   roomQuestMechanic,
   scriptedEventsMechanic,
   surveyMechanic,

@@ -94,4 +94,13 @@ describe('map generator', () => {
       );
     }
   });
+
+  it('often places field NPCs on mid-depth sectors', () => {
+    let found = 0;
+    for (const seed of [1, 7, 42, 99, 256, 777, 1337, 4096]) {
+      const map = generateSectorMap(getSector(3), seed, 3);
+      if (map.npcs.length > 0) found += 1;
+    }
+    expect(found).toBeGreaterThanOrEqual(3);
+  });
 });

@@ -1,6 +1,7 @@
 import type { EnemyKind, DamageType } from '../data/enemies';
 export type { DamageType };
 import type { ItemKind } from '../data/items';
+import type { NpcKind, AllyKind } from '../data/npcs';
 import type { SectorId } from '../data/encounters';
 import type { SkillId } from '../data/progression';
 import type { LoreId } from '../data/lore';
@@ -72,6 +73,27 @@ export interface Enemy {
   windup: number;
   /** Combat prize tier — elites/bosses grant storm + kit on kill */
   tier: EnemyTier;
+}
+
+export interface FieldNpc {
+  id: number;
+  kind: NpcKind;
+  x: number;
+  y: number;
+  talked: boolean;
+}
+
+export interface Ally {
+  id: number;
+  kind: AllyKind;
+  x: number;
+  y: number;
+  hp: number;
+  maxHp: number;
+  atk: number;
+  def: number;
+  turnsLeft: number;
+  alive: boolean;
 }
 
 export interface GroundItem {
@@ -184,6 +206,8 @@ export interface GameState {
   };
   inventory: InventorySlot[];
   enemies: Enemy[];
+  npcs: FieldNpc[];
+  allies: Ally[];
   items: GroundItem[];
   exitPos: Pos | null;
   shuttlePos: Pos | null;
@@ -196,6 +220,8 @@ export interface GameState {
   rooms: MapRoom[];
   /** Mid-room ids surveyed this sector (cap ~3). */
   surveyedRoomIds: number[];
+  /** Field NPCs already logged as sighted this run. */
+  noticedNpcIds: number[];
   codexPages: number;
   /** Collected CODEX-* lore ids for this run (Pages panel). */
   codexLog: LoreId[];

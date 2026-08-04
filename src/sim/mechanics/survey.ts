@@ -7,7 +7,7 @@ import {
   XP_ROOM_SURVEY,
   XP_SECTOR_SURVEY,
 } from '../../data/progression';
-import { pushLog } from '../combat';
+import { pushLog } from '../log';
 import { gainXp } from '../progression';
 import { randInt } from '../rng';
 import type { GameState } from '../types';

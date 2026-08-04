@@ -1,7 +1,8 @@
 import type { SectorDef } from '../data/encounters';
 import { ENEMIES, type EnemyKind } from '../data/enemies';
 import type { ItemKind } from '../data/items';
-import type { Enemy, EnemyTier, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
+import type { Enemy, EnemyTier, FieldNpc, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
+import { npcKindForSector } from '../data/npcs';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
 import {
@@ -31,6 +32,7 @@ export interface GeneratedMap {
   exit: Pos;
   enemies: Enemy[];
   items: GroundItem[];
+  npcs: FieldNpc[];
   beaconPos: Pos | null;
   shuttlePos: Pos | null;
   poiPos: Pos | null;
@@ -118,12 +120,14 @@ function occupiedSet(
   items: GroundItem[],
   start: Pos,
   specials: Pos[],
+  npcs: FieldNpc[] = [],
 ): Set<string> {
   const s = new Set<string>();
   s.add(`${start.x},${start.y}`);
   for (const p of specials) s.add(`${p.x},${p.y}`);
   for (const e of enemies) s.add(`${e.x},${e.y}`);
   for (const i of items) s.add(`${i.x},${i.y}`);
+  for (const n of npcs) s.add(`${n.x},${n.y}`);
   return s;
 }
 
@@ -497,6 +501,7 @@ export function generateSectorMap(
   let nextEntityId = 1;
   const enemies: Enemy[] = [];
   const items: GroundItem[] = [];
+  const npcs: FieldNpc[] = [];
 
   if (sector.isBeacon) {
     beaconPos = { x: endRoom.cx, y: endRoom.cy };
@@ -662,7 +667,7 @@ export function generateSectorMap(
   // Loot — fewer piles, more variety (already in tables)
   const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
   let placed = 0;
-  const occ = () => occupiedSet(enemies, items, start, specials);
+  const occ = () => occupiedSet(enemies, items, start, specials, npcs);
   for (const p of floors) {
     if (placed >= lootN) break;
     const key = `${p.x},${p.y}`;
@@ -768,6 +773,69 @@ export function generateSectorMap(
     placeBoss('shear_sovereign', { x: mid.cx, y: mid.cy }, true);
   }
 
+  // Field contacts — optional lore / ally hail sites
+  if (rooms.length >= 3) {
+    const contactChance = sector.index >= 2 ? 0.72 : 0.55;
+    if (rng() < contactChance) {
+      const midRooms = shuffle(
+        rng,
+        rooms.filter((r) => r !== startRoom && r !== endRoom),
+      );
+      for (const room of midRooms) {
+        const candidates = [
+          { x: room.cx, y: room.cy },
+          { x: room.cx + 1, y: room.cy },
+          { x: room.cx, y: room.cy + 1 },
+          { x: room.cx - 1, y: room.cy },
+          { x: room.cx, y: room.cy - 1 },
+        ].filter((p) => {
+          if (!tiles[p.y]?.[p.x]?.walkable) return false;
+          if (occ().has(`${p.x},${p.y}`)) return false;
+          if (p.x === exit.x && p.y === exit.y) return false;
+          if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) return false;
+          if (shuttlePos && p.x === shuttlePos.x && p.y === shuttlePos.y) return false;
+          if (roomQuest?.steps.some((s) => s.pos.x === p.x && s.pos.y === p.y)) return false;
+          return canReach(tiles, start, p);
+        });
+        if (!candidates.length) continue;
+        const p = candidates[0]!;
+        npcs.push({
+          id: nextEntityId++,
+          kind: npcKindForSector(sector.index),
+          x: p.x,
+          y: p.y,
+          talked: false,
+        });
+        specials.push(p);
+        break;
+      }
+    }
+  }
+
+  // Late sectors: extra field_tech for dormant drone activation (~50%)
+  if (sector.index >= 4 && rng() < 0.5 && !npcs.some((n) => n.kind === 'field_tech')) {
+    const midRooms = shuffle(
+      rng,
+      rooms.filter((r) => r !== startRoom && r !== endRoom),
+    );
+    for (const room of midRooms) {
+      const p = { x: room.cx, y: room.cy };
+      if (!tiles[p.y]?.[p.x]?.walkable) continue;
+      if (occ().has(`${p.x},${p.y}`)) continue;
+      if (p.x === exit.x && p.y === exit.y) continue;
+      if (!canReach(tiles, start, p)) continue;
+      npcs.push({
+        id: nextEntityId++,
+        kind: 'field_tech',
+        x: p.x,
+        y: p.y,
+        talked: false,
+      });
+      specials.push(p);
+      break;
+    }
+  }
+
   // Final connectivity assert repair
   if (!canReach(tiles, start, exit)) {
     for (const r of rooms) connect(tiles, startRoom, r, rng);
@@ -796,6 +864,7 @@ export function generateSectorMap(
     exit,
     enemies,
     items,
+    npcs,
     beaconPos,
     shuttlePos,
     poiPos,

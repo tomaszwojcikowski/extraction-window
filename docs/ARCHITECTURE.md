@@ -50,6 +50,7 @@ flowchart TB
 5. **Presenters call `audio/`; views do not play SFX.**
 6. **Overlays read state + `lore()`; they do not mutate** — input issues `Action`s.
 7. **Multi-turn systems register in `sim/mechanics/`** — `actions.ts` / `turn.ts` call the registry, not each mechanic by name.
+8. **Logging stays in `sim/log.ts`** — status / mechanics / turn must not import `combat.ts` just to push a log line. Enemy death credit lives in `sim/death.ts` (`killEnemy` vs `markEnemyDead`).
 
 ## Directory map
 
@@ -57,6 +58,9 @@ flowchart TB
 |------|------|
 | `data/`, `campaign/`, `map/` | Content + generation |
 | `sim/` | Rules, mutations, win/lose, logs |
+| `sim/log.ts` | Mission log push + combat detail formatting (no combat rules) |
+| `sim/spatial.ts` | Shared manhattan / entity-at queries |
+| `sim/death.ts` | Enemy death: `markEnemyDead` (no credit) vs `killEnemy` (XP/drops) |
 | `sim/mechanics/` | Multi-step systems (hooks into action/turn) |
 | `ai/` | Headless policy over `GameState` |
 | `game/` | Input, HUD/map/overlays, feedback presenters |

@@ -7,15 +7,20 @@ import { describeObjective, stickyMilestone, type GameState } from '../../sim';
 import { statusHud } from '../../sim/status';
 import { armorDefBonus, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
+import {
+  EXPLORE_BONUS_THRESHOLD,
+  SURVEY_ROOM_CAP,
+} from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawLcarsBadge } from '../../scenes/atmosphere';
 import { contextHint } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
+import { exploredFloorRatio } from '../../sim/mechanics/survey';
 
 export const HUD_BAR_SLOTS = 5;
-export const HUD_BADGE_SLOTS = 4;
+export const HUD_BADGE_SLOTS = 6;
 
 export type HudViewRefs = {
   barsGfx: Phaser.GameObjects.Graphics;
@@ -170,6 +175,18 @@ export class HudView {
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.quest });
     if (st.codexPages > 0) {
       badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });
+    }
+    if (st.rooms.length >= 3) {
+      badgeSpecs.push({
+        label: `${lore('UI-SURVEY')} ${st.surveyedRoomIds.length}/${SURVEY_ROOM_CAP}`,
+        fill: Theme.phosphorMute,
+      });
+      const expPct = Math.floor(exploredFloorRatio(st) * 100);
+      const exploreReady = exploredFloorRatio(st) >= EXPLORE_BONUS_THRESHOLD;
+      badgeSpecs.push({
+        label: `${lore('UI-EXPLORE')} ${expPct}%`,
+        fill: exploreReady ? Theme.storm : Theme.phosphorMute,
+      });
     }
     this.drawQuestBadges(badgeSpecs, opts.screenW);
 

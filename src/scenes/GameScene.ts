@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { lore, type LoreId } from '../data/lore';
-import { ENEMIES } from '../data/enemies';
-import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
-import { TILE_DRAW, enemyTextureKey, wallTextureKey } from './textures';
+import { TILE_DRAW, enemyTextureKey, npcTextureKey, allyTextureKey, wallTextureKey } from './textures';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
+import { ENEMIES } from '../data/enemies';
+import { NPCS, ALLIES } from '../data/npcs';
+import { lore, type LoreId } from '../data/lore';
+import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { createScanRetrace, drawHudStripChrome } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
@@ -48,6 +49,8 @@ export class GameScene extends Phaser.Scene {
 
   private playerSprite!: Phaser.GameObjects.Image;
   private enemyViews = new Map<number, EnemyView>();
+  private npcViews = new Map<number, EnemyView>();
+  private allyViews = new Map<number, EnemyView>();
   private animating = false;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
@@ -106,6 +109,8 @@ export class GameScene extends Phaser.Scene {
     this.pagesOpen = false;
     this.animating = false;
     this.enemyViews.clear();
+    this.npcViews.clear();
+    this.allyViews.clear();
   }
 
   create(): void {
@@ -490,6 +495,16 @@ export class GameScene extends Phaser.Scene {
       v.label.destroy();
     }
     this.enemyViews.clear();
+    for (const v of this.npcViews.values()) {
+      v.img.destroy();
+      v.label.destroy();
+    }
+    this.npcViews.clear();
+    for (const v of this.allyViews.values()) {
+      v.img.destroy();
+      v.label.destroy();
+    }
+    this.allyViews.clear();
 
     // Keep player sprite in entity layer
     if (!this.playerSprite.active) {
@@ -1172,6 +1187,89 @@ export class GameScene extends Phaser.Scene {
         view.img.destroy();
         view.label.destroy();
         this.enemyViews.delete(id);
+      }
+    }
+
+    const npcIds = new Set<number>();
+    for (const n of st.npcs) {
+      npcIds.add(n.id);
+      const visible = st.visible[n.y]?.[n.x] ?? false;
+      let view = this.npcViews.get(n.id);
+      const def = NPCS[n.kind];
+      if (!view) {
+        const img = this.add.image(0, 0, npcTextureKey(n.kind));
+        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
+        const label = this.add.text(0, 0, def.glyph, {
+          fontFamily: FONT_DATA,
+          fontSize: '11px',
+          color: '#a8e0ff',
+          stroke: '#000000',
+          strokeThickness: 3,
+        });
+        this.entityLayer.add(img);
+        this.entityLayer.add(label);
+        view = { img, label, gx: n.x, gy: n.y };
+        this.npcViews.set(n.id, view);
+        this.snapImg(img, n.x, n.y);
+        label.setPosition(img.x - 6, img.y - 10);
+      }
+      view.img.setVisible(visible);
+      view.label.setVisible(visible && !n.talked);
+      view.img.setAlpha(n.talked ? 0.45 : 1);
+      if (snapPositions) {
+        this.snapImg(view.img, n.x, n.y);
+        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.gx = n.x;
+        view.gy = n.y;
+      }
+    }
+    for (const [id, view] of this.npcViews) {
+      if (!npcIds.has(id)) {
+        view.img.destroy();
+        view.label.destroy();
+        this.npcViews.delete(id);
+      }
+    }
+
+    const allyIds = new Set<number>();
+    for (const a of st.allies) {
+      if (!a.alive) continue;
+      allyIds.add(a.id);
+      const visible = st.visible[a.y]?.[a.x] ?? false;
+      let view = this.allyViews.get(a.id);
+      const def = ALLIES[a.kind];
+      if (!view) {
+        const img = this.add.image(0, 0, allyTextureKey(a.kind));
+        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
+        const label = this.add.text(0, 0, def.glyph, {
+          fontFamily: FONT_DATA,
+          fontSize: '11px',
+          color: '#b8f0c0',
+          stroke: '#000000',
+          strokeThickness: 3,
+        });
+        this.entityLayer.add(img);
+        this.entityLayer.add(label);
+        view = { img, label, gx: a.x, gy: a.y };
+        this.allyViews.set(a.id, view);
+        this.snapImg(img, a.x, a.y);
+        label.setPosition(img.x - 6, img.y - 10);
+      }
+      view.img.setVisible(visible);
+      view.label.setVisible(visible);
+      view.img.setTexture(allyTextureKey(a.kind));
+      if (snapPositions) {
+        this.snapImg(view.img, a.x, a.y);
+        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.gx = a.x;
+        view.gy = a.y;
+      }
+    }
+    for (const [id, view] of this.allyViews) {
+      if (!allyIds.has(id)) {
+        view.img.destroy();
+        view.label.destroy();
+        this.allyViews.delete(id);
       }
     }
 

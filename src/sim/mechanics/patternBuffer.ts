@@ -1,5 +1,5 @@
 import { hasItem, removeOne } from '../inventory';
-import { pushLog } from '../combat';
+import { pushLog } from '../log';
 import { purgeEmStress } from '../emStress';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';

@@ -1,4 +1,5 @@
-import { INVENTORY_SLOTS } from '../data/items';
+import { INVENTORY_SLOTS, ITEMS } from '../data/items';
+import { lore } from '../data/lore';
 import {
   hasItem,
   tryPickup,
@@ -7,7 +8,8 @@ import {
   fireDart,
   addItem,
 } from './inventory';
-import { playerAttack, pushLog, recordLoreEvent } from './combat';
+import { playerAttack } from './combat';
+import { pushLog, recordLoreEvent } from './log';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
@@ -15,12 +17,10 @@ import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
 import { grantPoiXp } from './mechanics/survey';
-import type { Action, Enemy, GameState } from './types';
+import { livingAllyAt } from './allyAi';
+import { enemyAt, npcAt } from './spatial';
+import type { Action, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
-
-function enemyAt(state: GameState, x: number, y: number): Enemy | undefined {
-  return state.enemies.find((e) => e.alive && e.x === x && e.y === y);
-}
 
 function tryMove(state: GameState, dx: number, dy: number): void {
   if (state.ui.aimingDart) {
@@ -45,6 +45,22 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   if (foe) {
     playerAttack(state, foe, randInt(state.rng, -1, 1));
     endPlayerTurn(state);
+    return;
+  }
+
+  const ally = livingAllyAt(state, nx, ny);
+  if (ally) {
+    // Swap with ally — never attack friendlies
+    ally.x = state.player.x;
+    ally.y = state.player.y;
+    state.player.x = nx;
+    state.player.y = ny;
+    endPlayerTurn(state);
+    return;
+  }
+
+  if (npcAt(state, nx, ny)) {
+    pushLog(state, 'LOG-NPC-BLOCK');
     return;
   }
 
@@ -76,8 +92,9 @@ function tryPoi(state: GameState): boolean {
     pushLog(state, 'LOG-POI-CONSOLE');
     state.stormTurns += 25;
     const loot: IK[] = ['energy', 'dart', 'jammer', 'probe'];
-    addItem(state, pick(state.rng, loot));
-    pushLog(state, 'LOG-PICKUP');
+    const got = pick(state.rng, loot);
+    addItem(state, got);
+    pushLog(state, 'LOG-PICKUP', lore(ITEMS[got].loreName));
     grantPoiXp(state);
   } else if (kind === 'nest') {
     pushLog(state, 'LOG-POI-NEST');
@@ -94,9 +111,11 @@ function tryPoi(state: GameState): boolean {
   } else {
     pushLog(state, 'LOG-POI-CACHE');
     const loot: IK[] = ['med', 'coolant', 'sealant', 'plate', 'flare', 'salvage'];
-    addItem(state, pick(state.rng, loot));
-    addItem(state, pick(state.rng, ['salvage', 'energy', 'patch'] as IK[]));
-    pushLog(state, 'LOG-PICKUP');
+    const a = pick(state.rng, loot);
+    const b = pick(state.rng, ['salvage', 'energy', 'patch'] as IK[]);
+    addItem(state, a);
+    addItem(state, b);
+    pushLog(state, 'LOG-PICKUP', `${lore(ITEMS[a].loreName)}, ${lore(ITEMS[b].loreName)}`);
     grantPoiXp(state);
   }
   // Convert POI to floor after use
@@ -206,10 +225,8 @@ export function applyAction(state: GameState, action: Action): GameState {
       return state;
 
     case 'use': {
-      if (state.ui.inventoryOpen || state.inventory.length > 0) {
-        const spendTurn = useSelected(state);
-        if (spendTurn) endPlayerTurn(state);
-      }
+      const spendTurn = useSelected(state);
+      if (spendTurn) endPlayerTurn(state);
       return state;
     }
 

@@ -53,7 +53,7 @@ export function emitActionLights(
     }
   }
 
-  if (has('LOG-HIT') || has('LOG-KILL')) {
+  if (has('LOG-HIT') || has('LOG-KILL') || has('LOG-ALLY-HIT') || has('LOG-ALLY-KILL')) {
     for (const t of hitTiles) {
       lights.addFxLight({
         x: t.x,
@@ -64,6 +64,28 @@ export function emitActionLights(
         life: 1,
       });
     }
+  }
+
+  if (has('LOG-SURVEY-ROOM') || has('LOG-SURVEY-SECTOR')) {
+    lights.addFxLight({
+      x: player.x,
+      y: player.y,
+      radius: 4,
+      color: Theme.storm,
+      intensity: 0.75,
+      life: 2,
+    });
+  }
+
+  if (has('LOG-NPC-HAIL') || has('LOG-ALLY-UP') || has('LOG-NPC-SIGHT')) {
+    lights.addFxLight({
+      x: player.x,
+      y: player.y,
+      radius: 3.5,
+      color: 0xa8d0ff,
+      intensity: 0.7,
+      life: 2,
+    });
   }
 
   if (has('LOG-USE-PROBE') || has('LOG-USE-LENS')) {

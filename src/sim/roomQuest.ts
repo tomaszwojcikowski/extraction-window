@@ -1,8 +1,9 @@
 import type { LoreId } from '../data/lore';
+import { lore } from '../data/lore';
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { XP_ROOM_QUEST } from '../data/progression';
-import { pushLog } from './combat';
+import { pushLog } from './log';
 import { gainXp } from './progression';
 import { pick, randInt } from './rng';
 import type { GameState, Pos, QuestStep, RoomQuest, RoomQuestKind } from './types';
@@ -320,10 +321,17 @@ function finishQuestLoot(state: GameState, better: boolean): void {
   const loot: ItemKind[] = better
     ? ['plate', 'coolant', 'med', 'filter', 'mapper']
     : ['energy', 'med', 'dart', 'sealant', 'patch'];
-  addLoot(state, pick(state.rng, loot));
-  addLoot(state, pick(state.rng, loot));
-  if (better) addLoot(state, pick(state.rng, ['coolant', 'plate', 'lens'] as ItemKind[]));
-  pushLog(state, 'LOG-PICKUP');
+  const a = pick(state.rng, loot);
+  const b = pick(state.rng, loot);
+  addLoot(state, a);
+  addLoot(state, b);
+  const names = [lore(ITEMS[a].loreName), lore(ITEMS[b].loreName)];
+  if (better) {
+    const c = pick(state.rng, ['coolant', 'plate', 'lens'] as ItemKind[]);
+    addLoot(state, c);
+    names.push(lore(ITEMS[c].loreName));
+  }
+  pushLog(state, 'LOG-PICKUP', names.join(', '));
   grantQuestPayoff(state, better ? 'good' : 'basic');
   grantCodex(state);
 }

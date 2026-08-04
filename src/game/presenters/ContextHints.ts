@@ -1,6 +1,12 @@
 import type { LoreId } from '../../data/lore';
+import { ITEMS } from '../../data/items';
+import {
+  EXPLORE_BONUS_THRESHOLD,
+} from '../../data/progression';
 import type { GameState } from '../../sim';
+import { hasItem } from '../../sim/inventory';
 import { mechanicsContextHint } from '../../sim/mechanics';
+import { exploredFloorRatio } from '../../sim/mechanics/survey';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -26,8 +32,46 @@ export function contextHint(st: GameState): LoreId | null {
   if (tile.kind === 'poi' && !st.poiUsed) return 'UI-HINT-POI';
   if (tile.kind === 'quest') return 'UI-HINT-QUEST';
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
-  if (st.player.hp <= st.player.maxHp * 0.4) return 'UI-HINT-USE-MED';
-  if (st.player.energy <= st.player.maxEnergy * 0.35) return 'UI-HINT-USE-ENERGY';
-  if (st.player.armor <= 3 && st.player.maxArmor > 0) return 'UI-HINT-USE-ARMOR';
+
+  // Situation coaching — only when the kit actually has the tool
+  if ((tile.kind === 'hazard' || tile.kind === 'vent') && hasItem(st, 'sealant')) {
+    return 'UI-HINT-USE-SEALANT';
+  }
+  if ((st.player.statuses.bleed ?? 0) > 0 && hasItem(st, 'patch')) {
+    return 'UI-HINT-USE-PATCH';
+  }
+  if (st.player.hp <= st.player.maxHp * 0.4 && hasItem(st, 'med')) {
+    return 'UI-HINT-USE-MED';
+  }
+  if (
+    st.player.energy <= st.player.maxEnergy * 0.35 &&
+    (hasItem(st, 'energy') || hasItem(st, 'coolant') || hasItem(st, 'battery'))
+  ) {
+    return 'UI-HINT-USE-ENERGY';
+  }
+  if (
+    st.player.armor <= 3 &&
+    st.player.maxArmor > 0 &&
+    hasItem(st, 'plate')
+  ) {
+    return 'UI-HINT-USE-ARMOR';
+  }
+
+  // Unequipped wearables still in kit
+  for (const slot of st.inventory) {
+    const eq = ITEMS[slot.kind].equipSlot;
+    if (!eq) continue;
+    if (st.player.equip[eq] !== slot.kind) return 'UI-HINT-EQUIP';
+  }
+
+  const explore = exploredFloorRatio(st);
+  if (
+    st.exitPos &&
+    explore >= EXPLORE_BONUS_THRESHOLD * 0.82 &&
+    explore < EXPLORE_BONUS_THRESHOLD
+  ) {
+    return 'UI-HINT-EXPLORE';
+  }
+
   return null;
 }

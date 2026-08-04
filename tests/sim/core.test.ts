@@ -355,3 +355,90 @@ describe('survey and surplus salvage', () => {
     expect(st.log.some((e) => e.loreId === 'LOG-SURPLUS-STORM')).toBe(true);
   });
 });
+
+describe('field NPCs', () => {
+  it('hails archive holo once and grants storm', () => {
+    const st = createGame(42);
+    st.npcs = [
+      {
+        id: 9001,
+        kind: 'archive_holo',
+        x: st.player.x,
+        y: st.player.y,
+        talked: false,
+      },
+    ];
+    const storm0 = st.stormTurns;
+    applyAction(st, { type: 'exit' });
+    expect(st.npcs[0]!.talked).toBe(true);
+    expect(st.stormTurns).toBeGreaterThan(storm0);
+    expect(st.codexLog).toContain('CODEX-HOLO');
+    const pages = st.codexPages;
+    applyAction(st, { type: 'exit' });
+    expect(st.codexPages).toBe(pages);
+  });
+
+  it('ensign spawns escort ally; player swaps instead of attacking', () => {
+    const st = createGame(42);
+    st.npcs = [
+      {
+        id: 9002,
+        kind: 'stranded_ensign',
+        x: st.player.x,
+        y: st.player.y,
+        talked: false,
+      },
+    ];
+    applyAction(st, { type: 'exit' });
+    expect(st.allies.some((a) => a.alive && a.kind === 'away_escort')).toBe(true);
+    const ally = st.allies.find((a) => a.alive)!;
+    const ax = ally.x;
+    const ay = ally.y;
+    const dx = ax - st.player.x;
+    const dy = ay - st.player.y;
+    applyAction(st, { type: 'move', dx, dy });
+    expect(ally.alive).toBe(true);
+    expect(st.player.x).toBe(ax);
+    expect(st.player.y).toBe(ay);
+  });
+
+  it('ally expires after turnsLeft ticks', () => {
+    const st = createGame(42);
+    st.allies = [
+      {
+        id: 9003,
+        kind: 'probe_drone',
+        x: st.player.x + 1,
+        y: st.player.y,
+        hp: 8,
+        maxHp: 8,
+        atk: 3,
+        def: 1,
+        turnsLeft: 1,
+        alive: true,
+      },
+    ];
+    applyAction(st, { type: 'wait' });
+    expect(st.allies[0]!.alive).toBe(false);
+  });
+
+  it('logs first sight when NPC enters FOV', () => {
+    const st = createGame(42);
+    st.noticedNpcIds = [];
+    const nx = Math.min(st.width - 1, st.player.x + 1);
+    const ny = st.player.y;
+    st.npcs = [
+      {
+        id: 9010,
+        kind: 'archive_holo',
+        x: nx,
+        y: ny,
+        talked: false,
+      },
+    ];
+    st.visible[ny]![nx] = true;
+    applyAction(st, { type: 'wait' });
+    expect(st.noticedNpcIds).toContain(9010);
+    expect(st.log.some((e) => e.loreId === 'LOG-NPC-SIGHT')).toBe(true);
+  });
+});

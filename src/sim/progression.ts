@@ -6,7 +6,7 @@ import {
   xpToNextForLevel,
 } from '../data/progression';
 import { lore } from '../data/lore';
-import { pushLog } from './combat';
+import { pushLog } from './log';
 import type { GameState } from './types';
 
 /** ADOM-style talent forks — pick 1 of 2 at milestone levels. */

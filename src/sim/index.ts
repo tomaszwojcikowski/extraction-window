@@ -18,7 +18,10 @@ export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem } from './inventory';
-export { toolAtkBonus, armorDefBonus } from './combat';
+export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack } from './combat';
+export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
+export { killEnemy, markEnemyDead } from './death';
+export { manhattan, enemyAt, allyAt, npcAt } from './spatial';
 export {
   mechanicsTryAction,
   mechanicsOnEndTurn,

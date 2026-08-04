@@ -1,28 +1,14 @@
-import { ENEMY_DROPS, dropChance } from '../data/drops';
 import { ENEMIES } from '../data/enemies';
-import {
-  STORM_BOSS_KILL,
-  STORM_ELITE_KILL,
-  XP_BOSS,
-  XP_ELITE,
-  XP_KILL_BASE,
-} from '../data/progression';
-import { lore, type LoreId } from '../data/lore';
-import { addStatus, hasStatus } from './status';
-import { gainXp, hasSkill } from './progression';
-import { randInt } from './rng';
-import type { DamageType, Enemy, GameState } from './types';
-import type { ItemKind } from '../data/items';
+import { lore } from '../data/lore';
 import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS } from '../data/items';
+import { killEnemy } from './death';
+import { formatCombatDetail, pushLog } from './log';
+import { addStatus, hasStatus } from './status';
+import { hasSkill } from './progression';
+import type { DamageType, Enemy, GameState } from './types';
 
-export function pushLog(state: GameState, loreId: LoreId, detail?: string): void {
-  state.log.push({ loreId, detail, turn: state.turn });
-  if (state.log.length > 80) state.log.shift();
-}
-
-export function recordLoreEvent(state: GameState, loreId: LoreId): void {
-  state.loreEvents.push(loreId);
-}
+export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
+export { killEnemy, markEnemyDead } from './death';
 
 export function meleeDamage(atk: number, def: number, variance: number): number {
   return Math.max(1, atk - def + variance);
@@ -48,6 +34,7 @@ export function applyPlayerDamage(
   state: GameState,
   amount: number,
   type: DamageType,
+  opts?: { source?: string },
 ): { armorLost: number; hpLost: number; fullyAbsorbed: boolean } {
   let dmg = Math.max(0, amount);
   const filterOn = state.player.filterTurns > 0;
@@ -60,6 +47,7 @@ export function applyPlayerDamage(
   let hpLost = 0;
   if (dmg <= 0) return { armorLost: 0, hpLost: 0, fullyAbsorbed: true };
 
+  const src = opts?.source;
   if (state.player.armor > 0) {
     let absorbCap = dmg;
     // Exposed away officers bleed through personal shields
@@ -69,82 +57,21 @@ export function applyPlayerDamage(
     armorLost = Math.min(state.player.armor, absorbCap);
     state.player.armor -= armorLost;
     dmg -= armorLost;
-    if (armorLost > 0) pushLog(state, 'LOG-ARMOR-ABSORB', `-${armorLost}`);
+    if (armorLost > 0) {
+      pushLog(state, 'LOG-ARMOR-ABSORB', src ? `${src} -${armorLost}` : `-${armorLost}`);
+    }
   }
   if (dmg > 0) {
     hpLost = dmg;
     state.player.hp -= hpLost;
-    pushLog(state, 'LOG-HURT', `-${hpLost}`);
+    const rem = Math.max(0, state.player.hp);
+    pushLog(
+      state,
+      'LOG-HURT',
+      formatCombatDetail(src ?? 'hit', hpLost, rem, state.player.maxHp, type),
+    );
   }
   return { armorLost, hpLost, fullyAbsorbed: hpLost === 0 && armorLost > 0 };
-}
-
-function forceDrop(state: GameState, enemy: Enemy, kind: ItemKind): void {
-  state.items.push({
-    id: state.nextEntityId++,
-    kind,
-    x: enemy.x,
-    y: enemy.y,
-  });
-}
-
-function pickFromTable(state: GameState, enemy: Enemy): ItemKind | null {
-  const table = ENEMY_DROPS[enemy.kind];
-  if (!table.length) return null;
-  const total = table.reduce((s, e) => s + e.weight, 0);
-  let roll = state.rng() * total;
-  let kind = table[0]!.kind;
-  for (const entry of table) {
-    roll -= entry.weight;
-    if (roll <= 0) {
-      kind = entry.kind;
-      break;
-    }
-  }
-  return kind;
-}
-
-function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
-  if (enemy.tier === 'elite' || enemy.tier === 'boss') {
-    const count = enemy.tier === 'boss' ? 2 : 1;
-    for (let i = 0; i < count; i++) {
-      const kind = pickFromTable(state, enemy);
-      if (kind) forceDrop(state, enemy, kind);
-    }
-    pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
-    return;
-  }
-  let chance = dropChance(state.sectorIndex) + bonusChance;
-  if (hasSkill(state, 'scavenger')) chance = Math.min(0.95, chance + 0.15);
-  if (state.rng() > chance) return;
-  const kind = pickFromTable(state, enemy);
-  if (!kind) return;
-  forceDrop(state, enemy, kind);
-  pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
-}
-
-export function killEnemy(state: GameState, enemy: Enemy): void {
-  const windupInterrupt = enemy.windup > 0 || enemy.swellTurns >= 2;
-  enemy.alive = false;
-  enemy.hp = 0;
-  pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
-  tryDeathDrop(state, enemy, windupInterrupt ? 0.25 : 0);
-  let xp =
-    XP_KILL_BASE + Math.floor(enemy.maxHp / 2) + (windupInterrupt ? XP_KILL_BASE : 0);
-  if (enemy.tier === 'elite') {
-    xp = Math.max(xp, XP_ELITE);
-    const storm = randInt(state.rng, STORM_ELITE_KILL[0], STORM_ELITE_KILL[1]);
-    state.stormTurns += storm;
-    pushLog(state, 'LOG-ELITE-DOWN', `+${storm}`);
-  } else if (enemy.tier === 'boss') {
-    xp = Math.max(xp, XP_BOSS);
-    const storm = randInt(state.rng, STORM_BOSS_KILL[0], STORM_BOSS_KILL[1]);
-    state.stormTurns += storm;
-    state.scriptedFired[`boss_cleared_${state.sectorId}`] = true;
-    pushLog(state, 'LOG-BOSS-DOWN', `+${storm}`);
-  }
-  gainXp(state, xp);
-  if (windupInterrupt) pushLog(state, 'LOG-WINDUP-KILL');
 }
 
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
@@ -161,7 +88,8 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
-  pushLog(state, 'LOG-HIT', rem > 0 ? `-${dmg} · hp${rem}` : `-${dmg}`);
+  const name = lore(ENEMIES[enemy.kind].loreName);
+  pushLog(state, 'LOG-HIT', formatCombatDetail(name, dmg, rem, enemy.maxHp));
   if (state.player.equip.tool === 'pulse_baton' && enemy.alive && enemy.hp > 0) {
     addStatus(enemy, 'stun', 1);
     enemy.windup = 0;
@@ -187,11 +115,12 @@ export function enemyAttack(
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
-  const result = applyPlayerDamage(state, dmg, dtype);
+  const name = lore(ENEMIES[enemy.kind].loreName);
+  const result = applyPlayerDamage(state, dmg, dtype, { source: name });
 
   if (ENEMIES[enemy.kind].behavior === 'drain') {
     state.player.energy -= 2;
-    pushLog(state, 'LOG-DRAIN', '-2E');
+    pushLog(state, 'LOG-DRAIN', `${name} -2E`);
   }
   if (
     enemy.kind === 'stalker' ||

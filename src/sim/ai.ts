@@ -1,17 +1,20 @@
 import { ENEMIES } from '../data/enemies';
-import { applyPlayerDamage, enemyAttack, pushLog } from './combat';
+import { lore } from '../data/lore';
+import { applyPlayerDamage, enemyAttack } from './combat';
+import { pushLog } from './log';
 import { bfsPath } from './fov';
 import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
 import { emAggroBonus } from './emStress';
+import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
+import { enemyAt, manhattan, npcAt } from './spatial';
 import type { Enemy, GameState, Pos } from './types';
 
-function enemyAt(state: GameState, x: number, y: number, skipId?: number): Enemy | undefined {
-  return state.enemies.find((e) => e.alive && e.id !== skipId && e.x === x && e.y === y);
-}
-
-function manhattan(ax: number, ay: number, bx: number, by: number): number {
-  return Math.abs(ax - bx) + Math.abs(ay - by);
+function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: number): boolean {
+  if (enemyAt(state, x, y, skipEnemyId)) return true;
+  if (livingAllyAt(state, x, y)) return true;
+  if (npcAt(state, x, y)) return true;
+  return false;
 }
 
 function effectiveAggro(state: GameState, enemy: Enemy): number {
@@ -38,12 +41,12 @@ function stepToward(
     state.tiles,
     { x: enemy.x, y: enemy.y },
     { x: tx, y: ty },
-    (x, y) => !!enemyAt(state, x, y, enemy.id),
+    (x, y) => tileBlocked(state, x, y, enemy.id),
   );
   if (!path || path.length === 0) return false;
   const step = path[0]!;
   if (step.x === state.player.x && step.y === state.player.y) return false;
-  if (enemyAt(state, step.x, step.y, enemy.id)) return false;
+  if (tileBlocked(state, step.x, step.y, enemy.id)) return false;
   enemy.x = step.x;
   enemy.y = step.y;
   return true;
@@ -64,6 +67,7 @@ function stepAway(state: GameState, enemy: Enemy): void {
     if (p.x < 0 || p.y < 0 || p.x >= state.width || p.y >= state.height) continue;
     if (!state.tiles[p.y]![p.x]!.walkable) continue;
     if (enemyAt(state, p.x, p.y, enemy.id)) continue;
+    if (livingAllyAt(state, p.x, p.y)) continue;
     if (p.x === px && p.y === py) continue;
     const d = manhattan(p.x, p.y, px, py);
     if (d > bestDist) {
@@ -85,6 +89,7 @@ function randomStep(state: GameState, enemy: Enemy): void {
     if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) continue;
     if (!state.tiles[ny]![nx]!.walkable) continue;
     if (enemyAt(state, nx, ny, enemy.id)) continue;
+    if (livingAllyAt(state, nx, ny)) continue;
     if (nx === state.player.x && ny === state.player.y) continue;
     enemy.x = nx;
     enemy.y = ny;
@@ -109,10 +114,12 @@ function shuffleDirs(state: GameState): Array<[number, number]> {
 }
 
 function tryMelee(state: GameState, enemy: Enemy, bonusAtk = 0): boolean {
-  const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-  if (dist !== 1) return false;
-  enemyAttack(state, enemy, randInt(state.rng, -1, 1), { bonusAtk });
-  return true;
+  return tryEnemyMeleePreferPlayer(state, enemy, () => {
+    const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+    if (dist !== 1) return false;
+    enemyAttack(state, enemy, randInt(state.rng, -1, 1), { bonusAtk });
+    return true;
+  });
 }
 
 /** Hunter/ambush/wraith: windup then pounce with bonus damage. */
@@ -158,7 +165,7 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
       // Ion sentinel smash
       if (dist === 1) {
         tryMelee(state, enemy, 2);
-        applyPlayerDamage(state, 1, 'ion');
+        applyPlayerDamage(state, 1, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
       } else {
         stepToward(state, enemy, state.player.x, state.player.y);
         const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
@@ -170,7 +177,7 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
       // Quiet-break / FOV drain pulse
       state.player.energy -= 2;
       addStatus(state.player, 'expose', 1);
-      pushLog(state, 'LOG-DRAIN', '-2E');
+      pushLog(state, 'LOG-DRAIN', `${lore(ENEMIES[enemy.kind].loreName)} -2E`);
       if (dist === 1) tryMelee(state, enemy, 1);
       else stepToward(state, enemy, state.player.x, state.player.y);
       return;
@@ -178,13 +185,13 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
     // shear_sovereign — hunter pounce + short ion burst
     if (dist === 1) {
       tryMelee(state, enemy, 2);
-      applyPlayerDamage(state, 1, 'ion');
+      applyPlayerDamage(state, 1, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
     } else {
       stepToward(state, enemy, state.player.x, state.player.y);
       const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
       if (d2 === 1) {
         tryMelee(state, enemy, 2);
-        applyPlayerDamage(state, 1, 'ion');
+        applyPlayerDamage(state, 1, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
       }
     }
     return;
@@ -253,7 +260,9 @@ export function moveEnemies(state: GameState): void {
             pushLog(state, 'LOG-SPORE-BURST');
             if (dist <= 2) {
               state.player.energy -= 6;
-              applyPlayerDamage(state, 3, 'ion');
+              applyPlayerDamage(state, 3, 'ion', {
+                source: lore(ENEMIES[enemy.kind].loreName),
+              });
               addStatus(state.player, 'ion_burn', 3);
               addStatus(state.player, 'expose', 2);
             }

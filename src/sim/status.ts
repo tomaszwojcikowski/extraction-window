@@ -1,5 +1,6 @@
 import type { StatusId, StatusMap, GameState, Enemy } from './types';
-import { pushLog } from './combat';
+import { killEnemy } from './death';
+import { formatCombatDetail, pushLog } from './log';
 
 export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: number): void {
   const cur = target.statuses[id] ?? 0;
@@ -25,12 +26,13 @@ export function tickPlayerStatusEffects(state: GameState): void {
   if (hasStatus(p, 'bleed')) {
     // Bleed bypasses ablative armor
     p.hp -= 2;
-    pushLog(state, 'LOG-STATUS-BLEED');
+    const rem = Math.max(0, p.hp);
+    pushLog(state, 'LOG-STATUS-BLEED', formatCombatDetail('bleed', 2, rem, p.maxHp));
   }
   if (hasStatus(p, 'ion_burn')) {
     const drain = p.filterTurns > 0 ? 1 : 3;
     p.energy -= drain;
-    pushLog(state, 'LOG-STATUS-ION');
+    pushLog(state, 'LOG-STATUS-ION', `-${drain}E · ${Math.max(0, p.energy)} EPS`);
   }
   tickStatuses(p);
 }
@@ -43,20 +45,16 @@ export function tickEnemyStatusEffects(state: GameState, enemy: Enemy): void {
   if (hasStatus(enemy, 'bleed')) {
     enemy.hp -= 2;
     if (enemy.hp <= 0) {
-      enemy.alive = false;
-      enemy.hp = 0;
-      pushLog(state, 'LOG-KILL');
+      killEnemy(state, enemy);
     }
   }
-  if (hasStatus(enemy, 'ion_burn')) {
+  if (hasStatus(enemy, 'ion_burn') && enemy.alive) {
     enemy.hp -= 1;
     if (enemy.hp <= 0) {
-      enemy.alive = false;
-      enemy.hp = 0;
-      pushLog(state, 'LOG-KILL');
+      killEnemy(state, enemy);
     }
   }
-  tickStatuses(enemy);
+  if (enemy.alive) tickStatuses(enemy);
 }
 
 export function statusHud(statuses: StatusMap): string {
