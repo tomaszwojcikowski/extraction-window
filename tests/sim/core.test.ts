@@ -421,6 +421,7 @@ describe('field NPCs', () => {
         def: 1,
         turnsLeft: 1,
         alive: true,
+        roleCooldown: 0,
       },
     ];
     applyAction(st, { type: 'wait' });

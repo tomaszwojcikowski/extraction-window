@@ -203,6 +203,12 @@ export function collectLightSources(state: GameState): SimLightSource[] {
     }
   }
 
+  for (const ally of state.allies) {
+    if (ally.alive && ally.kind === 'probe_drone') {
+      sources.push({ x: ally.x, y: ally.y, radius: 3.2, intensity: 0.65, color: 0x99bbff });
+    }
+  }
+
   if (state.handshake?.active && state.beaconPos) {
     sources.push({
       x: state.beaconPos.x,

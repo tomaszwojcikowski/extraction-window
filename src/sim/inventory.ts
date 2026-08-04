@@ -33,6 +33,9 @@ const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
   ablative_vest: 'LOG-USE-VEST',
   sensor_rig: 'LOG-USE-SENSOR',
   eps_coupler: 'LOG-USE-COUPLER',
+  flare_prism: 'LOG-USE-FLARE-PRISM',
+  ward_weave: 'LOG-USE-WARD-WEAVE',
+  shadow_lens: 'LOG-USE-SHADOW-LENS',
 };
 
 type TimerKey =
@@ -402,7 +405,7 @@ export function useSelected(state: GameState): boolean {
         y: state.player.y,
         radius: 5.5,
         intensity: 1.35,
-        life: 4,
+        life: state.player.equip.utility === 'flare_prism' ? 6 : 4,
         color: 0xccffff,
       });
       rebuildIllumination(state);
@@ -537,7 +540,7 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
     if (!state.visible[y]![x]) break;
     const en = state.enemies.find((e) => e.alive && e.x === x && e.y === y);
     if (en) {
-      if (!isLit(state, x, y)) {
+      if (!isLit(state, x, y) && state.player.equip.utility !== 'shadow_lens') {
         darkBlock = true;
         break;
       }

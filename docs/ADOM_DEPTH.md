@@ -61,9 +61,14 @@ flowchart TB
 
 **Exit gate:** unit + cohere + smoke + balance in band; optional content never required for extract.
 
-## Wave 3 — Living Shelf (later)
+## Wave 3 — Living Shelf
 
-Ion fronts, elite/boss branded drops, companion depth, content fattening, Phaser Filters polish.
+| Ticket | Status |
+|--------|--------|
+| Elite/boss readable brands + deterministic branded kit drops | Done |
+| Branded counter-kit: Flare Prism / Ward Weave / Shadow Lens | Done |
+| Companion field roles: drone lamp/intercept + escort cover | Done |
+| Ion fronts, content fattening, Phaser Filters polish | Later |
 
 **Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
 

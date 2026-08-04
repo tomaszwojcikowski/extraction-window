@@ -1,4 +1,5 @@
 import type { LoreId } from './lore';
+import type { ItemKind } from './items';
 
 export type DamageType = 'kinetic' | 'ion';
 
@@ -36,6 +37,8 @@ export type EnemyBehavior =
   | 'sentinel'
   | 'hunter';
 
+export type EnemyBrand = 'flarebound' | 'warded' | 'shadowbound';
+
 export interface EnemyDef {
   kind: EnemyKind;
   loreName: LoreId;
@@ -49,7 +52,11 @@ export interface EnemyDef {
   aggroRange: number;
   damageType: DamageType;
   /** Prefer dark (hunt shadows) or lit (hunt lamps) tiles for aggro bias. */
-  lightPrefer?: 'dark' | 'lit';}
+  lightPrefer?: 'dark' | 'lit';
+  /** Named elite/boss field modifier and its deterministic recovery. */
+  brand?: EnemyBrand;
+  brandDrop?: ItemKind;
+}
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   mite: {
@@ -264,6 +271,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'skirmish',
     aggroRange: 6,
     damageType: 'kinetic',
+    brand: 'flarebound',
+    brandDrop: 'flare_prism',
   },
   elite_ward: {
     kind: 'elite_ward',
@@ -276,6 +285,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 5,
     damageType: 'kinetic',
+    brand: 'warded',
+    brandDrop: 'ward_weave',
   },
   elite_apex: {
     kind: 'elite_apex',
@@ -288,6 +299,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'hunter',
     aggroRange: 8,
     damageType: 'ion',
+    brand: 'shadowbound',
+    brandDrop: 'shadow_lens',
   },
   isolinear_warden: {
     kind: 'isolinear_warden',
@@ -300,6 +313,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 6,
     damageType: 'ion',
+    brand: 'warded',
+    brandDrop: 'ward_weave',
   },
   pattern_custodian: {
     kind: 'pattern_custodian',
@@ -312,6 +327,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'guard',
     aggroRange: 6,
     damageType: 'ion',
+    brand: 'shadowbound',
+    brandDrop: 'shadow_lens',
   },
   shear_sovereign: {
     kind: 'shear_sovereign',
@@ -324,5 +341,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'hunter',
     aggroRange: 8,
     damageType: 'ion',
+    brand: 'flarebound',
+    brandDrop: 'flare_prism',
   },
 };

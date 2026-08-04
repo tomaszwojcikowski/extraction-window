@@ -68,9 +68,14 @@ export function spawnAlly(state: GameState, kind: AllyKind, near: Pos): boolean 
     def: def.def,
     turnsLeft: def.turns,
     alive: true,
+    roleCooldown: 0,
   };
   state.allies.push(ally);
-  pushLog(state, 'LOG-ALLY-UP', lore(def.loreName));
+  pushLog(
+    state,
+    'LOG-ALLY-UP',
+    `${lore(def.loreName)} · ${kind === 'probe_drone' ? lore('UI-ALLY-DRONE') : lore('UI-ALLY-ESCORT')}`,
+  );
   return true;
 }
 

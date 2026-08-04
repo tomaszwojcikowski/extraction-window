@@ -26,6 +26,15 @@ export function armorDefBonus(state: GameState): number {
   return ARMOR_DEF_BONUS[armor] ?? 0;
 }
 
+function hasEscortCover(state: GameState): boolean {
+  return state.allies.some(
+    (ally) =>
+      ally.alive &&
+      ally.kind === 'away_escort' &&
+      Math.abs(ally.x - state.player.x) + Math.abs(ally.y - state.player.y) === 1,
+  );
+}
+
 /**
  * Apply damage to the player: ion filter halves ion, then ablative armor absorbs before HP.
  * Returns whether armor fully absorbed the hit (no HP loss).
@@ -39,6 +48,9 @@ export function applyPlayerDamage(
   let dmg = Math.max(0, amount);
   const filterOn = state.player.filterTurns > 0;
   const ionSkin = hasSkill(state, 'ion_skin');
+  if (type === 'ion' && state.player.equip.armor === 'ward_weave') {
+    dmg = Math.max(1, dmg - 1);
+  }
   if (filterOn && (type === 'ion' || (ionSkin && type === 'kinetic'))) {
     dmg = Math.max(1, Math.ceil(dmg / 2));
   }
@@ -119,6 +131,7 @@ export function enemyAttack(
     armorDefBonus(state) +
     (state.player.stabilizeTurns > 0 ? 1 : 0) +
     (state.player.braceTurns > 0 ? 2 : 0) +
+    (hasEscortCover(state) ? 1 : 0) +
     lastWindow -
     (hasStatus(state.player, 'expose') ? 2 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);

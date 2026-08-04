@@ -147,11 +147,21 @@ export class HudView {
     const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
     const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? ` DS${st.patternDesync}` : '';
+    const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
+      ? ` ${lore('UI-ALLY-DRONE')}`
+      : st.allies.some(
+            (a) =>
+              a.alive &&
+              a.kind === 'away_escort' &&
+              Math.abs(a.x - st.player.x) + Math.abs(a.y - st.player.y) === 1,
+          )
+        ? ` ${lore('UI-ALLY-ESCORT')}`
+        : '';
     const doctrine =
       st.doctrineQuiet > 0 || st.doctrineProbe > 0
         ? `  ${lore('UI-DOCTRINE')}:Q${st.doctrineQuiet} P${st.doctrineProbe}`
         : '';
-    const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}`;
+    const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}${allyRole}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
     const tool = st.player.equip.tool
       ? `  ${lore('UI-TOOL')}:${shortEquipName(st.player.equip.tool)}`

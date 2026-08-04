@@ -29,7 +29,10 @@ export type ItemKind =
   | 'sealed_crate'
   | 'array_shard'
   | 'field_sample'
-  | 'pattern_balm';
+  | 'pattern_balm'
+  | 'flare_prism'
+  | 'ward_weave'
+  | 'shadow_lens';
 
 export type EquipSlotId = 'tool' | 'armor' | 'utility';
 
@@ -51,6 +54,9 @@ export const EQUIP_TAGS = {
   eps_coupler: { emEnergyTaxZero: true },
   sensor_rig: { blindFovPenalty: 1 },
   harness: { cancelFatigueTax: true },
+  flare_prism: { flareLifeBonus: 2 },
+  ward_weave: { ionDamageReduction: 1 },
+  shadow_lens: { shadowScan: true },
 } as const;
 
 export function equipOnHitBleed(tool: ItemKind | null): number {
@@ -277,6 +283,30 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: true,
   },
+  flare_prism: {
+    kind: 'flare_prism',
+    loreName: 'ITEM-FLARE-PRISM',
+    loreDesc: 'ITEM-FLARE-PRISM-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'utility',
+  },
+  ward_weave: {
+    kind: 'ward_weave',
+    loreName: 'ITEM-WARD-WEAVE',
+    loreDesc: 'ITEM-WARD-WEAVE-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'armor',
+  },
+  shadow_lens: {
+    kind: 'shadow_lens',
+    loreName: 'ITEM-SHADOW-LENS',
+    loreDesc: 'ITEM-SHADOW-LENS-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'utility',
+  },
 };
 
 /** Max armor granted while this armor piece is worn. */
@@ -313,6 +343,12 @@ export function shortEquipName(kind: ItemKind | null): string {
       return 'sensor';
     case 'eps_coupler':
       return 'coupler';
+    case 'flare_prism':
+      return 'prism';
+    case 'ward_weave':
+      return 'weave';
+    case 'shadow_lens':
+      return 'shadow';
     default:
       return kind;
   }

@@ -1,5 +1,6 @@
 import type { LoreId } from '../../data/lore';
 import { ITEMS } from '../../data/items';
+import { ENEMIES } from '../../data/enemies';
 import {
   EXPLORE_BONUS_THRESHOLD,
 } from '../../data/progression';
@@ -29,6 +30,22 @@ export function contextHint(st: GameState): LoreId | null {
   if (telegraphed) return 'UI-HINT-TELE';
 
   if (fromMechanic) return fromMechanic;
+
+  const brandedVisible = st.enemies.some(
+    (e) => e.alive && ENEMIES[e.kind].brand && (st.visible[e.y]?.[e.x] ?? false),
+  );
+  if (brandedVisible) return 'UI-HINT-BRAND';
+  if (st.allies.some((a) => a.alive && a.kind === 'probe_drone')) return 'UI-HINT-ALLY-DRONE';
+  if (
+    st.allies.some(
+      (a) =>
+        a.alive &&
+        a.kind === 'away_escort' &&
+        Math.abs(a.x - st.player.x) + Math.abs(a.y - st.player.y) === 1,
+    )
+  ) {
+    return 'UI-HINT-ALLY-ESCORT';
+  }
 
   const tile = st.tiles[st.player.y]![st.player.x]!;
   if (tile.kind === 'exit') return 'UI-HINT-EXIT';

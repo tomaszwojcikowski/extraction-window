@@ -87,6 +87,42 @@ export function livingAllyAt(state: GameState, x: number, y: number): Ally | und
   return allyAt(state, x, y);
 }
 
+/** Escort cover is evaluated only while enemy attacks resolve. */
+export function hasEscortCover(state: GameState): boolean {
+  return state.allies.some(
+    (ally) =>
+      ally.alive &&
+      ally.kind === 'away_escort' &&
+      manhattan(ally.x, ally.y, state.player.x, state.player.y) === 1,
+  );
+}
+
+/**
+ * Drone role: cancel one visible overwatch on a short cooldown.
+ * This is deliberately positional prevention, not another damage source.
+ */
+export function applyAllyFieldRoles(state: GameState): void {
+  for (const ally of state.allies) {
+    if (!ally.alive || ally.kind !== 'probe_drone') continue;
+    if (ally.roleCooldown > 0) {
+      ally.roleCooldown -= 1;
+      continue;
+    }
+    const overwatch = state.enemies.find(
+      (enemy) =>
+        enemy.alive &&
+        enemy.intent === 'overwatch' &&
+        enemy.windup > 0 &&
+        (state.visible[enemy.y]?.[enemy.x] ?? false),
+    );
+    if (!overwatch) continue;
+    overwatch.windup = 0;
+    overwatch.intent = undefined;
+    ally.roleCooldown = 3;
+    pushLog(state, 'LOG-DRONE-INTERRUPT', lore(ENEMIES[overwatch.kind].loreName));
+  }
+}
+
 /**
  * Ally AI tick — chase / melee fauna, then expire timers.
  * No player XP on ally kills.

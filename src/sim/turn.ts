@@ -8,7 +8,7 @@ import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
-import { moveAllies } from './allyAi';
+import { applyAllyFieldRoles, moveAllies } from './allyAi';
 import { addStatus, addPlayerMarked, hasScar, hasStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax, EM_HIGH, SCAR_STREAK_TURNS } from './emStress';
@@ -256,6 +256,7 @@ export function endPlayerTurn(state: GameState): void {
   tickEnvironment(state);
   // FOV + light from the player's new tile before AI so ambush/FOV checks see current vision.
   refreshVisionAfterTurn(state);
+  applyAllyFieldRoles(state);
   moveEnemies(state);
   moveAllies(state);
   // Recompute after enemy moves so presentation matches final visibility / light.

@@ -2,6 +2,7 @@ import { computeFov, playerFovRadius } from './fov';
 import { rebuildIllumination, tickLightSources } from './light';
 import { mechanicsModifyFov } from './mechanics';
 import { hasScar, hasStatus } from './status';
+import { noticeVisibleBrands } from './brands';
 import type { GameState } from './types';
 
 export function visionRadius(state: GameState): number {
@@ -30,6 +31,7 @@ export function refreshVision(state: GameState): void {
     visionRadius(state),
   );
   rebuildIllumination(state);
+  noticeVisibleBrands(state);
 }
 
 /** End-of-turn light decay then vision refresh. */

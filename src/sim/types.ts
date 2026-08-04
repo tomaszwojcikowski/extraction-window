@@ -134,6 +134,8 @@ export interface Ally {
   def: number;
   turnsLeft: number;
   alive: boolean;
+  /** Cooldown on a companion's positional field intervention. */
+  roleCooldown: number;
 }
 
 export interface GroundItem {
@@ -281,6 +283,8 @@ export interface GameState {
   surveyedRoomIds: number[];
   /** Field NPCs already logged as sighted this run. */
   noticedNpcIds: number[];
+  /** Branded elite/boss contacts already identified this run. */
+  noticedBrandIds: number[];
   /** Per-tile HDR illumination (ambient + emitters); rebuilt with FOV. */
   illumination: number[][];
   /** Ephemeral light emitters (flares, etc.). */

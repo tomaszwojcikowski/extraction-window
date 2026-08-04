@@ -48,12 +48,11 @@ function pickFromTable(state: GameState, enemy: Enemy): ItemKind | null {
 
 function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
   if (enemy.tier === 'elite' || enemy.tier === 'boss') {
-    const count = enemy.tier === 'boss' ? 2 : 1;
-    for (let i = 0; i < count; i++) {
-      const kind = pickFromTable(state, enemy);
-      if (kind) forceDrop(state, enemy, kind);
+    const brandDrop = ENEMIES[enemy.kind].brandDrop;
+    if (brandDrop) {
+      forceDrop(state, enemy, brandDrop);
+      pushLog(state, 'LOG-BRAND-DROP', lore(ENEMIES[enemy.kind].loreName));
     }
-    pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
     return;
   }
   let chance = dropChance(state.sectorIndex) + bonusChance;

@@ -117,6 +117,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     rooms: map.rooms.map((r) => ({ ...r })),
     surveyedRoomIds: [],
     noticedNpcIds: [],
+    noticedBrandIds: [],
     illumination: Array.from({ length: map.height }, () =>
       Array.from({ length: map.width }, () => 0),
     ),

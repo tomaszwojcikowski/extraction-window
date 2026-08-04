@@ -155,7 +155,7 @@ describe('drill bay tutorial', () => {
         s.kind !== 'array_shard',
     );
     if (!st.inventory.some((s) => s.kind === 'flare')) {
-      st.inventory.push({ kind: 'flare', qty: 1 });
+      st.inventory.push({ kind: 'flare', count: 1 });
     }
     // Force soft-shadow underfoot (tutorial ambient can keep jammer dimming lit).
     st.player.x = 10;

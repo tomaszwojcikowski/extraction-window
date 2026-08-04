@@ -99,6 +99,9 @@ export const LORE = {
   'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
   'UI-HINT-TELE': 'Hostile winding up — b brace or r retreat; strike to interrupt',
+  'UI-HINT-BRAND': 'Branded hostile visible — optional elite reward; route around or use its counter-kit',
+  'UI-HINT-ALLY-DRONE': 'DRONE LAMP active — it can interrupt one visible overwatch every few turns',
+  'UI-HINT-ALLY-ESCORT': 'ESCORT COVER active while adjacent — +1 DEF during the enemy phase',
   'UI-HINT-PREFER-DARK': 'Fauna favors shadow — stay lit to reduce its interest',
   'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
@@ -141,6 +144,8 @@ export const LORE = {
   'UI-TOOL': 'TOOL',
   'UI-EQUIP-ARMOR': 'SUIT',
   'UI-EQUIP-UTIL': 'UTIL',
+  'UI-ALLY-DRONE': 'DRONE LAMP',
+  'UI-ALLY-ESCORT': 'ESCORT COVER',
   'UI-FILTER': 'FILTER',
   'UI-JAMMER': 'JAM',
   'UI-WIN': 'EXTRACTION COMPLETE',
@@ -288,6 +293,15 @@ export const LORE = {
     'Fauna residue. Craft with sealant → filter, or energy → ration (u).',
   'ITEM-BALM': 'Pattern Balm',
   'ITEM-BALM-DESC': 'Clears pattern desync and purges EM stress. Crafted from shard + coolant.',
+  'ITEM-FLARE-PRISM': 'Flare Prism',
+  'ITEM-FLARE-PRISM-DESC':
+    'Branded utility: plasma flares persist 2 extra turns. Situational light and overwatch counter.',
+  'ITEM-WARD-WEAVE': 'Ward Weave',
+  'ITEM-WARD-WEAVE-DESC':
+    'Branded suit: reduce each ion hit by 1 before shields. Situational answer to EM wardens.',
+  'ITEM-SHADOW-LENS': 'Shadow Lens',
+  'ITEM-SHADOW-LENS-DESC':
+    'Branded utility: microdarts can lock visible targets in shadow. Situational scan counter.',
 
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
@@ -329,6 +343,9 @@ export const LORE = {
   'ENEMY-SHEAR-NOTE': 'Storm-shear hunter — desync pressure.',
   'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and shear-window refund on kill.',
   'ENEMY-BOSS-NOTE': 'Campaign apex — optional detour, rich storm/XP/kit payoff.',
+  'BRAND-FLAREBOUND': 'FLAREBOUND — volatile charge; recover a Flare Prism on kill.',
+  'BRAND-WARDED': 'WARDED — ion lattice plating; recover Ward Weave on kill.',
+  'BRAND-SHADOWBOUND': 'SHADOWBOUND — scan-breaking field; recover a Shadow Lens on kill.',
 
   // Logs
   'LOG-DROP':
@@ -363,6 +380,7 @@ export const LORE = {
   'LOG-ALLY-EXPIRE': 'Ally offline',
   'LOG-ALLY-FULL': 'Ally slot full — dismiss or wait for expire.',
   'LOG-ALLY-NO-SPACE': 'No clear tile to deploy ally.',
+  'LOG-DRONE-INTERRUPT': 'Drone lamp disrupts overwatch.',
   'LOG-NO-PICKUP': 'Nothing underfoot to recover.',
   'LOG-INV-FULL': 'Field kit capacity exceeded.',
   'LOG-SURPLUS-STORM': 'Kit full — ground salvage converted to shear-window time.',
@@ -440,6 +458,11 @@ export const LORE = {
   'LOG-POI-NEST': 'Disturbed EM nest — sensor wake and plasma burn.',
   'LOG-POI-CACHE': 'Cache scar cracked — field kit recovered.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
+  'LOG-BRAND-SIGHT': 'Branded hostile identified.',
+  'LOG-BRAND-DROP': 'Branded field kit recovered.',
+  'LOG-USE-FLARE-PRISM': 'Flare Prism equipped — flares burn longer.',
+  'LOG-USE-WARD-WEAVE': 'Ward Weave equipped — ion hits are softened.',
+  'LOG-USE-SHADOW-LENS': 'Shadow Lens equipped — darts can scan through shadow.',
   'LOG-GOT-KEY': 'Splice Key acquired from Crash Wreck Belt. Proceed to Emergency Beacon.',
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Contingency Cache holds spare Nav Lattice.',

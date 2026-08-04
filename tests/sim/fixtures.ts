@@ -37,6 +37,7 @@ export function makeEnemy(
     homeY: overrides.homeY ?? y,
     skirmishRetreat: overrides.skirmishRetreat ?? false,
     windup: overrides.windup ?? 0,
+    intent: overrides.intent,
     beamCooldown: overrides.beamCooldown ?? 0,
     tier: (overrides.tier ?? 'normal') as EnemyTier,
   };
@@ -58,6 +59,7 @@ export function makeAlly(
     def: overrides.def ?? def.def,
     turnsLeft: overrides.turnsLeft ?? def.turns,
     alive: overrides.alive ?? true,
+    roleCooldown: overrides.roleCooldown ?? 0,
   };
 }
 
