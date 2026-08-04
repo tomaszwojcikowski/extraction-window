@@ -302,6 +302,7 @@ function spawnPurgeHostiles(state: GameState): void {
       homeY: y,
       skirmishRetreat: false,
       windup: 0,
+      beamCooldown: 0,
       tier: 'normal',
     });
     rq.spawnedIds.push(id);
@@ -400,6 +401,7 @@ export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
       homeY: y,
       skirmishRetreat: false,
       windup: 0,
+      beamCooldown: 0,
       tier: 'normal',
     });
   }

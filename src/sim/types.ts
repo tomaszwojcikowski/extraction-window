@@ -104,6 +104,10 @@ export interface Enemy {
   skirmishRetreat: boolean;
   /** Turns remaining in telegraph windup (0 = ready) */
   windup: number;
+  /** Telegraph type carried by the shared windup counter. */
+  intent?: 'pounce' | 'beam' | 'overwatch';
+  /** Enemy AI turns before the next beam can be prepared. */
+  beamCooldown: number;
   /** Combat prize tier — elites/bosses grant storm + kit on kill */
   tier: EnemyTier;
 }
@@ -239,6 +243,8 @@ export interface GameState {
     lensTurns: number;
     mapperTurns: number;
     stabilizeTurns: number;
+    /** Brace persists through this enemy phase, then expires next player turn. */
+    braceTurns: number;
     statuses: StatusMap;
     equip: EquipSlots;
   };
@@ -264,6 +270,8 @@ export interface GameState {
   illumination: number[][];
   /** Ephemeral light emitters (flares, etc.). */
   lightSources: FieldLightSource[];
+  /** Short-lived spore residue; costs bus power when occupied. */
+  contamination: Array<Pos & { turns: number }>;
   codexPages: number;
   /** Collected CODEX-* lore ids for this run (Pages panel). */
   codexLog: LoreId[];
@@ -323,6 +331,8 @@ export type Action =
   | { type: 'select_slot'; index: number }
   | { type: 'use' }
   | { type: 'aim'; dx: number; dy: number }
+  | { type: 'brace' }
+  | { type: 'retreat' }
   | { type: 'exit' }
   | { type: 'close_ui' }
   | { type: 'pick_skill'; id: SkillId };

@@ -37,6 +37,7 @@ export function makeEnemy(
     homeY: overrides.homeY ?? y,
     skirmishRetreat: overrides.skirmishRetreat ?? false,
     windup: overrides.windup ?? 0,
+    beamCooldown: overrides.beamCooldown ?? 0,
     tier: (overrides.tier ?? 'normal') as EnemyTier,
   };
 }

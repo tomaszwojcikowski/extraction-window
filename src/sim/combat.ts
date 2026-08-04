@@ -97,6 +97,7 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
     if (stunTurns > 0) {
       addStatus(enemy, 'stun', stunTurns);
       enemy.windup = 0;
+      enemy.intent = undefined;
     }
     const bleedTurns = equipOnHitBleed(state.player.equip.tool);
     if (bleedTurns > 0) addStatus(enemy, 'bleed', bleedTurns);
@@ -117,6 +118,7 @@ export function enemyAttack(
     state.player.def +
     armorDefBonus(state) +
     (state.player.stabilizeTurns > 0 ? 1 : 0) +
+    (state.player.braceTurns > 0 ? 2 : 0) +
     lastWindow -
     (hasStatus(state.player, 'expose') ? 2 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);

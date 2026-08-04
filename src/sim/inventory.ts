@@ -21,6 +21,7 @@ import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
+import { cancelOverwatch } from './ai';
 
 const PLATE_REPAIR = 10;
 
@@ -376,6 +377,7 @@ export function useSelected(state: GameState): boolean {
     case 'flare': {
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
+      cancelOverwatch(state);
       let hits = 0;
       for (const en of state.enemies) {
         if (!en.alive) continue;

@@ -120,6 +120,7 @@ function makeEnemy(
     homeY: p.y,
     skirmishRetreat: false,
     windup: 0,
+    beamCooldown: 0,
     tier,
   };
 }

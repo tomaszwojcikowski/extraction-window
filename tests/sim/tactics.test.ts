@@ -1,0 +1,108 @@
+import { describe, expect, it } from 'vitest';
+import { applyAction } from '../../src/sim/actions';
+import { hasBeamLine, moveEnemies, triggerOverwatch } from '../../src/sim/ai';
+import { enemyAttack } from '../../src/sim/combat';
+import { leaveContamination, tickContamination } from '../../src/sim/contamination';
+import { useSelected } from '../../src/sim/inventory';
+import { combatArena, lastLog, makeEnemy } from './fixtures';
+
+function floor(state: ReturnType<typeof combatArena>, x: number, y: number): void {
+  state.tiles[y]![x] = { kind: 'floor', walkable: true, transparent: true };
+}
+
+describe('Iteration 2 tactical threats', () => {
+  it('drone beam requires a clear cardinal three-tile line', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    const drone = makeEnemy({ kind: 'drone', x: 8, y: 5 });
+    st.enemies = [drone];
+    floor(st, 6, 5);
+    floor(st, 7, 5);
+
+    expect(hasBeamLine(st, drone)).toBe(true);
+    moveEnemies(st);
+    expect(drone.intent).toBe('beam');
+    expect(lastLog(st, 'LOG-TELE-BEAM')).toBeTruthy();
+
+    const energy = st.player.energy;
+    moveEnemies(st);
+    expect(st.player.energy).toBe(energy - 4);
+    expect(lastLog(st, 'LOG-BEAM-FIRE')).toBeTruthy();
+
+    drone.beamCooldown = 0;
+    floor(st, 7, 5);
+    st.tiles[5]![7] = { kind: 'scrub', walkable: true, transparent: false };
+    expect(hasBeamLine(st, drone)).toBe(false);
+  });
+
+  it('spore contamination taxes bus for its two-turn lifetime', () => {
+    const st = combatArena();
+    leaveContamination(st, { x: st.player.x, y: st.player.y });
+    const energy = st.player.energy;
+    tickContamination(st);
+    expect(st.player.energy).toBe(energy - 2);
+    expect(st.contamination).toHaveLength(1);
+    tickContamination(st);
+    expect(st.contamination).toHaveLength(0);
+  });
+
+  it('sentinel overwatch triggers first and flare cancellation clears it', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    st.player.armor = 0;
+    const sentinel = makeEnemy({ kind: 'sentinel', x: 7, y: 5, atk: 8 });
+    st.enemies = [sentinel];
+    floor(st, 6, 5);
+
+    moveEnemies(st);
+    expect(sentinel.intent).toBe('overwatch');
+    const hp = st.player.hp;
+    expect(triggerOverwatch(st, { x: 6, y: 5 })).toBe(true);
+    expect(st.player.hp).toBeLessThan(hp);
+
+    sentinel.windup = 1;
+    sentinel.intent = 'overwatch';
+    st.inventory = [{ kind: 'flare', count: 1 }];
+    st.ui.selectedSlot = 0;
+    useSelected(st);
+    expect(sentinel.intent).toBeUndefined();
+    expect(sentinel.windup).toBe(0);
+  });
+});
+
+describe('Iteration 2 player tactics', () => {
+  it('brace raises defense for the following enemy phase', () => {
+    const st = combatArena();
+    st.player.armor = 0;
+    st.player.def = 0;
+    st.player.hp = 30;
+    st.player.maxHp = 30;
+    st.enemies = [];
+    applyAction(st, { type: 'brace' });
+    expect(st.player.braceTurns).toBe(1);
+    const hp = st.player.hp;
+    enemyAttack(st, makeEnemy({ kind: 'mite', atk: 6 }), 0);
+    expect(st.player.hp).toBe(hp - 4);
+  });
+
+  it('retreat moves away from a visible adjacent enemy and spends bus', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    st.player.energy = 30;
+    const foe = makeEnemy({ kind: 'mite', x: 6, y: 5 });
+    st.enemies = [foe];
+    st.visible[5]![6] = true;
+    floor(st, 4, 5);
+    floor(st, 5, 4);
+    floor(st, 5, 6);
+
+    applyAction(st, { type: 'retreat' });
+    expect(st.player.x).toBe(4);
+    expect(st.player.y).toBe(5);
+    expect(st.player.energy).toBeLessThanOrEqual(26);
+    expect(lastLog(st, 'LOG-RETREAT')).toBeTruthy();
+  });
+});

@@ -12,6 +12,7 @@ import type { ItemKind } from '../data/items';
 import { pushLog } from './log';
 import { gainXp, hasSkill } from './progression';
 import { randInt } from './rng';
+import { leaveContamination } from './contamination';
 import type { Enemy, GameState } from './types';
 
 /** Mark hostile dead without XP / drops / kill log (ally kills, despawn). */
@@ -68,6 +69,7 @@ function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
 export function killEnemy(state: GameState, enemy: Enemy): void {
   const windupInterrupt = enemy.windup > 0 || enemy.swellTurns >= 2;
   markEnemyDead(enemy);
+  if (enemy.kind === 'spore') leaveContamination(state, enemy);
   pushLog(state, 'LOG-KILL', lore(ENEMIES[enemy.kind].loreName));
   tryDeathDrop(state, enemy, windupInterrupt ? 0.25 : 0);
   let xp =

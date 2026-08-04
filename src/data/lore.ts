@@ -40,6 +40,8 @@ export const LORE = {
     '\n' +
     'MOVE    WASD or arrow keys — one tile per turn\n' +
     'WAIT    . (period) — hold position, time still passes\n' +
+    'BRACE   b — +2 DEF for the enemy phase; pounces lose their bonus\n' +
+    'RETREAT r — step away from a visible close/winding hostile; costs 4 bus\n' +
     'GET     g — pick up salvage under your boots\n' +
     'KIT     i — open field kit; ↑↓ or 1–9 to select; esc closes\n' +
     'USE     u — use consumables, or equip/stow tool·suit·utility gear\n' +
@@ -68,7 +70,7 @@ export const LORE = {
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-KIT-PURPOSE':
     'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
-  'UI-CONTROLS': 'WASD · g get · i kit · u use · > hatch · ? help',
+  'UI-CONTROLS': 'WASD · b brace · r retreat · g get · i kit · u use · > hatch · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'Stand on hatch — press > to advance',
@@ -93,7 +95,7 @@ export const LORE = {
   'UI-HINT-EQUIP': 'Wearable gear in kit — open kit (i), select, press u to equip',
   'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
-  'UI-HINT-TELE': 'Hostile windup — step back or strike before the pounce',
+  'UI-HINT-TELE': 'Hostile winding up — b brace or r retreat; strike to interrupt',
   'UI-HINT-PREFER-DARK': 'Fauna favors shadow — stay lit to reduce its interest',
   'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
@@ -406,6 +408,15 @@ export const LORE = {
   'LOG-SPORE-BURST': 'Wash spore burst — power spike and burn.',
   'LOG-TELE-SWELL': 'Spore swelling — burst imminent.',
   'LOG-TELE-POUNCE': 'Hostile windup — pounce telegraph.',
+  'LOG-TELE-BEAM': 'Drone beam charging — break line or brace.',
+  'LOG-BEAM-FIRE': 'Drone ion beam rakes the lane.',
+  'LOG-BEAM-BLOCKED': 'Drone beam splashes against cover.',
+  'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
+  'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
+  'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
+  'LOG-RETREAT': 'Tactical retreat — bus diverted.',
+  'LOG-RETREAT-FAIL': 'No safe retreat vector or insufficient bus.',
+  'LOG-CONTAMINATION': 'Spore contamination taxes the bus.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
   'LOG-STATUS-BLEED': 'Bleed tick',

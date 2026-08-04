@@ -34,7 +34,7 @@ export function isPagesDismissKey(e: KeyboardEvent): boolean {
 }
 
 /**
- * Pure gameplay action from key — inventory, use, get, wait, exit, move.
+ * Pure gameplay action from key — inventory, tactics, use, get, wait, exit, move.
  * Returns null for unmapped keys. Escape → close_ui (caller opens help when kit is closed).
  */
 export function actionFromKey(e: KeyboardEvent): Action | null {
@@ -42,6 +42,8 @@ export function actionFromKey(e: KeyboardEvent): Action | null {
   if (k === 'Escape') return { type: 'close_ui' };
   if (k === 'i' || k === 'I') return { type: 'toggle_inventory' };
   if (k === 'u' || k === 'U') return { type: 'use' };
+  if (k === 'b' || k === 'B') return { type: 'brace' };
+  if (k === 'r' || k === 'R') return { type: 'retreat' };
   if (k === 'g' || k === 'G') return { type: 'get' };
   if (k === '.' && !e.shiftKey) return { type: 'wait' };
   if (k === '>' || k === '=' || (e.code === 'Period' && e.shiftKey)) return { type: 'exit' };
@@ -59,6 +61,8 @@ export function isQueueableAction(action: Action): boolean {
     action.type === 'wait' ||
     action.type === 'get' ||
     action.type === 'use' ||
+    action.type === 'brace' ||
+    action.type === 'retreat' ||
     action.type === 'exit' ||
     action.type === 'aim'
   );

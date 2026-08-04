@@ -52,6 +52,18 @@ export function actionFloatLabels(
       case 'LOG-BOSS-TELE':
         next = { label: 'POUNCE INCOMING', color: ThemeCss.danger };
         break;
+      case 'LOG-TELE-BEAM':
+        next = { label: 'BEAM READY', color: '#66ccff' };
+        break;
+      case 'LOG-TELE-OVERWATCH':
+        next = { label: 'OVERWATCH', color: '#cc99ff' };
+        break;
+      case 'LOG-BRACE':
+        next = { label: 'BRACE · DEF +2', color: ThemeCss.phosphorBright };
+        break;
+      case 'LOG-RETREAT':
+        next = { label: 'RETREAT · -4 BUS', color: '#a8d0ff' };
+        break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: '#44aa88' };
@@ -263,6 +275,9 @@ export function playActionSfx(
   if (has('LOG-STORM-WARN')) {
     sfx.play('warn');
   }
+  if (has('LOG-TELE-BEAM') || has('LOG-TELE-OVERWATCH')) {
+    sfx.play('warn');
+  }
   if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT')) {
     sfx.play('armor');
   }
@@ -279,6 +294,8 @@ export function playActionSfx(
     return;
   }
   if (
+    has('LOG-BRACE') ||
+    has('LOG-RETREAT') ||
     has('LOG-USE-MED') ||
     has('LOG-USE-ENERGY') ||
     has('LOG-USE-RATION') ||
@@ -411,7 +428,13 @@ export function presentActionFeedback(opts: {
 
   const sectorChanged = state.sectorIndex !== prevSector;
   if (!sectorChanged) {
-    const flareOrBurst = newLogs.some((id) => id === 'LOG-USE-FLARE' || id === 'LOG-SPORE-BURST');
+    const flareOrBurst = newLogs.some(
+      (id) =>
+        id === 'LOG-USE-FLARE' ||
+        id === 'LOG-SPORE-BURST' ||
+        id === 'LOG-TELE-BEAM' ||
+        id === 'LOG-TELE-OVERWATCH',
+    );
     if (flareOrBurst) flash(Theme.ionHazard, 0.22);
     if (state.player.hp < prevHp) flash(Theme.phosphorBright, 0.35);
     if (newLogs.some((id) => id === 'LOG-HIT' || id === 'LOG-KILL')) {

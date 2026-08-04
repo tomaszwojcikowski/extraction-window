@@ -21,8 +21,8 @@ export function contextHint(st: GameState): LoreId | null {
   const telegraphed = st.enemies.some(
     (e) =>
       e.alive &&
-      e.windup > 0 &&
-      (st.visible[e.y]?.[e.x] ?? false),
+      (st.visible[e.y]?.[e.x] ?? false) &&
+      (e.windup > 0 || Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1),
   );
   if (telegraphed) return 'UI-HINT-TELE';
 

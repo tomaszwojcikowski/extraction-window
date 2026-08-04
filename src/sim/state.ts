@@ -83,6 +83,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       lensTurns: 0,
       mapperTurns: 0,
       stabilizeTurns: 0,
+      braceTurns: 0,
       statuses: {},
       equip: { tool: null, armor: null, utility: null },
     },
@@ -119,6 +120,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       Array.from({ length: map.width }, () => 0),
     ),
     lightSources: [],
+    contamination: [],
     codexPages: 0,
     codexLog: [],
     emStress: 0,
@@ -209,6 +211,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.surveyedRoomIds = [];
   state.lightSources = [];
+  state.contamination = [];
   state.illumination = Array.from({ length: map.height }, () =>
     Array.from({ length: map.width }, () => 0),
   );

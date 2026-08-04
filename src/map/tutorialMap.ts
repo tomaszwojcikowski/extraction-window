@@ -77,6 +77,7 @@ export function generateTutorialMap(seed: number): GeneratedMap {
       homeY: mitePos.y,
       skirmishRetreat: false,
       windup: 0,
+      beamCooldown: 0,
       tier: 'normal',
     },
   ];

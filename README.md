@@ -34,6 +34,8 @@ npm run playtest     # full seed suite → playtest-report.json
 |-----|--------|
 | WASD / arrows | Move (or navigate kit) |
 | `.` | Wait |
+| `b` | Brace: +2 DEF through the enemy phase; cancels pounce bonus |
+| `r` | Retreat from a visible adjacent/winding hostile (costs 4 bus) |
 | `g` | Get item |
 | `i` | Open field kit |
 | `u` | Use selected item |

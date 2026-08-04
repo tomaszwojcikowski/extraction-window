@@ -9,6 +9,7 @@ import { emAggroBonus } from './emStress';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
 import { inShadow, isLit } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
+import { leaveContamination } from './contamination';
 import type { Enemy, GameState, Pos } from './types';
 
 function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: number): boolean {
@@ -140,32 +141,104 @@ function tryMelee(state: GameState, enemy: Enemy, bonusAtk = 0): boolean {
   });
 }
 
+/** Cardinal three-tile ray; walls and scrub stop ion beams. */
+export function hasBeamLine(state: GameState, enemy: Enemy): boolean {
+  const dx = state.player.x - enemy.x;
+  const dy = state.player.y - enemy.y;
+  const distance = Math.abs(dx) + Math.abs(dy);
+  if (distance === 0 || distance > 3 || (dx !== 0 && dy !== 0)) return false;
+
+  const stepX = Math.sign(dx);
+  const stepY = Math.sign(dy);
+  for (let step = 1; step < distance; step++) {
+    const tile = state.tiles[enemy.y + stepY * step]?.[enemy.x + stepX * step];
+    if (!tile?.transparent) return false;
+  }
+  return true;
+}
+
+function tryBeamPattern(state: GameState, enemy: Enemy): boolean {
+  if (enemy.beamCooldown > 0) {
+    enemy.beamCooldown -= 1;
+    return false;
+  }
+  if (enemy.intent === 'beam' && enemy.windup > 0) {
+    enemy.windup = 0;
+    enemy.intent = undefined;
+    enemy.beamCooldown = 3;
+    if (hasBeamLine(state, enemy)) {
+      applyPlayerDamage(state, 2, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
+      state.player.energy -= 4;
+      pushLog(state, 'LOG-BEAM-FIRE', `${lore(ENEMIES[enemy.kind].loreName)} -4E`);
+    } else {
+      pushLog(state, 'LOG-BEAM-BLOCKED');
+    }
+    return true;
+  }
+  if (hasBeamLine(state, enemy)) {
+    enemy.windup = 1;
+    enemy.intent = 'beam';
+    pushLog(state, 'LOG-TELE-BEAM');
+    return true;
+  }
+  return false;
+}
+
+/** Armed sentinels strike before a player enters a neighboring tile. */
+export function triggerOverwatch(state: GameState, destination: Pos): boolean {
+  const sentry = state.enemies.find(
+    (enemy) =>
+      enemy.alive &&
+      enemy.intent === 'overwatch' &&
+      enemy.windup > 0 &&
+      manhattan(enemy.x, enemy.y, destination.x, destination.y) === 1,
+  );
+  if (!sentry) return false;
+  sentry.windup = 0;
+  sentry.intent = undefined;
+  enemyAttack(state, sentry, randInt(state.rng, -1, 1), { bonusAtk: 1 });
+  pushLog(state, 'LOG-OVERWATCH-FIRE');
+  return true;
+}
+
+/** Flares and stun interrupt a visible sentinel's held shot. */
+export function cancelOverwatch(state: GameState): void {
+  for (const enemy of state.enemies) {
+    if (enemy.intent !== 'overwatch') continue;
+    enemy.windup = 0;
+    enemy.intent = undefined;
+  }
+}
+
 /** Hunter/ambush/wraith: windup then pounce with bonus damage. */
 function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): void {
   const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
   if (dist > defAggro) {
     enemy.windup = 0;
+    enemy.intent = undefined;
     return;
   }
   if (enemy.windup > 0) {
     enemy.windup = 0;
+    enemy.intent = undefined;
     if (dist === 1) {
-      tryMelee(state, enemy, 3);
+      tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
     } else {
       // One lunge step — no double-step pounce (keeps telegraph readable).
       stepToward(state, enemy, state.player.x, state.player.y);
       const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-      if (d2 === 1) tryMelee(state, enemy, 3);
+      if (d2 === 1) tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
     }
     return;
   }
   // Soft-shadow player (quiet lamp / dark tile): skip telegraph and strike if adjacent
   if (dist === 1 && inShadow(state, state.player.x, state.player.y)) {
-    tryMelee(state, enemy, 3);
+    tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
     return;
   }
   if (dist <= 2) {
     enemy.windup = 1;
+    enemy.intent = 'pounce';
     pushLog(state, 'LOG-TELE-POUNCE');
     return;
   }
@@ -246,6 +319,7 @@ export function moveEnemies(state: GameState): void {
     if (!enemy.alive) continue;
     if (hasStatus(enemy, 'stun')) {
       enemy.windup = 0;
+      enemy.intent = undefined;
       continue;
     }
 
@@ -259,6 +333,10 @@ export function moveEnemies(state: GameState): void {
     const inFov = state.visible[enemy.y]?.[enemy.x] ?? false;
     const quiet = silenced(state, enemy);
     const aggro = effectiveAggro(state, enemy);
+
+    if ((enemy.kind === 'drone' || enemy.kind === 'duct_drone') && tryBeamPattern(state, enemy)) {
+      continue;
+    }
 
     switch (def.behavior) {
       case 'wander': {
@@ -293,6 +371,7 @@ export function moveEnemies(state: GameState): void {
             }
             enemy.alive = false;
             enemy.hp = 0;
+            leaveContamination(state, enemy);
           }
         } else {
           enemy.swellTurns = Math.max(0, enemy.swellTurns - 1);
@@ -354,6 +433,15 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'sentinel': {
+        if (enemy.kind === 'sentinel') {
+          if (enemy.intent === 'overwatch' && enemy.windup > 0) break;
+          if (dist <= aggro && dist > 1) {
+            enemy.windup = 1;
+            enemy.intent = 'overwatch';
+            pushLog(state, 'LOG-TELE-OVERWATCH');
+            break;
+          }
+        }
         if (dist <= aggro) {
           if (dist === 1) tryMelee(state, enemy);
           else if (dist <= 3) stepToward(state, enemy, state.player.x, state.player.y);

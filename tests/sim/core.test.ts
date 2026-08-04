@@ -249,6 +249,7 @@ describe('turn economy', () => {
       def: 1,
       alive: true,
       windup: 1,
+      beamCooldown: 0,
       swellTurns: 0,
       alerted: true,
       skirmishRetreat: false,

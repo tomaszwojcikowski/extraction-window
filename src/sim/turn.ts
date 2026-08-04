@@ -16,6 +16,7 @@ import { mechanicsOnEndTurn } from './mechanics';
 import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
+import { tickContamination } from './contamination';
 import type { Enemy, GameState, ScanScarId } from './types';
 import { pick } from './rng';
 
@@ -51,6 +52,7 @@ function trySpawnNestMite(state: GameState): void {
       homeY: y,
       skirmishRetreat: false,
       windup: 0,
+      beamCooldown: 0,
       tier: 'normal',
     };
     state.enemies.push(mite);
@@ -125,6 +127,8 @@ function tickEnvironment(state: GameState): void {
     if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
     if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
     if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
+    if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
+    tickContamination(state);
     tickPlayerStatusEffects(state);
     tickScanScars(state);
     mechanicsOnEndTurn(state);
@@ -222,6 +226,7 @@ function tickEnvironment(state: GameState): void {
     }
   }
   // scrub / scrub_nest are sight-blockers — scrub_nest may also spawn
+  tickContamination(state);
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
@@ -233,6 +238,7 @@ function tickEnvironment(state: GameState): void {
   if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
   if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
+  if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
 
   tickPlayerStatusEffects(state);
   tickScanScars(state);
