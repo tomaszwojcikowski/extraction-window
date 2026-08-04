@@ -1,5 +1,7 @@
 # Extraction Window — Build Spec
 
+> **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Framing below still uses legacy Voyager/Type-9 names — treat balance numbers and layout as authoritative; treat franchise strings as stale.
+
 Solo turn-based sci-fi roguelike for the browser. **Voyager / Delta Quadrant away ops** framing.
 
 ## Stack

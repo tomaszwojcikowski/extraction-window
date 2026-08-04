@@ -3,7 +3,8 @@
 Halcyon Survey Corps field logbook for Meridian Shelf extraction runs.
 Tone: terse procedure + conflicting prior PADDs. No fantasy magic. All player-facing copy maps to entry IDs in `src/data/lore.ts`.
 
-**Design bible:** [`docs/WORLD.md`](WORLD.md) (glossary, ecology thesis, rename checklist).
+**Design bible:** [`docs/WORLD.md`](WORLD.md) (glossary, ecology thesis, rename checklist).  
+**First-version scope:** [`docs/V1.md`](V1.md) (pillars, cut list, engine, ship gates, fiction audit).
 
 ---
 

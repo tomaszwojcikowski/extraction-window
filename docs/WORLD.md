@@ -59,15 +59,15 @@ Early food chain (sectors 0–1 voice):
 
 ---
 
-## Sector arc (15 beats — full rename in Phase 2)
+## Sector arc (15 beats)
 
-Phase 1 authors voice for **0–1 only**. Later biomes keep mechanical roles; names become Meridian places in Phase 2.
+Phase 1 authored voice for **0–1**. **v1** finishes Meridian names for 2–14 — targets listed in [`docs/V1.md`](V1.md) fiction audit.
 
-| # | ID | Phase 1 name | Role |
-|---|-----|--------------|------|
+| # | ID | Current / Phase 1 name | Role |
+|---|-----|------------------------|------|
 | 0 | plains | Relay Scar Flats | Drop; afterglow EM; scar mites |
 | 1 | flood | Shearwash Basin | Standing shear-water; bus tax |
-| 2–14 | … | (template names until Phase 2) | Same spine: canopy → reef → mast → wreck → beacon → inland → vault → pad |
+| 2–14 | … | See V1 fiction audit | Same spine: canopy → reef → mast → wreck → beacon → inland → vault → pad |
 
 ---
 
