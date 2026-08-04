@@ -477,7 +477,7 @@ export function useSelected(state: GameState): boolean {
         break;
       }
       const tile = state.tiles[state.player.y]![state.player.x]!;
-      if (tile.kind === 'hazard' || tile.kind === 'vent') {
+      if (tile.kind === 'hazard' || tile.kind === 'vent' || tile.kind === 'brine_pool') {
         state.tiles[state.player.y]![state.player.x] = {
           kind: 'floor',
           walkable: true,

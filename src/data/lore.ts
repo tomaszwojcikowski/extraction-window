@@ -60,6 +60,7 @@ export const LORE = {
     'Elites and campaign bosses are optional prizes — rare kit, XP, and storm.\n' +
     'Field contacts (hail with >) grant PADD lore; ensign/tech can loan a short-lived ally.\n' +
     'Full kit + salvage converts to shear-window time instead of a dead pickup.\n' +
+    'At the drop skiff, > starts uplink and . holds it; coolant skips a hold and flare repels its pressure wave.\n' +
     '\n' +
     'HUD READOUT\n' +
     'HP / SHD / BUS / WINDOW / XP — vitals, shields, bus, shear window, proficiency\n' +
@@ -77,7 +78,7 @@ export const LORE = {
   'UI-HINT-BEACON': 'Emergency beacon — press > to start splice handshake',
   'UI-HINT-HANDSHAKE': 'Handshake syncing — hold position on the beacon',
   'UI-HINT-SHUTTLE': 'Drop skiff pad — press > with Nav Lattice',
-  'UI-HINT-UPLINK-HOLD': 'Uplink live — hold the pad; coolant accelerates, flare repels the wave',
+  'UI-HINT-UPLINK-HOLD': 'Uplink live — press . to hold; coolant skips a hold, flare repels the wave',
   'UI-HINT-DESYNC': 'Pattern buffer desynced — use Bus Coolant before skiff lock',
   'UI-HINT-ITEM': 'Salvage underfoot — press g to recover',
   'UI-HINT-POI': 'Anomaly underfoot — press > to scan',
@@ -89,7 +90,8 @@ export const LORE = {
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
   'UI-HINT-SEALED': 'Sealed hatch adjacent — need sealant or baton pry (>)',
   'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with pulse baton (>)',
-  'UI-HINT-QUIET': 'Quiet stance — lamp dimmed; FOV tight; fauna less interested',
+  'UI-HINT-QUIET':
+    'Quiet stance — fauna less interested, but soft shadow lets adjacent pounces skip their telegraph',
   'UI-HINT-QUIET-EM':
     'EM critical — use EM Scrambler (u) for quiet stance; suppresses fauna aggro bump (FOV shrinks)',
   'UI-HINT-FLARE': 'Standing dark near hostiles — plasma flare lights the fight',
@@ -237,7 +239,8 @@ export const LORE = {
   'ITEM-PLATE': 'Shield Charge',
   'ITEM-PLATE-DESC': 'Repair personal shield pool (+10 SHD).',
   'ITEM-FLARE': 'Plasma Flare',
-  'ITEM-FLARE-DESC': 'Burst damage + stun to adjacent hostiles.',
+  'ITEM-FLARE-DESC':
+    '4-turn light; burst damage + stun adjacent hostiles; cancels sentinel overwatch and repels the skiff uplink wave.',
   'ITEM-FILTER': 'Plasma Filter',
   'ITEM-FILTER-DESC': 'Halves environmental power drain and plasma hits (50 turns).',
   'ITEM-COOLANT': 'Bus Coolant',
@@ -519,7 +522,7 @@ export const LORE = {
   'LOG-PB-REJECT': 'Drop skiff rejects lock — pattern buffer still desynced.',
   'LOG-PB-STRESS': 'Pattern buffer under shear stress.',
   'LOG-QUIET-ON':
-    'Quiet stance online — sensors narrowed, fauna interest down. At EM-HIGH, contamination aggro bump suppressed.',
+    'Quiet stance online — sensors narrowed, fauna interest down; soft shadow allows adjacent pounces without warning. At EM-HIGH, contamination aggro bump suppressed.',
   'LOG-QUIET-OFF': 'Quiet stance offline — sensors and fauna interest return.',
   'LOG-QUIET-EM': 'Quiet stance holding — EM-HIGH aggro bump suppressed while FOV stays tight.',
   'LOG-EVT-AFTERGLOW': 'Drop afterglow — residual field-array EM spike.',

@@ -18,7 +18,7 @@ import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
-import { inShadow, isLit } from '../../sim/light';
+import { stanceBadgeLabel } from '../presenters/HudBadges';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 6;
@@ -54,6 +54,15 @@ export type HudRedrawOpts = {
   /** Mutable holder so the scene can stop/replace the pulse tween. */
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
 };
+
+/** The light badge must mirror the shadow predicate used by ambush AI. */
+export function stanceBadgeSpec(st: GameState): { label: string; fill: number } | null {
+  const label = stanceBadgeLabel(st);
+  if (label === 'QUIET') return { label, fill: Theme.phosphorMute };
+  if (label === 'SHADOW') return { label, fill: Theme.quest };
+  if (label === 'LIT') return { label, fill: Theme.energy };
+  return null;
+}
 
 /**
  * Field HUD redraw helpers — bars, badges, meta, objectives, log, kit panel.
@@ -182,13 +191,7 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
-    const stanceBadge = isQuietStance(st)
-      ? { label: 'QUIET', fill: Theme.phosphorMute }
-      : isLit(st, st.player.x, st.player.y)
-        ? { label: 'LIT', fill: Theme.energy }
-        : inShadow(st, st.player.x, st.player.y)
-          ? { label: 'SHADOW', fill: Theme.quest }
-          : null;
+    const stanceBadge = stanceBadgeSpec(st);
     if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });
     if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
@@ -205,6 +208,9 @@ export class HudView {
     }
     if (st.uplink?.active) {
       badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.storm });
+      if (st.uplink.progress === 1 && !st.uplink.repelled) {
+        badgeSpecs.push({ label: 'WAVE NEXT', fill: Theme.danger });
+      }
     }
     if (st.codexPages > 0) {
       badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });

@@ -1129,6 +1129,11 @@ export class GameScene extends Phaser.Scene {
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
     this.lightView.drawBloom(sources, st.visible);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+    for (const patch of st.contamination) {
+      const tile = this.tileSprites[patch.y]?.[patch.x];
+      if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
+      tile.setTint(0x8bd8c7);
+    }
   }
 
   private redrawTilesAndHud(): void {

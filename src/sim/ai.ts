@@ -201,6 +201,23 @@ export function triggerOverwatch(state: GameState, destination: Pos): boolean {
   return true;
 }
 
+/** Resolve a held sentinel shot before the player bump-attacks it. */
+export function triggerOverwatchOnAttack(state: GameState, target: Enemy): boolean {
+  if (
+    !target.alive ||
+    target.intent !== 'overwatch' ||
+    target.windup <= 0 ||
+    manhattan(target.x, target.y, state.player.x, state.player.y) !== 1
+  ) {
+    return false;
+  }
+  target.windup = 0;
+  target.intent = undefined;
+  enemyAttack(state, target, randInt(state.rng, -1, 1), { bonusAtk: 1 });
+  pushLog(state, 'LOG-OVERWATCH-FIRE');
+  return true;
+}
+
 /** Flares and stun interrupt a visible sentinel's held shot. */
 export function cancelOverwatch(state: GameState): void {
   for (const enemy of state.enemies) {
@@ -334,7 +351,11 @@ export function moveEnemies(state: GameState): void {
     const quiet = silenced(state, enemy);
     const aggro = effectiveAggro(state, enemy);
 
-    if ((enemy.kind === 'drone' || enemy.kind === 'duct_drone') && tryBeamPattern(state, enemy)) {
+    if (
+      (enemy.kind === 'drone' || enemy.kind === 'duct_drone') &&
+      dist <= aggro &&
+      tryBeamPattern(state, enemy)
+    ) {
       continue;
     }
 
@@ -434,7 +455,14 @@ export function moveEnemies(state: GameState): void {
       }
       case 'sentinel': {
         if (enemy.kind === 'sentinel') {
-          if (enemy.intent === 'overwatch' && enemy.windup > 0) break;
+          if (enemy.intent === 'overwatch' && enemy.windup > 0) {
+            if (dist === 1) {
+              enemy.windup = 0;
+              enemy.intent = undefined;
+              tryMelee(state, enemy);
+            }
+            break;
+          }
           if (dist <= aggro && dist > 1) {
             enemy.windup = 1;
             enemy.intent = 'overwatch';

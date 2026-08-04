@@ -11,6 +11,12 @@ const FAVOR_BY_QUEST = {
   vent_seal: 'hazard_pass',
 } as const satisfies Record<NonNullable<GameState['roomQuest']>['kind'], ExtractFavorKind>;
 
+const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
+  storm_shelter: 'SHELTER',
+  hazard_pass: 'SAFE STEP',
+  pattern_fail_safe: 'BUFFER',
+};
+
 export function favorForQuest(state: GameState): ExtractFavorKind {
   return FAVOR_BY_QUEST[state.roomQuest?.kind ?? 'salvage'];
 }
@@ -19,13 +25,19 @@ export function favorForQuest(state: GameState): ExtractFavorKind {
 export function grantExtractFavor(state: GameState, kind: ExtractFavorKind): void {
   const replaced = state.extractFavor?.kind;
   state.extractFavor = { kind };
-  pushLog(state, 'LOG-FAVOR-GRANT', replaced ? `${replaced} → ${kind}` : kind);
+  pushLog(
+    state,
+    'LOG-FAVOR-GRANT',
+    replaced
+      ? `replaced ${FAVOR_LABEL[replaced]} → ${FAVOR_LABEL[kind]}`
+      : FAVOR_LABEL[kind],
+  );
 }
 
 export function consumeExtractFavor(state: GameState, kind: ExtractFavorKind): boolean {
   if (state.extractFavor?.kind !== kind) return false;
   state.extractFavor = null;
-  pushLog(state, 'LOG-FAVOR-CONSUME', kind);
+  pushLog(state, 'LOG-FAVOR-CONSUME', FAVOR_LABEL[kind]);
   return true;
 }
 

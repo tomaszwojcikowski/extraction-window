@@ -80,6 +80,25 @@ export function chooseAction(state: GameState): Action | null {
     return { type: 'pick_skill', id: state.skillPick[0]! };
   }
 
+  // Finale aids are meaningful only while the uplink is live: repel the
+  // telegraphed wave first, then use coolant to skip a hold.
+  if (state.uplink?.active) {
+    if (state.uplink.progress === 1 && !state.uplink.repelled) {
+      const flareIdx = state.inventory.findIndex((slot) => slot.kind === 'flare');
+      if (flareIdx >= 0) {
+        state.ui.selectedSlot = flareIdx;
+        return { type: 'use' };
+      }
+    }
+    if (state.uplink.progress < 2) {
+      const coolantIdx = state.inventory.findIndex((slot) => slot.kind === 'coolant');
+      if (coolantIdx >= 0) {
+        state.ui.selectedSlot = coolantIdx;
+        return { type: 'use' };
+      }
+    }
+  }
+
   const mechanicHint = mechanicsAutopilotHint(state);
   if (mechanicHint) return mechanicHint;
 

@@ -70,9 +70,56 @@ describe('Iteration 2 tactical threats', () => {
     expect(sentinel.intent).toBeUndefined();
     expect(sentinel.windup).toBe(0);
   });
+
+  it('fires overwatch before a player bump-attacks the sentinel', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    st.player.armor = 0;
+    const sentinel = makeEnemy({ kind: 'sentinel', x: 6, y: 5, atk: 8, windup: 1 });
+    sentinel.intent = 'overwatch';
+    st.enemies = [sentinel];
+    floor(st, 6, 5);
+
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+
+    expect(lastLog(st, 'LOG-OVERWATCH-FIRE')).toBeTruthy();
+  });
+
+  it('quiet stance prevents an undetected drone from winding up a beam', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    st.player.jammerTurns = 12;
+    const drone = makeEnemy({ kind: 'drone', x: 8, y: 5 });
+    st.enemies = [drone];
+    floor(st, 6, 5);
+    floor(st, 7, 5);
+
+    moveEnemies(st);
+
+    expect(drone.intent).toBeUndefined();
+    expect(lastLog(st, 'LOG-TELE-BEAM')).toBeUndefined();
+  });
 });
 
 describe('Iteration 2 player tactics', () => {
+  it('sealant converts brine underfoot into stable floor', () => {
+    const st = combatArena();
+    st.tiles[st.player.y]![st.player.x] = {
+      kind: 'brine_pool',
+      walkable: true,
+      transparent: true,
+    };
+    st.inventory = [{ kind: 'sealant', count: 1 }];
+
+    useSelected(st);
+
+    expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('floor');
+    expect(st.inventory).toHaveLength(0);
+    expect(lastLog(st, 'LOG-USE-SEALANT')).toBeTruthy();
+  });
+
   it('brace raises defense for the following enemy phase', () => {
     const st = combatArena();
     st.player.armor = 0;

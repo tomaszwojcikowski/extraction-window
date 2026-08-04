@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, applyAction } from '../../src/sim';
 import { contextHint } from '../../src/game/presenters/ContextHints';
+import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
 import { hasItem } from '../../src/sim/inventory';
+import { makeEnemy } from '../sim/fixtures';
 
 describe('contextHint coaching', () => {
   it('returns skill hint when skillPick is set', () => {
@@ -51,6 +53,44 @@ describe('contextHint coaching', () => {
     st.inventory.push({ kind: 'blade', count: 1 });
     st.player.equip.tool = null;
     expect(contextHint(st)).toBe('UI-HINT-EQUIP');
+  });
+
+  it('shows SHADOW instead of LIT in the soft-shadow band', () => {
+    const st = createGame(42);
+    st.player.jammerTurns = 0;
+    st.illumination[st.player.y]![st.player.x] = 0.2;
+
+    expect(stanceBadgeLabel(st)).toBe('SHADOW');
+  });
+
+  it('warns that quiet soft shadow can hide an adjacent pounce', () => {
+    const st = createGame(42);
+    st.player.jammerTurns = 12;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.illumination[st.player.y]![st.player.x] = 0.2;
+    const stalker = makeEnemy({ kind: 'stalker', x: st.player.x + 1, y: st.player.y });
+    st.enemies = [stalker];
+    st.visible[stalker.y]![stalker.x] = true;
+
+    expect(contextHint(st)).toBe('UI-HINT-QUIET');
+  });
+
+  it('prioritizes visible windups over an exit interaction', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.tiles[st.player.y]![st.player.x]!.kind = 'exit';
+    const sentinel = makeEnemy({
+      kind: 'sentinel',
+      x: st.player.x + 2,
+      y: st.player.y,
+      windup: 1,
+    });
+    sentinel.intent = 'overwatch';
+    st.enemies = [sentinel];
+    st.visible[sentinel.y]![sentinel.x] = true;
+
+    expect(contextHint(st)).toBe('UI-HINT-TELE');
   });
 });
 

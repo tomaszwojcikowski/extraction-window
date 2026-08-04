@@ -8,6 +8,7 @@ import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
+import { isQuietStance } from '../../sim/mechanics/quietStance';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -16,15 +17,18 @@ export function contextHint(st: GameState): LoreId | null {
   if (st.ui.aimingDart) return 'UI-HINT-AIM';
 
   const fromMechanic = mechanicsContextHint(st);
-  if (fromMechanic) return fromMechanic;
+  // The first-run drill deliberately teaches its bespoke stalker response.
+  if (st.tutorialActive && fromMechanic) return fromMechanic;
 
   const telegraphed = st.enemies.some(
     (e) =>
       e.alive &&
       (st.visible[e.y]?.[e.x] ?? false) &&
-      (e.windup > 0 || Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1),
+      e.windup > 0,
   );
   if (telegraphed) return 'UI-HINT-TELE';
+
+  if (fromMechanic) return fromMechanic;
 
   const tile = st.tiles[st.player.y]![st.player.x]!;
   if (tile.kind === 'exit') return 'UI-HINT-EXIT';
@@ -54,6 +58,18 @@ export function contextHint(st: GameState): LoreId | null {
   });
   if (adjSealed && hasItem(st, 'sealant')) {
     return 'UI-HINT-USE-SEALANT';
+  }
+  if (
+    isQuietStance(st) &&
+    inShadow(st, st.player.x, st.player.y) &&
+    st.enemies.some(
+      (e) =>
+        e.alive &&
+        (st.visible[e.y]?.[e.x] ?? false) &&
+        Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) <= 2,
+    )
+  ) {
+    return 'UI-HINT-QUIET';
   }
   if (
     inShadow(st, st.player.x, st.player.y) &&

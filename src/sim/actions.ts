@@ -20,7 +20,7 @@ import { mechanicsTryAction } from './mechanics';
 import { grantPoiXp } from './mechanics/survey';
 import { livingAllyAt } from './allyAi';
 import { enemyAt, npcAt } from './spatial';
-import { triggerOverwatch } from './ai';
+import { triggerOverwatch, triggerOverwatchOnAttack } from './ai';
 import type { Action, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -45,6 +45,7 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 
   const foe = enemyAt(state, nx, ny);
   if (foe) {
+    triggerOverwatchOnAttack(state, foe);
     playerAttack(state, foe, randInt(state.rng, -1, 1));
     endPlayerTurn(state);
     return;
