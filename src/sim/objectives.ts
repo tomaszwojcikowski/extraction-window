@@ -46,6 +46,14 @@ export type ObjectiveDesc = {
 
 /** Shared HUD / coherency description of the active goal. */
 export function describeObjective(state: GameState): ObjectiveDesc {
+  if (state.tutorialActive) {
+    return {
+      local: 'OBJ-TUT-HATCH',
+      campaign: 'OBJ-TUT-BRIEF',
+      pos: state.exitPos,
+    };
+  }
+
   const campaign = objectivePrompt({
     hasRelayKey: state.objectives.hasRelayKey,
     usedRelayKey: state.objectives.usedRelayKey,

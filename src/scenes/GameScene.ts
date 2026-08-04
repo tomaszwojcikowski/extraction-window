@@ -100,7 +100,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data: { seed?: number }): void {
-    this.state = createGame(data.seed ?? 42);
+    this.state = createGame(data.seed ?? 42, { skipTutorial: false });
     this.helpOpen = false;
     this.pagesOpen = false;
     this.animating = false;

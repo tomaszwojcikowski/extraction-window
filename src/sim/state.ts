@@ -3,6 +3,7 @@ import { getSector, type SectorId } from '../data/encounters';
 import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
 import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
+import { generateTutorialMap } from '../map/tutorialMap';
 import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './log';
@@ -28,10 +29,19 @@ const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   ridge: 'LOG-SEC-RIDGE',
 };
 
-export function createGame(seed: number): GameState {
+export type CreateGameOpts = {
+  /** Default true — harness / tests / autopilot skip the drill bay. */
+  skipTutorial?: boolean;
+};
+
+export function createGame(seed: number, opts?: CreateGameOpts): GameState {
+  const skipTutorial = opts?.skipTutorial ?? true;
+  const tutorialActive = !skipTutorial;
   const rng = mulberry32(seed >>> 0);
   const sector = getSector(0);
-  const map = generateSectorMap(sector, seed, 0);
+  const map = tutorialActive
+    ? generateTutorialMap(seed)
+    : generateSectorMap(sector, seed, 0);
 
   const explored = Array.from({ length: map.height }, () =>
     Array.from({ length: map.width }, () => false),
@@ -49,6 +59,7 @@ export function createGame(seed: number): GameState {
     stormTurns: STORM_TURNS,
     sectorIndex: 0,
     sectorId: sector.id,
+    tutorialActive,
     width: map.width,
     height: map.height,
     tiles: map.tiles,
@@ -144,12 +155,24 @@ export function createGame(seed: number): GameState {
   };
 
   refreshVision(state);
-  pushLog(state, 'LOG-DROP');
-  pushLog(state, 'LOG-SEC-PLAINS');
+  if (!tutorialActive) {
+    pushLog(state, 'LOG-DROP');
+    pushLog(state, 'LOG-SEC-PLAINS');
+  }
   syncObjectiveFlags(state);
   mechanicsOnSectorEnter(state);
   refreshVision(state);
   return state;
+}
+
+/** Leave drill bay into real plains — no XP_SECTOR; afterglow fires on loadSector. */
+export function finishTutorial(state: GameState): void {
+  if (!state.tutorialActive) return;
+  state.tutorialActive = false;
+  state.stormTurns += 2;
+  loadSector(state, 0);
+  pushLog(state, 'LOG-TUT-DONE');
+  refreshVision(state);
 }
 
 export function loadSector(state: GameState, sectorIndex: number): void {

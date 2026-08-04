@@ -214,6 +214,8 @@ export interface GameState {
   stormTurns: number;
   sectorIndex: number;
   sectorId: SectorId;
+  /** Pre-campaign drill bay — not a 16th sector; gates plains afterglow / storm tax. */
+  tutorialActive: boolean;
   width: number;
   height: number;
   tiles: Tile[][];

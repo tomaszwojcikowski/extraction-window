@@ -12,7 +12,8 @@ export type {
   InventorySlot,
   LogEntry,
 } from './types';
-export { createGame, loadSector } from './state';
+export { createGame, loadSector, finishTutorial } from './state';
+export type { CreateGameOpts } from './state';
 export { applyAction } from './actions';
 export { computeFov, bfsPath, canReach, playerFovRadius, fovDistance, FOV_RADIUS } from './fov';
 export {

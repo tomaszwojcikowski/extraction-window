@@ -7,6 +7,7 @@ export const LORE = {
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
   'UI-BRIEF': 'Recover spare Nav Lattice · reach drop skiff before the shear window collapses',
+  'UI-BRIEF-TUT': 'Short drill bay first · then Meridian Shelf extract',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin survey mission',
   'UI-SEED': 'Mission ID',
@@ -20,13 +21,23 @@ export const LORE = {
   'UI-BAR-WINDOW': 'WINDOW',
   'UI-BAR-XP': 'XP',
   'UI-SECTOR': 'Sector',
+  'UI-TUT-SECTOR': 'DRILL',
   'UI-ATK': 'ATK',
   'UI-DEF': 'DEF',
   'UI-INV': 'Field kit',
   'UI-LOG': 'Mission log',
   'UI-OBJECTIVE': 'Objective',
   'UI-HELP': 'Survey team manual',
+  'UI-HELP-TUT':
+    'DRILL BAY (first run)\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, > exit.\n' +
+    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    '\n',
   'UI-HELP-BODY':
+    'DRILL BAY (first run)\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, > exit.\n' +
+    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    '\n' +
     'MOVE    WASD or arrow keys — one tile per turn\n' +
     'WAIT    . (period) — hold position, time still passes\n' +
     'GET     g — pick up salvage under your boots\n' +
@@ -57,7 +68,7 @@ export const LORE = {
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-KIT-PURPOSE':
     'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
-  'UI-CONTROLS': 'WASD move · . wait · g get · i kit · u use · p PADD · > exit · ? help · m mute',
+  'UI-CONTROLS': 'WASD · g get · i kit · u use · > hatch · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'Stand on hatch — press > to advance',
@@ -85,6 +96,11 @@ export const LORE = {
   'UI-HINT-TELE': 'Hostile windup — step back or strike before the pounce',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
   'UI-HINT-NPC': 'Field contact nearby — press > to hail',
+  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn',
+  'UI-TUT-GET': 'g — pick up',
+  'UI-TUT-KIT': 'i kit · u use',
+  'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
+  'UI-TUT-EXIT': '> on hatch — begin the survey',
   'UI-SURVEY': 'SRV',
   'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
@@ -144,6 +160,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Survey anomaly',
+  'OBJ-TUT-HATCH': '→ Drill hatch',
+  'OBJ-TUT-BRIEF': 'Training — not the real drop yet',
   'HAZ-STORM': 'Shear storm extraction window remaining.',
   'UI-CODEX': 'PADD',
 
@@ -305,6 +323,8 @@ export const LORE = {
   // Logs
   'LOG-DROP':
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
+  'LOG-TUT-WELCOME': 'Drill bay — reach the hatch east.',
+  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',

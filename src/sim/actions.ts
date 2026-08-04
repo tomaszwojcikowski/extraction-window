@@ -11,6 +11,7 @@ import {
 import { playerAttack } from './combat';
 import { pushLog, recordLoreEvent } from './log';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
+import { finishTutorial } from './state';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
@@ -176,6 +177,11 @@ function tryExit(state: GameState): void {
     }
     checkLose(state);
     if (state.status !== 'playing') return;
+    if (state.tutorialActive) {
+      finishTutorial(state);
+      finishSectorTransition(state);
+      return;
+    }
     if (!advanceSector(state)) {
       pushLog(state, 'LOG-EXIT-BLOCKED');
       return;

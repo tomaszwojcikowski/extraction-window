@@ -113,6 +113,24 @@ function tickScanScars(state: GameState): void {
 }
 
 function tickEnvironment(state: GameState): void {
+  // Drill bay — pause storm clock and bus drip (stress-free teaching)
+  if (state.tutorialActive) {
+    if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
+    if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
+    if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
+    if (state.player.jammerTurns > 0) {
+      state.player.jammerTurns -= 1;
+      if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
+    }
+    if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
+    if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
+    if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
+    tickPlayerStatusEffects(state);
+    tickScanScars(state);
+    mechanicsOnEndTurn(state);
+    return;
+  }
+
   const sector = getSector(state.sectorIndex);
   state.stormTurns -= 1;
   if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {

@@ -55,7 +55,7 @@ export const scriptedEventsMechanic: Mechanic = {
   id: 'scripted_events',
 
   onSectorEnter(state: GameState): void {
-    if (state.sectorId === 'plains' && once(state, 'plains_afterglow')) {
+    if (state.sectorId === 'plains' && !state.tutorialActive && once(state, 'plains_afterglow')) {
       pushLog(state, 'LOG-EVT-AFTERGLOW');
       addEmStress(state, 3, 'drop afterglow');
       // Prior crew claimed the array was cold / hatch east — later scraps disagree

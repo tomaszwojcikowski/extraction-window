@@ -243,6 +243,7 @@ export function rebuildIllumination(state: GameState): void {
     state.illumination = emptyGrid(state.width, state.height);
   }
   let ambient = SECTOR_AMBIENT[state.sectorId] ?? 0.3;
+  if (state.tutorialActive) ambient = Math.max(ambient, 0.22);
   if (state.emStress >= EM_HIGH) ambient += 0.08;
 
   const sources = collectLightSources(state);

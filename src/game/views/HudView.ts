@@ -167,12 +167,18 @@ export class HudView {
     );
 
     const sector = getSector(st.sectorIndex);
-    const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
-      i <= st.sectorIndex ? '●' : '○',
-    ).join(' ');
-    r.sectorText.setText(
-      `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
-    );
+    if (st.tutorialActive) {
+      r.sectorText.setText(
+        `${lore('UI-SECTOR')} ${lore('UI-TUT-SECTOR')}\n${lore('OBJ-TUT-BRIEF')}   ${lore('UI-SEED')} ${st.seed}`,
+      );
+    } else {
+      const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
+        i <= st.sectorIndex ? '●' : '○',
+      ).join(' ');
+      r.sectorText.setText(
+        `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
+      );
+    }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
     if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });

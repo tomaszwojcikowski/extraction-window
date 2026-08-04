@@ -9,15 +9,18 @@ import { scriptedEventsMechanic } from './scriptedEvents';
 import { surveyMechanic } from './survey';
 import { npcMechanic } from './npcMechanic';
 import { sealedHatchMechanic } from './sealedHatch';
+import { tutorialMechanic } from './tutorial';
 
 /**
  * Ordered plug-ins.
+ * Tutorial first for contextHint / autopilot while drill bay is active.
  * Handshake + pattern buffer claim actions / autopilot before optional room quests
  * so mid-handshake or desync clear is not interrupted by side-quest pathing.
  * Field NPCs hail before room quests when both claim `>`.
  * Sealed pry after NPCs so hail still wins when both are adjacent.
  */
 const MECHANICS: Mechanic[] = [
+  tutorialMechanic,
   beaconHandshakeMechanic,
   patternBufferMechanic,
   quietStanceMechanic,

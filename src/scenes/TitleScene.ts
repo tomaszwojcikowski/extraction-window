@@ -100,7 +100,7 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.86, lore('UI-BRIEF'), {
+      .text(width / 2, height * 0.86, lore('UI-BRIEF-TUT'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.textMute,

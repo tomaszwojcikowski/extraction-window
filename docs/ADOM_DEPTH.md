@@ -79,3 +79,9 @@ Ion fronts, elite/boss branded drops, companion depth, content fattening, Phaser
 | Optional content never required for extract | Causal spine stays clean |
 | Lore IDs for every player string | LORE discipline |
 | Deepen EM/light/kit before weather | Ecology thesis |
+
+---
+
+## Feel / onboarding
+
+Human starts (`GameScene`) run a short **drill bay** tutorial (`tutorialActive`, `skipTutorial: false`) before real plains — not a 16th campaign sector. Harness / autopilot keep default `skipTutorial: true`. Storm clock and bus drip pause in the bay; hatch exit calls `finishTutorial` → load plains (afterglow fires once).
