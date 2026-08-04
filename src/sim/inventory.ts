@@ -8,12 +8,14 @@ import {
 } from '../data/items';
 import { STORM_SURPLUS_SALVAGE, XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
-import { pushLog, recordLoreEvent, playerAttack, killEnemy } from './combat';
+import { playerAttack } from './combat';
+import { killEnemy } from './death';
+import { pushLog, recordLoreEvent } from './log';
 import { addStatus } from './status';
 import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, purgeEmStress } from './emStress';
+import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 
@@ -47,6 +49,14 @@ const TIMER_KEYS: TimerKey[] = [
 
 /** Soft cap: at most 3 concurrent kit timers (keep the one being applied). */
 function capActiveSystems(state: GameState, keep: TimerKey): void {
+  const labels: Record<TimerKey, string> = {
+    probeTurns: 'probe',
+    stimTurns: 'stim',
+    filterTurns: 'filter',
+    jammerTurns: 'jammer',
+    lensTurns: 'lens',
+    mapperTurns: 'mapper',
+  };
   const active = TIMER_KEYS.filter((k) => state.player[k] > 0 && k !== keep);
   while (active.length >= 3) {
     let shortest = active[0]!;
@@ -54,6 +64,7 @@ function capActiveSystems(state: GameState, keep: TimerKey): void {
       if (state.player[k] < state.player[shortest]) shortest = k;
     }
     state.player[shortest] = 0;
+    pushLog(state, 'LOG-SYS-DROP', labels[shortest]);
     const i = active.indexOf(shortest);
     if (i >= 0) active.splice(i, 1);
   }
@@ -195,7 +206,7 @@ function identifySalvage(state: GameState): void {
 
 export function useSelected(state: GameState): boolean {
   if (state.inventory.length === 0) {
-    pushLog(state, 'LOG-USE-FAIL');
+    pushLog(state, 'LOG-USE-EMPTY');
     return false;
   }
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
@@ -230,7 +241,7 @@ export function useSelected(state: GameState): boolean {
       capActiveSystems(state, 'probeTurns');
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
-      addEmStress(state, 4, 'tricorder');
+      addEmStress(state, 4, 'array pulse');
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
@@ -318,6 +329,7 @@ export function useSelected(state: GameState): boolean {
       addEmStress(state, 5, 'scrambler');
       pushLog(state, 'LOG-USE-JAMMER');
       pushLog(state, 'LOG-QUIET-ON');
+      if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
     case 'salvage': {
       identifySalvage(state);
@@ -353,7 +365,7 @@ export function useSelected(state: GameState): boolean {
       return false;
     case 'relay_key':
     case 'nav_core':
-      pushLog(state, 'LOG-USE-FAIL');
+      pushLog(state, 'LOG-USE-QUEST');
       return false;
   }
   syncObjectiveFlags(state);
@@ -413,7 +425,7 @@ export function tryPickup(state: GameState): boolean {
   if (!addItem(state, item.kind)) return false;
   state.items = state.items.filter((i) => i.id !== item.id);
   state.lootTakenThisSector = true;
-  pushLog(state, 'LOG-PICKUP');
+  pushLog(state, 'LOG-PICKUP', lore(ITEMS[item.kind].loreName));
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');
     recordLoreEvent(state, 'LOG-GOT-KEY');

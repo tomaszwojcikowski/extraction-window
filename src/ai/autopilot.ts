@@ -8,6 +8,7 @@ import {
   type GameState,
 } from '../sim';
 import { INVENTORY_SLOTS } from '../data/items';
+import { EM_HIGH } from '../sim/emStress';
 
 function dartAim(
   state: GameState,
@@ -35,6 +36,32 @@ function nearestDartTarget(state: GameState) {
   return best;
 }
 
+function randomStep(state: GameState): Action {
+  const dirs = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  const { x, y } = state.player;
+  const shuffled = dirs.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(state.rng() * (i + 1));
+    const tmp = shuffled[i]!;
+    shuffled[i] = shuffled[j]!;
+    shuffled[j] = tmp;
+  }
+  for (const [dx, dy] of shuffled) {
+    const nx = x + dx!;
+    const ny = y + dy!;
+    if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) continue;
+    if (!state.tiles[ny]![nx]!.walkable) continue;
+    if (state.enemies.some((e) => e.alive && e.x === nx && e.y === ny)) continue;
+    return { type: 'move', dx: dx!, dy: dy! };
+  }
+  return { type: 'wait' };
+}
+
 /**
  * Headless autopilot: path to objectives, fight blockers, heal when low,
  * use tactical tools, key/core interactions, exit sectors.
@@ -54,13 +81,13 @@ export function chooseAction(state: GameState): Action | null {
   const mechanicHint = mechanicsAutopilotHint(state);
   if (mechanicHint) return mechanicHint;
 
-  // Finish dart aim if already aiming
+  // Finish dart aim if already aiming; cancel if target gone (avoid idle wait loop)
   if (state.ui.aimingDart) {
     const target = nearestDartTarget(state);
     if (target) {
       return { type: 'aim', dx: target.dx, dy: target.dy };
     }
-    return { type: 'wait' };
+    state.ui.aimingDart = false;
   }
 
   // Heal / recharge aggressively
@@ -128,15 +155,16 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  // Jammer when mites/wasps nearby and not already jamming
+  // Jammer: mites/wasps nearby, or EM-HIGH (quiet suppresses contamination aggro bump)
   if (state.player.jammerTurns <= 0) {
+    const emCritical = state.emStress >= EM_HIGH;
     const noisyNear = state.enemies.some(
       (e) =>
         e.alive &&
         (e.kind === 'mite' || e.kind === 'wasp') &&
         Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) <= 4,
     );
-    if (noisyNear) {
+    if (emCritical || noisyNear) {
       const jIdx = state.inventory.findIndex((s) => s.kind === 'jammer');
       if (jIdx >= 0) {
         state.ui.selectedSlot = jIdx;
@@ -201,7 +229,6 @@ export function chooseAction(state: GameState): Action | null {
   }
   const vestIdx = state.inventory.findIndex((s) => s.kind === 'ablative_vest');
   if (vestIdx >= 0 && state.player.equip.armor !== 'ablative_vest') {
-    // Prefer vest when HP pressure or no harness yet; harness if no vest and armor empty
     if (
       state.player.equip.armor !== 'harness' ||
       state.player.hp < state.player.maxHp * 0.7
@@ -268,14 +295,17 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  // Pickup useful items underfoot
+  // Always recover quest items underfoot (pathing targets them but old code skipped get)
   const here = state.items.find((i) => i.x === x && i.y === y);
-  if (here && here.kind !== 'relay_key' && here.kind !== 'nav_core') {
+  if (here) {
+    if (here.kind === 'relay_key' || here.kind === 'nav_core') {
+      return { type: 'get' };
+    }
     if (state.inventory.length < INVENTORY_SLOTS) return { type: 'get' };
   }
 
   const goal = currentObjectivePos(state);
-  if (!goal) return { type: 'wait' };
+  if (!goal) return randomStep(state);
 
   if (
     state.beaconPos &&
@@ -307,36 +337,37 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
-  const blocked = (bx: number, by: number) => {
+  const blockedElites = (bx: number, by: number) => {
+    if (state.npcs.some((n) => n.x === bx && n.y === by)) return true;
     const en = state.enemies.find((e) => e.alive && e.x === bx && e.y === by);
     if (!en) return false;
-    // Path around optional prizes when hurt; engage when healthy
     if ((en.tier === 'elite' || en.tier === 'boss') && state.player.hp < state.player.maxHp * 0.75) {
       return true;
     }
     return false;
   };
 
-  const path = bfsPath(state.tiles, { x, y }, goal, blocked);
-  if (!path || path.length === 0) {
-    if (state.exitPos && !(goal.x === state.exitPos.x && goal.y === state.exitPos.y)) {
-      const alt = bfsPath(state.tiles, { x, y }, state.exitPos, blocked);
-      if (alt && alt[0]) {
-        return { type: 'move', dx: alt[0].x - x, dy: alt[0].y - y };
-      }
-    }
-    const dirs = [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ];
-    const d = dirs[Math.floor(state.rng() * dirs.length)]!;
-    return { type: 'move', dx: d[0]!, dy: d[1]! };
+  const path = bfsPath(state.tiles, { x, y }, goal, blockedElites);
+  if (path && path[0]) {
+    return { type: 'move', dx: path[0].x - x, dy: path[0].y - y };
   }
 
-  const step = path[0]!;
-  return { type: 'move', dx: step.x - x, dy: step.y - y };
+  // Retry without elite avoidance — better to fight than thrash forever (NPCs still block)
+  const blockedNpcs = (bx: number, by: number) =>
+    state.npcs.some((n) => n.x === bx && n.y === by);
+  const direct = bfsPath(state.tiles, { x, y }, goal, blockedNpcs);
+  if (direct && direct[0]) {
+    return { type: 'move', dx: direct[0].x - x, dy: direct[0].y - y };
+  }
+
+  if (state.exitPos && !(goal.x === state.exitPos.x && goal.y === state.exitPos.y)) {
+    const alt = bfsPath(state.tiles, { x, y }, state.exitPos, blockedElites);
+    if (alt && alt[0]) {
+      return { type: 'move', dx: alt[0].x - x, dy: alt[0].y - y };
+    }
+  }
+
+  return randomStep(state);
 }
 
 export interface AutopilotResult {
@@ -360,7 +391,19 @@ export function runAutopilot(
     actions++;
 
     const pos = `${state.player.x},${state.player.y},${state.sectorIndex},${state.objectives.beaconOpen},${state.objectives.hasRelayKey},${state.objectives.hasNavCore}`;
-    if (pos === lastPos && action.type !== 'use' && action.type !== 'get' && action.type !== 'aim') {
+    const inMelee = state.enemies.some(
+      (e) =>
+        e.alive &&
+        Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) === 1,
+    );
+    if (
+      pos === lastPos &&
+      !inMelee &&
+      action.type !== 'use' &&
+      action.type !== 'get' &&
+      action.type !== 'aim' &&
+      action.type !== 'exit'
+    ) {
       idleStreak++;
     } else {
       idleStreak = 0;

@@ -1,7 +1,7 @@
-import { pushLog } from './combat';
+import { pushLog } from './log';
 import type { GameState } from './types';
 
-/** ADOM-style corruption lite: tricorder EM agitates Theta-7 ecology. */
+/** ADOM-style corruption lite: field-array EM agitates Meridian Shelf ecology. */
 export const EM_WARN = 35;
 export const EM_HIGH = 65;
 export const EM_MAX = 100;
@@ -32,9 +32,13 @@ export function emEnergyTax(state: GameState): number {
   return 0;
 }
 
-/** Extra aggro range for EM-sensitive fauna. */
+/**
+ * Extra aggro range for EM-sensitive fauna.
+ * Quiet stance (jammer) at EM-HIGH fully suppresses the contamination bump —
+ * FOV cost still applies via quietStance.modifyFov.
+ */
 export function emAggroBonus(state: GameState): number {
-  if (state.emStress >= EM_HIGH) return 1;
-  if (state.emStress >= EM_WARN) return 1;
-  return 0;
+  if (state.emStress < EM_WARN) return 0;
+  if (state.emStress >= EM_HIGH && state.player.jammerTurns > 0) return 0;
+  return 1;
 }

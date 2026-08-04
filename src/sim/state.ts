@@ -6,12 +6,13 @@ import { generateSectorMap } from '../map/generator';
 import { computeFov, playerFovRadius } from './fov';
 import { mulberry32 } from './rng';
 import type { GameState } from './types';
-import { pushLog } from './combat';
+import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
 
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
+  plains: 'LOG-SEC-PLAINS',
   flood: 'LOG-SEC-FLOOD',
   canopy: 'LOG-SEC-CANOPY',
   reef: 'LOG-SEC-REEF',
@@ -91,6 +92,8 @@ export function createGame(seed: number): GameState {
       { kind: 'sealant', count: 1 },
     ],
     enemies: map.enemies,
+    npcs: map.npcs,
+    allies: [],
     items: map.items,
     exitPos: map.exit,
     shuttlePos: map.shuttlePos,
@@ -101,6 +104,7 @@ export function createGame(seed: number): GameState {
     roomQuest: map.roomQuest,
     rooms: map.rooms.map((r) => ({ ...r })),
     surveyedRoomIds: [],
+    noticedNpcIds: [],
     codexPages: 0,
     codexLog: [],
     emStress: 0,
@@ -143,6 +147,7 @@ export function createGame(seed: number): GameState {
       (state.player.equip.utility === 'sensor_rig' ? 1 : 0),
   );
   pushLog(state, 'LOG-DROP');
+  pushLog(state, 'LOG-SEC-PLAINS');
   syncObjectiveFlags(state);
   mechanicsOnSectorEnter(state);
   return state;
@@ -168,6 +173,8 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.player.x = map.start.x;
   state.player.y = map.start.y;
   state.enemies = map.enemies;
+  state.npcs = map.npcs;
+  state.allies = [];
   state.items = map.items;
   state.exitPos = map.exit;
   state.shuttlePos = map.shuttlePos;

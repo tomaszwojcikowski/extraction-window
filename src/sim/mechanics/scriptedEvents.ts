@@ -1,8 +1,18 @@
-import { pushLog } from '../combat';
+import type { LoreId } from '../../data/lore';
+import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
 import { spawnRelayAmbushNearStep, activeQuestStep } from '../roomQuest';
 import type { GameState, Pos } from '../types';
 import type { Mechanic } from './types';
+
+/** File a prior-crew PADD without quest XP / paddMods (texture only). */
+function grantPriorCodex(state: GameState, page: LoreId): void {
+  if (!state.codexLog.includes(page)) {
+    state.codexLog.push(page);
+    state.codexPages += 1;
+  }
+  pushLog(state, page);
+}
 
 function once(state: GameState, id: string): boolean {
   if (state.scriptedFired[id]) return false;
@@ -53,6 +63,13 @@ export const scriptedEventsMechanic: Mechanic = {
     if (state.sectorId === 'plains' && once(state, 'plains_afterglow')) {
       pushLog(state, 'LOG-EVT-AFTERGLOW');
       addEmStress(state, 3, 'drop afterglow');
+      // Prior crew claimed the array was cold / hatch east — later scraps disagree
+      grantPriorCodex(state, 'CODEX-PRIOR-MAP');
+    }
+
+    if (state.sectorId === 'flood' && once(state, 'flood_prior_conflict')) {
+      pushLog(state, 'LOG-EVT-PRIOR-WASH');
+      grantPriorCodex(state, 'CODEX-PRIOR-ARRAY');
     }
 
     // Sector-enter pulse for the active quest step room on all biomes

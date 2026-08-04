@@ -2,10 +2,11 @@ import { getSector } from '../data/encounters';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { XP_SECTOR } from '../data/progression';
 import { computeFov, playerFovRadius } from './fov';
-import { pushLog } from './combat';
+import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
+import { moveAllies } from './allyAi';
 import { addStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax } from './emStress';
@@ -103,7 +104,10 @@ function tickEnvironment(state: GameState): void {
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
-  if (state.player.jammerTurns > 0) state.player.jammerTurns -= 1;
+  if (state.player.jammerTurns > 0) {
+    state.player.jammerTurns -= 1;
+    if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
+  }
   if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
   if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
@@ -126,6 +130,7 @@ export function endPlayerTurn(state: GameState): void {
     fovR(state),
   );
   moveEnemies(state);
+  moveAllies(state);
   // Recompute after enemy moves so presentation matches final visibility.
   computeFov(
     state.tiles,
