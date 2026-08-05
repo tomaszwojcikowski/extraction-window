@@ -21,6 +21,19 @@ export class TitleScene extends Phaser.Scene {
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
+    const surveyField = this.add.graphics();
+    surveyField.lineStyle(1, Theme.quest, 0.18);
+    surveyField.strokeCircle(width / 2, height * 0.31, 92);
+    surveyField.strokeCircle(width / 2, height * 0.31, 106);
+    surveyField.lineStyle(1, Theme.phosphor, 0.3);
+    surveyField.lineBetween(width / 2 - 124, height * 0.31, width / 2 - 78, height * 0.31);
+    surveyField.lineBetween(width / 2 + 78, height * 0.31, width / 2 + 124, height * 0.31);
+    surveyField.fillStyle(Theme.ionHazard, 0.35);
+    for (let i = 0; i < 8; i++) {
+      const x = width / 2 - 154 + ((i * 47) % 308);
+      const y = height * 0.17 + ((i * 31) % Math.max(1, height * 0.3));
+      surveyField.fillRect(x, y, i % 3 === 0 ? 2 : 1, 1);
+    }
 
     this.add
       .text(width / 2, height * 0.2, lore('UI-ORG'), {

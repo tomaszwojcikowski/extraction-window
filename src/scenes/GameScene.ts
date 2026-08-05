@@ -1,10 +1,18 @@
 import Phaser from 'phaser';
-import { TILE_DRAW, enemyTextureKey, npcTextureKey, allyTextureKey, wallTextureKey } from './textures';
+import {
+  TILE_DRAW,
+  enemyTextureKey,
+  npcTextureKey,
+  allyTextureKey,
+  playerTextureKey,
+  wallTextureKey,
+} from './textures';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
+import { tileBrightness } from '../sim/light';
 import {
   addCameraAtmosphere,
   createScanRetrace,
@@ -61,6 +69,7 @@ export class GameScene extends Phaser.Scene {
   private animFrame = 0;
   private animAccum = 0;
   private fovVignette!: Phaser.GameObjects.Graphics;
+  private fieldMotes!: Phaser.GameObjects.Graphics;
   private idleBob = 0;
 
   private topPanel!: Phaser.GameObjects.Graphics;
@@ -129,6 +138,8 @@ export class GameScene extends Phaser.Scene {
     this.entityLayer = this.add.container(0, 0);
     // Bloom above actors so the player lamp isn't buried under the sprite.
     this.lightLayer = this.add.container(0, 0);
+    this.fieldMotes = this.add.graphics();
+    this.lightLayer.add(this.fieldMotes);
     this.lightView = new LightView(this, this.lightLayer);
 
     this.playerSprite = this.add.image(0, 0, 't_player');
@@ -427,8 +438,9 @@ export class GameScene extends Phaser.Scene {
     this.animAccum += dt;
     if (this.animAccum >= 420) {
       this.animAccum = 0;
-      this.animFrame = (this.animFrame + 1) % 3;
+      this.animFrame = (this.animFrame + 1) % 4;
       this.tickAnimatedTiles();
+      this.tickAnimatedActors();
       // Pulse vent/hazard/beacon bloom with anim frame
       if (this.state.status === 'playing') this.applyFieldLighting();
     }
@@ -459,6 +471,17 @@ export class GameScene extends Phaser.Scene {
         if (!img) continue;
         img.setTexture(this.tileKey(kind, x, y));
       }
+    }
+  }
+
+  private tickAnimatedActors(): void {
+    this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
+    for (const en of this.state.enemies) {
+      if (!en.alive) continue;
+      const view = this.enemyViews.get(en.id);
+      if (!view) continue;
+      view.img.setTexture(enemyTextureKey(en.kind, this.animFrame % 3));
+      this.updateEnemyIntentLabel(view, en);
     }
   }
 
@@ -559,15 +582,16 @@ export class GameScene extends Phaser.Scene {
 
   private tileKey(kind: string, x = 0, y = 0): string {
     const f = this.animFrame;
+    const animated = (base: string): string => (f === 0 ? base : `${base}_${f}`);
     switch (kind) {
       case 'wall': {
         const v = (x * 3 + y * 7 + this.state.seed) % 2;
         return wallTextureKey(this.state.sectorId, v);
       }
       case 'hazard':
-        return f === 0 ? 't_hazard' : f === 1 ? 't_hazard_1' : 't_hazard_2';
+        return animated('t_hazard');
       case 'brine_pool':
-        return f === 0 ? 't_brine_pool' : f === 1 ? 't_brine_pool_1' : 't_brine_pool_2';
+        return animated('t_brine_pool');
       case 'scrub':
         return 't_scrub';
       case 'scrub_nest':
@@ -579,17 +603,17 @@ export class GameScene extends Phaser.Scene {
       case 'tripwire':
         return 't_tripwire';
       case 'vent':
-        return f === 0 ? 't_vent' : f === 1 ? 't_vent_1' : 't_vent_2';
+        return animated('t_vent');
       case 'exit':
         return 't_exit';
       case 'beacon':
-        return f === 0 ? 't_beacon' : f === 1 ? 't_beacon_1' : 't_beacon_2';
+        return animated('t_beacon');
       case 'shuttle':
         return 't_shuttle';
       case 'poi':
-        return f === 0 ? 't_poi' : f === 1 ? 't_poi_1' : 't_poi_2';
+        return animated('t_poi');
       case 'quest':
-        return f === 0 ? 't_quest_tile' : f === 1 ? 't_quest_tile_1' : 't_quest_tile_2';
+        return animated('t_quest_tile');
       case 'floor': {
         const v = (x + y * 3 + this.state.seed) % 3;
         return floorTextureKey(this.state.sectorId, v);
@@ -833,7 +857,7 @@ export class GameScene extends Phaser.Scene {
       const visible = st.visible[en.y]![en.x];
       let view = this.enemyViews.get(en.id);
       if (!view) {
-        const img = this.add.image(0, 0, enemyTextureKey(en.kind));
+        const img = this.add.image(0, 0, enemyTextureKey(en.kind, this.animFrame % 3));
         img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
         const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
           fontFamily: FONT_DATA,
@@ -842,19 +866,21 @@ export class GameScene extends Phaser.Scene {
           stroke: '#000000',
           strokeThickness: 3,
         });
+        label.setOrigin(0.5, 1);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: en.x, gy: en.y };
         this.enemyViews.set(en.id, view);
         this.snapImg(img, en.x, en.y);
-        label.setPosition(img.x - 6, img.y - 10);
+        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
       view.img.setVisible(visible);
       view.label.setVisible(visible);
-      view.img.setTexture(enemyTextureKey(en.kind));
+      view.img.setTexture(enemyTextureKey(en.kind, this.animFrame % 3));
+      this.updateEnemyIntentLabel(view, en);
       if (snapPositions) {
         this.snapImg(view.img, en.x, en.y);
-        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
         view.gx = en.x;
         view.gy = en.y;
       }
@@ -884,19 +910,20 @@ export class GameScene extends Phaser.Scene {
           stroke: '#000000',
           strokeThickness: 3,
         });
+        label.setOrigin(0.5, 1);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: n.x, gy: n.y };
         this.npcViews.set(n.id, view);
         this.snapImg(img, n.x, n.y);
-        label.setPosition(img.x - 6, img.y - 10);
+        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
       view.img.setVisible(visible);
       view.label.setVisible(visible && !n.talked);
       view.img.setAlpha(n.talked ? 0.45 : 1);
       if (snapPositions) {
         this.snapImg(view.img, n.x, n.y);
-        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
         view.gx = n.x;
         view.gy = n.y;
       }
@@ -926,19 +953,20 @@ export class GameScene extends Phaser.Scene {
           stroke: '#000000',
           strokeThickness: 3,
         });
+        label.setOrigin(0.5, 1);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: a.x, gy: a.y };
         this.allyViews.set(a.id, view);
         this.snapImg(img, a.x, a.y);
-        label.setPosition(img.x - 6, img.y - 10);
+        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
       view.img.setVisible(visible);
       view.label.setVisible(visible);
       view.img.setTexture(allyTextureKey(a.kind));
       if (snapPositions) {
         this.snapImg(view.img, a.x, a.y);
-        view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
         view.gx = a.x;
         view.gy = a.y;
       }
@@ -955,6 +983,35 @@ export class GameScene extends Phaser.Scene {
     if (snapPositions) this.snapImg(this.playerSprite, st.player.x, st.player.y);
     // Keep player on top
     this.entityLayer.bringToTop(this.playerSprite);
+  }
+
+  private updateEnemyIntentLabel(
+    view: EnemyView,
+    enemy: GameState['enemies'][number],
+  ): void {
+    if (enemy.windup <= 0) {
+      view.label.setText(ENEMIES[enemy.kind].glyph);
+      view.label.setColor('#ffffff');
+      view.label.setFontSize(11);
+      return;
+    }
+    const marker =
+      enemy.intent === 'beam'
+        ? 'BEAM'
+        : enemy.intent === 'overwatch'
+          ? 'OW'
+          : enemy.intent === 'pounce'
+            ? 'P!'
+            : 'CHARGE';
+    const color =
+      enemy.intent === 'beam'
+        ? '#66ccff'
+        : enemy.intent === 'overwatch'
+          ? '#cc99ff'
+          : '#ff8066';
+    view.label.setText(marker);
+    view.label.setColor(color);
+    view.label.setFontSize(marker.length > 2 ? 8 : 10);
   }
 
   private updateCamera(snap: boolean): void {
@@ -1156,12 +1213,42 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Capped procedural dust/ion motes; rebuilt so no particle survives outside FOV. */
+  private drawFieldMotes(): void {
+    const st = this.state;
+    this.fieldMotes.clear();
+    let count = 0;
+    const maxMotes = 44;
+    for (let y = 0; y < st.height && count < maxMotes; y++) {
+      for (let x = 0; x < st.width && count < maxMotes; x++) {
+        if (!st.visible[y]?.[x] || tileBrightness(st, x, y) < 0.28) continue;
+        const hash = (x * 73856093) ^ (y * 19349663) ^ (st.seed * 83492791);
+        if (Math.abs(hash) % 7 !== this.animFrame % 4) continue;
+        const ion = (Math.abs(hash >> 4) + this.animFrame) % 5 === 0;
+        const ox = 5 + (Math.abs(hash >> 7) % Math.max(1, TILE_DRAW - 10));
+        const oy =
+          5 +
+          ((Math.abs(hash >> 13) + this.animFrame * (ion ? 3 : 1)) %
+            Math.max(1, TILE_DRAW - 10));
+        this.fieldMotes.fillStyle(ion ? Theme.ionHazard : Theme.phosphorBright, ion ? 0.5 : 0.28);
+        this.fieldMotes.fillRect(
+          x * TILE_DRAW + ox,
+          y * TILE_DRAW + oy,
+          ion ? 2 : 1,
+          ion ? 2 : 1,
+        );
+        count += 1;
+      }
+    }
+  }
+
   private applyFieldLighting(): void {
     const st = this.state;
     this.lightView.syncTurn(st.turn);
     const sources = this.lightView.allSources(st, this.animFrame);
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
-    this.lightView.drawBloom(sources, st.visible);
+    this.drawFieldMotes();
+    this.lightView.drawBloom(sources, st.visible, st.tiles);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
     for (const patch of st.contamination) {
       const tile = this.tileSprites[patch.y]?.[patch.x];

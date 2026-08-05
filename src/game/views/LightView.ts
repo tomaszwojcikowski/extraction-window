@@ -92,19 +92,36 @@ export class LightView {
     this.fx = next;
   }
 
-  drawBloom(sources: LightSource[], visible: boolean[][]): void {
+  drawBloom(
+    sources: LightSource[],
+    visible: boolean[][],
+    tiles?: GameState['tiles'],
+  ): void {
     this.lightsGfx.clear();
     for (const s of sources) {
       const row = visible[s.y];
       if (!row?.[s.x]) continue;
       const wx = s.x * TILE_DRAW + TILE_DRAW / 2;
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
-      const core = Math.max(6, TILE_DRAW * 0.55 * Math.sqrt(s.intensity));
-      const halo = Math.max(core + 4, s.radius * TILE_DRAW * 0.4);
-      const aCore = Math.min(0.28, 0.1 + s.intensity * 0.18);
-      const aHalo = aCore * 0.35;
-      this.lightsGfx.fillStyle(s.color, aHalo);
-      this.lightsGfx.fillCircle(wx, wy, halo);
+      const blocked = tiles
+        ? [
+            tiles[s.y - 1]?.[s.x],
+            tiles[s.y + 1]?.[s.x],
+            tiles[s.y]?.[s.x - 1],
+            tiles[s.y]?.[s.x + 1],
+          ].filter((tile) => tile && !tile.transparent).length
+        : 0;
+      const attenuation = Math.max(0.48, 1 - blocked * 0.13);
+      const core = Math.max(6, TILE_DRAW * 0.46 * Math.sqrt(s.intensity));
+      const middle = Math.max(core + 5, s.radius * TILE_DRAW * 0.27 * attenuation);
+      const outer = Math.max(middle + 6, s.radius * TILE_DRAW * 0.44 * attenuation);
+      const aCore = Math.min(0.32, (0.11 + s.intensity * 0.18) * attenuation);
+
+      // Deliberately stepped rings retain the pixel-art lighting language.
+      this.lightsGfx.fillStyle(s.color, aCore * 0.16);
+      this.lightsGfx.fillCircle(wx, wy, outer);
+      this.lightsGfx.fillStyle(s.color, aCore * 0.34);
+      this.lightsGfx.fillCircle(wx, wy, middle);
       this.lightsGfx.fillStyle(s.color, aCore);
       this.lightsGfx.fillCircle(wx, wy, core);
     }
@@ -198,8 +215,9 @@ export class LightView {
 
         img.setTexture(tileKey(kind, x, y));
         if (!st.visible[y]![x]) {
-          img.setTint(Theme.memory);
-          img.setAlpha(0.32);
+          // Survey memory is distinctly cool and recedes behind active FOV.
+          img.setTint(0x46536f);
+          img.setAlpha(0.24);
           continue;
         }
 
@@ -217,13 +235,13 @@ export class LightView {
           kind === 'rubble' ||
           kind === 'tripwire';
         let tint = isTerrain ? floorTint : 0xffffff;
-        tint = multiplyTint(tint, ambientTint, 0.35);
+        tint = multiplyTint(tint, ambientTint, 0.28);
         if (colorPull > 0.04) {
-          tint = multiplyTint(tint, colorAcc, Math.min(0.6, colorPull * 0.45));
+          tint = multiplyTint(tint, colorAcc, Math.min(0.72, colorPull * 0.58));
         }
-        tint = blendTowardWhite(tint, brightness * 0.28);
+        tint = blendTowardWhite(tint, brightness * 0.4);
         img.setTint(tint);
-        img.setAlpha(0.38 + 0.62 * brightness);
+        img.setAlpha(0.46 + 0.54 * brightness);
       }
     }
   }

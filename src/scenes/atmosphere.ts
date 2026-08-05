@@ -45,32 +45,55 @@ export function drawMenuChrome(
   accent: number = Theme.phosphor,
 ): void {
   g.clear();
-  g.fillStyle(Theme.groundDeep, 1);
+  g.fillGradientStyle(0x020207, 0x080817, 0x0e0912, 0x030309, 1);
   g.fillRect(0, 0, width, height);
 
-  // Main panel
-  g.fillStyle(Theme.ground, 1);
+  // Deep nested field and quiet sensor bands.
+  g.fillGradientStyle(Theme.ground, 0x171424, 0x090914, Theme.panel, 1);
   g.fillRect(40, 44, width - 80, height - 88);
+  g.fillStyle(Theme.phosphorMute, 0.08);
+  for (let y = 78; y < height - 76; y += 18) {
+    g.fillRect(58, y, width - 116, 1);
+  }
+  for (let i = 0; i < 18; i++) {
+    const x = 70 + ((i * 97) % Math.max(1, width - 140));
+    const y = 76 + ((i * 53) % Math.max(1, height - 152));
+    g.fillStyle(i % 5 === 0 ? Theme.quest : Theme.phosphorBright, i % 5 === 0 ? 0.25 : 0.12);
+    g.fillRect(x, y, i % 4 === 0 ? 2 : 1, 1);
+  }
 
   // Outer LCARS frame
-  g.lineStyle(2, accent, 0.85);
+  g.lineStyle(1, Theme.phosphorBright, 0.9);
   g.strokeRect(40.5, 44.5, width - 81, height - 89);
+  g.lineStyle(1, accent, 0.35);
+  g.strokeRect(44.5, 48.5, width - 89, height - 97);
 
-  // Top elbow bar
+  // Strong segmented top elbow.
   g.fillStyle(accent, 1);
-  g.fillRect(48, 52, width - 140, 10);
-  g.fillRect(width - 100, 52, 44, 10);
-  g.fillRect(width - 64, 52, 10, 28);
+  g.fillRect(48, 52, width - 178, 12);
+  g.fillRect(width - 116, 52, 60, 12);
+  g.fillRect(width - 68, 52, 12, 38);
+  g.fillStyle(Theme.phosphorBright, 0.9);
+  g.fillRect(54, 55, width - 202, 2);
+  g.fillStyle(Theme.storm, 0.95);
+  g.fillRect(width - 164, 52, 38, 12);
 
-  // Bottom elbow bar
+  // Mirrored lavender bottom elbow.
   g.fillStyle(Theme.quest, 0.9);
-  g.fillRect(48, height - 62, 10, 10);
-  g.fillRect(48, height - 62, width - 140, 8);
-  g.fillRect(width - 100, height - 62, 44, 8);
+  g.fillRect(48, height - 72, 12, 22);
+  g.fillRect(48, height - 62, width - 188, 12);
+  g.fillRect(width - 128, height - 62, 72, 12);
+  g.fillStyle(Theme.phosphorBright, 0.65);
+  g.fillRect(62, height - 59, width - 224, 2);
 
-  // Side rail
-  g.fillStyle(Theme.phosphorMute, 0.55);
-  g.fillRect(48, 70, 8, height - 140);
+  // Segmented side rail and registration notches.
+  g.fillStyle(Theme.phosphorMute, 0.75);
+  g.fillRect(48, 72, 10, height - 160);
+  g.fillStyle(Theme.groundDeep, 1);
+  for (let y = 94; y < height - 92; y += 42) g.fillRect(48, y, 10, 5);
+  g.fillStyle(accent, 0.95);
+  g.fillRect(34, 82, 6, 52);
+  g.fillRect(34, height - 134, 6, 52);
 }
 
 /** Top/bottom in-run HUD strips — elbow accents without eating the map. */
@@ -89,16 +112,20 @@ export function drawHudStripChrome(
     g.fillRect(10, y + 4, width - 200, 6);
     g.fillRect(width - 178, y + 4, 36, 6);
     g.fillRect(width - 150, y + 4, 6, 16);
-    // Bottom rule into map
-    g.lineStyle(2, Theme.phosphor, 0.75);
+    // Thin, high-contrast map bezel.
+    g.lineStyle(1, Theme.phosphorBright, 0.95);
     g.lineBetween(0, y + height - 1, width, y + height - 1);
+    g.lineStyle(1, Theme.phosphor, 0.35);
+    g.lineBetween(0, y + height - 3, width, y + height - 3);
     // Side rail fragment
     g.fillStyle(Theme.phosphorMute, 0.55);
     g.fillRect(4, y + 12, 5, height - 18);
   } else {
-    // Top rule from map
-    g.lineStyle(2, Theme.phosphor, 0.75);
+    // Thin, high-contrast map bezel.
+    g.lineStyle(1, Theme.phosphorBright, 0.95);
     g.lineBetween(0, y + 1, width, y + 1);
+    g.lineStyle(1, Theme.quest, 0.35);
+    g.lineBetween(0, y + 3, width, y + 3);
     // Lavender elbow along bottom (matches Title menu)
     g.fillStyle(Theme.quest, 0.9);
     g.fillRect(10, y + height - 12, 8, 8);

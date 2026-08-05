@@ -2,15 +2,28 @@ import Phaser from 'phaser';
 import type { SectorId } from '../data/encounters';
 import type { EnemyKind } from '../data/enemies';
 import { Theme, floorTextureKey } from './theme';
+import {
+  drawDeluxeContact,
+  drawDeluxeEnemy,
+  drawDeluxeFloor,
+  drawDeluxeItem,
+  drawDeluxePlayer,
+  drawDeluxeProp,
+  drawDeluxeWall,
+} from './tex/deluxe';
 
 /** Base pixel art size — rendered larger on screen for readability. */
-export const TILE = 32;
-export const TILE_DRAW = 36;
+export const TILE = 48;
+export const TILE_DRAW = 46;
 
 export { FONT_DATA as FONT, FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
 
-export function enemyTextureKey(kind: EnemyKind): string {
-  return `t_enemy_${kind}`;
+export function enemyTextureKey(kind: EnemyKind, frame = 0): string {
+  return frame === 0 ? `t_enemy_${kind}` : `t_enemy_${kind}_${frame % 3}`;
+}
+
+export function playerTextureKey(frame = 0): string {
+  return frame === 0 ? 't_player' : `t_player_${frame % 3}`;
 }
 
 export function npcTextureKey(kind: string): string {
@@ -864,14 +877,14 @@ export function registerTextures(scene: Phaser.Scene): void {
   const styles: WallStyle[] = ['cliff', 'bulkhead', 'conduit'];
   for (const style of styles) {
     for (let v = 0; v < 2; v++) {
-      drawWall(g, T, style, v);
+      drawDeluxeWall(g, T, style, v);
       bake(g, `t_wall_${style}_${v}`, T);
     }
   }
   // Legacy wall aliases
-  drawWall(g, T, 'cliff', 0);
+  drawDeluxeWall(g, T, 'cliff', 0);
   bake(g, 't_wall', T);
-  drawWall(g, T, 'cliff', 1);
+  drawDeluxeWall(g, T, 'cliff', 1);
   bake(g, 't_wall_1', T);
 
   const sectors: SectorId[] = [
@@ -893,48 +906,48 @@ export function registerTextures(scene: Phaser.Scene): void {
   ];
   for (const id of sectors) {
     for (let v = 0; v < 3; v++) {
-      drawFloor(g, T, id, v);
+      drawDeluxeFloor(g, T, id, v);
       bake(g, floorTextureKey(id, v), T);
     }
   }
   // Legacy floor aliases
-  drawFloor(g, T, 'plains', 0);
+  drawDeluxeFloor(g, T, 'plains', 0);
   bake(g, 't_floor', T);
   bake(g, 't_floor_0', T);
-  drawFloor(g, T, 'plains', 1);
+  drawDeluxeFloor(g, T, 'plains', 1);
   bake(g, 't_floor_1', T);
-  drawFloor(g, T, 'plains', 2);
+  drawDeluxeFloor(g, T, 'plains', 2);
   bake(g, 't_floor_2', T);
 
-  drawProp(g, T, 'scrub');
+  drawDeluxeProp(g, T, 'scrub');
   bake(g, 't_scrub', T);
-  drawProp(g, T, 'scrub_nest');
+  drawDeluxeProp(g, T, 'scrub_nest');
   bake(g, 't_scrub_nest', T);
-  drawProp(g, T, 'rubble');
+  drawDeluxeProp(g, T, 'rubble');
   bake(g, 't_rubble', T);
-  drawProp(g, T, 'sealed');
+  drawDeluxeProp(g, T, 'sealed');
   bake(g, 't_sealed', T);
-  drawProp(g, T, 'tripwire');
+  drawDeluxeProp(g, T, 'tripwire');
   bake(g, 't_tripwire', T);
 
-  for (let f = 0; f < 3; f++) {
-    drawProp(g, T, 'vent', f);
+  for (let f = 0; f < 4; f++) {
+    drawDeluxeProp(g, T, 'vent', f);
     bake(g, f === 0 ? 't_vent' : `t_vent_${f}`, T);
-    drawProp(g, T, 'hazard', f);
+    drawDeluxeProp(g, T, 'hazard', f);
     bake(g, f === 0 ? 't_hazard' : `t_hazard_${f}`, T);
-    drawProp(g, T, 'brine_pool', f);
+    drawDeluxeProp(g, T, 'brine_pool', f);
     bake(g, f === 0 ? 't_brine_pool' : `t_brine_pool_${f}`, T);
-    drawProp(g, T, 'beacon', f);
+    drawDeluxeProp(g, T, 'beacon', f);
     bake(g, f === 0 ? 't_beacon' : `t_beacon_${f}`, T);
-    drawProp(g, T, 'poi', f);
+    drawDeluxeProp(g, T, 'poi', f);
     bake(g, f === 0 ? 't_poi' : `t_poi_${f}`, T);
-    drawProp(g, T, 'quest', f);
+    drawDeluxeProp(g, T, 'quest', f);
     bake(g, f === 0 ? 't_quest_tile' : `t_quest_tile_${f}`, T);
   }
 
-  drawProp(g, T, 'exit');
+  drawDeluxeProp(g, T, 'exit');
   bake(g, 't_exit', T);
-  drawProp(g, T, 'shuttle');
+  drawDeluxeProp(g, T, 'shuttle');
   bake(g, 't_shuttle', T);
 
   drawFog(g, T);
@@ -942,15 +955,17 @@ export function registerTextures(scene: Phaser.Scene): void {
   drawMemory(g, T);
   bake(g, 't_memory', T);
 
-  drawPlayer(g, T);
-  bake(g, 't_player', T);
+  for (let f = 0; f < 3; f++) {
+    drawDeluxePlayer(g, T, f);
+    bake(g, playerTextureKey(f), T);
+  }
 
-  drawItemCrate(g, T);
+  drawDeluxeItem(g, T, 'crate');
   bake(g, 't_item', T);
-  drawKeyCrystal(g, T);
+  drawDeluxeItem(g, T, 'key');
   bake(g, 't_quest', T);
   bake(g, 't_key', T);
-  drawNavCore(g, T);
+  drawDeluxeItem(g, T, 'core');
   bake(g, 't_nav_core', T);
 
   const kinds: EnemyKind[] = [
@@ -978,22 +993,24 @@ export function registerTextures(scene: Phaser.Scene): void {
     'shear_sovereign',
   ];
   for (const kind of kinds) {
-    drawEnemy(g, T, kind);
-    bake(g, enemyTextureKey(kind), T);
+    for (let f = 0; f < 3; f++) {
+      drawDeluxeEnemy(g, T, kind, f);
+      bake(g, enemyTextureKey(kind, f), T);
+    }
   }
 
   // Field contacts
-  drawNpcHolo(g, T);
+  drawDeluxeContact(g, T, 'npc', 'archive_holo');
   bake(g, npcTextureKey('archive_holo'), T);
-  drawNpcEnsign(g, T);
+  drawDeluxeContact(g, T, 'npc', 'stranded_ensign');
   bake(g, npcTextureKey('stranded_ensign'), T);
-  drawNpcTech(g, T);
+  drawDeluxeContact(g, T, 'npc', 'field_tech');
   bake(g, npcTextureKey('field_tech'), T);
-  drawNpcSurvey(g, T);
+  drawDeluxeContact(g, T, 'npc', 'survey_contact');
   bake(g, npcTextureKey('survey_contact'), T);
-  drawAllyDrone(g, T);
+  drawDeluxeContact(g, T, 'ally', 'probe_drone');
   bake(g, allyTextureKey('probe_drone'), T);
-  drawAllyEscort(g, T);
+  drawDeluxeContact(g, T, 'ally', 'away_escort');
   bake(g, allyTextureKey('away_escort'), T);
 
   g.destroy();

@@ -72,6 +72,18 @@ export class EndScene extends Phaser.Scene {
     const cameraAtmosphere = addCameraAtmosphere(this, won ? 0.045 : 0.08);
     const g = this.add.graphics();
     drawMenuChrome(this, g, width, height, accent);
+    const statusField = this.add.graphics();
+    statusField.lineStyle(1, accent, 0.3);
+    statusField.strokeCircle(width / 2, height * 0.3, 78);
+    statusField.strokeCircle(width / 2, height * 0.3, 88);
+    statusField.fillStyle(accent, 0.22);
+    for (let i = 0; i < 7; i++) {
+      const barWidth = 24 + ((i * 31) % 72);
+      const x = i % 2 === 0 ? 66 : width - 66 - barWidth;
+      statusField.fillRect(x, height * 0.18 + i * 27, barWidth, i % 3 === 0 ? 3 : 1);
+    }
+    statusField.fillStyle(won ? Theme.ok : Theme.danger, 0.5);
+    statusField.fillRect(width / 2 - 54, height * 0.3 + 48, 108, 2);
 
     this.add
       .text(width / 2, height * 0.2, lore('UI-MISSION-STATUS'), {

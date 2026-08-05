@@ -521,7 +521,9 @@ export function bumpMeleeAttackers(
       yoyo: true,
       ease: 'Quad.easeOut',
       onUpdate: () => {
-        if (view.label.active) view.label.setPosition(view.img.x - 6, view.img.y - 10);
+        if (view.label.active) {
+          view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
+        }
       },
     });
   }
@@ -567,7 +569,7 @@ export function playMoveAnims(
     const a = host.worldXY(from.x, from.y);
     const b = host.worldXY(to.x, to.y);
     img.setPosition(a.x, a.y);
-    if (label) label.setPosition(a.x - 6, a.y - 10);
+    if (label) label.setPosition(a.x, a.y - TILE_DRAW / 2 + 5);
     host.tweens.add({
       targets: img,
       x: b.x,
@@ -575,7 +577,9 @@ export function playMoveAnims(
       duration: MOVE_MS,
       ease: 'Cubic.easeOut',
       onUpdate: () => {
-        if (label && label.active) label.setPosition(img.x - 6, img.y - 10);
+        if (label && label.active) {
+          label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
+        }
       },
       onComplete: () => {
         if (img.active) img.setDisplaySize(TILE_DRAW, TILE_DRAW);
