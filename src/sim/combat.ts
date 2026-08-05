@@ -5,6 +5,7 @@ import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
 import { addStatus, addPlayerMarked, hasScar, hasStatus } from './status';
 import { hasSkill } from './progression';
+import { brandIonAttackPenalty } from './brands';
 import type { DamageType, Enemy, GameState } from './types';
 
 export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
@@ -135,8 +136,9 @@ export function enemyAttack(
     lastWindow -
     (hasStatus(state.player, 'expose') ? 2 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
-  const dmg = meleeDamage(atk, Math.max(0, def), variance);
+  const rawDamage = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
+  const dmg = dtype === 'ion' ? Math.max(1, rawDamage - brandIonAttackPenalty(enemy)) : rawDamage;
   const name = lore(ENEMIES[enemy.kind].loreName);
   const result = applyPlayerDamage(state, dmg, dtype, { source: name });
 

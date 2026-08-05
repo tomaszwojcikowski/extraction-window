@@ -10,6 +10,7 @@ import {
   tryRoomQuest,
   tryStabilizeQuest,
 } from '../../src/sim/roomQuest';
+import { roomQuestHudLine } from '../../src/sim/mechanics/roomQuestMechanic';
 import { combatArena, makeEnemy } from './fixtures';
 
 describe('ADOM Wave 3 — ion fronts', () => {
@@ -20,8 +21,8 @@ describe('ADOM Wave 3 — ion fronts', () => {
     const energy = st.player.energy;
 
     mechanicsOnEndTurn(st);
-    expect(st.emStress).toBe(em + 1);
-    expect(st.player.energy).toBe(energy - 1);
+    expect(st.emStress).toBe(em + 2);
+    expect(st.player.energy).toBe(energy - 2);
 
     st.ionFrontTurns = 2;
     st.player.jammerTurns = 4;
@@ -70,6 +71,13 @@ describe('ADOM Wave 3 — relay chain', () => {
 
     expect(st.roomQuest.done).toBe(true);
     expect(st.extractFavor).toEqual({ kind: 'pattern_fail_safe' });
+  });
+
+  it('previews the extract favor before an optional quest is completed', () => {
+    const st = combatArena();
+    st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+
+    expect(roomQuestHudLine(st)).toMatchObject({ favor: 'SHELTER', index: 1, total: 1 });
   });
 });
 

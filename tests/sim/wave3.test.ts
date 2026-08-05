@@ -5,6 +5,8 @@ import { killEnemy } from '../../src/sim/death';
 import { collectLightSources } from '../../src/sim/light';
 import { applyAllyFieldRoles } from '../../src/sim/allyAi';
 import { enemyAttack } from '../../src/sim/combat';
+import { useSelected } from '../../src/sim/inventory';
+import { effectiveAggro } from '../../src/sim/ai';
 import { combatArena, makeAlly, makeEnemy } from './fixtures';
 
 describe('Wave 3 branded rewards', () => {
@@ -38,6 +40,31 @@ describe('Wave 3 branded rewards', () => {
 
     expect(st.log.filter((entry) => entry.loreId === 'LOG-BRAND-SIGHT')).toHaveLength(1);
     expect(st.log[0]?.detail).toContain('SHADOWBOUND');
+  });
+
+  it('makes flarebound targets take extra flare damage and a longer stun', () => {
+    const st = combatArena();
+    const elite = makeEnemy({ kind: 'elite_skirmisher', x: st.player.x + 1, y: st.player.y });
+    st.enemies = [elite];
+    st.inventory = [{ kind: 'flare', count: 1 }];
+    st.ui.selectedSlot = 0;
+
+    expect(useSelected(st)).toBe(true);
+    expect(elite.hp).toBe(elite.maxHp - 6);
+    expect(elite.statuses.stun).toBe(3);
+  });
+
+  it('softens warded ion attacks and sharpens shadowbound dark aggro', () => {
+    const st = combatArena();
+    st.player.hp = 20;
+    st.player.def = 0;
+    const ward = makeEnemy({ kind: 'isolinear_warden', atk: 5, x: st.player.x + 1, y: st.player.y });
+    enemyAttack(st, ward, 0);
+    expect(st.player.hp).toBe(16);
+
+    const shadow = makeEnemy({ kind: 'elite_apex', x: st.player.x + 3, y: st.player.y });
+    st.illumination[st.player.y]![st.player.x] = 0;
+    expect(effectiveAggro(st, shadow)).toBe(ENEMIES.elite_apex.aggroRange + 1);
   });
 });
 

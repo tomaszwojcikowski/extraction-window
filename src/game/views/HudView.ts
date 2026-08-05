@@ -159,7 +159,7 @@ export class HudView {
         : '';
     const doctrine =
       st.doctrineQuiet > 0 || st.doctrineProbe > 0
-        ? `  ${lore('UI-DOCTRINE')}:Q${st.doctrineQuiet} P${st.doctrineProbe}`
+        ? `  ${lore('UI-DOCTRINE')}:Q${st.doctrineQuiet}${st.doctrineQuiet >= 3 ? '(-1EM)' : '/3'} P${st.doctrineProbe}${st.doctrineProbe >= 3 ? '(+5W)' : '/3'}`
         : '';
     const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}${allyRole}`;
     const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
@@ -253,7 +253,7 @@ export class HudView {
     if (questLine) {
       r.questText.setVisible(true);
       r.questText.setText(
-        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)}  ${questLine.index}/${questLine.total}`,
+        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} → ${questLine.favor}  ${questLine.index}/${questLine.total}`,
       );
       r.questText.setColor(st.ui.questFlash > 0 ? ThemeCss.phosphorBright : ThemeCss.quest);
     } else {

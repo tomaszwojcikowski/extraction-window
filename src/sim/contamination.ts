@@ -1,8 +1,8 @@
 import { pushLog } from './log';
 import type { GameState, Pos } from './types';
 
-const CONTAMINATION_TURNS = 2;
-const CONTAMINATION_ENERGY_COST = 2;
+const CONTAMINATION_TURNS = 3;
+const CONTAMINATION_ENERGY_COST = 3;
 
 /** Leave a short-lived energy-taxing residue, refreshing an existing patch. */
 export function leaveContamination(state: GameState, pos: Pos): void {
@@ -22,7 +22,7 @@ export function tickContamination(state: GameState): void {
     )
   ) {
     state.player.energy -= CONTAMINATION_ENERGY_COST;
-    pushLog(state, 'LOG-CONTAMINATION', `-${CONTAMINATION_ENERGY_COST}E`);
+    pushLog(state, 'LOG-CONTAMINATION', `tile tax -${CONTAMINATION_ENERGY_COST}E`);
   }
   state.contamination = state.contamination
     .map((tile) => ({ ...tile, turns: tile.turns - 1 }))

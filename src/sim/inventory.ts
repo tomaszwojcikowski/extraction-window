@@ -18,8 +18,8 @@ import { tryStabilizeQuest } from './roomQuest';
 import { gainXp, hasSkill, bumpDoctrine } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
-import { onNavCoreAcquired } from './mechanics/scriptedEvents';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
+import { flareDamageForEnemy } from './brands';
 import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 import { cancelOverwatch } from './ai';
@@ -394,8 +394,9 @@ export function useSelected(state: GameState): boolean {
       for (const en of state.enemies) {
         if (!en.alive) continue;
         if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) !== 1) continue;
-        en.hp -= 4;
-        addStatus(en, 'stun', 2);
+        const flareDamage = flareDamageForEnemy(en, 4);
+        en.hp -= flareDamage;
+        addStatus(en, 'stun', flareDamage > 4 ? 3 : 2);
         en.windup = 0;
         hits += 1;
         if (en.hp <= 0) killEnemy(state, en);
@@ -589,7 +590,6 @@ export function tryPickup(state: GameState): boolean {
     pushLog(state, 'LOG-GOT-CORE');
     recordLoreEvent(state, 'LOG-GOT-CORE');
     gainXp(state, XP_QUEST_ITEM, 'core');
-    onNavCoreAcquired(state);
   }
   syncObjectiveFlags(state);
   return true;

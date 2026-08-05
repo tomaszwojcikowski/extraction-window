@@ -1,18 +1,8 @@
-import type { LoreId } from '../../data/lore';
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
 import { spawnRelayAmbushNearStep, activeQuestStep } from '../roomQuest';
 import type { GameState } from '../types';
 import type { Mechanic } from './types';
-
-/** File a prior-crew PADD without quest XP / paddMods (texture only). */
-function grantPriorCodex(state: GameState, page: LoreId): void {
-  if (!state.codexLog.includes(page)) {
-    state.codexLog.push(page);
-    state.codexPages += 1;
-  }
-  pushLog(state, page);
-}
 
 function once(state: GameState, id: string): boolean {
   if (state.scriptedFired[id]) return false;
@@ -45,11 +35,9 @@ function shearPulse(state: GameState): void {
 /**
  * Sector scripted beats — prior-crew conflict + pillar-teaching pulses.
  *
- * Kept: drop EM afterglow, flood prior-map conflict, quest-room reveal,
- * survey mapper pulse (reef/ruin), beacon handshake teach, vault pattern hook,
- * approach storm pressure (soft bus tax), elite contact tell,
- * legacy relay ambush for deferred relay_chain saves.
- * Softened: approach shear no longer spawns vent rings around the player.
+ * Kept: drop EM afterglow, quest-room reveal, approach storm pressure,
+ * elite contact tell, and the legacy relay ambush for deferred relay-chain saves.
+ * Removed texture-only sector pulses and non-quest mapper reveals.
  */
 export const scriptedEventsMechanic: Mechanic = {
   id: 'scripted_events',
@@ -58,13 +46,6 @@ export const scriptedEventsMechanic: Mechanic = {
     if (state.sectorId === 'plains' && !state.tutorialActive && once(state, 'plains_afterglow')) {
       pushLog(state, 'LOG-EVT-AFTERGLOW');
       addEmStress(state, 3, 'drop afterglow');
-      // Prior crew claimed the array was cold / hatch east — later scraps disagree
-      grantPriorCodex(state, 'CODEX-PRIOR-MAP');
-    }
-
-    if (state.sectorId === 'flood' && once(state, 'flood_prior_conflict')) {
-      pushLog(state, 'LOG-EVT-PRIOR-WASH');
-      grantPriorCodex(state, 'CODEX-PRIOR-ARRAY');
     }
 
     // Sector-enter pulse for the active quest step room on all biomes
@@ -72,25 +53,6 @@ export const scriptedEventsMechanic: Mechanic = {
       markQuestOnMap(state);
       const step = activeQuestStep(state.roomQuest);
       if (step) revealRoomPulse(state, step.room);
-    }
-
-    if ((state.sectorId === 'reef' || state.sectorId === 'ruin') && once(state, `survey_${state.sectorId}`)) {
-      pushLog(state, 'LOG-EVT-SURVEY');
-      if (!state.roomQuest || state.roomQuest.done) {
-        if (state.exitPos) {
-          const midY = Math.floor(state.height / 2);
-          const midX = Math.floor(state.width / 2);
-          revealRoomPulse(state, { x: midX - 2, y: midY - 2, w: 5, h: 5 });
-        }
-      }
-    }
-
-    if (state.sectorId === 'beacon' && once(state, 'beacon_lock_warn')) {
-      pushLog(state, 'LOG-EVT-BEACON-TEACH');
-    }
-
-    if (state.sectorId === 'vault' && once(state, 'vault_pattern_hook')) {
-      pushLog(state, 'LOG-EVT-PATTERN-HOOK');
     }
 
     if (state.sectorId === 'approach') {
@@ -133,10 +95,3 @@ export const scriptedEventsMechanic: Mechanic = {
     }
   },
 };
-
-/** Mild pattern stress when Nav Core is first secured. */
-export function onNavCoreAcquired(state: GameState): void {
-  if (!once(state, 'core_pattern_seed')) return;
-  // Lore beat only — do not force desync (keeps coolant for skiff lock)
-  pushLog(state, 'LOG-PB-STRESS');
-}

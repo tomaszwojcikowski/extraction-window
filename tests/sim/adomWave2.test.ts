@@ -19,9 +19,12 @@ describe('ADOM Wave 2 — sealed hatch', () => {
     st.tiles[sy]![sx] = { kind: 'sealed', walkable: false, transparent: true };
     st.inventory = [{ kind: 'sealant', count: 1 }];
     st.ui.selectedSlot = 0;
+    const storm = st.stormTurns;
     expect(tryOpenAdjacentSealed(st)).toBe(true);
     expect(st.tiles[sy]![sx]!.kind).toBe('floor');
     expect(st.log.some((e) => e.loreId === 'LOG-SEALED-OPEN')).toBe(true);
+    expect(st.stormTurns).toBe(storm + 6);
+    expect(st.log.some((e) => e.loreId === 'LOG-SEALED-CACHE')).toBe(true);
   });
 
   it('pry opens sealed with pulse baton via exit', () => {
@@ -96,18 +99,22 @@ describe('ADOM Wave 2 — field craft', () => {
 describe('ADOM Wave 2 — doctrine', () => {
   it('tallies jammer/probe and logs at 3', () => {
     const st = createGame(42);
+    st.emStress = 10;
     bumpDoctrine(st, 'quiet');
     bumpDoctrine(st, 'quiet');
     expect(st.doctrineQuiet).toBe(2);
     expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-QUIET')).toBe(false);
     bumpDoctrine(st, 'quiet');
     expect(st.doctrineQuiet).toBe(3);
+    expect(st.emStress).toBe(9);
     expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-QUIET')).toBe(true);
 
+    const storm = st.stormTurns;
     bumpDoctrine(st, 'probe');
     bumpDoctrine(st, 'probe');
     bumpDoctrine(st, 'probe');
     expect(st.doctrineProbe).toBe(3);
+    expect(st.stormTurns).toBe(storm + 5);
     expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-PROBE')).toBe(true);
   });
 });

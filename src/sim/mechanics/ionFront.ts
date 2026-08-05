@@ -23,9 +23,9 @@ function pulseIonFront(state: GameState): void {
     return;
   }
 
-  addEmStress(state, 1, 'ion front');
+  addEmStress(state, 2, 'ion front');
   // Quiet remains useful under broad-spectrum shear without nullifying the front.
-  state.player.energy -= state.player.jammerTurns > 0 ? 0 : 1;
+  state.player.energy -= state.player.jammerTurns > 0 ? 0 : 2;
   pushLog(state, 'LOG-ION-PULSE');
 }
 

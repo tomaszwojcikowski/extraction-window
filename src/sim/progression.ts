@@ -67,10 +67,16 @@ function offerSkillFork(state: GameState, level: number): void {
 export function bumpDoctrine(state: GameState, which: 'quiet' | 'probe'): void {
   if (which === 'quiet') {
     state.doctrineQuiet += 1;
-    if (state.doctrineQuiet === 3) pushLog(state, 'LOG-DOCTRINE-QUIET');
+    if (state.doctrineQuiet === 3) {
+      state.emStress = Math.max(0, state.emStress - 1);
+      pushLog(state, 'LOG-DOCTRINE-QUIET', '-1 EM now');
+    }
   } else {
     state.doctrineProbe += 1;
-    if (state.doctrineProbe === 3) pushLog(state, 'LOG-DOCTRINE-PROBE');
+    if (state.doctrineProbe === 3) {
+      state.stormTurns += 5;
+      pushLog(state, 'LOG-DOCTRINE-PROBE', '+5 window now');
+    }
   }
 }
 

@@ -79,6 +79,13 @@ flowchart TB
 **Wave 3 complete.** Camera filters are WebGL-only atmosphere; unsupported renderers keep the existing
 Graphics/tint/light presentation. Sim light and FOV remain the gameplay source of truth.
 
+### Relevance pass
+
+Sealed hatches now refund a small storm window; brands alter flare, ion, and dark-aggro behavior;
+ion fronts and contamination have clearer, sharper taxes; and Q3/P3 doctrine plus optional quest
+favor previews make their thresholds and rewards visible. Texture-only scripted pulses were removed;
+the optional quest route remains outside the extraction spine.
+
 ---
 
 ## Guardrails

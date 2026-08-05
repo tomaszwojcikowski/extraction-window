@@ -224,11 +224,6 @@ export const LORE = {
     'Field tech: Halcyon probe reboot successful — short combat assist only.',
   'CODEX-SURVEY':
     'Survey contact: map a mid-room or bring a Nav Ping — optional favor for storm refund.',
-  'CODEX-PRIOR-MAP':
-    'Prior PADD: hatch bearing due inland-east from drop. Array reported cold — safe for survey.',
-  'CODEX-PRIOR-ARRAY':
-    'Conflicting scrap: lead swore the field array shut clean. Residual scan pressure says it never did.',
-
   // Items
   'ITEM-RELAY-KEY': 'Splice Key',
   'ITEM-RELAY-KEY-DESC': 'Emergency Beacon inland authorization crystal.',
@@ -345,9 +340,9 @@ export const LORE = {
   'ENEMY-SHEAR-NOTE': 'Storm-shear hunter — desync pressure.',
   'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and shear-window refund on kill.',
   'ENEMY-BOSS-NOTE': 'Campaign apex — optional detour, rich storm/XP/kit payoff.',
-  'BRAND-FLAREBOUND': 'FLAREBOUND — volatile charge; recover a Flare Prism on kill.',
-  'BRAND-WARDED': 'WARDED — ion lattice plating; recover Ward Weave on kill.',
-  'BRAND-SHADOWBOUND': 'SHADOWBOUND — scan-breaking field; recover a Shadow Lens on kill.',
+  'BRAND-FLAREBOUND': 'FLAREBOUND — plasma flares hit harder and stun longer; recover a Flare Prism on kill.',
+  'BRAND-WARDED': 'WARDED — ion lattice softens its own ion strikes; recover Ward Weave on kill.',
+  'BRAND-SHADOWBOUND': 'SHADOWBOUND — gains +1 aggro against targets in shadow; recover a Shadow Lens on kill.',
 
   // Logs
   'LOG-DROP':
@@ -413,6 +408,7 @@ export const LORE = {
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
   'LOG-SEALED-OPEN': 'Sealant cracks the sealed hatch — floor cleared.',
   'LOG-SEALED-PRY': 'Pulse baton pries the sealed hatch open.',
+  'LOG-SEALED-CACHE': 'Hatch cache recovered — shear window refunded.',
   'LOG-TRIPWIRE': 'Tripwire snaps — EM spike; nearby fauna alerted.',
   'LOG-BRINE-POOL': 'Brine pool drains the bus.',
   'LOG-SCRUB-NEST': 'Scrub nest stirs — mite emerges.',
@@ -421,8 +417,8 @@ export const LORE = {
   'LOG-CRAFT-BALM': 'Field craft: shard + coolant → pattern balm.',
   'LOG-CRAFT-NEED': 'Need sealant or energy with the field sample to craft.',
   'LOG-USE-BALM': 'Pattern balm applied — desync cleared, EM purged.',
-  'LOG-DOCTRINE-QUIET': 'Quiet doctrine settling — soft stance habits forming.',
-  'LOG-DOCTRINE-PROBE': 'Probe doctrine settling — array habits forming.',
+  'LOG-DOCTRINE-QUIET': 'Quiet doctrine threshold — EM scrub applied; Quiet5 later restores FOV.',
+  'LOG-DOCTRINE-PROBE': 'Probe doctrine threshold — survey window refunded.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
   'LOG-AIM-MISS': 'Microdart spent — no valid visible target in range.',
@@ -442,7 +438,7 @@ export const LORE = {
   'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
   'LOG-RETREAT': 'Tactical retreat — bus diverted.',
   'LOG-RETREAT-FAIL': 'No safe retreat vector or insufficient bus.',
-  'LOG-CONTAMINATION': 'Spore contamination taxes the bus.',
+  'LOG-CONTAMINATION': 'Spore contamination tile tax drains the bus.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
   'LOG-STATUS-BLEED': 'Bleed tick',
@@ -552,18 +548,12 @@ export const LORE = {
   'LOG-QUIET-OFF': 'Quiet stance offline — sensors and fauna interest return.',
   'LOG-QUIET-EM': 'Quiet stance holding — EM-HIGH aggro bump suppressed while FOV stays tight.',
   'LOG-EVT-AFTERGLOW': 'Drop afterglow — residual field-array EM spike.',
-  'LOG-EVT-SURVEY': 'Prior survey echo — mapper pulse paints a room.',
-  'LOG-EVT-BEACON-TEACH':
-    'Beacon note: Splice authorization is a sustained handshake — do not leave the pad.',
-  'LOG-EVT-PATTERN-HOOK': 'Cache warning: Nav Lattice pattern buffers hate plasma vents and EM.',
   'LOG-EVT-APPROACH': 'Pad approach — storm shear will pulse the bus; watch the pattern buffer.',
   'LOG-EVT-SHEAR': 'Storm shear pulse — bus tax under pad approach pressure.',
   'LOG-ION-FRONT': 'Ion front forming — broad-spectrum shear will tax EM and lit fauna tracking.',
-  'LOG-ION-PULSE': 'Ion front pulse — EM rises and the bus takes a shear bite.',
+  'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 bus; Quiet, filter, or flare dampens it.',
   'LOG-ION-DAMPEN': 'Ion front pulse dampened by field kit shielding.',
   'LOG-ION-CLEAR': 'Ion front clearing — sector shear subsides.',
-  'LOG-EVT-PRIOR-WASH':
-    'Wash note: prior map marked this basin dry shelf — standing shear-water disagrees.',
   'LOG-XP': 'Survey proficiency gained.',
   'LOG-LEVEL': 'Survey proficiency advanced.',
   'LOG-SKILL': 'Field skill unlocked.',

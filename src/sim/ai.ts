@@ -10,6 +10,7 @@ import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
 import { inShadow, isLit } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
 import { leaveContamination } from './contamination';
+import { shadowboundDarkAggro } from './brands';
 import type { Enemy, GameState, Pos } from './types';
 
 function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: number): boolean {
@@ -48,6 +49,7 @@ export function effectiveAggro(state: GameState, enemy: Enemy): number {
     }
     if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
   }
+  r += shadowboundDarkAggro(enemy, inShadow(state, state.player.x, state.player.y));
   return r;
 }
 

@@ -24,6 +24,10 @@ function adjacentSealed(state: GameState): Pos | null {
 export function openSealedTile(state: GameState, x: number, y: number, how: 'sealant' | 'pry'): void {
   state.tiles[y]![x] = { ...FLOOR };
   pushLog(state, how === 'sealant' ? 'LOG-SEALED-OPEN' : 'LOG-SEALED-PRY');
+  // Every sealed hatch conceals a short route refund, so spending a tool or a
+  // turn to open one remains a meaningful optional detour.
+  state.stormTurns += 6;
+  pushLog(state, 'LOG-SEALED-CACHE', '+6 window');
 }
 
 /** Sealant foam on an adjacent sealed hatch (inventory use path). */

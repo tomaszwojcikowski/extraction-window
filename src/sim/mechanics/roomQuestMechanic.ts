@@ -1,5 +1,6 @@
 import type { Action, GameState } from '../types';
 import { tryRoomQuest, tickRoomQuest, questStepPrompt, activeQuestStep } from '../roomQuest';
+import { FAVOR_LABEL, favorForQuest } from '../extractFavor';
 import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
 
@@ -36,10 +37,17 @@ export const roomQuestMechanic: Mechanic = {
   },
 };
 
-export function roomQuestHudLine(state: GameState): { prompt: LoreId; index: number; total: number } | null {
+export function roomQuestHudLine(
+  state: GameState,
+): { prompt: LoreId; index: number; total: number; favor: string } | null {
   const rq = state.roomQuest;
   if (!rq || rq.done) return null;
   const prompt = questStepPrompt(rq);
   if (!prompt) return null;
-  return { prompt, index: rq.stepIndex + 1, total: rq.steps.length };
+  return {
+    prompt,
+    index: rq.stepIndex + 1,
+    total: rq.steps.length,
+    favor: FAVOR_LABEL[favorForQuest(state)],
+  };
 }

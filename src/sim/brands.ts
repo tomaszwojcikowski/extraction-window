@@ -7,6 +7,21 @@ export function enemyBrand(enemy: Enemy): EnemyBrand | null {
   return ENEMIES[enemy.kind].brand ?? null;
 }
 
+/** Flarebound targets overload under a plasma flare. */
+export function flareDamageForEnemy(enemy: Enemy, baseDamage: number): number {
+  return enemyBrand(enemy) === 'flarebound' ? baseDamage + 2 : baseDamage;
+}
+
+/** Warded ion lattices blunt their own ion output by one point. */
+export function brandIonAttackPenalty(enemy: Enemy): number {
+  return enemyBrand(enemy) === 'warded' ? 1 : 0;
+}
+
+/** Shadowbound fields make dark tiles a more dangerous place to linger. */
+export function shadowboundDarkAggro(enemy: Enemy, playerInShadow: boolean): number {
+  return enemyBrand(enemy) === 'shadowbound' && playerInShadow ? 1 : 0;
+}
+
 export function brandLoreId(brand: EnemyBrand): LoreId {
   switch (brand) {
     case 'flarebound':
