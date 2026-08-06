@@ -5,6 +5,7 @@ import {
   wakeTellsAt,
   wouldNoticeEnemy,
 } from '../../src/game/presenters/WakeTells';
+import { pressureRevealTint } from '../../src/game/presenters/PressureReveal';
 import { computeShearPressure } from '../../src/game/presenters/ShearPressure';
 import type { Enemy, GameState } from '../../src/sim/types';
 
@@ -58,6 +59,7 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
     xpToNext: 100,
     lootTakenThisSector: false,
     ionFrontTurns: 0,
+    scanScars: [],
     ...over,
   } as GameState;
 }
@@ -196,5 +198,91 @@ describe('collectWakeTells', () => {
     expect(collectWakeTells(st).every((t) => !t.litBoost)).toBe(true);
     const preview = wakeTellsAt(st, 6, 6);
     expect(preview.some((t) => t.litBoost)).toBe(true);
+  });
+
+  it('preview and live share identical tell sets at the same tile', () => {
+    const st = stubState({
+      enemies: [
+        stubEnemy('crawler', 7, 5),
+        stubEnemy('wasp', 6, 6),
+        stubEnemy('mite', 8, 5),
+      ],
+    });
+    st.player.x = 5;
+    st.player.y = 5;
+    const live = collectWakeTells(st);
+    const preview = wakeTellsAt(st, st.player.x, st.player.y);
+    expect(preview.map((t) => t.id).sort()).toEqual(live.map((t) => t.id).sort());
+    for (const id of live.map((t) => t.id)) {
+      const a = live.find((t) => t.id === id)!;
+      const b = preview.find((t) => t.id === id)!;
+      expect(b.litBoost).toBe(a.litBoost);
+      expect(b.darkBoost).toBe(a.darkBoost);
+      expect(b.neutralNotice).toBe(a.neutralNotice);
+    }
+  });
+
+  it('guard alerted extends engage to aggro range', () => {
+    const st = stubState({
+      enemies: [stubEnemy('crawler', 9, 5, { alerted: true })],
+    });
+    expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(true);
+    expect(collectWakeTells(st)).toHaveLength(1);
+  });
+
+  it('swell pre-burst uses neutral notice bracket language', () => {
+    const st = stubState({
+      enemies: [stubEnemy('spore', 6, 5, { swellTurns: 0 })],
+    });
+    const tells = collectWakeTells(st);
+    expect(tells).toHaveLength(1);
+    expect(tells[0]!.neutralNotice).toBe(true);
+  });
+
+  it('quiet jammer shrinks preview footprint same as live', () => {
+    const st = stubState({
+      enemies: [stubEnemy('sentinel', 10, 5)], // dist=5, aggro 5
+    });
+    expect(collectWakeTells(st)).toHaveLength(1);
+    st.player.jammerTurns = 3; // aggro shrinks to 2 — out of range
+    expect(collectWakeTells(st)).toHaveLength(0);
+    expect(wakeTellsAt(st, 5, 5)).toHaveLength(0);
+  });
+});
+
+describe('pressureRevealTint', () => {
+  function questTileState(): GameState {
+    const st = stubState({});
+    st.tiles[3]![7] = { kind: 'quest', walkable: true, transparent: true };
+    return st;
+  }
+
+  it('returns null at Calm — optional path stays sealed', () => {
+    const st = questTileState();
+    const calm = computeShearPressure(st);
+    expect(calm.state).toBe('Calm');
+    expect(pressureRevealTint(st, calm, 7, 3, 0)).toBeNull();
+  });
+
+  it('returns arc tint at Arcing+ for explored visible optional tiles', () => {
+    const st = questTileState();
+    st.stormTurns = Math.floor(STORM_TURNS * 0.35);
+    st.player.energy = 25;
+    const arcing = computeShearPressure(st);
+    expect(arcing.state).toBe('Arcing');
+    // Flicker gate: (animFrame + x + y) % 3 === 0 at Arcing
+    const tint = pressureRevealTint(st, arcing, 7, 3, 2);
+    expect(tint).not.toBeNull();
+  });
+
+  it('skips unseen or unexplored tiles — no ESP reveal', () => {
+    const st = questTileState();
+    const arcing = computeShearPressure(
+      stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
+    );
+    st.stormTurns = 0;
+    st.player.energy = 5;
+    st.visible[3]![7] = false;
+    expect(pressureRevealTint(st, arcing, 7, 3, 0)).toBeNull();
   });
 });
