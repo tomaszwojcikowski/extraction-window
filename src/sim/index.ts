@@ -21,6 +21,7 @@ export {
   lightTransmittance,
   toneMap,
   accumulateLight,
+  floodAddLight,
   rebuildIllumination,
   isLit,
   inShadow,
