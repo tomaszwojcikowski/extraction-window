@@ -15,6 +15,12 @@ export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
+/** Rays per light pool — enough to read as a soft wall-cut shape, not a star. */
+const POOL_RAYS = 48;
+const POOL_STEP = 0.28;
+/** Additive shells per pool — fewer shells = less banding; rays carry the silhouette. */
+const POOL_SHELLS = 7;
+
 function multiplyTint(base: number, light: number, amount: number): number {
   const br = (base >> 16) & 0xff;
   const bg = (base >> 8) & 0xff;
@@ -48,8 +54,8 @@ function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource 
  * Field lighting — draws from the sim illumination grid + shared emitters.
  *
  * Three physical claims this view has to sell:
- *  1. light has a *glow* — Phaser PointLights (engine soft radial falloff);
- *     tile tint from Dijkstra flood keeps walls honest in gameplay brightness;
+ *  1. light has a *shape* — pools are ray-marched against the tile grid, so a
+ *     wall cuts the pool instead of a circle fading over it;
  *  2. light comes *from* somewhere — actors drop a contact shadow away from
  *     whichever emitter is actually brightest on their tile;
  *  3. light *arrives* — sector entry sweeps in behind a front (`applySweep`)
@@ -60,11 +66,6 @@ function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource 
 export class LightView {
   private fx: LightSource[] = [];
   private lastTurn = -1;
-  private readonly scene: Phaser.Scene;
-  private readonly lightParent: Phaser.GameObjects.Container;
-  /** Soft bloom via Phaser PointLight (WebGL), pooled per visible emitter. */
-  private pointLights: Phaser.GameObjects.PointLight[] = [];
-  /** Brief ignition flares still drawn with Graphics. */
   private readonly lightsGfx: Phaser.GameObjects.Graphics;
   private readonly shadowGfx: Phaser.GameObjects.Graphics | null;
   /** Cached per-tile presentation so sweeps/gates avoid a full relight. */
@@ -76,10 +77,9 @@ export class LightView {
     parent: Phaser.GameObjects.Container,
     shadowParent?: Phaser.GameObjects.Container,
   ) {
-    this.scene = scene;
-    this.lightParent = parent;
     this.lightsGfx = scene.add.graphics();
     this.lightsGfx.setDepth(1);
+    // Additive: light is energy landing on a surface, not paint over it.
     this.lightsGfx.setBlendMode(Phaser.BlendModes.ADD);
     parent.add(this.lightsGfx);
     if (shadowParent) {
@@ -92,8 +92,6 @@ export class LightView {
 
   destroy(): void {
     this.fx = [];
-    for (const pl of this.pointLights) pl.destroy();
-    this.pointLights = [];
     this.lightsGfx.destroy();
     this.shadowGfx?.destroy();
   }
@@ -131,17 +129,67 @@ export class LightView {
   }
 
   /**
-   * Soft bloom via Phaser PointLights — established engine radial falloff.
-   * Wall occlusion for gameplay stays on the Dijkstra illumination grid;
-   * PointLights sell the glow without custom ray-march shells.
+   * Ray-march how far the source actually reaches in each direction before a
+   * wall eats it. One pass per source; every shell reuses these distances.
+   */
+  private poolReach(
+    tiles: GameState['tiles'],
+    sx: number,
+    sy: number,
+    radius: number,
+  ): number[] {
+    const cx = sx + 0.5;
+    const cy = sy + 0.5;
+    const reach: number[] = [];
+    for (let i = 0; i < POOL_RAYS; i++) {
+      const a = (i / POOL_RAYS) * Math.PI * 2;
+      const dx = Math.cos(a);
+      const dy = Math.sin(a);
+      let hit = radius;
+      for (let t = POOL_STEP; t <= radius; t += POOL_STEP) {
+        const tile = tiles[Math.floor(cy + dy * t)]?.[Math.floor(cx + dx * t)];
+        if (!tile) {
+          hit = t;
+          break;
+        }
+        if (!tile.transparent) {
+          // Stop just inside the blocker so the pool laps the wall face.
+          hit = Math.max(POOL_STEP, t - POOL_STEP * 0.5);
+          break;
+        }
+      }
+      reach.push(hit);
+    }
+    return reach;
+  }
+
+  private shellPoints(reach: number[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
+    const cx = sx + 0.5;
+    const cy = sy + 0.5;
+    const pts: Phaser.Math.Vector2[] = [];
+    for (let i = 0; i < reach.length; i++) {
+      const a = (i / reach.length) * Math.PI * 2;
+      const d = reach[i]! * scale;
+      pts.push(
+        new Phaser.Math.Vector2(
+          (cx + Math.cos(a) * d) * TILE_DRAW,
+          (cy + Math.sin(a) * d) * TILE_DRAW,
+        ),
+      );
+    }
+    return pts;
+  }
+
+  /**
+   * Wall-aware bloom. Ray-marched pools stop at geometry and spill down corridors.
+   * Personal lamp (hooded work light) stays soft; flares/beacons keep a hotter core.
    */
   drawBloom(
     sources: LightSource[],
     visible: boolean[][],
-    _tiles?: GameState['tiles'],
+    tiles?: GameState['tiles'],
   ): void {
     this.lightsGfx.clear();
-    let used = 0;
     for (const s of sources) {
       const row = visible[s.y];
       if (!row?.[s.x]) continue;
@@ -149,33 +197,48 @@ export class LightView {
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
       const personal =
         s.color === LightTemp.lamp || s.color === LightTemp.lampQuiet;
-      const radiusPx = s.radius * TILE_DRAW * (personal ? 0.92 : 1.05);
-      const intensity = personal
-        ? Math.min(0.48, 0.18 + s.intensity * 0.22)
-        : Math.min(0.95, 0.28 + s.intensity * 0.4);
-      const attenuation = personal ? 0.14 : 0.09;
+      const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity)));
+      // Personal lamp: readable pool without a white-hot blob on the sprite.
+      const aCore = personal
+        ? Math.min(0.34, 0.07 + s.intensity * 0.16)
+        : Math.min(0.62, 0.12 + s.intensity * 0.3);
 
-      let pl = this.pointLights[used];
-      if (!pl) {
-        pl = this.scene.add.pointlight(wx, wy, s.color, radiusPx, intensity, attenuation);
-        pl.setBlendMode(Phaser.BlendModes.ADD);
-        this.lightParent.add(pl);
-        this.pointLights.push(pl);
+      if (tiles) {
+        // Stacked shells cut to the room's shape. Each shell's alpha is the
+        // *increment* of `irradiance()` between two radii, so the additive
+        // stack reproduces the sim's windowed inverse-square falloff.
+        const reach = this.poolReach(tiles, s.x, s.y, s.radius);
+        const peak = irradiance(s.radius / POOL_SHELLS, s.radius, 1) || 1;
+        let prev = 0;
+        for (let k = POOL_SHELLS; k >= 1; k--) {
+          const scale = k / POOL_SHELLS;
+          // Milder gamma — mid-field stays visible without banding into rings.
+          const f = Math.pow(Math.min(1, irradiance(scale * s.radius, s.radius, 1) / peak), 0.62);
+          const inc = f - prev;
+          prev = f;
+          if (inc <= 0.001) continue;
+          this.lightsGfx.fillStyle(s.color, aCore * inc);
+          this.lightsGfx.fillPoints(this.shellPoints(reach, s.x, s.y, scale), true);
+        }
       } else {
-        pl.setPosition(wx, wy);
-        pl.radius = radiusPx;
-        pl.intensity = intensity;
-        pl.attenuation = attenuation;
-        const r = (s.color >> 16) & 0xff;
-        const g = (s.color >> 8) & 0xff;
-        const b = s.color & 0xff;
-        pl.color.setTo(r, g, b);
-        pl.setVisible(true);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.14);
+        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.44);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.24);
+        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
       }
-      used++;
-    }
-    for (let i = used; i < this.pointLights.length; i++) {
-      this.pointLights[i]!.setVisible(false);
+
+      // Emitter filament — soft for the hooded lamp, hot for flares / tech.
+      if (personal) {
+        const core = Math.max(3, TILE_DRAW * 0.14 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.45);
+        this.lightsGfx.fillCircle(wx, wy, core);
+      } else {
+        const core = Math.max(5, TILE_DRAW * 0.26 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.55);
+        this.lightsGfx.fillCircle(wx, wy, core);
+        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.7), Math.min(0.9, aCore * 1.6));
+        this.lightsGfx.fillCircle(wx, wy, core * 0.4);
+      }
     }
   }
 
