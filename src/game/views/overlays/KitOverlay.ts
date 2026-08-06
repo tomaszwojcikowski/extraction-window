@@ -3,7 +3,7 @@ import { lore } from '../../../data/lore';
 import { ITEMS, shortEquipName } from '../../../data/items';
 import type { GameState } from '../../../sim';
 import { Theme } from '../../../scenes/theme';
-import { drawLcarsPanel } from '../../../scenes/atmosphere';
+import { drawFieldPanel } from '../../../scenes/atmosphere';
 
 function isWorn(st: GameState, kind: string): boolean {
   const e = st.player.equip;
@@ -22,7 +22,7 @@ export function drawKitOverlay(
   const ph = Math.max(200, 100 + st.inventory.length * 22);
   const px = (screenW - pw) / 2;
   const py = (screenH - ph) / 2;
-  drawLcarsPanel(panel, px, py, pw, ph, Theme.phosphor);
+  drawFieldPanel(panel, px, py, pw, ph, Theme.tape);
   const lines =
     st.inventory.length === 0
       ? [lore('UI-EMPTY-INV')]

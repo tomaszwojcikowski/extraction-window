@@ -8,6 +8,12 @@ import {
   isQueueableAction,
   slotIndexFromKey,
 } from './Keymap';
+import { toMoveAction, type MovePreviewQueue } from './MovePreviewQueue';
+
+export type CommitTurnOpts = {
+  /** Keep queued move ghost/tells after a non-move turn (quiet toggle while queued). */
+  keepMovePreview?: boolean;
+};
 
 /**
  * Scene-facing hooks for chrome / turn commit. InputController owns key
@@ -19,6 +25,10 @@ export type InputHost = {
   isHelpOpen(): boolean;
   isPagesOpen(): boolean;
   queueAction(action: Action): void;
+  queueMovePreview(dx: number, dy: number): void;
+  getMovePreview(): MovePreviewQueue | null;
+  getQueuedAction(): Action | null;
+  clearQueuedAction(): void;
   syncFieldAudio(force?: boolean): void;
   /** Brief mute on/off tip in the hint line. */
   showMuteHint(muted: boolean): void;
@@ -28,7 +38,7 @@ export type InputHost = {
   /** After kit/chrome UI actions — redraw HUD (and items when needed). */
   afterUiChrome(opts?: { syncItems?: boolean }): void;
   showSkillHint(): void;
-  commitTurnAction(action: Action): void;
+  commitTurnAction(action: Action, opts?: CommitTurnOpts): void;
 };
 
 /**
@@ -66,12 +76,14 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (chrome?.kind === 'toggle_help') {
+    host.clearQueuedAction();
     host.toggleHelp();
     sfx.play('ui');
     return;
   }
   if (chrome?.kind === 'toggle_pages') {
     if (host.isHelpOpen()) host.toggleHelp(false);
+    host.clearQueuedAction();
     host.togglePages();
     sfx.play('ui');
     return;
@@ -109,6 +121,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   const slotIdx = slotIndexFromKey(e);
   if (slotIdx !== null) {
+    // Keep move preview so jammer can be selected/used while a step is queued.
     applyAction(state, { type: 'select_slot', index: slotIdx });
     if (!state.ui.inventoryOpen) applyAction(state, { type: 'toggle_inventory' });
     sfx.play('ui');
@@ -121,6 +134,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   // Escape opens help when kit is closed (actionFromKey maps Escape → close_ui)
   if (action.type === 'close_ui' && !state.ui.inventoryOpen) {
+    host.clearQueuedAction();
     if (host.isPagesOpen()) {
       host.togglePages(false);
       sfx.play('ui');
@@ -132,11 +146,37 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
+    // Kit open/close keeps preview — quiet toggle while queued needs selected jammer.
     applyAction(state, action);
     sfx.play('ui');
     host.afterUiChrome();
     return;
   }
 
+  // Move preview: direction queues + wake footprint; `.` confirms the queued step.
+  if (action.type === 'move' && !host.isAnimating()) {
+    host.queueMovePreview(action.dx, action.dy);
+    sfx.play('ui');
+    return;
+  }
+
+  if (action.type === 'wait' && !host.isAnimating()) {
+    const preview = host.getMovePreview();
+    if (preview) {
+      host.clearQueuedAction();
+      host.commitTurnAction(toMoveAction(preview));
+      return;
+    }
+    host.commitTurnAction(action);
+    return;
+  }
+
+  // Use (e.g. jammer) while queued: apply stance, keep ghost so wake tells shrink live.
+  if (action.type === 'use' && host.getMovePreview()) {
+    host.commitTurnAction(action, { keepMovePreview: true });
+    return;
+  }
+
+  host.clearQueuedAction();
   host.commitTurnAction(action);
 }

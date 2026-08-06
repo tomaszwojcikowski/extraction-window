@@ -12,13 +12,14 @@ import {
   SURVEY_ROOM_CAP,
 } from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
-import { drawLcarsBadge } from '../../scenes/atmosphere';
+import { drawStencilBadge } from '../../scenes/atmosphere';
 import { contextHint } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
+import type { ShearPressureSpec } from '../presenters/ShearPressure';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 6;
@@ -53,6 +54,10 @@ export type HudRedrawOpts = {
   tweens: Phaser.Tweens.TweenManager;
   /** Mutable holder so the scene can stop/replace the pulse tween. */
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
+  /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
+  shear?: ShearPressureSpec;
+  /** Queued move preview active — teach `.` commit without opening help. */
+  movePreviewActive?: boolean;
 };
 
 /** The light badge must mirror the shadow predicate used by ambush AI. */
@@ -76,6 +81,9 @@ export class HudView {
     r.barsGfx.clear();
     const barY = 22;
     const barH = 10;
+    const shearPrimary = (opts.shear?.value ?? 0) > 0.12;
+    const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.phosphorDim;
+    const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.phosphor;
     this.placeBarSlot(
       0,
       14,
@@ -109,8 +117,10 @@ export class HudView {
       st.player.energy / st.player.maxEnergy,
       Theme.energy,
       Theme.storm,
-      lore('UI-BAR-EPS'),
+      shearPrimary ? lore('UI-BAR-EPS') : lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
+      secondaryCss,
+      secondaryValCss,
     );
     this.placeBarSlot(
       3,
@@ -123,6 +133,8 @@ export class HudView {
       Theme.danger,
       lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
+      secondaryCss,
+      secondaryValCss,
     );
     const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
     this.placeBarSlot(
@@ -182,8 +194,9 @@ export class HudView {
       (st.player.stimTurns > 0 ? 3 : 0) +
       (st.scanScars.some((s) => s.id === 'array_bleed') ? 1 : 0);
     const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
+    const emPart = shearPrimary ? '' : `  ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}  ${lore('UI-EM')} ${st.emStress}${doctrine}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${doctrine}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -201,6 +214,12 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
+    if (opts.shear) {
+      badgeSpecs.push({
+        label: `SHEAR · ${opts.shear.state.toUpperCase()}`,
+        fill: opts.shear.accent,
+      });
+    }
     const stanceBadge = stanceBadgeSpec(st);
     if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.ionFrontTurns > 0) {
@@ -271,7 +290,7 @@ export class HudView {
         `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
       );
     }
-    if (st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
+    if (!shearPrimary && st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
@@ -290,7 +309,10 @@ export class HudView {
     });
     r.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
 
-    const hint = contextHint(st);
+    const hint =
+      opts.movePreviewActive && !st.ui.inventoryOpen && !st.skillPick && !st.ui.aimingDart
+        ? 'UI-HINT-COMMIT'
+        : contextHint(st);
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
@@ -337,16 +359,19 @@ export class HudView {
     low: number,
     caption: string,
     value: string,
+    captionCss: string = ThemeCss.phosphorDim,
+    valueCss: string = ThemeCss.phosphor,
   ): void {
     this.drawBar(x, y, w, h, ratio, fill, low);
     const cap = this.refs.barCaptions[index]!;
     const val = this.refs.barValues[index]!;
     cap.setPosition(x, y - 11);
     cap.setText(caption);
+    cap.setColor(captionCss);
     val.setPosition(x, y + h + 2);
     val.setText(value);
     const critical = ratio <= 0.3;
-    val.setColor(critical ? '#cc4444' : ThemeCss.phosphor);
+    val.setColor(critical ? '#cc4444' : valueCss);
   }
 
   private syncWindowPulse(
@@ -409,9 +434,9 @@ export class HudView {
       const b = badges[i]!;
       const tw = widths[i]!;
       const t = this.refs.badgeTexts[i]!;
-      drawLcarsBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
-      t.setColor('#06060c');
-      t.setPosition(x + padX, y + 2);
+      drawStencilBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
+      t.setColor(ThemeCss.ink);
+      t.setPosition(x + padX, y + 3);
       x += tw + gap;
     }
   }

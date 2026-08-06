@@ -2,7 +2,13 @@ import Phaser from 'phaser';
 import { lore, type LoreId } from '../data/lore';
 import type { LoseReason } from '../sim';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
-import { addCameraAtmosphere, drawMenuChrome } from './atmosphere';
+import {
+  addCameraAtmosphere,
+  drawBolt,
+  drawMenuChrome,
+  drawPlate,
+  drawTapeStrip,
+} from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 import { SKILLS, type SkillId } from '../data/progression';
 
@@ -44,12 +50,12 @@ export class EndScene extends Phaser.Scene {
     const won = this.status === 'won';
     let titleId: LoreId = 'UI-WIN';
     let bodyId: LoreId = 'UI-WIN-BODY';
-    let accent: number = Theme.phosphor;
-    let titleColor: string = ThemeCss.phosphorBright;
+    let accent: number = Theme.safe;
+    let titleColor: string = ThemeCss.inkBright;
 
     if (!won) {
-      accent = Theme.danger;
-      titleColor = '#c87060';
+      accent = Theme.rust;
+      titleColor = '#e0846a';
       switch (this.loseReason) {
         case 'hp':
           titleId = 'UI-LOSE-HP';
@@ -72,24 +78,35 @@ export class EndScene extends Phaser.Scene {
     const cameraAtmosphere = addCameraAtmosphere(this, won ? 0.045 : 0.08);
     const g = this.add.graphics();
     drawMenuChrome(this, g, width, height, accent);
+    // Verdict stamped onto a recovered mission card, not a sensor readout.
     const statusField = this.add.graphics();
-    statusField.lineStyle(1, accent, 0.3);
-    statusField.strokeCircle(width / 2, height * 0.3, 78);
-    statusField.strokeCircle(width / 2, height * 0.3, 88);
-    statusField.fillStyle(accent, 0.22);
-    for (let i = 0; i < 7; i++) {
-      const barWidth = 24 + ((i * 31) % 72);
-      const x = i % 2 === 0 ? 66 : width - 66 - barWidth;
-      statusField.fillRect(x, height * 0.18 + i * 27, barWidth, i % 3 === 0 ? 3 : 1);
+    const cardX = width / 2 - 172;
+    const cardY = height * 0.24;
+    const cardW = 344;
+    const cardH = height * 0.15;
+    drawPlate(statusField, cardX, cardY, cardW, cardH, { fill: Theme.ground, alpha: 0.9 });
+    if (won) {
+      statusField.fillStyle(accent, 0.85);
+      statusField.fillRect(cardX + 10, cardY + 8, 4, cardH - 16);
+    } else {
+      drawTapeStrip(statusField, cardX + 8, cardY + 8, cardW - 16, 8, accent, 0.7);
     }
-    statusField.fillStyle(won ? Theme.ok : Theme.danger, 0.5);
-    statusField.fillRect(width / 2 - 54, height * 0.3 + 48, 108, 2);
+    for (const [bx, by] of [
+      [cardX + 5, cardY + 5],
+      [cardX + cardW - 6, cardY + 5],
+      [cardX + 5, cardY + cardH - 6],
+      [cardX + cardW - 6, cardY + cardH - 6],
+    ]) {
+      drawBolt(statusField, bx!, by!);
+    }
+    statusField.fillStyle(won ? Theme.safe : Theme.rust, 0.55);
+    statusField.fillRect(width / 2 - 54, cardY + cardH - 12, 108, 2);
 
     this.add
       .text(width / 2, height * 0.2, lore('UI-MISSION-STATUS'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
         letterSpacing: 4,
       })
       .setOrigin(0.5);
@@ -111,7 +128,7 @@ export class EndScene extends Phaser.Scene {
       .text(width / 2, height * 0.4, lore(bodyId), {
         fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: ThemeCss.phosphorDim,
+        color: ThemeCss.inkDim,
         align: 'center',
         wordWrap: { width: width - 180 },
       })
@@ -132,7 +149,7 @@ export class EndScene extends Phaser.Scene {
       .text(width / 2, height * 0.54, summary, {
         fontFamily: FONT_DATA,
         fontSize: '12px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
         align: 'center',
         lineSpacing: 4,
       })
@@ -142,7 +159,7 @@ export class EndScene extends Phaser.Scene {
       .text(width / 2, height * 0.72, lore('UI-RETRY'), {
         fontFamily: FONT_DATA,
         fontSize: '14px',
-        color: ThemeCss.phosphorBright,
+        color: ThemeCss.inkBright,
       })
       .setOrigin(0.5);
 

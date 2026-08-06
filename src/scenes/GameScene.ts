@@ -7,7 +7,7 @@ import {
   playerTextureKey,
   wallTextureKey,
 } from './textures';
-import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
+import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
@@ -15,14 +15,21 @@ import { applyAction, createGame, describeObjective, type Action, type GameState
 import { tileBrightness } from '../sim/light';
 import {
   addCameraAtmosphere,
-  createScanRetrace,
+  createArcSweep,
   drawHudStripChrome,
+  type ArcSweep,
   type CameraAtmosphere,
 } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
-import { handleGameKey } from '../game/input/InputController';
+import { handleGameKey, type CommitTurnOpts } from '../game/input/InputController';
+import {
+  applyDirectionQueue,
+  previewTile,
+  toMoveAction,
+  type MovePreviewQueue,
+} from '../game/input/MovePreviewQueue';
 import { contextHint } from '../game/presenters/ContextHints';
 import {
   bumpAttack,
@@ -40,6 +47,9 @@ import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
+import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
+import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters/WakeTells';
+import { pressureRevealTint } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
@@ -51,6 +61,7 @@ export class GameScene extends Phaser.Scene {
   private mapLayer!: Phaser.GameObjects.Container;
   private lightLayer!: Phaser.GameObjects.Container;
   private itemLayer!: Phaser.GameObjects.Container;
+  private shadowLayer!: Phaser.GameObjects.Container;
   private entityLayer!: Phaser.GameObjects.Container;
   private lightView!: LightView;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
@@ -58,16 +69,24 @@ export class GameScene extends Phaser.Scene {
   private camY = 0;
 
   private playerSprite!: Phaser.GameObjects.Image;
+  /** Semi-transparent silhouette at queued destination — commit ghost bet. */
+  private commitGhost!: Phaser.GameObjects.Image;
+  private commitGhostFade: Phaser.Tweens.Tween | null = null;
   private enemyViews = new Map<number, EnemyView>();
   private npcViews = new Map<number, EnemyView>();
   private allyViews = new Map<number, EnemyView>();
   private animating = false;
+  /** Idle move preview — direction queues, `.` confirms one step. */
+  private movePreviewQueue: MovePreviewQueue | null = null;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
-  private atmo: Phaser.GameObjects.Rectangle | null = null;
+  private arcSweep: ArcSweep | null = null;
   private cameraAtmosphere: CameraAtmosphere | null = null;
   private animFrame = 0;
   private animAccum = 0;
+  /** First-light sweep radius in tiles, or null when the gate is released. */
+  private firstLight: number | null = null;
+  private firstLightTween: Phaser.Tweens.Tween | null = null;
   private fovVignette!: Phaser.GameObjects.Graphics;
   private fieldMotes!: Phaser.GameObjects.Graphics;
   private idleBob = 0;
@@ -92,6 +111,10 @@ export class GameScene extends Phaser.Scene {
   private windowPulseTween: Phaser.Tweens.Tween | null = null;
   private hud!: HudView;
   private chevronGfx!: Phaser.GameObjects.Graphics;
+  private wakeTellGfx!: Phaser.GameObjects.Graphics;
+  private shearReadout!: Phaser.GameObjects.Text;
+  private lastShearState: ShearPressureState | null = null;
+  private shearFlashUntil = 0;
   private goalMarker!: Phaser.GameObjects.Image;
   private goalPulseTween: Phaser.Tweens.Tween | null = null;
   private readonly lightPreferenceHints = new Set<number>();
@@ -128,6 +151,8 @@ export class GameScene extends Phaser.Scene {
     this.allyViews.clear();
     this.lightPreferenceHints.clear();
     this.preferenceHint = null;
+    this.firstLight = null;
+    this.firstLightTween = null;
   }
 
   create(): void {
@@ -135,16 +160,26 @@ export class GameScene extends Phaser.Scene {
     this.cameraAtmosphere = addCameraAtmosphere(this);
     this.mapLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
+    // Contact shadows sit between the floor and the things casting them.
+    this.shadowLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
     // Bloom above actors so the player lamp isn't buried under the sprite.
     this.lightLayer = this.add.container(0, 0);
     this.fieldMotes = this.add.graphics();
+    this.fieldMotes.setBlendMode(Phaser.BlendModes.ADD);
     this.lightLayer.add(this.fieldMotes);
-    this.lightView = new LightView(this, this.lightLayer);
+    this.lightView = new LightView(this, this.lightLayer, this.shadowLayer);
 
     this.playerSprite = this.add.image(0, 0, 't_player');
     this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
     this.entityLayer.add(this.playerSprite);
+
+    this.commitGhost = this.add.image(0, 0, 't_player');
+    this.commitGhost.setDisplaySize(TILE_DRAW, TILE_DRAW);
+    this.commitGhost.setAlpha(0);
+    this.commitGhost.setVisible(false);
+    this.commitGhost.setDepth(22);
+    this.entityLayer.add(this.commitGhost);
 
     this.buildMapSprites();
 
@@ -245,6 +280,21 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.chevronGfx = this.add.graphics().setScrollFactor(0).setDepth(94);
+
+    this.wakeTellGfx = this.add.graphics();
+    this.wakeTellGfx.setDepth(24);
+    this.entityLayer.add(this.wakeTellGfx);
+
+    this.shearReadout = this.add
+      .text(this.scale.width / 2, 6, '', {
+        fontFamily: FONT_DISPLAY,
+        fontSize: '12px',
+        color: ThemeCss.phosphorBright,
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(93)
+      .setAlpha(0.72);
 
     this.goalMarker = this.add.image(0, 0, 't_quest');
     this.goalMarker.setDisplaySize(TILE_DRAW + 4, TILE_DRAW + 4);
@@ -400,7 +450,8 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       ambient.stop();
       music.stop();
-      this.atmo?.destroy();
+      this.arcSweep?.destroy();
+      this.arcSweep = null;
       this.cameraAtmosphere?.destroy();
       this.cameraAtmosphere = null;
       this.lightView?.destroy();
@@ -476,6 +527,9 @@ export class GameScene extends Phaser.Scene {
 
   private tickAnimatedActors(): void {
     this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
+    if (this.commitGhost.visible) {
+      this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
+    }
     for (const en of this.state.enemies) {
       if (!en.alive) continue;
       const view = this.enemyViews.get(en.id);
@@ -494,25 +548,53 @@ export class GameScene extends Phaser.Scene {
     img.setPosition(p.x, p.y);
   }
 
-  private drawChrome(): void {
+  private drawChrome(shear = computeShearPressure(this.state)): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    drawHudStripChrome(this.topPanel, { y: 0, height: TOP, width: w, side: 'top' });
+    drawHudStripChrome(this.topPanel, {
+      y: 0,
+      height: TOP,
+      width: w,
+      side: 'top',
+      corrosion: shear.value,
+      accent: shear.accent,
+      drainingLeg: shear.drainingLeg,
+      animFrame: this.animFrame,
+    });
     drawHudStripChrome(this.bottomPanel, {
       y: h - BOTTOM,
       height: BOTTOM,
       width: w,
       side: 'bottom',
+      corrosion: shear.value,
+      accent: shear.accent,
     });
   }
 
-  private rebuildAtmosphere(): void {
-    if (this.atmo) {
-      this.tweens.killTweensOf(this.atmo);
-      this.atmo.destroy();
-      this.atmo = null;
+  private syncShearPresentation(shear = computeShearPressure(this.state)): void {
+    if (this.lastShearState !== shear.state) {
+      this.lastShearState = shear.state;
+      this.shearFlashUntil = this.time.now + 2200;
     }
-    this.atmo = createScanRetrace(this, 85);
+    const flash = this.shearFlashUntil > this.time.now;
+    this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
+    this.shearReadout.setColor(
+      shear.state === 'Breaching'
+        ? ThemeCss.arcWhite
+        : shear.state === 'Arcing'
+          ? ThemeCss.arc
+          : shear.state === 'Charged'
+            ? ThemeCss.tape
+            : ThemeCss.biolum,
+    );
+    this.shearReadout.setAlpha(flash ? 1 : 0.58);
+    this.shearReadout.setPosition(this.scale.width / 2, 6);
+    this.arcSweep?.setPressure(shear.value, shear.accent);
+  }
+
+  private rebuildAtmosphere(): void {
+    this.arcSweep?.destroy();
+    this.arcSweep = createArcSweep(this, 85);
   }
 
   private buildMapSprites(): void {
@@ -632,6 +714,16 @@ export class GameScene extends Phaser.Scene {
       queueAction: (action) => {
         this.queuedAction = action;
       },
+      queueMovePreview: (dx, dy) => {
+        this.movePreviewQueue = applyDirectionQueue(this.state, this.movePreviewQueue, dx, dy);
+        this.applyFieldLighting();
+      },
+      getMovePreview: () => this.movePreviewQueue,
+      getQueuedAction: () =>
+        this.movePreviewQueue ? toMoveAction(this.movePreviewQueue) : this.queuedAction,
+      clearQueuedAction: () => {
+        this.clearMovePreview();
+      },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
         this.hintText.setVisible(true);
@@ -666,8 +758,14 @@ export class GameScene extends Phaser.Scene {
         this.hintText.setVisible(true);
         this.hintText.setText(lore('UI-HINT-SKILL'));
       },
-      commitTurnAction: (action) => this.commitTurnAction(action),
+      commitTurnAction: (action, opts) => this.commitTurnAction(action, opts),
     });
+  }
+
+  private clearMovePreview(fade = true): void {
+    this.movePreviewQueue = null;
+    this.hideCommitGhost(fade);
+    this.applyFieldLighting();
   }
 
   private flushQueuedAction(): void {
@@ -677,7 +775,14 @@ export class GameScene extends Phaser.Scene {
     this.commitTurnAction(next);
   }
 
-  private commitTurnAction(action: Action): void {
+  private commitTurnAction(action: Action, opts?: CommitTurnOpts): void {
+    const keepPreview = opts?.keepMovePreview ? this.movePreviewQueue : null;
+    if (!keepPreview) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(false);
+    }
+    this.queuedAction = null;
+    this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
     const prevTutorialActive = this.state.tutorialActive;
     const prevMapWidth = this.state.width;
@@ -718,6 +823,8 @@ export class GameScene extends Phaser.Scene {
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
     if (fb.mapReloaded) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(false);
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -725,6 +832,7 @@ export class GameScene extends Phaser.Scene {
       this.redrawTilesAndHud();
       this.updateCamera(true);
       this.syncFieldAudio(true);
+      this.startFirstLight();
       if (this.state.player.hp < prevHp) this.flashHit();
       this.maybeEnd();
       this.flushQueuedAction();
@@ -736,6 +844,12 @@ export class GameScene extends Phaser.Scene {
       stormTurns: this.state.stormTurns,
       inCombat: this.threatNearby(),
     });
+
+    // Drop keep-preview if the adjacent tile is no longer walkable after the turn.
+    if (keepPreview && !previewTile(this.state, keepPreview)) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(true);
+    }
 
     // Light/FOV at the new tile immediately so the lamp isn't left behind the tween.
     // Full HUD (bars, log, hints) still waits for afterPresent.
@@ -1005,10 +1119,10 @@ export class GameScene extends Phaser.Scene {
             : 'CHARGE';
     const color =
       enemy.intent === 'beam'
-        ? '#66ccff'
+        ? ThemeCss.arcWhite
         : enemy.intent === 'overwatch'
-          ? '#cc99ff'
-          : '#ff8066';
+          ? ThemeCss.tape
+          : ThemeCss.rust;
     view.label.setText(marker);
     view.label.setColor(color);
     view.label.setFontSize(marker.length > 2 ? 8 : 10);
@@ -1029,6 +1143,7 @@ export class GameScene extends Phaser.Scene {
     const ox = -this.camX;
     const oy = -this.camY + TOP;
     this.mapLayer.setPosition(ox, oy);
+    this.shadowLayer.setPosition(ox, oy);
     this.lightLayer.setPosition(ox, oy);
     this.itemLayer.setPosition(ox, oy);
     this.entityLayer.setPosition(ox, oy);
@@ -1060,7 +1175,7 @@ export class GameScene extends Phaser.Scene {
     const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
     const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
     this.goalMarker.setPosition(wx, wy);
-    this.goalMarker.setTint(Theme.quest);
+    this.goalMarker.setTint(Theme.flag);
     if (!this.goalPulseTween) {
       this.goalMarker.setAlpha(0.75);
       this.goalPulseTween = this.tweens.add({
@@ -1098,8 +1213,8 @@ export class GameScene extends Phaser.Scene {
     const ex = cx + ux * edgeDist;
     const ey = cy + uy * edgeDist;
 
-    this.chevronGfx.fillStyle(Theme.quest, 0.95);
-    this.chevronGfx.lineStyle(1, Theme.phosphorBright, 1);
+    this.chevronGfx.fillStyle(Theme.flag, 0.95);
+    this.chevronGfx.lineStyle(1, Theme.inkBright, 1);
     const s = 10;
     const px = -uy;
     const py = ux;
@@ -1201,11 +1316,40 @@ export class GameScene extends Phaser.Scene {
     if (has('LOG-ION-FRONT') || has('LOG-ION-PULSE')) {
       this.cameraAtmosphere?.pulse(0.18, 240);
       this.cameras.main.shake(140, 0.0015);
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        7,
+        LightTemp.scan,
+      );
       return;
     }
     if (has('LOG-USE-FLARE')) {
+      // A flare is an event: ignition front, kick, and the room changing.
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        6,
+        LightTemp.flare,
+      );
       this.cameraAtmosphere?.pulse(0.13, 160);
-      this.cameras.main.shake(90, 0.001);
+      this.cameras.main.shake(120, 0.0016);
+      return;
+    }
+    if (has('LOG-SPORE-BURST')) {
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        4,
+        LightTemp.fauna,
+      );
+      this.cameras.main.shake(90, 0.0012);
       return;
     }
     if (has('LOG-EXTRACT')) {
@@ -1230,7 +1374,7 @@ export class GameScene extends Phaser.Scene {
           5 +
           ((Math.abs(hash >> 13) + this.animFrame * (ion ? 3 : 1)) %
             Math.max(1, TILE_DRAW - 10));
-        this.fieldMotes.fillStyle(ion ? Theme.ionHazard : Theme.phosphorBright, ion ? 0.5 : 0.28);
+        this.fieldMotes.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.5 : 0.28);
         this.fieldMotes.fillRect(
           x * TILE_DRAW + ox,
           y * TILE_DRAW + oy,
@@ -1244,17 +1388,153 @@ export class GameScene extends Phaser.Scene {
 
   private applyFieldLighting(): void {
     const st = this.state;
+    const shear = computeShearPressure(st);
     this.lightView.syncTurn(st.turn);
     const sources = this.lightView.allSources(st, this.animFrame);
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles);
+    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
-    for (const patch of st.contamination) {
-      const tile = this.tileSprites[patch.y]?.[patch.x];
-      if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
-      tile.setTint(0x8bd8c7);
+
+    const preview = this.wakePreviewContext();
+    const tells = preview ? preview.tells : collectWakeTells(st);
+    drawWakeTells(this.wakeTellGfx, st, tells, this.animFrame, {
+      originX: preview?.originX,
+      originY: preview?.originY,
+      previewDest: preview?.previewDest,
+    });
+    if (preview) this.showCommitGhost(preview.previewDest);
+
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        const tile = this.tileSprites[y]?.[x];
+        if (!tile) continue;
+        const reveal = pressureRevealTint(st, shear, x, y, this.animFrame);
+        if (reveal !== null) {
+          tile.setTint(reveal);
+          continue;
+        }
+        const patch = st.contamination.some((c) => c.x === x && c.y === y);
+        if (patch && st.visible[y]?.[x]) {
+          tile.setTint(Theme.biolum);
+        } else {
+          tile.clearTint();
+        }
+      }
     }
+    if (this.firstLight !== null) {
+      this.lightView.applySweep(st, this.tileSprites, this.firstLight);
+    }
+  }
+
+  /** Queued move destination — preview wake footprint before commit. */
+  private wakePreviewContext():
+    | {
+        originX: number;
+        originY: number;
+        previewDest: { x: number; y: number };
+        tells: ReturnType<typeof wakeTellsAt>;
+      }
+    | null {
+    const q = this.movePreviewQueue;
+    if (!q) return null;
+    const dest = previewTile(this.state, q);
+    if (!dest) return null;
+    return {
+      originX: dest.x,
+      originY: dest.y,
+      previewDest: dest,
+      tells: wakeTellsAt(this.state, dest.x, dest.y),
+    };
+  }
+
+  /** Commit ghost — player silhouette at queued destination, synced with wake preview. */
+  private showCommitGhost(dest: { x: number; y: number }): void {
+    this.commitGhostFade?.stop();
+    this.commitGhostFade = null;
+    const p = this.worldXY(dest.x, dest.y);
+    this.commitGhost.setVisible(true);
+    this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
+    this.commitGhost.setPosition(p.x, p.y);
+    this.commitGhost.setAlpha(0.35);
+  }
+
+  private hideCommitGhost(fadeOut: boolean): void {
+    if (!this.commitGhost.visible || this.commitGhost.alpha <= 0) {
+      this.commitGhost.setVisible(false);
+      this.commitGhost.setAlpha(0);
+      return;
+    }
+
+    if (!fadeOut) {
+      this.commitGhostFade?.stop();
+      this.commitGhostFade = null;
+      this.commitGhost.setVisible(false);
+      this.commitGhost.setAlpha(0);
+      return;
+    }
+
+    this.commitGhostFade?.stop();
+    this.commitGhostFade = this.tweens.add({
+      targets: this.commitGhost,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => {
+        this.commitGhost.setVisible(false);
+        this.commitGhostFade = null;
+      },
+    });
+  }
+
+  /** Everything solid enough to throw a shadow this frame. */
+  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean }> {
+    const st = this.state;
+    yield { gx: st.player.x, gy: st.player.y };
+    for (const en of st.enemies) {
+      if (!en.alive) continue;
+      yield { gx: en.x, gy: en.y, tall: en.tier !== 'normal' };
+    }
+    for (const a of st.allies) {
+      if (!a.alive) continue;
+      yield { gx: a.x, gy: a.y };
+    }
+    for (const n of st.npcs) yield { gx: n.x, gy: n.y };
+  }
+
+  /**
+   * First light — a new sector arrives behind an expanding front instead of
+   * hard-cutting the fog open. One wonder beat per sector, ~1.1s, skippable by
+   * simply acting (the gate releases on the next committed turn).
+   */
+  private startFirstLight(): void {
+    this.firstLightTween?.stop();
+    const st = this.state;
+    const reach = Math.hypot(st.width, st.height);
+    this.firstLight = 0;
+    this.firstLightTween = this.tweens.addCounter({
+      from: 0,
+      to: reach,
+      duration: 1100,
+      ease: 'Quad.easeOut',
+      onUpdate: (tw) => {
+        this.firstLight = tw.getValue() ?? reach;
+        this.lightView.applySweep(this.state, this.tileSprites, this.firstLight);
+      },
+      onComplete: () => {
+        this.firstLight = null;
+        this.firstLightTween = null;
+        this.lightView.applySweep(this.state, this.tileSprites, null);
+      },
+    });
+  }
+
+  private releaseFirstLight(): void {
+    if (this.firstLight === null) return;
+    this.firstLightTween?.stop();
+    this.firstLightTween = null;
+    this.firstLight = null;
+    this.lightView.applySweep(this.state, this.tileSprites, null);
   }
 
   private redrawTilesAndHud(): void {
@@ -1262,6 +1542,10 @@ export class GameScene extends Phaser.Scene {
     this.applyFieldLighting();
 
     drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, BOTTOM);
+
+    const shear = computeShearPressure(st);
+    this.drawChrome(shear);
+    this.syncShearPresentation(shear);
 
     const pulseBox = { current: this.windowPulseTween };
     this.hud.redraw(st, {
@@ -1271,6 +1555,8 @@ export class GameScene extends Phaser.Scene {
       pagesOpen: this.pagesOpen,
       tweens: this.tweens,
       windowPulseTween: pulseBox,
+      shear,
+      movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
