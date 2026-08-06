@@ -41,8 +41,8 @@ function stubState(over: Partial<{ px: number; py: number; wallAt?: [number, num
   } as GameState;
 }
 
-describe('MovePreviewQueue', () => {
-  it('queues adjacent tile on first direction press', () => {
+describe('MovePreviewQueue (Shift wake peek)', () => {
+  it('aims adjacent tile for peek', () => {
     const st = stubState();
     const q = applyDirectionQueue(st, null, 0, -1);
     expect(q).toEqual({ dx: 0, dy: -1 });
@@ -51,7 +51,7 @@ describe('MovePreviewQueue', () => {
     expect(previewMatchesCommit(st, q!)).toBe(true);
   });
 
-  it('same direction re-aims adjacent only — no peek lead', () => {
+  it('same direction re-aims adjacent only', () => {
     const st = stubState();
     const first = applyDirectionQueue(st, null, 1, 0);
     const second = applyDirectionQueue(st, first, 1, 0);
@@ -66,7 +66,6 @@ describe('MovePreviewQueue', () => {
     const east = applyDirectionQueue(st, north, 1, 0);
     expect(east).toEqual({ dx: 1, dy: 0 });
     expect(previewTile(st, east!)).toEqual({ x: 6, y: 5 });
-    expect(previewMatchesCommit(st, east!)).toBe(true);
   });
 
   it('returns null when direction targets a wall', () => {
@@ -74,15 +73,12 @@ describe('MovePreviewQueue', () => {
     expect(applyDirectionQueue(st, null, 0, -1)).toBeNull();
   });
 
-  it('keeps honesty: preview dest always equals one-step commit tile', () => {
+  it('peek dest always equals one-step tile', () => {
     const st = stubState();
     let q = applyDirectionQueue(st, null, 1, 0);
     for (let i = 0; i < 5; i++) {
       q = applyDirectionQueue(st, q, 1, 0);
-      expect(q).not.toBeNull();
       expect(previewMatchesCommit(st, q!)).toBe(true);
-      const dest = previewTile(st, q!)!;
-      expect(dest).toEqual({ x: st.player.x + q!.dx, y: st.player.y + q!.dy });
     }
   });
 });

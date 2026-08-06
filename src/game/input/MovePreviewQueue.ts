@@ -1,8 +1,8 @@
 import type { Action, GameState } from '../../sim';
 
 /**
- * Queued adjacent step. Preview destination always matches the one-tile commit
- * (`toMoveAction`) — no multi-tile peek lead.
+ * Optional Shift-peek aim — adjacent tile only.
+ * Ghost + wake tells show here; normal WASD still commits immediately.
  */
 export type MovePreviewQueue = {
   dx: number;
@@ -14,7 +14,7 @@ export function isWalkableTile(st: GameState, x: number, y: number): boolean {
   return st.tiles[y]?.[x]?.walkable ?? false;
 }
 
-/** Destination tile for ghost + wake tells — always the one-step commit tile. */
+/** Peek destination tile for ghost + wake tells. */
 export function previewTile(
   st: GameState,
   q: MovePreviewQueue,
@@ -25,10 +25,7 @@ export function previewTile(
   return { x, y };
 }
 
-/**
- * Queue or re-aim a move preview.
- * Same direction re-aims the adjacent tile (no lead advance) — ghost honesty.
- */
+/** Aim or re-aim a Shift-peek at an adjacent walkable tile. */
 export function applyDirectionQueue(
   st: GameState,
   _current: MovePreviewQueue | null,
@@ -43,7 +40,7 @@ export function toMoveAction(q: MovePreviewQueue): Action {
   return { type: 'move', dx: q.dx, dy: q.dy };
 }
 
-/** True when preview destination equals the tile a commit would land on. */
+/** Peek dest always matches one-step along (dx, dy). */
 export function previewMatchesCommit(st: GameState, q: MovePreviewQueue): boolean {
   const dest = previewTile(st, q);
   if (!dest) return false;
