@@ -32,13 +32,13 @@ export const LORE = {
   'UI-HELP': 'Survey team manual',
   'UI-HELP-TUT':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
+    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
     '\n',
   'UI-HELP-BODY':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
+    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
     '\n' +
     'MOVE    WASD or arrow keys — one tile per turn\n' +
     'PEEK    Shift+direction — ghost + wake preview (who you would wake); release Shift to clear\n' +
@@ -113,13 +113,17 @@ export const LORE = {
   'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear · . waits',
   'UI-HINT-PEEK-TEACH':
     'Wake lines at your feet — Shift+direction peeks the next tile before you step',
-  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn · Shift+dir peeks · . waits',
-  'UI-TUT-GET': 'g — pick up',
-  'UI-TUT-KIT': 'i kit · u use',
-  'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
-  'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip past through the side alcove',
-  'UI-TUT-GOTO-HATCH': 'Walk east onto the hatch tile to begin',
-  'UI-TUT-EXIT': 'On hatch — walk off and back, or press Enter / Space / = / >',
+  'UI-TUT-MOVE': 'WASD moves · Shift+dir peeks who you’d wake · . waits',
+  'UI-TUT-GET': 'g — pick up salvage underfoot',
+  'UI-TUT-KIT': 'i kit · u use — ID salvage / fire flare / seal hazards',
+  'UI-TUT-HAZARD':
+    'Ion hazard — known bus tax. Cross it, seal with Sealant Foam (u), or take the south alcove',
+  'UI-TUT-WAKE':
+    'Lines from your feet = fauna that notices you here · Shift+dir peeks the next tile',
+  'UI-TUT-FIGHT': 'Bump to fight · b brace · r retreat · flare if dark',
+  'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip south past hazard',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — shear window clock starts on the real drop',
+  'UI-TUT-EXIT': 'On hatch — walk off/back or Enter / Space / = / > to begin the drop',
   'UI-SURVEY': 'SRV',
   'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
@@ -181,8 +185,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Survey anomaly',
-  'OBJ-TUT-HATCH': '→ Drill hatch',
-  'OBJ-TUT-BRIEF': 'Training — not the real drop yet',
+  'OBJ-TUT-HATCH': '→ Drill hatch (learn wake, hazard, kit)',
+  'OBJ-TUT-BRIEF': 'Training bay — storm paused; hatch starts the real shear window',
   'HAZ-STORM': 'Shear storm extraction window remaining.',
   'UI-CODEX': 'PADD',
 
@@ -352,8 +356,13 @@ export const LORE = {
   // Logs
   'LOG-DROP':
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
-  'LOG-TUT-WELCOME': 'Drill bay — reach the hatch east.',
-  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats.',
+  'LOG-TUT-WELCOME':
+    'Drill bay — storm paused. Wake lines show who notices you; ion tiles tax the bus (alcove or sealant). Hatch east starts the real drop.',
+  'LOG-TUT-HAZARD':
+    'Ion hazard underfoot drains bus — visible path tax, not a surprise trap. Sealant Foam (u) clears it this visit, or walk the south alcove.',
+  'LOG-TUT-WAKE':
+    'Wake lines track fauna interest. Step carefully — Shift+direction peeks the next tile’s footprint without moving.',
+  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats. Shear window is live.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',

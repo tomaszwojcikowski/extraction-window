@@ -115,9 +115,73 @@ function tickScanScars(state: GameState): void {
   pushLog(state, id === 'array_bleed' ? 'LOG-SCAR-ARRAY' : 'LOG-SCAR-EYE');
 }
 
+/** Underfoot terrain tax — shared so the drill can teach visible hazards. */
+function tickUnderfootTerrain(state: GameState): void {
+  const sector = getSector(state.sectorIndex);
+  const filter = state.player.filterTurns > 0;
+  const coupler = state.player.equip.utility === 'eps_coupler';
+  const tile = state.tiles[state.player.y]![state.player.x]!;
+  const hazardCrossing =
+    tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
+  if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
+    pushLog(state, 'LOG-FAVOR-HAZARD');
+  } else if (tile.kind === 'hazard') {
+    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
+    let hazardDrain = (filter ? 1 : 2) + brineExtra;
+    if (coupler) hazardDrain = Math.max(0, hazardDrain - 1);
+    state.player.energy -= hazardDrain;
+    addStatus(state.player, 'ion_burn', 1);
+    pushLog(state, 'LOG-HAZARD');
+  } else if (tile.kind === 'brine_pool') {
+    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
+    let poolDrain = (filter ? 1 : 2) + brineExtra;
+    if (coupler) poolDrain = Math.max(0, poolDrain - 1);
+    state.player.energy -= poolDrain;
+    if (state.rng() < 0.18) {
+      addStatus(state.player, 'fatigue', 2);
+      pushLog(state, 'LOG-STATUS-FATIGUE');
+    }
+    pushLog(state, 'LOG-BRINE-POOL');
+  } else if (tile.kind === 'vent') {
+    state.player.energy -= filter || coupler ? 0 : 1;
+    if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
+    const ventRoll = state.rng();
+    if (ventRoll < 0.12) {
+      addStatus(state.player, 'jam', 1);
+      pushLog(state, 'LOG-STATUS-JAM');
+    } else if (ventRoll < 0.22) {
+      addStatus(state.player, 'fatigue', 2);
+      pushLog(state, 'LOG-STATUS-FATIGUE');
+    }
+  } else if (tile.kind === 'tripwire') {
+    addEmStress(state, 2, 'tripwire');
+    for (const en of state.enemies) {
+      if (!en.alive) continue;
+      if (manhattan(en.x, en.y, state.player.x, state.player.y) <= 5) {
+        en.alerted = true;
+      }
+    }
+    state.tiles[state.player.y]![state.player.x] = {
+      kind: 'floor',
+      walkable: true,
+      transparent: true,
+    };
+    pushLog(state, 'LOG-TRIPWIRE');
+  } else if (tile.kind === 'scrub_nest') {
+    const nestRoll = state.rng();
+    if (nestRoll < 0.08) {
+      addPlayerMarked(state, 3);
+      pushLog(state, 'LOG-STATUS-MARKED');
+    } else if (nestRoll < 0.14) {
+      trySpawnNestMite(state);
+    }
+  }
+}
+
 function tickEnvironment(state: GameState): void {
-  // Drill bay — pause storm clock and bus drip (stress-free teaching)
+  // Drill bay — pause storm clock and bus drip; still teach underfoot hazards.
   if (state.tutorialActive) {
+    tickUnderfootTerrain(state);
     if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
     if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
     if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
@@ -173,63 +237,7 @@ function tickEnvironment(state: GameState): void {
     state.player.energy -= 1;
   }
 
-  const tile = state.tiles[state.player.y]![state.player.x]!;
-  const hazardCrossing =
-    tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
-  if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
-    pushLog(state, 'LOG-FAVOR-HAZARD');
-  } else if (tile.kind === 'hazard') {
-    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
-    let hazardDrain = (filter ? 1 : 2) + brineExtra;
-    if (coupler) hazardDrain = Math.max(0, hazardDrain - 1);
-    state.player.energy -= hazardDrain;
-    addStatus(state.player, 'ion_burn', 1);
-    pushLog(state, 'LOG-HAZARD');
-  } else if (tile.kind === 'brine_pool') {
-    const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
-    let poolDrain = (filter ? 1 : 2) + brineExtra;
-    if (coupler) poolDrain = Math.max(0, poolDrain - 1);
-    state.player.energy -= poolDrain;
-    if (state.rng() < 0.18) {
-      addStatus(state.player, 'fatigue', 2);
-      pushLog(state, 'LOG-STATUS-FATIGUE');
-    }
-    pushLog(state, 'LOG-BRINE-POOL');
-  } else if (tile.kind === 'vent') {
-    state.player.energy -= filter || coupler ? 0 : 1;
-    if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
-    // Vent step: chance jam (1) or fatigue
-    const ventRoll = state.rng();
-    if (ventRoll < 0.12) {
-      addStatus(state.player, 'jam', 1);
-      pushLog(state, 'LOG-STATUS-JAM');
-    } else if (ventRoll < 0.22) {
-      addStatus(state.player, 'fatigue', 2);
-      pushLog(state, 'LOG-STATUS-FATIGUE');
-    }
-  } else if (tile.kind === 'tripwire') {
-    addEmStress(state, 2, 'tripwire');
-    for (const en of state.enemies) {
-      if (!en.alive) continue;
-      if (manhattan(en.x, en.y, state.player.x, state.player.y) <= 5) {
-        en.alerted = true;
-      }
-    }
-    state.tiles[state.player.y]![state.player.x] = {
-      kind: 'floor',
-      walkable: true,
-      transparent: true,
-    };
-    pushLog(state, 'LOG-TRIPWIRE');
-  } else if (tile.kind === 'scrub_nest') {
-    const nestRoll = state.rng();
-    if (nestRoll < 0.08) {
-      addPlayerMarked(state, 3);
-      pushLog(state, 'LOG-STATUS-MARKED');
-    } else if (nestRoll < 0.14) {
-      trySpawnNestMite(state);
-    }
-  }
+  tickUnderfootTerrain(state);
   // scrub / scrub_nest are sight-blockers — scrub_nest may also spawn
   tickContamination(state);
 
