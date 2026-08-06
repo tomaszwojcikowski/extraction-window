@@ -1,7 +1,10 @@
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
+import { hasItem } from '../inventory';
+import { isQuietStance } from './quietStance';
 import type { GameState } from '../types';
 import type { Mechanic } from './types';
+import type { LoreId } from '../../data/lore';
 
 const FRONT_DURATION = 6;
 const FRONT_START_CHANCE = 0.6;
@@ -31,7 +34,7 @@ function pulseIonFront(state: GameState): void {
 
 /**
  * Late-sector ion fronts are short, optional ecology pressure: they tax the
- * bus/EM together and make an already lit player easier for lit fauna to track.
+ * Bus/EM together and make an already lit player easier for lit fauna to track.
  */
 export const ionFrontMechanic: Mechanic = {
   id: 'ion_front',
@@ -45,5 +48,20 @@ export const ionFrontMechanic: Mechanic = {
     if (state.ionFrontTurns % 2 === 0) pulseIonFront(state);
     state.ionFrontTurns -= 1;
     if (state.ionFrontTurns === 0) pushLog(state, 'LOG-ION-CLEAR');
+  },
+
+  contextHint(state: GameState): LoreId | null {
+    if (state.ionFrontTurns <= 0) return null;
+    if (state.player.filterTurns > 0 || state.ionFrontDampened || isQuietStance(state)) {
+      return null;
+    }
+    if (
+      hasItem(state, 'filter') ||
+      hasItem(state, 'flare') ||
+      hasItem(state, 'jammer')
+    ) {
+      return 'UI-HINT-ION-FRONT';
+    }
+    return 'UI-HINT-ION-FRONT';
   },
 };

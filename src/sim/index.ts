@@ -39,6 +39,12 @@ export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';
 export { manhattan, enemyAt, allyAt, npcAt } from './spatial';
 export {
+  effectiveAggro,
+  effectiveAggroAt,
+  isJammerSilenced,
+  wouldNoticeEnemy,
+} from './notice';
+export {
   mechanicsTryAction,
   mechanicsOnEndTurn,
   mechanicsContextHint,

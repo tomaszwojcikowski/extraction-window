@@ -117,7 +117,7 @@ export class HudView {
       st.player.energy / st.player.maxEnergy,
       Theme.energy,
       Theme.storm,
-      shearPrimary ? lore('UI-BAR-EPS') : lore('UI-BAR-EPS'),
+      shearPrimary ? '' : lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
       secondaryCss,
       secondaryValCss,
@@ -131,7 +131,7 @@ export class HudView {
       st.stormTurns / STORM_TURNS,
       Theme.storm,
       Theme.danger,
-      lore('UI-BAR-WINDOW'),
+      shearPrimary ? '' : lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
       secondaryCss,
       secondaryValCss,
@@ -215,13 +215,7 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
-    // Center shear readout covers Calm — badge only when pressure matters.
-    if (opts.shear && opts.shear.state !== 'Calm') {
-      badgeSpecs.push({
-        label: `SHEAR · ${opts.shear.state.toUpperCase()}`,
-        fill: opts.shear.accent,
-      });
-    }
+    // Shear state lives on the center readout only (Charged+) — no badge duplicate.
     const stanceBadge = stanceBadgeSpec(st);
     if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.ionFrontTurns > 0) {
@@ -243,6 +237,12 @@ export class HudView {
       }[st.extractFavor.kind];
       badgeSpecs.push({ label, fill: Theme.ok });
     }
+    if (st.handshake?.active) {
+      badgeSpecs.push({
+        label: `HS ${st.handshake.progress}/2`,
+        fill: Theme.ok,
+      });
+    }
     if (st.uplink?.active) {
       badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.storm });
       if (st.uplink.progress === 1 && !st.uplink.repelled) {
@@ -253,16 +253,23 @@ export class HudView {
       badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });
     }
     if (st.rooms.length >= 3) {
-      badgeSpecs.push({
-        label: `${lore('UI-SURVEY')} ${st.surveyedRoomIds.length}/${SURVEY_ROOM_CAP}`,
-        fill: Theme.phosphorMute,
-      });
-      const expPct = Math.floor(exploredFloorRatio(st) * 100);
-      const exploreReady = exploredFloorRatio(st) >= EXPLORE_BONUS_THRESHOLD;
-      badgeSpecs.push({
-        label: `${lore('UI-EXPLORE')} ${expPct}%`,
-        fill: exploreReady ? Theme.storm : Theme.phosphorMute,
-      });
+      const surveyed = st.surveyedRoomIds.length;
+      if (surveyed > 0) {
+        badgeSpecs.push({
+          label: `${lore('UI-SURVEY')} ${surveyed}/${SURVEY_ROOM_CAP}`,
+          fill: Theme.phosphorMute,
+        });
+      }
+      const exploreRatio = exploredFloorRatio(st);
+      const expPct = Math.floor(exploreRatio * 100);
+      // Progressive disclosure — show EXP near hatch bonus or after first survey.
+      if (surveyed > 0 || exploreRatio >= 0.4) {
+        const exploreReady = exploreRatio >= EXPLORE_BONUS_THRESHOLD;
+        badgeSpecs.push({
+          label: `${lore('UI-EXPLORE')} ${expPct}%`,
+          fill: exploreReady ? Theme.storm : Theme.phosphorMute,
+        });
+      }
     }
     this.drawQuestBadges(badgeSpecs, opts.screenW);
 
@@ -283,10 +290,9 @@ export class HudView {
     }
 
     const stormHot = st.stormTurns <= 80;
-    const stormWarn = st.stormTurns <= 200;
     const urgencyParts: string[] = [];
+    // Window bar + pulse already signal warn; urgency only when critical.
     if (stormHot) urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
-    else if (stormWarn) urgencyParts.push(`${lore('LOG-STORM-WARN')}  (${st.stormTurns})`);
     if (st.skillPick) {
       urgencyParts.push(
         `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
@@ -296,7 +302,7 @@ export class HudView {
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
-    r.urgencyText.setColor(stormHot ? '#cc4444' : stormWarn ? '#ff9933' : ThemeCss.phosphorDim);
+    r.urgencyText.setColor(stormHot ? '#cc4444' : ThemeCss.phosphorDim);
 
     const sticky = stickyMilestone(st.loreEvents);
     if (hasUrgency) {

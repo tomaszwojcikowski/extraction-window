@@ -20,16 +20,17 @@ import { ionFrontMechanic } from './ionFront';
  * so mid-handshake or desync clear is not interrupted by side-quest pathing.
  * Field NPCs hail before room quests when both claim `>`.
  * Sealed pry after NPCs so hail still wins when both are adjacent.
+ * Quiet after interactables so stance coaching never blocks hatch/NPC/quest hints.
  */
 const MECHANICS: Mechanic[] = [
   tutorialMechanic,
   beaconHandshakeMechanic,
   patternBufferMechanic,
   extractionUplinkMechanic,
-  quietStanceMechanic,
   npcMechanic,
   sealedHatchMechanic,
   roomQuestMechanic,
+  quietStanceMechanic,
   ionFrontMechanic,
   scriptedEventsMechanic,
   surveyMechanic,

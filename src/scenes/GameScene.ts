@@ -597,11 +597,16 @@ export class GameScene extends Phaser.Scene {
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
     if (this.lastShearState !== shear.state) {
       this.lastShearState = shear.state;
-      this.shearFlashUntil = this.time.now + 2200;
+      // Juice budget ~200ms — never flash-show Calm.
+      if (shear.state !== 'Calm') {
+        this.shearFlashUntil = this.time.now + 200;
+      } else {
+        this.shearFlashUntil = 0;
+      }
     }
     const flash = this.shearFlashUntil > this.time.now;
-    // Calm is quiet chrome — don't compete with bars / LIT badge.
-    if (shear.state === 'Calm' && !flash) {
+    // Single loud channel: center readout for Charged+ only (no Calm, no badge).
+    if (shear.state === 'Calm') {
       this.shearReadout.setVisible(false);
     } else {
       this.shearReadout.setVisible(true);
@@ -611,9 +616,7 @@ export class GameScene extends Phaser.Scene {
           ? ThemeCss.arcWhite
           : shear.state === 'Arcing'
             ? ThemeCss.arc
-            : shear.state === 'Charged'
-              ? ThemeCss.tape
-              : ThemeCss.biolum,
+            : ThemeCss.tape,
       );
       this.shearReadout.setAlpha(flash ? 1 : 0.88);
       this.shearReadout.setPosition(this.scale.width / 2, 6);
@@ -1404,7 +1407,7 @@ export class GameScene extends Phaser.Scene {
   /** Lore-driven camera cues are cosmetic; filters never affect sim light/FOV. */
   private pulseCameraAtmosphere(logs: readonly LoreId[]): void {
     const has = (id: LoreId) => logs.includes(id);
-    if (has('LOG-ION-FRONT') || has('LOG-ION-PULSE')) {
+    if (has('LOG-ION-FRONT') || has('LOG-ION-CLEAR')) {
       this.cameraAtmosphere?.pulse(0.18, 240);
       this.cameras.main.shake(140, 0.0015);
       this.lightView.ignite(
@@ -1415,6 +1418,11 @@ export class GameScene extends Phaser.Scene {
         7,
         LightTemp.scan,
       );
+      return;
+    }
+    if (has('LOG-EVT-SHEAR') || has('LOG-EVT-APPROACH')) {
+      this.cameraAtmosphere?.pulse(0.1, 140);
+      this.cameras.main.shake(90, 0.001);
       return;
     }
     if (has('LOG-USE-FLARE')) {

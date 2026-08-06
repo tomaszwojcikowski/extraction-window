@@ -180,7 +180,7 @@ function hailNpc(state: GameState, npc: FieldNpc): boolean {
     pushLog(
       state,
       'LOG-NPC-ENSIGN',
-      `med+energy · ${lore(ALLIES[allyKind].loreName)}`,
+      `Hypo + Power Cell · ${lore(ALLIES[allyKind].loreName)}`,
     );
     spawnAlly(state, allyKind, { x: npc.x, y: npc.y });
     npc.agendaOpen = true;

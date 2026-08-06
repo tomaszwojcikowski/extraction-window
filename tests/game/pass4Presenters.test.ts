@@ -192,10 +192,14 @@ describe('PeekTeach', () => {
     expect(shouldShowPeekTeach(st)).toBe(false);
   });
 
-  it('yields to drill stalker / tele coaching', () => {
+  it('yields to drill get/kit/hatch and combat coaching', () => {
     expect(peekTeachBlockedBy('UI-TUT-STALKER')).toBe(true);
     expect(peekTeachBlockedBy('UI-TUT-FIGHT')).toBe(true);
     expect(peekTeachBlockedBy('UI-HINT-TELE')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-GET')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-KIT')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-GOTO-HATCH')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-HAZARD')).toBe(true);
     expect(peekTeachBlockedBy('UI-TUT-MOVE')).toBe(false);
     expect(peekTeachBlockedBy(null)).toBe(false);
 
@@ -203,6 +207,7 @@ describe('PeekTeach', () => {
     const st = stubState({ enemies: [near], tutorialActive: true, sectorIndex: 0 });
     expect(shouldShowPeekTeach(st, 'UI-TUT-STALKER')).toBe(false);
     expect(shouldShowPeekTeach(st, 'UI-HINT-TELE')).toBe(false);
+    expect(shouldShowPeekTeach(st, 'UI-TUT-GET')).toBe(false);
     expect(shouldShowPeekTeach(st, 'UI-TUT-MOVE')).toBe(true);
     expect(shouldShowPeekTeach(st, null)).toBe(true);
   });
