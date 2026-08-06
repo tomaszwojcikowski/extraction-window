@@ -56,38 +56,69 @@ export function enemyMovedCloser(
   return manhattan(en.x, en.y, px, py) < manhattan(prev.x, prev.y, px, py);
 }
 
+function stillNoticeThreat(
+  state: GameState,
+  en: Enemy,
+  px: number,
+  py: number,
+): boolean {
+  if (!en.alive) return false;
+  if (!(state.visible[en.y]?.[en.x] ?? false)) return false;
+  if (isJammerSilenced(state, en)) return false;
+  return wouldNoticeEnemy(state, en, px, py);
+}
+
+/**
+ * Prune chase latches when fauna leave notice / FOV / silence.
+ * Mutates `chaseLatched` in place.
+ */
+export function pruneNoticeChaseLatch(
+  state: GameState,
+  chaseLatched: Set<number>,
+): void {
+  const px = state.player.x;
+  const py = state.player.y;
+  for (const id of [...chaseLatched]) {
+    const en = state.enemies.find((e) => e.id === id);
+    if (!en || !stillNoticeThreat(state, en, px, py)) chaseLatched.delete(id);
+  }
+}
+
 /**
  * Fauna that newly noticed / engaged this turn — honest Impact targets only.
  * Quiet/jammer-suppressed notice never punches.
- * Already-noticing fauna that keep standing still do not spam.
+ * Chase Impact latches per id until leave-notice so sustained approach is not strobe.
  */
 export function noticeImpactIds(
   state: GameState,
   prev: ReadonlyArray<NoticeSnap>,
+  chaseLatched: Set<number> = new Set(),
 ): number[] {
   const px = state.player.x;
   const py = state.player.y;
   const prevById = new Map(prev.map((p) => [p.id, p]));
   const ids: number[] = [];
 
-  for (const en of state.enemies) {
-    if (!en.alive) continue;
-    const visible = state.visible[en.y]?.[en.x] ?? false;
-    if (!visible) continue;
+  pruneNoticeChaseLatch(state, chaseLatched);
 
-    // Honesty: only punch fauna that would show a live wake tell.
-    if (isJammerSilenced(state, en)) continue;
-    if (!wouldNoticeEnemy(state, en, px, py)) continue;
+  for (const en of state.enemies) {
+    if (!stillNoticeThreat(state, en, px, py)) continue;
 
     const p = prevById.get(en.id);
     if (!p || !p.alive) continue;
 
     const newlyNoticed = !p.wouldNotice;
     const newlyAlerted = !p.alerted && en.alerted;
-    const chaseStart = p.wouldNotice && p.visible && enemyMovedCloser(p, en, px, py);
+    const chaseEdge =
+      p.wouldNotice &&
+      p.visible &&
+      enemyMovedCloser(p, en, px, py) &&
+      !chaseLatched.has(en.id);
 
-    if (newlyNoticed || newlyAlerted || chaseStart) {
+    if (newlyNoticed || newlyAlerted || chaseEdge) {
       ids.push(en.id);
+      // Latch after any Impact so follow-up closer steps stay quiet.
+      chaseLatched.add(en.id);
     }
   }
 

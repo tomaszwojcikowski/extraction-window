@@ -8,6 +8,7 @@ import {
 import {
   markPeekTeachDone,
   PEEK_TEACH_SCRIPT,
+  peekTeachBlockedBy,
   peekTeachEligible,
   shouldShowPeekTeach,
 } from '../../src/game/presenters/PeekTeach';
@@ -118,13 +119,33 @@ describe('NoticeImpact', () => {
     expect(noticeImpactIds(st, prev)).toEqual([]);
   });
 
-  it('punches on chase start (enemy closes distance)', () => {
+  it('punches on first chase edge only — latch blocks follow-up closer steps', () => {
     const near = stubEnemy('mite', 7, 5, { alerted: true });
     const st = stubState({ enemies: [near] });
+    const latch = new Set<number>();
     const prev = captureNoticeSnap(st);
     near.x = 6;
     expect(enemyMovedCloser(prev[0]!, near, 5, 5)).toBe(true);
-    expect(noticeImpactIds(st, prev)).toEqual([1]);
+    expect(noticeImpactIds(st, prev, latch)).toEqual([1]);
+    expect(latch.has(1)).toBe(true);
+
+    const mid = captureNoticeSnap(st);
+    near.x = 5; // closes again
+    expect(enemyMovedCloser(mid[0]!, near, 5, 5)).toBe(true);
+    expect(noticeImpactIds(st, mid, latch)).toEqual([]);
+  });
+
+  it('re-arms chase latch after fauna leaves notice', () => {
+    const en = stubEnemy('mite', 6, 5, { alerted: true });
+    const st = stubState({ enemies: [en] });
+    const latch = new Set<number>([1]);
+    en.x = 9; // leave notice
+    expect(noticeImpactIds(st, captureNoticeSnap(st), latch)).toEqual([]);
+    expect(latch.has(1)).toBe(false);
+
+    const farSnap = captureNoticeSnap(st);
+    en.x = 6; // re-enter notice
+    expect(noticeImpactIds(st, farSnap, latch)).toEqual([1]);
   });
 
   it('stays quiet under jammer silence (no false Impact)', () => {
@@ -169,6 +190,21 @@ describe('PeekTeach', () => {
     const near = stubEnemy('mite', 6, 5);
     const st = stubState({ enemies: [near], sectorIndex: 5, tutorialActive: false });
     expect(shouldShowPeekTeach(st)).toBe(false);
+  });
+
+  it('yields to drill stalker / tele coaching', () => {
+    expect(peekTeachBlockedBy('UI-TUT-STALKER')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-FIGHT')).toBe(true);
+    expect(peekTeachBlockedBy('UI-HINT-TELE')).toBe(true);
+    expect(peekTeachBlockedBy('UI-TUT-MOVE')).toBe(false);
+    expect(peekTeachBlockedBy(null)).toBe(false);
+
+    const near = stubEnemy('mite', 6, 5);
+    const st = stubState({ enemies: [near], tutorialActive: true, sectorIndex: 0 });
+    expect(shouldShowPeekTeach(st, 'UI-TUT-STALKER')).toBe(false);
+    expect(shouldShowPeekTeach(st, 'UI-HINT-TELE')).toBe(false);
+    expect(shouldShowPeekTeach(st, 'UI-TUT-MOVE')).toBe(true);
+    expect(shouldShowPeekTeach(st, null)).toBe(true);
   });
 });
 

@@ -130,6 +130,8 @@ export class GameScene extends Phaser.Scene {
   /** Notice Impact — tell flash / ring pop until this time (ms). */
   private noticeImpactUntil = 0;
   private noticeImpactIds = new Set<number>();
+  /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
+  private noticeChaseLatched = new Set<number>();
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -163,6 +165,7 @@ export class GameScene extends Phaser.Scene {
     this.preferenceHint = null;
     this.noticeImpactUntil = 0;
     this.noticeImpactIds.clear();
+    this.noticeChaseLatched.clear();
     this.firstLight = null;
     this.firstLightTween = null;
   }
@@ -855,13 +858,16 @@ export class GameScene extends Phaser.Scene {
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
     this.pulseCameraAtmosphere(fb.newLogs);
-    this.presentNoticeImpact(noticeImpactIds(this.state, prevNotice));
+    this.presentNoticeImpact(noticeImpactIds(this.state, prevNotice, this.noticeChaseLatched));
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
     if (fb.mapReloaded) {
       this.movePreviewQueue = null;
       this.hideCommitGhost(false);
+      this.noticeChaseLatched.clear();
+      this.noticeImpactIds.clear();
+      this.noticeImpactUntil = 0;
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();

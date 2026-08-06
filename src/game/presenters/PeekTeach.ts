@@ -1,7 +1,46 @@
+import type { LoreId } from '../../data/lore';
 import type { GameState } from '../../sim/types';
 import { collectWakeTells, wouldNoticeEnemy } from './WakeTells';
 
 export const PEEK_TEACH_SCRIPT = 'peek_teach';
+
+/**
+ * Coaching that must beat the one-shot Shift-peek tip — drill stalker / fight,
+ * telegraphs, vitals, and tile interactions own the hint line first.
+ */
+const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
+  'UI-HINT-SKILL',
+  'UI-HINT-AIM',
+  'UI-HINT-TELE',
+  'UI-TUT-STALKER',
+  'UI-TUT-FIGHT',
+  'UI-TUT-EXIT',
+  'UI-HINT-USE-MED',
+  'UI-HINT-USE-ENERGY',
+  'UI-HINT-USE-ARMOR',
+  'UI-HINT-USE-PATCH',
+  'UI-HINT-USE-SEALANT',
+  'UI-HINT-FLARE',
+  'UI-HINT-QUIET',
+  'UI-HINT-QUIET-EM',
+  'UI-HINT-EXIT',
+  'UI-HINT-BEACON',
+  'UI-HINT-HANDSHAKE',
+  'UI-HINT-SHUTTLE',
+  'UI-HINT-UPLINK-HOLD',
+  'UI-HINT-DESYNC',
+  'UI-HINT-ITEM',
+  'UI-HINT-POI',
+  'UI-HINT-QUEST',
+  'UI-HINT-NPC',
+  'UI-HINT-BRAND',
+  'UI-HINT-SEALED',
+  'UI-HINT-PRY-SEALED',
+  'UI-HINT-ALLY-DRONE',
+  'UI-HINT-ALLY-ESCORT',
+  'UI-HINT-PREFER-DARK',
+  'UI-HINT-PREFER-LIT',
+]);
 
 /** Early vertical-slice window for the one-shot Shift-peek cue. */
 export function peekTeachEligible(st: GameState): boolean {
@@ -27,8 +66,15 @@ export function peekTeachThreatVisible(st: GameState): boolean {
   return false;
 }
 
-export function shouldShowPeekTeach(st: GameState): boolean {
-  return peekTeachEligible(st) && peekTeachThreatVisible(st);
+export function peekTeachBlockedBy(coaching: LoreId | null): boolean {
+  if (!coaching) return false;
+  return PEEK_TEACH_YIELDS_TO.has(coaching);
+}
+
+export function shouldShowPeekTeach(st: GameState, coaching: LoreId | null = null): boolean {
+  if (!peekTeachEligible(st) || !peekTeachThreatVisible(st)) return false;
+  if (peekTeachBlockedBy(coaching)) return false;
+  return true;
 }
 
 /** Mark the one-shot teach consumed (successful peek or dismiss). */

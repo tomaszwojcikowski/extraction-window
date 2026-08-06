@@ -314,13 +314,13 @@ export class HudView {
       opts.movePreviewActive && !st.ui.inventoryOpen && !st.skillPick && !st.ui.aimingDart
         ? ('UI-HINT-COMMIT' as const)
         : contextHint(st);
-    // One-shot field teach — Shift-peek before a doc; never nags after success/dismiss.
+    // One-shot Shift-peek teach — yields to drill/tele/vitals coaching.
     if (
       !opts.movePreviewActive &&
       !st.ui.inventoryOpen &&
       !st.skillPick &&
       !st.ui.aimingDart &&
-      shouldShowPeekTeach(st)
+      shouldShowPeekTeach(st, hint)
     ) {
       hint = 'UI-HINT-PEEK-TEACH';
     }
