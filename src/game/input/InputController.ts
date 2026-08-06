@@ -8,10 +8,10 @@ import {
   isQueueableAction,
   slotIndexFromKey,
 } from './Keymap';
-import { toMoveAction, type MovePreviewQueue } from './MovePreviewQueue';
+import type { MovePreviewQueue } from './MovePreviewQueue';
 
 export type CommitTurnOpts = {
-  /** Keep queued move ghost/tells after a non-move turn (quiet toggle while queued). */
+  /** Keep Shift-peek ghost/tells after a non-move turn (quiet toggle while peeking). */
   keepMovePreview?: boolean;
 };
 
@@ -25,7 +25,8 @@ export type InputHost = {
   isHelpOpen(): boolean;
   isPagesOpen(): boolean;
   queueAction(action: Action): void;
-  queueMovePreview(dx: number, dy: number): void;
+  /** Shift+direction wake peek — ghost + tells, no move. */
+  setWakePeek(dx: number, dy: number): void;
   getMovePreview(): MovePreviewQueue | null;
   getQueuedAction(): Action | null;
   clearQueuedAction(): void;
@@ -42,8 +43,8 @@ export type InputHost = {
 };
 
 /**
- * Handle a keydown for the playing field. Behavior-identical to the former
- * GameScene.onKey switchboard — mute, overlays, skill fork, slots, then turns.
+ * Handle a keydown for the playing field.
+ * Move is immediate (roguelike). Shift+direction peeks wake footprint without committing.
  */
 export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   sfx.unlock();
@@ -57,7 +58,9 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
       return;
     }
     const queued = actionFromKey(e);
-    if (queued && isQueueableAction(queued)) host.queueAction(queued);
+    if (queued && isQueueableAction(queued) && !(queued.type === 'move' && e.shiftKey)) {
+      host.queueAction(queued);
+    }
     return;
   }
 
@@ -121,7 +124,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   const slotIdx = slotIndexFromKey(e);
   if (slotIdx !== null) {
-    // Keep move preview so jammer can be selected/used while a step is queued.
+    host.clearQueuedAction();
     applyAction(state, { type: 'select_slot', index: slotIdx });
     if (!state.ui.inventoryOpen) applyAction(state, { type: 'toggle_inventory' });
     sfx.play('ui');
@@ -132,9 +135,13 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   const action = actionFromKey(e);
   if (!action) return;
 
-  // Escape opens help when kit is closed (actionFromKey maps Escape → close_ui)
+  // Escape: clear wake peek first; otherwise open help when kit is closed
   if (action.type === 'close_ui' && !state.ui.inventoryOpen) {
-    host.clearQueuedAction();
+    if (host.getMovePreview()) {
+      host.clearQueuedAction();
+      sfx.play('ui');
+      return;
+    }
     if (host.isPagesOpen()) {
       host.togglePages(false);
       sfx.play('ui');
@@ -146,32 +153,28 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
-    // Kit open/close keeps preview — quiet toggle while queued needs selected jammer.
+    host.clearQueuedAction();
     applyAction(state, action);
     sfx.play('ui');
     host.afterUiChrome();
     return;
   }
 
-  // Move preview: direction queues + wake footprint; `.` confirms the queued step.
-  if (action.type === 'move' && !host.isAnimating()) {
-    host.queueMovePreview(action.dx, action.dy);
+  // Shift+direction: wake peek only — no turn spent.
+  if (action.type === 'move' && e.shiftKey && !host.isAnimating()) {
+    host.setWakePeek(action.dx, action.dy);
     sfx.play('ui');
     return;
   }
 
-  if (action.type === 'wait' && !host.isAnimating()) {
-    const preview = host.getMovePreview();
-    if (preview) {
-      host.clearQueuedAction();
-      host.commitTurnAction(toMoveAction(preview));
-      return;
-    }
+  // Fluid move — one press commits. Clear any peek first.
+  if (action.type === 'move') {
+    host.clearQueuedAction();
     host.commitTurnAction(action);
     return;
   }
 
-  // Use (e.g. jammer) while queued: apply stance, keep ghost so wake tells shrink live.
+  // Use while peeking: apply stance, keep ghost so wake tells shrink live.
   if (action.type === 'use' && host.getMovePreview()) {
     host.commitTurnAction(action, { keepMovePreview: true });
     return;

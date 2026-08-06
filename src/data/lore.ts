@@ -32,29 +32,29 @@ export const LORE = {
   'UI-HELP': 'Survey team manual',
   'UI-HELP-TUT':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD queues a step, . commits it; g get, i kit, u use, >/=/Enter exit.\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
     'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
     '\n',
   'UI-HELP-BODY':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD queues a step, . commits it; g get, i kit, u use, >/=/Enter exit.\n' +
+    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
     'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
     '\n' +
-    'MOVE    WASD or arrow keys — queue one adjacent step (ghost + wake preview)\n' +
-    'CONFIRM . (period) — commit the queued step; with no queue, hold position (time still passes)\n' +
-    'RE-AIM  press a direction again while queued — retarget preview without moving\n' +
+    'MOVE    WASD or arrow keys — one tile per turn\n' +
+    'PEEK    Shift+direction — ghost + wake preview (who you would wake); release Shift to clear\n' +
+    'WAIT    . (period) — hold position, time still passes\n' +
     'BRACE   b — +2 DEF for the enemy phase; pounces lose their bonus\n' +
     'RETREAT r — step away from a visible close/winding hostile; costs 4 bus\n' +
     'GET     g — pick up salvage under your boots\n' +
     'KIT     i — open field kit; ↑↓ or 1–9 to select; esc closes\n' +
-    'USE     u — use consumables, or equip/stow tool·suit·utility gear (keeps move preview)\n' +
+    'USE     u — use consumables, or equip/stow tool·suit·utility gear\n' +
     'EXIT    Enter / Space / = / > — hatch, beacon, drop skiff pad, anomaly, or hail a field contact\n' +
     'PADD    p — mission notes recovered this run\n' +
     'SKILL   1 or 2 — choose a field skill when prompted (move locked until then)\n' +
     'DART    u on Microdart, then a direction — hits a seen target within 3 tiles\n' +
     'HELP    ? — this manual\n' +
     'MUTE    m — toggle sound\n' +
-    'ESC     clear queued step / close kit / PADD / help (opens help if nothing is open)\n' +
+    'ESC     clear peek / close kit / PADD / help (opens help if nothing is open)\n' +
     '\n' +
     'WHY GATHER\n' +
     'Kit keeps you alive through the shear window (med / bus / shields / tactics).\n' +
@@ -74,7 +74,7 @@ export const LORE = {
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-KIT-PURPOSE':
     'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
-  'UI-CONTROLS': 'WASD queue · . commit · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
+  'UI-CONTROLS': 'WASD · Shift+dir peek · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — press Enter / Space / = / > to advance',
@@ -109,8 +109,8 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
   'UI-HINT-NPC': 'Field contact nearby — press > to hail',
-  'UI-HINT-COMMIT': '. commits queued step · direction re-aims · esc clears',
-  'UI-TUT-MOVE': 'WASD queues a step · . commits it',
+  'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear',
+  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn',
   'UI-TUT-GET': 'g — pick up',
   'UI-TUT-KIT': 'i kit · u use',
   'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
