@@ -9,7 +9,6 @@ import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
-import { isQuietStance } from '../../sim/mechanics/quietStance';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -76,18 +75,7 @@ export function contextHint(st: GameState): LoreId | null {
   if (adjSealed && hasItem(st, 'sealant')) {
     return 'UI-HINT-USE-SEALANT';
   }
-  if (
-    isQuietStance(st) &&
-    inShadow(st, st.player.x, st.player.y) &&
-    st.enemies.some(
-      (e) =>
-        e.alive &&
-        (st.visible[e.y]?.[e.x] ?? false) &&
-        Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) <= 2,
-    )
-  ) {
-    return 'UI-HINT-QUIET';
-  }
+  // Quiet ambush trade is one-shot via quietStanceMechanic — do not re-hog here.
   if (
     inShadow(st, st.player.x, st.player.y) &&
     hasItem(st, 'flare') &&

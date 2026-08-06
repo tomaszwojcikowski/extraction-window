@@ -149,7 +149,15 @@ export class HudView {
       lore('UI-BAR-XP'),
       st.xpToNext ? `${st.xp}/${st.xpToNext}` : `${st.xp}`,
     );
-    this.syncWindowPulse(400, barY, 100, barH, st.stormTurns <= 80, opts);
+    this.syncWindowPulse(
+      400,
+      barY,
+      100,
+      barH,
+      // When Shear owns the center readout, skip Window bar pulse (one channel).
+      !shearPrimary && st.stormTurns <= 80,
+      opts,
+    );
 
     const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
@@ -291,8 +299,10 @@ export class HudView {
 
     const stormHot = st.stormTurns <= 80;
     const urgencyParts: string[] = [];
-    // Window bar + pulse already signal warn; urgency only when critical.
-    if (stormHot) urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+    // Window critical + SHEAR center would triple-signal — Shear owns Charged+.
+    if (stormHot && !shearPrimary) {
+      urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+    }
     if (st.skillPick) {
       urgencyParts.push(
         `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
@@ -302,7 +312,7 @@ export class HudView {
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
-    r.urgencyText.setColor(stormHot ? '#cc4444' : ThemeCss.phosphorDim);
+    r.urgencyText.setColor(stormHot && !shearPrimary ? '#cc4444' : ThemeCss.phosphorDim);
 
     const sticky = stickyMilestone(st.loreEvents);
     if (hasUrgency) {

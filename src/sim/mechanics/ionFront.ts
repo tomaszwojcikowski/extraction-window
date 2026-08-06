@@ -16,6 +16,8 @@ function canFormIonFront(state: GameState): boolean {
 export function startIonFront(state: GameState): void {
   state.ionFrontTurns = FRONT_DURATION;
   state.ionFrontDampened = false;
+  // Allow one teach hint per front (badge carries the rest).
+  state.scriptedFired.ion_front_hint = false;
   pushLog(state, 'LOG-ION-FRONT');
 }
 
@@ -55,13 +57,16 @@ export const ionFrontMechanic: Mechanic = {
     if (state.player.filterTurns > 0 || state.ionFrontDampened || isQuietStance(state)) {
       return null;
     }
+    if (state.scriptedFired.ion_front_hint) return null;
+    // Teach only when kit can act — otherwise badge + LOG-ION-* are enough.
     if (
-      hasItem(state, 'filter') ||
-      hasItem(state, 'flare') ||
-      hasItem(state, 'jammer')
+      !hasItem(state, 'filter') &&
+      !hasItem(state, 'flare') &&
+      !hasItem(state, 'jammer')
     ) {
-      return 'UI-HINT-ION-FRONT';
+      return null;
     }
+    state.scriptedFired.ion_front_hint = true;
     return 'UI-HINT-ION-FRONT';
   },
 };

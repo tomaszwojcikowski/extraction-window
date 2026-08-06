@@ -43,12 +43,8 @@ describe('pickCameraCue', () => {
     expect(notice.shakeMs).toBeLessThanOrEqual(200);
   });
 
-  it('keeps Quiet as hush (vignette only — no zoom/shake hog)', () => {
-    const quiet = pickCameraCue(['LOG-QUIET-ON'])!;
-    expect(quiet.profile).toBe('hush');
-    expect(quiet.zoomScale).toBe(1);
-    expect(quiet.shakeMs).toBe(0);
-    expect(quiet.vignette).toBeGreaterThan(0);
+  it('keeps Quiet hush profile defined but does not cue on Quiet logs', () => {
+    expect(pickCameraCue(['LOG-QUIET-ON', 'LOG-USE-JAMMER'])).toBeNull();
   });
 
   it('treats approach shear as pressure, not a punch', () => {

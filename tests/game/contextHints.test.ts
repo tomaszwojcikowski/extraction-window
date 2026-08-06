@@ -63,9 +63,10 @@ describe('contextHint coaching', () => {
     expect(stanceBadgeLabel(st)).toBe('SHADOW');
   });
 
-  it('warns that quiet soft shadow can hide an adjacent pounce', () => {
+  it('one-shots Quiet soft-shadow ambush tip then yields the hint line', () => {
     const st = createGame(42);
     st.player.jammerTurns = 12;
+    st.scriptedFired.quiet_hint = true;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
     st.illumination[st.player.y]![st.player.x] = 0.2;
@@ -74,6 +75,7 @@ describe('contextHint coaching', () => {
     st.visible[stalker.y]![stalker.x] = true;
 
     expect(contextHint(st)).toBe('UI-HINT-QUIET');
+    expect(contextHint(st)).not.toBe('UI-HINT-QUIET');
   });
 
   it('prioritizes visible windups over an exit interaction', () => {

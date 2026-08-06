@@ -235,8 +235,7 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-USED-KEY', 'handshake'],
   ['LOG-HS-START', 'handshake'],
   ['LOG-UPLINK-START', 'uplink_done'],
-  ['LOG-USE-JAMMER', 'quiet'],
-  ['LOG-QUIET-ON', 'quiet'],
+  // Quiet: badge + meta timer only — no camera (juice budget / one channel).
   ['LOG-PB-DESYNC', 'desync'],
   ['LOG-SEALED-OPEN', 'hatch'],
   ['LOG-SEALED-PRY', 'hatch'],
