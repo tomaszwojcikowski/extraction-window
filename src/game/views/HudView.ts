@@ -56,6 +56,8 @@ export type HudRedrawOpts = {
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
   /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
   shear?: ShearPressureSpec;
+  /** Queued move preview active — teach `.` commit without opening help. */
+  movePreviewActive?: boolean;
 };
 
 /** The light badge must mirror the shadow predicate used by ambush AI. */
@@ -307,7 +309,10 @@ export class HudView {
     });
     r.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
 
-    const hint = contextHint(st);
+    const hint =
+      opts.movePreviewActive && !st.ui.inventoryOpen && !st.skillPick && !st.ui.aimingDart
+        ? 'UI-HINT-COMMIT'
+        : contextHint(st);
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
