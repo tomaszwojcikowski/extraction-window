@@ -12,7 +12,7 @@ import {
   SURVEY_ROOM_CAP,
 } from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
-import { drawLcarsBadge } from '../../scenes/atmosphere';
+import { drawStencilBadge } from '../../scenes/atmosphere';
 import { contextHint } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
@@ -409,9 +409,9 @@ export class HudView {
       const b = badges[i]!;
       const tw = widths[i]!;
       const t = this.refs.badgeTexts[i]!;
-      drawLcarsBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
-      t.setColor('#06060c');
-      t.setPosition(x + padX, y + 2);
+      drawStencilBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
+      t.setColor(ThemeCss.ink);
+      t.setPosition(x + padX, y + 3);
       x += tw + gap;
     }
   }

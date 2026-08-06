@@ -15,8 +15,9 @@ import { applyAction, createGame, describeObjective, type Action, type GameState
 import { tileBrightness } from '../sim/light';
 import {
   addCameraAtmosphere,
-  createScanRetrace,
+  createArcSweep,
   drawHudStripChrome,
+  type ArcSweep,
   type CameraAtmosphere,
 } from './atmosphere';
 import { sfx } from '../audio/sfx';
@@ -64,7 +65,7 @@ export class GameScene extends Phaser.Scene {
   private animating = false;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
-  private atmo: Phaser.GameObjects.Rectangle | null = null;
+  private arcSweep: ArcSweep | null = null;
   private cameraAtmosphere: CameraAtmosphere | null = null;
   private animFrame = 0;
   private animAccum = 0;
@@ -400,7 +401,8 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       ambient.stop();
       music.stop();
-      this.atmo?.destroy();
+      this.arcSweep?.destroy();
+      this.arcSweep = null;
       this.cameraAtmosphere?.destroy();
       this.cameraAtmosphere = null;
       this.lightView?.destroy();
@@ -507,12 +509,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private rebuildAtmosphere(): void {
-    if (this.atmo) {
-      this.tweens.killTweensOf(this.atmo);
-      this.atmo.destroy();
-      this.atmo = null;
-    }
-    this.atmo = createScanRetrace(this, 85);
+    this.arcSweep?.destroy();
+    this.arcSweep = createArcSweep(this, 85);
   }
 
   private buildMapSprites(): void {
@@ -1005,10 +1003,10 @@ export class GameScene extends Phaser.Scene {
             : 'CHARGE';
     const color =
       enemy.intent === 'beam'
-        ? '#66ccff'
+        ? ThemeCss.arcWhite
         : enemy.intent === 'overwatch'
-          ? '#cc99ff'
-          : '#ff8066';
+          ? ThemeCss.tape
+          : ThemeCss.rust;
     view.label.setText(marker);
     view.label.setColor(color);
     view.label.setFontSize(marker.length > 2 ? 8 : 10);
@@ -1060,7 +1058,7 @@ export class GameScene extends Phaser.Scene {
     const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
     const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
     this.goalMarker.setPosition(wx, wy);
-    this.goalMarker.setTint(Theme.quest);
+    this.goalMarker.setTint(Theme.flag);
     if (!this.goalPulseTween) {
       this.goalMarker.setAlpha(0.75);
       this.goalPulseTween = this.tweens.add({
@@ -1098,8 +1096,8 @@ export class GameScene extends Phaser.Scene {
     const ex = cx + ux * edgeDist;
     const ey = cy + uy * edgeDist;
 
-    this.chevronGfx.fillStyle(Theme.quest, 0.95);
-    this.chevronGfx.lineStyle(1, Theme.phosphorBright, 1);
+    this.chevronGfx.fillStyle(Theme.flag, 0.95);
+    this.chevronGfx.lineStyle(1, Theme.inkBright, 1);
     const s = 10;
     const px = -uy;
     const py = ux;
@@ -1230,7 +1228,7 @@ export class GameScene extends Phaser.Scene {
           5 +
           ((Math.abs(hash >> 13) + this.animFrame * (ion ? 3 : 1)) %
             Math.max(1, TILE_DRAW - 10));
-        this.fieldMotes.fillStyle(ion ? Theme.ionHazard : Theme.phosphorBright, ion ? 0.5 : 0.28);
+        this.fieldMotes.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.5 : 0.28);
         this.fieldMotes.fillRect(
           x * TILE_DRAW + ox,
           y * TILE_DRAW + oy,
@@ -1253,7 +1251,7 @@ export class GameScene extends Phaser.Scene {
     for (const patch of st.contamination) {
       const tile = this.tileSprites[patch.y]?.[patch.x];
       if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
-      tile.setTint(0x8bd8c7);
+      tile.setTint(Theme.biolum);
     }
   }
 

@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
 import type { Action, Enemy, GameState } from '../../sim';
 import { sfx } from '../../audio/sfx';
-import { Theme, ThemeCss } from '../../scenes/theme';
+import { LightTemp, Theme, ThemeCss } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { MOVE_MS } from '../GameHost';
 import type { LightView } from '../views/LightView';
@@ -33,49 +33,49 @@ export function actionFloatLabels(
     let next: ActionFloat | null = null;
     switch (log.loreId) {
       case 'LOG-ARMOR-ABSORB':
-        next = { label: `SHD ${log.detail ?? 'HIT'}`, color: ThemeCss.phosphorBright };
+        next = { label: `SHD ${log.detail ?? 'HIT'}`, color: ThemeCss.inkBright };
         break;
       case 'LOG-DRAIN':
-        next = { label: `BUS ${log.detail ?? '-2E'}`, color: '#ff9933' };
+        next = { label: `BUS ${log.detail ?? '-2E'}`, color: ThemeCss.arc };
         break;
       case 'LOG-QUIET-ON':
-        next = { label: 'QUIET · FOV -2 · AGGRO -3', color: '#a8d0ff' };
+        next = { label: 'QUIET · FOV -2 · AGGRO -3', color: ThemeCss.lampQuiet };
         break;
       case 'LOG-QUIET-OFF':
-        next = { label: 'QUIET OFF', color: ThemeCss.phosphorDim };
+        next = { label: 'QUIET OFF', color: ThemeCss.inkDim };
         break;
       case 'LOG-SURVEY-ROOM':
       case 'LOG-SURVEY-SECTOR':
-        next = { label: `WINDOW ${log.detail ?? '+'}`, color: ThemeCss.quest };
+        next = { label: `WINDOW ${log.detail ?? '+'}`, color: ThemeCss.flag };
         break;
       case 'LOG-TELE-POUNCE':
       case 'LOG-BOSS-TELE':
-        next = { label: 'POUNCE INCOMING', color: ThemeCss.danger };
+        next = { label: 'POUNCE INCOMING', color: ThemeCss.rust };
         break;
       case 'LOG-TELE-BEAM':
-        next = { label: 'BEAM READY', color: '#66ccff' };
+        next = { label: 'BEAM READY', color: ThemeCss.arcWhite };
         break;
       case 'LOG-TELE-OVERWATCH':
-        next = { label: 'OVERWATCH', color: '#cc99ff' };
+        next = { label: 'OVERWATCH', color: ThemeCss.tape };
         break;
       case 'LOG-BRACE':
-        next = { label: 'BRACE · DEF +2', color: ThemeCss.phosphorBright };
+        next = { label: 'BRACE · DEF +2', color: ThemeCss.inkBright };
         break;
       case 'LOG-RETREAT':
-        next = { label: 'RETREAT · -4 BUS', color: '#a8d0ff' };
+        next = { label: 'RETREAT · -4 BUS', color: ThemeCss.biolum };
         break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
-        next = { label: 'HATCH OPEN', color: '#44aa88' };
+        next = { label: 'HATCH OPEN', color: ThemeCss.safe };
         break;
       case 'LOG-CRAFT-FILTER':
-        next = { label: 'CRAFT · FILTER', color: ThemeCss.quest };
+        next = { label: 'CRAFT · FILTER', color: ThemeCss.flag };
         break;
       case 'LOG-CRAFT-RATION':
-        next = { label: 'CRAFT · RATION', color: ThemeCss.quest };
+        next = { label: 'CRAFT · RATION', color: ThemeCss.flag };
         break;
       case 'LOG-CRAFT-BALM':
-        next = { label: 'CRAFT · BALM', color: ThemeCss.quest };
+        next = { label: 'CRAFT · BALM', color: ThemeCss.flag };
         break;
     }
     if (next) labels.push(next);
@@ -106,7 +106,7 @@ export function emitActionLights(
       x: player.x,
       y: player.y,
       radius: 5.5,
-      color: 0xccffff,
+      color: LightTemp.flare,
       intensity: 1.35,
       life: 4,
     });
@@ -118,7 +118,7 @@ export function emitActionLights(
         x: t.x,
         y: t.y,
         radius: 3,
-        color: 0x66ffaa,
+        color: LightTemp.fauna,
         intensity: 0.8,
         life: 3,
       });
@@ -128,7 +128,7 @@ export function emitActionLights(
         x: player.x,
         y: player.y,
         radius: 3,
-        color: 0x66ffaa,
+        color: LightTemp.fauna,
         intensity: 0.75,
         life: 3,
       });
@@ -153,7 +153,7 @@ export function emitActionLights(
       x: player.x,
       y: player.y,
       radius: 4,
-      color: Theme.storm,
+      color: Theme.arc,
       intensity: 0.75,
       life: 2,
     });
@@ -164,7 +164,7 @@ export function emitActionLights(
       x: player.x,
       y: player.y,
       radius: 3.5,
-      color: 0xa8d0ff,
+      color: LightTemp.pattern,
       intensity: 0.7,
       life: 2,
     });
@@ -175,7 +175,7 @@ export function emitActionLights(
       x: player.x,
       y: player.y,
       radius: 6,
-      color: 0xa8d0ff,
+      color: LightTemp.pattern,
       intensity: 0.7,
       life: 2,
     });
@@ -186,7 +186,7 @@ export function emitActionLights(
       x: beaconPos?.x ?? player.x,
       y: beaconPos?.y ?? player.y,
       radius: 4.5,
-      color: Theme.storm,
+      color: LightTemp.beacon,
       intensity: 0.85,
       life: 2,
     });
@@ -197,7 +197,7 @@ export function emitActionLights(
       x: player.x,
       y: player.y,
       radius: 2.5,
-      color: 0xcc88ff,
+      color: LightTemp.pattern,
       intensity: 0.65,
       life: 3,
     });
@@ -220,7 +220,7 @@ export function flashHit(
   tweens: Phaser.Tweens.TweenManager,
   flash: Phaser.GameObjects.Rectangle,
 ): void {
-  flashScreen(tweens, flash, Theme.phosphorBright, 0.35);
+  flashScreen(tweens, flash, Theme.inkBright, 0.3);
 }
 
 /**
@@ -258,22 +258,22 @@ export function playActionSfx(
   }
   if (has('LOG-USED-KEY')) {
     sfx.play('beacon');
-    flash(Theme.quest, 0.28);
+    flash(Theme.flag, 0.28);
     return;
   }
   if (has('LOG-GOT-KEY') || has('LOG-GOT-CORE')) {
     sfx.play('quest');
-    flash(Theme.quest, 0.3);
+    flash(Theme.flag, 0.3);
     return;
   }
   if (has('LOG-LEVEL')) {
     sfx.play('level');
-    flash(Theme.phosphorBright, 0.22);
+    flash(Theme.inkBright, 0.22);
     return;
   }
   if (has('LOG-EXTRACT')) {
     sfx.play('extract');
-    flash(Theme.ok, 0.35);
+    flash(Theme.safe, 0.35);
     return;
   }
   if (has('LOG-STORM-WARN')) {
@@ -452,8 +452,8 @@ export function presentActionFeedback(opts: {
         id === 'LOG-TELE-BEAM' ||
         id === 'LOG-TELE-OVERWATCH',
     );
-    if (flareOrBurst) flash(Theme.ionHazard, 0.22);
-    if (state.player.hp < prevHp) flash(Theme.phosphorBright, 0.35);
+    if (flareOrBurst) flash(Theme.biolum, 0.22);
+    if (state.player.hp < prevHp) flash(Theme.rust, 0.3);
     if (newLogs.some((id) => id === 'LOG-HIT' || id === 'LOG-KILL')) {
       tintHitEnemies?.();
     }

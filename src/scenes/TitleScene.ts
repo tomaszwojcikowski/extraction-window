@@ -1,7 +1,13 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
-import { addCameraAtmosphere, drawMenuChrome } from './atmosphere';
+import {
+  addCameraAtmosphere,
+  drawBolt,
+  drawMenuChrome,
+  drawPlate,
+  drawStencilTicks,
+} from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 
 export class TitleScene extends Phaser.Scene {
@@ -21,25 +27,43 @@ export class TitleScene extends Phaser.Scene {
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
+    // Stencilled title window: sight brackets scratched into the case, a
+    // laminated mission card, and brine beading along its lower edge.
     const surveyField = this.add.graphics();
-    surveyField.lineStyle(1, Theme.quest, 0.18);
-    surveyField.strokeCircle(width / 2, height * 0.31, 92);
-    surveyField.strokeCircle(width / 2, height * 0.31, 106);
-    surveyField.lineStyle(1, Theme.phosphor, 0.3);
-    surveyField.lineBetween(width / 2 - 124, height * 0.31, width / 2 - 78, height * 0.31);
-    surveyField.lineBetween(width / 2 + 78, height * 0.31, width / 2 + 124, height * 0.31);
-    surveyField.fillStyle(Theme.ionHazard, 0.35);
-    for (let i = 0; i < 8; i++) {
-      const x = width / 2 - 154 + ((i * 47) % 308);
-      const y = height * 0.17 + ((i * 31) % Math.max(1, height * 0.3));
-      surveyField.fillRect(x, y, i % 3 === 0 ? 2 : 1, 1);
+    const cardX = width / 2 - 196;
+    const cardY = height * 0.245;
+    const cardW = 392;
+    const cardH = height * 0.175;
+    drawPlate(surveyField, cardX, cardY, cardW, cardH, { fill: Theme.panel, alpha: 0.95 });
+    surveyField.fillStyle(Theme.groundDeep, 0.35);
+    surveyField.fillRect(cardX + 6, cardY + 6, cardW - 12, cardH - 12);
+    surveyField.fillStyle(Theme.inkMute, 0.5);
+    surveyField.fillRect(cardX + 14, cardY + cardH - 16, cardW - 28, 1);
+    for (const [bx, by] of [
+      [cardX + 5, cardY + 5],
+      [cardX + cardW - 6, cardY + 5],
+      [cardX + 5, cardY + cardH - 6],
+      [cardX + cardW - 6, cardY + cardH - 6],
+    ]) {
+      drawBolt(surveyField, bx!, by!);
+    }
+    const arm = 16;
+    surveyField.lineStyle(1, Theme.biolum, 0.5);
+    surveyField.lineBetween(cardX - 14, cardY - 8, cardX - 14 + arm, cardY - 8);
+    surveyField.lineBetween(cardX - 14, cardY - 8, cardX - 14, cardY - 8 + arm);
+    surveyField.lineBetween(cardX + cardW + 14, cardY + cardH + 8, cardX + cardW + 14 - arm, cardY + cardH + 8);
+    surveyField.lineBetween(cardX + cardW + 14, cardY + cardH + 8, cardX + cardW + 14, cardY + cardH + 8 - arm);
+    drawStencilTicks(surveyField, cardX + 14, cardY + cardH - 13, cardW - 28, false, Theme.inkMute);
+    for (let i = 0; i < 14; i++) {
+      surveyField.fillStyle(Theme.biolum, 0.18 + ((i * 7) % 5) * 0.05);
+      surveyField.fillRect(cardX + 18 + ((i * 53) % (cardW - 36)), cardY + cardH - 5, 1, 2);
     }
 
     this.add
       .text(width / 2, height * 0.2, lore('UI-ORG'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
         letterSpacing: 5,
       })
       .setOrigin(0.5);
@@ -48,7 +72,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.3, lore('UI-TITLE'), {
         fontFamily: FONT_DISPLAY,
         fontSize: '36px',
-        color: ThemeCss.phosphorBright,
+        color: ThemeCss.inkBright,
         letterSpacing: 3,
       })
       .setOrigin(0.5);
@@ -61,19 +85,19 @@ export class TitleScene extends Phaser.Scene {
         {
           fontFamily: FONT_DATA,
           fontSize: '13px',
-          color: ThemeCss.phosphorDim,
+          color: ThemeCss.inkDim,
         },
       )
       .setOrigin(0.5);
 
-    // Sheet rule
-    this.add.rectangle(width / 2, height * 0.44, 220, 1, Theme.phosphorMute).setOrigin(0.5);
+    // Scribed rule on the case face
+    this.add.rectangle(width / 2, height * 0.44, 220, 1, Theme.inkMute).setOrigin(0.5);
 
     this.seedText = this.add
       .text(width / 2, height * 0.5, this.seedLabel(), {
         fontFamily: FONT_DATA,
         fontSize: '16px',
-        color: ThemeCss.phosphor,
+        color: ThemeCss.ink,
       })
       .setOrigin(0.5);
 
@@ -81,7 +105,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.55, lore('UI-SEED-HINT'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
       })
       .setOrigin(0.5);
 
@@ -89,7 +113,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.64, lore('UI-PRESS-START'), {
         fontFamily: FONT_DATA,
         fontSize: '15px',
-        color: ThemeCss.phosphorBright,
+        color: ThemeCss.inkBright,
       })
       .setOrigin(0.5);
 
@@ -107,7 +131,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.78, lore('UI-CONTROLS'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
         align: 'center',
         wordWrap: { width: width - 120 },
       })
@@ -117,7 +141,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.86, lore('UI-BRIEF-TUT'), {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.textMute,
+        color: ThemeCss.inkMute,
       })
       .setOrigin(0.5);
 
@@ -125,7 +149,7 @@ export class TitleScene extends Phaser.Scene {
       .text(width / 2, height * 0.92, this.muteLabel(), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
-        color: ThemeCss.phosphorMute,
+        color: ThemeCss.inkMute,
       })
       .setOrigin(0.5);
 

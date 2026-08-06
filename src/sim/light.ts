@@ -101,6 +101,34 @@ export function accumulateLight(
 export type SimLightSource = FieldLightSource;
 
 /**
+ * Motivated colour temperature per emitter. Presentation-only (`color` never
+ * feeds gameplay) but it lives here so the sim's emitter table and the art
+ * palette can't drift apart — `scenes/theme.ts` re-exports this as `LightTemp`.
+ */
+export const LIGHT_TEMP = {
+  /** Hooded work lamp through scratched glass. */
+  lamp: 0xffd9a8,
+  /** Quiet stance: the same lamp behind a red night filter. */
+  lampQuiet: 0xd8734a,
+  /** Magnesium flare — chemical burn, near-white with a warm skirt. */
+  flare: 0xfff4e2,
+  /** Fauna / reef bioluminescence — cold, wet, green-cyan. */
+  fauna: 0x66f0d0,
+  /** Sodium relay beacon. */
+  beacon: 0xffb347,
+  /** Halcyon pad floods. */
+  shuttle: 0xffe0a0,
+  /** Isolinear pattern tech — hard blue-white. */
+  pattern: 0xbfe6ff,
+  /** Survey flagging / relay-key marker. */
+  marker: 0xff7fb0,
+  /** EM-HIGH scan wash — sallow, sickly, unwelcome. */
+  scan: 0xbfd45e,
+  /** Hatch / exit standby lamp. */
+  standby: 0x6fa87a,
+} as const;
+
+/**
  * Biome ambient exitance (sim) — low enough that far tiles fail `isLit`
  * without a lamp/flare, while presentation still gets a soft floor.
  * EM-HIGH adds +0.08 wash (harder to hide).
@@ -158,26 +186,28 @@ function playerLamp(state: GameState): SimLightSource {
     y: state.player.y,
     radius,
     intensity,
-    color: 0xffd0a0,
+    // Quiet stance swaps the hood for a red night filter — the stance is a
+    // visible change in the colour of your light, not just a stat.
+    color: isQuietStance(state) ? LIGHT_TEMP.lampQuiet : LIGHT_TEMP.lamp,
   };
 }
 
 function tileEmitter(kind: TileKind): Omit<SimLightSource, 'x' | 'y'> | null {
   switch (kind) {
     case 'beacon':
-      return { radius: 5, intensity: 1.15, color: 0xff9933 };
+      return { radius: 5, intensity: 1.15, color: LIGHT_TEMP.beacon };
     case 'shuttle':
-      return { radius: 6, intensity: 1.15, color: 0xffcc66 };
+      return { radius: 6, intensity: 1.15, color: LIGHT_TEMP.shuttle };
     case 'exit':
-      return { radius: 2.5, intensity: 0.7, color: 0x66aa88 };
+      return { radius: 2.5, intensity: 0.7, color: LIGHT_TEMP.standby };
     case 'poi':
-      return { radius: 3, intensity: 0.75, color: 0x88aaff };
+      return { radius: 3, intensity: 0.75, color: LIGHT_TEMP.pattern };
     case 'quest':
-      return { radius: 3.5, intensity: 0.9, color: 0xff9933 };
+      return { radius: 3.5, intensity: 0.9, color: LIGHT_TEMP.marker };
     case 'hazard':
     case 'vent':
     case 'brine_pool':
-      return { radius: 2.4, intensity: 0.6, color: 0x66ffcc };
+      return { radius: 2.4, intensity: 0.6, color: LIGHT_TEMP.fauna };
     default:
       return null;
   }
@@ -197,15 +227,15 @@ export function collectLightSources(state: GameState): SimLightSource[] {
 
   for (const item of state.items) {
     if (item.kind === 'nav_core') {
-      sources.push({ x: item.x, y: item.y, radius: 2.5, intensity: 0.85, color: 0xb088ff });
+      sources.push({ x: item.x, y: item.y, radius: 2.5, intensity: 0.85, color: LIGHT_TEMP.pattern });
     } else if (item.kind === 'relay_key') {
-      sources.push({ x: item.x, y: item.y, radius: 2.2, intensity: 0.7, color: 0x9999ff });
+      sources.push({ x: item.x, y: item.y, radius: 2.2, intensity: 0.7, color: LIGHT_TEMP.marker });
     }
   }
 
   for (const ally of state.allies) {
     if (ally.alive && ally.kind === 'probe_drone') {
-      sources.push({ x: ally.x, y: ally.y, radius: 3.2, intensity: 0.65, color: 0x99bbff });
+      sources.push({ x: ally.x, y: ally.y, radius: 3.2, intensity: 0.65, color: LIGHT_TEMP.pattern });
     }
   }
 
@@ -215,7 +245,7 @@ export function collectLightSources(state: GameState): SimLightSource[] {
       y: state.beaconPos.y,
       radius: 5,
       intensity: 1.2,
-      color: 0xff9933,
+      color: LIGHT_TEMP.beacon,
     });
   }
 

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { lore } from '../../../data/lore';
 import { Theme } from '../../../scenes/theme';
-import { drawLcarsPanel } from '../../../scenes/atmosphere';
+import { drawFieldPanel } from '../../../scenes/atmosphere';
 
 /** Draw the field help modal into existing Phaser objects. */
 export function drawHelpOverlay(
@@ -14,7 +14,7 @@ export function drawHelpOverlay(
   const h = Math.min(520, screenH - 48);
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
-  drawLcarsPanel(panel, x, y, w, h, Theme.phosphor);
+  drawFieldPanel(panel, x, y, w, h, Theme.biolum);
   text.setWordWrapWidth(w - 48);
   text.setPosition(x + 24, y + 22);
   text.setText(

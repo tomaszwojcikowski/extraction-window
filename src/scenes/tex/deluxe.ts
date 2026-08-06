@@ -63,9 +63,9 @@ function floorAccent(sector: SectorId): number {
       return Theme.storm;
     case 'spire':
     case 'vault':
-      return Theme.quest;
+      return Theme.arcWhite;
     default:
-      return Theme.phosphorDim;
+      return Theme.inkDim;
   }
 }
 
@@ -180,11 +180,12 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
   g.clear();
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, T, T);
-  g.fillStyle(style === 'cliff' ? 0x40384a : style === 'bulkhead' ? 0x34364d : 0x273d4c, 1);
+  // Meridian geology, not starship grey: basalt shelf, painted bulkhead, wet duct steel.
+  g.fillStyle(style === 'cliff' ? 0x2c3a37 : style === 'bulkhead' ? 0x28343a : 0x1e2f36, 1);
   g.fillRect(q(1), q(1), T - q(2), T - q(2));
 
   // Bright top/left bevel, deep bottom/right bevel.
-  g.fillStyle(style === 'conduit' ? Theme.ionHazardDeep : Theme.phosphorMute, 0.9);
+  g.fillStyle(style === 'conduit' ? Theme.biolumDeep : Theme.inkMute, 0.9);
   g.fillRect(q(2), q(2), T - q(4), q(4));
   g.fillRect(q(2), q(6), q(4), T - q(10));
   g.fillStyle(Theme.groundDeep, 0.95);
@@ -192,14 +193,14 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
   g.fillRect(T - q(7), q(6), q(5), T - q(13));
 
   if (style === 'cliff') {
-    g.fillStyle(0x171522, 0.95);
+    g.fillStyle(0x0d1517, 0.95);
     for (let i = 0; i < 5; i++) {
       const y = q(9 + i * 7 + (variant ? i % 2 : 0));
       const x = q(7 + ((i * 9 + variant * 4) % 14));
       g.fillRect(x, y, q(21 - (i % 3) * 4), q(3));
-      g.fillStyle(Theme.phosphorMute, 0.55);
+      g.fillStyle(Theme.inkMute, 0.55);
       g.fillRect(x, y, q(8), q(1));
-      g.fillStyle(0x171522, 0.95);
+      g.fillStyle(0x0d1517, 0.95);
     }
   } else if (style === 'bulkhead') {
     g.fillStyle(Theme.panel, 1);
@@ -209,7 +210,7 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
     g.fillStyle(Theme.groundDeep, 1);
     g.fillRect(q(22), q(10), q(4), T - q(24));
     g.fillRect(q(10), q(22), T - q(20), q(3));
-    g.fillStyle(variant ? Theme.quest : Theme.phosphor, 0.85);
+    g.fillStyle(variant ? Theme.tape : Theme.inkDim, 0.85);
     g.fillRect(q(11), q(11), q(7), q(2));
     g.fillRect(T - q(18), T - q(15), q(7), q(2));
   } else {
@@ -457,25 +458,26 @@ export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number)
 
 export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'): void {
   const q = actorBase(g, T);
-  g.fillStyle(Theme.quest, 0.45);
+  // Salvage is taped and stencilled; objectives get surveyor's flagging pink.
+  g.fillStyle(kind === 'crate' ? Theme.tape : kind === 'key' ? Theme.flag : Theme.arcWhite, 0.4);
   g.fillCircle(q(24), q(24), q(17));
   if (kind === 'crate') {
-    g.fillStyle(Theme.phosphorBright, 1);
+    g.fillStyle(Theme.inkDim, 1);
     g.fillRect(q(9), q(15), q(30), q(23));
     g.fillStyle(Theme.groundDeep, 1);
     g.fillRect(q(13), q(19), q(22), q(15));
-    g.fillStyle(Theme.quest, 1);
+    g.fillStyle(Theme.tape, 1);
     g.fillRect(q(20), q(14), q(8), q(8));
     g.fillRect(q(17), q(24), q(14), q(5));
   } else if (kind === 'key') {
-    g.fillStyle(Theme.quest, 1);
+    g.fillStyle(Theme.flag, 1);
     g.fillTriangle(q(24), q(4), q(11), q(22), q(37), q(22));
     g.fillTriangle(q(24), q(44), q(11), q(22), q(37), q(22));
     g.fillStyle(Theme.phosphorBright, 1);
     g.fillRect(q(22), q(10), q(4), q(25));
     g.fillRect(q(16), q(19), q(16), q(4));
   } else {
-    g.fillStyle(Theme.quest, 1);
+    g.fillStyle(Theme.arcWhite, 1);
     g.fillTriangle(q(24), q(3), q(5), q(24), q(24), q(45));
     g.fillTriangle(q(24), q(3), q(43), q(24), q(24), q(45));
     g.fillStyle(Theme.groundDeep, 1);

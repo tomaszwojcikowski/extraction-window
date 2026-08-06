@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGame } from '../../src/sim';
+import { ThemeCss } from '../../src/scenes/theme';
 import {
   actionFloatLabels,
   combatFeedbackTiles,
@@ -16,8 +17,8 @@ describe('ActionFeedback', () => {
         { loreId: 'LOG-QUIET-ON' },
       ]),
     ).toEqual([
-      { label: 'BUS Duct Drone -2E', color: '#ff9933' },
-      { label: 'QUIET · FOV -2 · AGGRO -3', color: '#a8d0ff' },
+      { label: 'BUS Duct Drone -2E', color: ThemeCss.arc },
+      { label: 'QUIET · FOV -2 · AGGRO -3', color: ThemeCss.lampQuiet },
     ]);
   });
 
@@ -28,8 +29,8 @@ describe('ActionFeedback', () => {
         { loreId: 'LOG-CRAFT-FILTER' },
       ]),
     ).toEqual([
-      { label: 'HATCH OPEN', color: '#44aa88' },
-      { label: 'CRAFT · FILTER', color: '#9999ff' },
+      { label: 'HATCH OPEN', color: ThemeCss.safe },
+      { label: 'CRAFT · FILTER', color: ThemeCss.flag },
     ]);
   });
 
