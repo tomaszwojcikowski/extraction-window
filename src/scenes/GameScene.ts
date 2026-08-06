@@ -1202,7 +1202,7 @@ export class GameScene extends Phaser.Scene {
     let nudgeY = 0;
     if (this.time.now < this.camNudgeUntil) {
       const remain = this.camNudgeUntil - this.time.now;
-      const t = Math.min(1, remain / 140);
+      const t = Math.min(1, remain / 200);
       nudgeX = this.camNudgeX * t;
       nudgeY = this.camNudgeY * t;
     } else {
@@ -1440,7 +1440,7 @@ export class GameScene extends Phaser.Scene {
       const ang = (this.state.turn * 2.399) % (Math.PI * 2);
       this.camNudgeX = Math.cos(ang) * cue.nudgePx;
       this.camNudgeY = Math.sin(ang) * cue.nudgePx;
-      this.camNudgeUntil = this.time.now + Math.max(140, cue.shakeMs, cue.vignetteMs * 0.5);
+      this.camNudgeUntil = this.time.now + Math.max(200, cue.shakeMs, cue.vignetteMs * 0.5);
     }
     if (cue.ignite) {
       const color =

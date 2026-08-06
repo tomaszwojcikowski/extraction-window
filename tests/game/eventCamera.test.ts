@@ -24,4 +24,10 @@ describe('pickCameraCue', () => {
     expect(pickCameraCue(['LOG-USE-FLARE'])?.ignite).toBe('flare');
     expect(pickCameraCue(['LOG-EXTRACT'])?.id).toBe('extract');
   });
+
+  it('keeps hurt kick readable (bumped intensity)', () => {
+    const hurt = pickCameraCue(['LOG-HURT']);
+    expect(hurt?.shakeIntensity).toBeGreaterThanOrEqual(0.004);
+    expect(hurt?.nudgePx).toBeGreaterThanOrEqual(8);
+  });
 });
