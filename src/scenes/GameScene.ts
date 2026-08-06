@@ -41,6 +41,14 @@ import {
   tintVisibleEnemies,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
+import {
+  captureNoticeSnap,
+  noticeImpactIds,
+} from '../game/presenters/NoticeImpact';
+import {
+  markPeekTeachDone,
+  shouldShowPeekTeach,
+} from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
@@ -68,7 +76,7 @@ export class GameScene extends Phaser.Scene {
   private camY = 0;
 
   private playerSprite!: Phaser.GameObjects.Image;
-  /** Semi-transparent silhouette at queued destination — commit ghost bet. */
+  /** Semi-transparent silhouette at Shift-peek destination — planning ghost. */
   private commitGhost!: Phaser.GameObjects.Image;
   private commitGhostFade: Phaser.Tweens.Tween | null = null;
   private enemyViews = new Map<number, EnemyView>();
@@ -119,6 +127,11 @@ export class GameScene extends Phaser.Scene {
   private readonly lightPreferenceHints = new Set<number>();
   private preferenceHint: { id: 'UI-HINT-PREFER-DARK' | 'UI-HINT-PREFER-LIT'; until: number } | null =
     null;
+  /** Notice Impact — tell flash / ring pop until this time (ms). */
+  private noticeImpactUntil = 0;
+  private noticeImpactIds = new Set<number>();
+  /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
+  private noticeChaseLatched = new Set<number>();
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -150,6 +163,9 @@ export class GameScene extends Phaser.Scene {
     this.allyViews.clear();
     this.lightPreferenceHints.clear();
     this.preferenceHint = null;
+    this.noticeImpactUntil = 0;
+    this.noticeImpactIds.clear();
+    this.noticeChaseLatched.clear();
     this.firstLight = null;
     this.firstLightTween = null;
   }
@@ -494,6 +510,13 @@ export class GameScene extends Phaser.Scene {
       this.tickAnimatedActors();
       // Pulse vent/hazard/beacon bloom with anim frame
       if (this.state.status === 'playing') this.applyFieldLighting();
+    } else if (
+      this.state.status === 'playing' &&
+      this.noticeImpactUntil > 0 &&
+      this.time.now <= this.noticeImpactUntil + 50
+    ) {
+      // Keep Impact tell flash resolving within the ≤200ms beat.
+      this.applyFieldLighting();
     }
     if (!this.animating) {
       // Snappy 1px plotter redraw, not floaty bob
@@ -716,12 +739,22 @@ export class GameScene extends Phaser.Scene {
       },
       setWakePeek: (dx, dy) => {
         this.movePreviewQueue = applyDirectionQueue(this.state, this.movePreviewQueue, dx, dy);
+        if (this.movePreviewQueue) markPeekTeachDone(this.state);
         this.applyFieldLighting();
+        this.redrawTilesAndHud();
       },
       getMovePreview: () => this.movePreviewQueue,
       getQueuedAction: () => this.queuedAction,
       clearQueuedAction: () => {
         this.clearMovePreview();
+      },
+      dismissPeekTeach: () => {
+        if (shouldShowPeekTeach(this.state)) {
+          markPeekTeachDone(this.state);
+          this.redrawTilesAndHud();
+          return true;
+        }
+        return false;
       },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
@@ -804,6 +837,7 @@ export class GameScene extends Phaser.Scene {
       alive: en.alive,
       kind: en.kind,
     }));
+    const prevNotice = captureNoticeSnap(this.state);
 
     applyAction(this.state, action);
 
@@ -824,12 +858,16 @@ export class GameScene extends Phaser.Scene {
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
     this.pulseCameraAtmosphere(fb.newLogs);
+    this.presentNoticeImpact(noticeImpactIds(this.state, prevNotice, this.noticeChaseLatched));
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
     if (fb.mapReloaded) {
       this.movePreviewQueue = null;
       this.hideCommitGhost(false);
+      this.noticeChaseLatched.clear();
+      this.noticeImpactIds.clear();
+      this.noticeImpactUntil = 0;
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -1315,6 +1353,42 @@ export class GameScene extends Phaser.Scene {
     flashScreen(this.tweens, this.flash, color, alpha);
   }
 
+  /**
+   * Notice Impact — one ≤~200ms punch when a wake tell becomes real engage.
+   * Presentation only; never delays the input queue.
+   */
+  private presentNoticeImpact(ids: number[]): void {
+    if (ids.length === 0) return;
+    this.noticeImpactIds = new Set(ids);
+    this.noticeImpactUntil = this.time.now + 180;
+
+    for (const id of ids) {
+      const view = this.enemyViews.get(id);
+      if (!view?.img.visible) continue;
+      view.img.setTint(Theme.rust);
+      const baseScaleX = view.img.scaleX;
+      const baseScaleY = view.img.scaleY;
+      this.tweens.add({
+        targets: view.img,
+        scaleX: baseScaleX * 1.18,
+        scaleY: baseScaleY * 1.18,
+        duration: 70,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+        onComplete: () => {
+          if (view.img.active) {
+            view.img.clearTint();
+            view.img.setScale(baseScaleX, baseScaleY);
+          }
+        },
+      });
+    }
+
+    this.cameras.main.shake(90, 0.0011);
+    this.cameraAtmosphere?.pulse(0.1, 140);
+    this.applyFieldLighting();
+  }
+
   /** Lore-driven camera cues are cosmetic; filters never affect sim light/FOV. */
   private pulseCameraAtmosphere(logs: readonly LoreId[]): void {
     const has = (id: LoreId) => logs.includes(id);
@@ -1403,13 +1477,39 @@ export class GameScene extends Phaser.Scene {
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
 
     const preview = this.wakePreviewContext();
-    const tells = preview ? preview.tells : collectWakeTells(st);
-    drawWakeTells(this.wakeTellGfx, st, tells, this.animFrame, {
-      originX: preview?.originX,
-      originY: preview?.originY,
-      previewDest: preview?.previewDest,
-    });
-    if (preview) this.showCommitGhost(preview.previewDest);
+    const liveTells = collectWakeTells(st);
+    const impactActive = this.time.now < this.noticeImpactUntil;
+    const impactIds = impactActive ? this.noticeImpactIds : undefined;
+    const impactPulse = impactActive
+      ? Math.max(0, (this.noticeImpactUntil - this.time.now) / 180)
+      : 0;
+
+    if (preview) {
+      // Dual-read: dim dashed live at feet + solid peek dest tells.
+      drawWakeTells(this.wakeTellGfx, st, liveTells, this.animFrame, {
+        layer: 'liveUnderPeek',
+        originX: st.player.x,
+        originY: st.player.y,
+        impactIds,
+        impactPulse,
+      });
+      drawWakeTells(this.wakeTellGfx, st, preview.tells, this.animFrame, {
+        clear: false,
+        layer: 'peek',
+        originX: preview.originX,
+        originY: preview.originY,
+        previewDest: preview.previewDest,
+        impactIds,
+        impactPulse,
+      });
+      this.showCommitGhost(preview.previewDest);
+    } else {
+      drawWakeTells(this.wakeTellGfx, st, liveTells, this.animFrame, {
+        layer: 'live',
+        impactIds,
+        impactPulse,
+      });
+    }
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {

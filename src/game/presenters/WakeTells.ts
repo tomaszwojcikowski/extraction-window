@@ -152,6 +152,9 @@ export function collectWakeTells(st: GameState): WakeTell[] {
   return wakeTellsAt(st, st.player.x, st.player.y);
 }
 
+/** Visual language for wake lines — live feet vs Shift-peek dest must dual-read. */
+export type WakeTellLayer = 'live' | 'liveUnderPeek' | 'peek';
+
 export type WakeTellDrawOpts = {
   tileDraw?: number;
   /** Line origin tile — player tile or queued destination. */
@@ -159,6 +162,14 @@ export type WakeTellDrawOpts = {
   originY?: number;
   /** Ground ring at the step being previewed. */
   previewDest?: { x: number; y: number };
+  /** Live vs peek weight — default live. */
+  layer?: WakeTellLayer;
+  /** Skip clear so live + peek can composite in one frame. */
+  clear?: boolean;
+  /** Notice Impact — thicken/flash these tell ids for one beat. */
+  impactIds?: ReadonlySet<number>;
+  /** 0..1 Impact pulse strength (from scene timer). */
+  impactPulse?: number;
 };
 
 function drawCornerBrackets(
@@ -168,9 +179,10 @@ function drawCornerBrackets(
   half: number,
   color: number,
   alpha: number,
+  lineWidth = 1,
 ): void {
   const len = half * 0.55;
-  g.lineStyle(1, color, alpha);
+  g.lineStyle(lineWidth, color, alpha);
   for (const [sx, sy, ex, ey] of [
     [-half, -half, -half + len, -half],
     [-half, -half, -half, -half + len],
@@ -188,6 +200,40 @@ function drawCornerBrackets(
   }
 }
 
+function drawDashedLine(
+  g: Phaser.GameObjects.Graphics,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  color: number,
+  alpha: number,
+  lineWidth: number,
+): void {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const len = Math.hypot(dx, dy);
+  if (len < 1) return;
+  const ux = dx / len;
+  const uy = dy / len;
+  const dash = 5;
+  const gap = 4;
+  let t = 0;
+  let draw = true;
+  while (t < len) {
+    const seg = Math.min(draw ? dash : gap, len - t);
+    if (draw) {
+      g.lineStyle(lineWidth, color, alpha);
+      g.beginPath();
+      g.moveTo(x0 + ux * t, y0 + uy * t);
+      g.lineTo(x0 + ux * (t + seg), y0 + uy * (t + seg));
+      g.strokePath();
+    }
+    t += seg;
+    draw = !draw;
+  }
+}
+
 /** Thin notice lines + pulse rings — live state or queued-step preview. */
 export function drawWakeTells(
   g: Phaser.GameObjects.Graphics,
@@ -196,45 +242,82 @@ export function drawWakeTells(
   animFrame: number,
   opts: WakeTellDrawOpts = {},
 ): void {
-  g.clear();
+  if (opts.clear !== false) g.clear();
   const tileDraw = opts.tileDraw ?? TILE_DRAW;
+  const layer: WakeTellLayer = opts.layer ?? 'live';
   const ox = opts.originX ?? st.player.x;
   const oy = opts.originY ?? st.player.y;
   const px = ox * tileDraw + tileDraw / 2;
   const py = oy * tileDraw + tileDraw / 2;
   const pulse = 0.55 + (animFrame % 4) * 0.12;
+  const impactIds = opts.impactIds;
+  const impactPulse = opts.impactPulse ?? 0;
 
-  if (opts.previewDest) {
+  if (opts.previewDest && layer === 'peek') {
     const dx = opts.previewDest.x * tileDraw + tileDraw / 2;
     const dy = opts.previewDest.y * tileDraw + tileDraw / 2;
     const destLit = isLit(st, opts.previewDest.x, opts.previewDest.y);
-    const ringColor = destLit ? LightTemp.lamp : Theme.phosphorMute;
-    g.lineStyle(2, ringColor, 0.42 * pulse);
+    const ringColor = destLit ? LightTemp.lamp : Theme.tape;
+    // Peek dest ring — heavier than live language so quiet-shrink is readable.
+    g.lineStyle(3, ringColor, 0.55 * pulse);
     g.strokeCircle(dx, dy, tileDraw * 0.44);
-    g.lineStyle(1, ringColor, 0.22);
-    g.strokeCircle(dx, dy, tileDraw * 0.52);
+    g.lineStyle(1, ringColor, 0.28);
+    g.strokeCircle(dx, dy, tileDraw * 0.56);
   }
 
   for (const t of tells) {
     const ex = t.ex * tileDraw + tileDraw / 2;
     const ey = t.ey * tileDraw + tileDraw / 2;
-    const color = t.litBoost ? LightTemp.lamp : t.darkBoost ? Theme.biolumDeep : Theme.scanWash;
-    const alpha = t.litBoost || t.darkBoost ? 0.78 : t.neutralNotice ? 0.32 : 0.48;
+    const impacting = impactIds?.has(t.id) && impactPulse > 0;
 
-    g.lineStyle(1, color, alpha * 0.5 * pulse);
-    g.beginPath();
-    g.moveTo(px, py);
-    g.lineTo(ex, ey);
-    g.strokePath();
+    let color: number;
+    let alpha: number;
+    let lineWidth: number;
 
-    const r = tileDraw * 0.36;
-    if (t.neutralNotice) {
-      drawCornerBrackets(g, ex, ey, r, color, alpha * pulse);
+    if (layer === 'liveUnderPeek') {
+      // Dim dashed presence at feet while peek owns the solid telegraph.
+      color = Theme.inkMute;
+      alpha = 0.22;
+      lineWidth = 1;
+    } else if (layer === 'peek') {
+      color = t.litBoost
+        ? LightTemp.lamp
+        : t.darkBoost
+          ? Theme.biolum
+          : Theme.tape;
+      alpha = t.litBoost || t.darkBoost ? 0.92 : t.neutralNotice ? 0.48 : 0.72;
+      lineWidth = 2;
     } else {
-      g.lineStyle(1, color, alpha * pulse);
-      g.strokeCircle(ex, ey, r);
-      g.lineStyle(1, color, alpha * 0.32);
-      g.strokeCircle(ex, ey, r + 3);
+      color = t.litBoost ? LightTemp.lamp : t.darkBoost ? Theme.biolumDeep : Theme.scanWash;
+      alpha = t.litBoost || t.darkBoost ? 0.78 : t.neutralNotice ? 0.32 : 0.48;
+      lineWidth = 1;
+    }
+
+    if (impacting) {
+      color = Theme.rust;
+      alpha = Math.min(1, alpha + 0.35 * impactPulse);
+      lineWidth = Math.max(lineWidth, 2) + (impactPulse > 0.5 ? 1 : 0);
+    }
+
+    if (layer === 'liveUnderPeek') {
+      drawDashedLine(g, px, py, ex, ey, color, alpha * pulse, lineWidth);
+    } else {
+      g.lineStyle(lineWidth, color, alpha * 0.55 * pulse);
+      g.beginPath();
+      g.moveTo(px, py);
+      g.lineTo(ex, ey);
+      g.strokePath();
+    }
+
+    const r = tileDraw * (layer === 'peek' ? 0.4 : 0.36);
+    const ringAlpha = alpha * pulse * (impacting ? 1.15 : 1);
+    if (t.neutralNotice && !impacting) {
+      drawCornerBrackets(g, ex, ey, r, color, ringAlpha, lineWidth);
+    } else {
+      g.lineStyle(impacting ? 2 : lineWidth, color, ringAlpha);
+      g.strokeCircle(ex, ey, r * (impacting ? 1 + 0.18 * impactPulse : 1));
+      g.lineStyle(1, color, ringAlpha * 0.35);
+      g.strokeCircle(ex, ey, r + 3 + (impacting ? 4 * impactPulse : 0));
     }
   }
 }

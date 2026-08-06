@@ -30,6 +30,8 @@ export type InputHost = {
   getMovePreview(): MovePreviewQueue | null;
   getQueuedAction(): Action | null;
   clearQueuedAction(): void;
+  /** Dismiss one-shot Shift-peek teach hint; returns true if consumed. */
+  dismissPeekTeach(): boolean;
   syncFieldAudio(force?: boolean): void;
   /** Brief mute on/off tip in the hint line. */
   showMuteHint(muted: boolean): void;
@@ -135,10 +137,14 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   const action = actionFromKey(e);
   if (!action) return;
 
-  // Escape: clear wake peek first; otherwise open help when kit is closed
+  // Escape: clear wake peek first; dismiss peek teach; otherwise open help when kit is closed
   if (action.type === 'close_ui' && !state.ui.inventoryOpen) {
     if (host.getMovePreview()) {
       host.clearQueuedAction();
+      sfx.play('ui');
+      return;
+    }
+    if (host.dismissPeekTeach()) {
       sfx.play('ui');
       return;
     }
