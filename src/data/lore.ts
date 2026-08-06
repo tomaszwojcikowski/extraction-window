@@ -74,7 +74,8 @@ export const LORE = {
     'KEY / CORE / BEACON OPEN — mission plates on the top-right',
   'UI-KIT-PURPOSE':
     'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
-  'UI-CONTROLS': 'WASD · Shift+dir peek · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
+  'UI-CONTROLS':
+    'WASD move · Shift+dir peek · . wait · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — press Enter / Space / = / > to advance',
@@ -109,8 +110,10 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
   'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
   'UI-HINT-NPC': 'Field contact nearby — press > to hail',
-  'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear',
-  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn',
+  'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear · . waits',
+  'UI-HINT-PEEK-TEACH':
+    'Wake lines at your feet — Shift+direction peeks the next tile before you step',
+  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn · Shift+dir peeks · . waits',
   'UI-TUT-GET': 'g — pick up',
   'UI-TUT-KIT': 'i kit · u use',
   'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
