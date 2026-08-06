@@ -8,6 +8,7 @@ import {
   isQueueableAction,
   slotIndexFromKey,
 } from './Keymap';
+import { applyDirectionQueue, toMoveAction, type MovePreviewQueue } from './MovePreviewQueue';
 
 /**
  * Scene-facing hooks for chrome / turn commit. InputController owns key
@@ -19,6 +20,8 @@ export type InputHost = {
   isHelpOpen(): boolean;
   isPagesOpen(): boolean;
   queueAction(action: Action): void;
+  queueMovePreview(dx: number, dy: number): void;
+  getMovePreview(): MovePreviewQueue | null;
   getQueuedAction(): Action | null;
   clearQueuedAction(): void;
   syncFieldAudio(force?: boolean): void;
@@ -68,12 +71,14 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (chrome?.kind === 'toggle_help') {
+    host.clearQueuedAction();
     host.toggleHelp();
     sfx.play('ui');
     return;
   }
   if (chrome?.kind === 'toggle_pages') {
     if (host.isHelpOpen()) host.toggleHelp(false);
+    host.clearQueuedAction();
     host.togglePages();
     sfx.play('ui');
     return;
@@ -111,6 +116,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   const slotIdx = slotIndexFromKey(e);
   if (slotIdx !== null) {
+    host.clearQueuedAction();
     applyAction(state, { type: 'select_slot', index: slotIdx });
     if (!state.ui.inventoryOpen) applyAction(state, { type: 'toggle_inventory' });
     sfx.play('ui');
@@ -123,6 +129,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   // Escape opens help when kit is closed (actionFromKey maps Escape → close_ui)
   if (action.type === 'close_ui' && !state.ui.inventoryOpen) {
+    host.clearQueuedAction();
     if (host.isPagesOpen()) {
       host.togglePages(false);
       sfx.play('ui');
@@ -134,26 +141,28 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
+    host.clearQueuedAction();
     applyAction(state, action);
     sfx.play('ui');
     host.afterUiChrome();
     return;
   }
 
-  // Move preview: first direction queues footprint; matching direction again commits.
+  // Move preview: direction queues + wake footprint; `.` confirms the queued step.
   if (action.type === 'move' && !host.isAnimating()) {
-    const queued = host.getQueuedAction();
-    if (
-      queued?.type === 'move' &&
-      queued.dx === action.dx &&
-      queued.dy === action.dy
-    ) {
+    host.queueMovePreview(action.dx, action.dy);
+    sfx.play('ui');
+    return;
+  }
+
+  if (action.type === 'wait' && !host.isAnimating()) {
+    const preview = host.getMovePreview();
+    if (preview) {
       host.clearQueuedAction();
-      host.commitTurnAction(action);
+      host.commitTurnAction(toMoveAction(preview));
       return;
     }
-    host.queueAction(action);
-    sfx.play('ui');
+    host.commitTurnAction(action);
     return;
   }
 

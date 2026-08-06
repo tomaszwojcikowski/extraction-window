@@ -24,6 +24,12 @@ import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
 import { handleGameKey } from '../game/input/InputController';
+import {
+  applyDirectionQueue,
+  previewTile,
+  toMoveAction,
+  type MovePreviewQueue,
+} from '../game/input/MovePreviewQueue';
 import { contextHint } from '../game/presenters/ContextHints';
 import {
   bumpAttack,
@@ -63,10 +69,15 @@ export class GameScene extends Phaser.Scene {
   private camY = 0;
 
   private playerSprite!: Phaser.GameObjects.Image;
+  /** Semi-transparent silhouette at queued destination — commit ghost bet. */
+  private commitGhost!: Phaser.GameObjects.Image;
+  private commitGhostFade: Phaser.Tweens.Tween | null = null;
   private enemyViews = new Map<number, EnemyView>();
   private npcViews = new Map<number, EnemyView>();
   private allyViews = new Map<number, EnemyView>();
   private animating = false;
+  /** Idle move preview — direction queues, `.` confirms one step. */
+  private movePreviewQueue: MovePreviewQueue | null = null;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
   private arcSweep: ArcSweep | null = null;
@@ -162,6 +173,13 @@ export class GameScene extends Phaser.Scene {
     this.playerSprite = this.add.image(0, 0, 't_player');
     this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
     this.entityLayer.add(this.playerSprite);
+
+    this.commitGhost = this.add.image(0, 0, 't_player');
+    this.commitGhost.setDisplaySize(TILE_DRAW, TILE_DRAW);
+    this.commitGhost.setAlpha(0);
+    this.commitGhost.setVisible(false);
+    this.commitGhost.setDepth(22);
+    this.entityLayer.add(this.commitGhost);
 
     this.buildMapSprites();
 
@@ -509,6 +527,9 @@ export class GameScene extends Phaser.Scene {
 
   private tickAnimatedActors(): void {
     this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
+    if (this.commitGhost.visible) {
+      this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
+    }
     for (const en of this.state.enemies) {
       if (!en.alive) continue;
       const view = this.enemyViews.get(en.id);
@@ -692,12 +713,16 @@ export class GameScene extends Phaser.Scene {
       isPagesOpen: () => this.pagesOpen,
       queueAction: (action) => {
         this.queuedAction = action;
+      },
+      queueMovePreview: (dx, dy) => {
+        this.movePreviewQueue = applyDirectionQueue(this.state, this.movePreviewQueue, dx, dy);
         this.applyFieldLighting();
       },
-      getQueuedAction: () => this.queuedAction,
+      getMovePreview: () => this.movePreviewQueue,
+      getQueuedAction: () =>
+        this.movePreviewQueue ? toMoveAction(this.movePreviewQueue) : this.queuedAction,
       clearQueuedAction: () => {
-        this.queuedAction = null;
-        this.applyFieldLighting();
+        this.clearMovePreview();
       },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
@@ -737,6 +762,12 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private clearMovePreview(fade = true): void {
+    this.movePreviewQueue = null;
+    this.hideCommitGhost(fade);
+    this.applyFieldLighting();
+  }
+
   private flushQueuedAction(): void {
     const next = this.queuedAction;
     this.queuedAction = null;
@@ -745,6 +776,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private commitTurnAction(action: Action): void {
+    this.movePreviewQueue = null;
+    this.hideCommitGhost(false);
     this.queuedAction = null;
     this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
@@ -1360,6 +1393,7 @@ export class GameScene extends Phaser.Scene {
       originY: preview?.originY,
       previewDest: preview?.previewDest,
     });
+    if (preview) this.showCommitGhost(preview.previewDest);
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
@@ -1392,19 +1426,54 @@ export class GameScene extends Phaser.Scene {
         tells: ReturnType<typeof wakeTellsAt>;
       }
     | null {
-    const qa = this.queuedAction;
-    if (qa?.type !== 'move') return null;
-    const px = this.state.player.x + qa.dx;
-    const py = this.state.player.y + qa.dy;
-    if (px < 0 || py < 0 || px >= this.state.width || py >= this.state.height) return null;
-    const dest = this.state.tiles[py]?.[px];
-    if (!dest?.walkable) return null;
+    const q = this.movePreviewQueue;
+    if (!q) return null;
+    const dest = previewTile(this.state, q);
+    if (!dest) return null;
     return {
-      originX: px,
-      originY: py,
-      previewDest: { x: px, y: py },
-      tells: wakeTellsAt(this.state, px, py),
+      originX: dest.x,
+      originY: dest.y,
+      previewDest: dest,
+      tells: wakeTellsAt(this.state, dest.x, dest.y),
     };
+  }
+
+  /** Commit ghost — player silhouette at queued destination, synced with wake preview. */
+  private showCommitGhost(dest: { x: number; y: number }): void {
+    this.commitGhostFade?.stop();
+    this.commitGhostFade = null;
+    const p = this.worldXY(dest.x, dest.y);
+    this.commitGhost.setVisible(true);
+    this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
+    this.commitGhost.setPosition(p.x, p.y);
+    this.commitGhost.setAlpha(0.35);
+  }
+
+  private hideCommitGhost(fadeOut: boolean): void {
+    if (!this.commitGhost.visible || this.commitGhost.alpha <= 0) {
+      this.commitGhost.setVisible(false);
+      this.commitGhost.setAlpha(0);
+      return;
+    }
+
+    if (!fadeOut) {
+      this.commitGhostFade?.stop();
+      this.commitGhostFade = null;
+      this.commitGhost.setVisible(false);
+      this.commitGhost.setAlpha(0);
+      return;
+    }
+
+    this.commitGhostFade?.stop();
+    this.commitGhostFade = this.tweens.add({
+      targets: this.commitGhost,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => {
+        this.commitGhost.setVisible(false);
+        this.commitGhostFade = null;
+      },
+    });
   }
 
   /** Everything solid enough to throw a shadow this frame. */

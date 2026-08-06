@@ -2,7 +2,7 @@ import { Theme } from '../../scenes/theme';
 import type { ShearPressureSpec } from './ShearPressure';
 import type { GameState } from '../../sim/types';
 
-const REVEAL_KINDS = new Set(['quest', 'exit', 'poi']);
+const REVEAL_KINDS = new Set(['quest', 'poi']);
 
 /** Arcing+ stress-fracture on optional paths — presentation-only, no loot sim changes. */
 export function pressureRevealTint(

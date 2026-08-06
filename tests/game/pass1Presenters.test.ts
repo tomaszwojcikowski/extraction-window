@@ -285,4 +285,16 @@ describe('pressureRevealTint', () => {
     st.visible[3]![7] = false;
     expect(pressureRevealTint(st, arcing, 7, 3, 0)).toBeNull();
   });
+
+  it('returns null for exit tiles at all shear states — mandatory path stays stable', () => {
+    const st = stubState({});
+    st.tiles[3]![7] = { kind: 'exit', walkable: true, transparent: true };
+    st.stormTurns = 0;
+    st.player.energy = 5;
+    const breaching = computeShearPressure(st);
+    expect(breaching.state).toBe('Breaching');
+    for (let frame = 0; frame < 6; frame++) {
+      expect(pressureRevealTint(st, breaching, 7, 3, frame)).toBeNull();
+    }
+  });
 });
