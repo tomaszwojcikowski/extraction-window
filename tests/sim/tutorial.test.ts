@@ -107,15 +107,20 @@ describe('drill bay tutorial', () => {
     expect(st.player.statuses.bleed).toBe(4);
   });
 
-  it('shows lamp / LIT·SHADOW·QUIET tip after the first turn', () => {
+  it('shows lamp tip when SHADOW first matters (hint only, map-first)', () => {
     const st = drill(7);
     expect(contextHint(st)).toBe('UI-TUT-MOVE');
     clearHostiles(st);
     st.player.x = 2;
     st.player.y = 7;
     applyAction(st, { type: 'wait' });
+    // Bright floor: no light tip yet — badge already says LIT.
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(false);
+    st.illumination[st.player.y]![st.player.x] = 0.15;
+    expect(inShadow(st, st.player.x, st.player.y)).toBe(true);
     expect(contextHint(st)).toBe('UI-TUT-LIGHT');
-    expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(true);
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(false);
     expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
   });
 
@@ -160,7 +165,7 @@ describe('drill bay tutorial', () => {
     st.player.x = 2;
     st.player.y = 7;
     expect(contextHint(st)).toBe('UI-TUT-WAKE');
-    expect(st.log.some((l) => l.loreId === 'LOG-TUT-WAKE')).toBe(true);
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-WAKE')).toBe(false);
     expect(contextHint(st)).toBe('UI-TUT-FIGHT');
   });
 

@@ -38,10 +38,6 @@ export function actionFloatLabels(
       case 'LOG-DRAIN':
         next = { label: `BUS ${log.detail ?? 'DRAIN'}`, color: ThemeCss.arc };
         break;
-      case 'LOG-QUIET-ON':
-      case 'LOG-USE-JAMMER':
-        next = { label: 'QUIET ON', color: ThemeCss.lampQuiet };
-        break;
       case 'LOG-QUIET-OFF':
         next = { label: 'QUIET OFF', color: ThemeCss.inkDim };
         break;

@@ -433,7 +433,6 @@ export function useSelected(state: GameState): boolean {
       addEmStress(state, 5, 'scrambler');
       bumpDoctrine(state, 'quiet');
       pushLog(state, 'LOG-USE-JAMMER');
-      pushLog(state, 'LOG-QUIET-ON');
       if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
     case 'salvage':

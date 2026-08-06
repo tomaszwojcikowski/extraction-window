@@ -14,11 +14,11 @@ describe('ActionFeedback', () => {
       actionFloatLabels([
         { loreId: 'LOG-ARMOR-ABSORB', detail: 'Rift Mite -2' },
         { loreId: 'LOG-DRAIN', detail: 'Duct Drone -2E' },
-        { loreId: 'LOG-QUIET-ON' },
+        { loreId: 'LOG-QUIET-OFF' },
       ]),
     ).toEqual([
       { label: 'BUS Duct Drone -2E', color: ThemeCss.arc },
-      { label: 'QUIET ON', color: ThemeCss.lampQuiet },
+      { label: 'QUIET OFF', color: ThemeCss.inkDim },
     ]);
   });
 
@@ -26,6 +26,12 @@ describe('ActionFeedback', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-ARMOR-ABSORB', detail: '-2' }])).toEqual([
       { label: 'SHIELD -2', color: ThemeCss.inkBright },
     ]);
+  });
+
+  it('does not float Quiet-on (badge owns that channel)', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-JAMMER' }, { loreId: 'LOG-QUIET-ON' }])).toEqual(
+      [],
+    );
   });
 
   it('includes hatch and craft feedback', () => {

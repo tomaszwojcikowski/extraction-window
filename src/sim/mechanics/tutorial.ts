@@ -54,10 +54,12 @@ export const tutorialMechanic: Mechanic = {
     );
     if (underfoot) return 'UI-TUT-GET';
 
-    // Once: how the hooded lamp / LIT·SHADOW·QUIET badge works
-    if (!state.scriptedFired.tut_light) {
+    // Once: hooded lamp / LIT·SHADOW·QUIET — teach when SHADOW/Quiet first matters (map already speaks LIT).
+    if (
+      !state.scriptedFired.tut_light &&
+      (inShadow(state, state.player.x, state.player.y) || state.player.jammerTurns > 0)
+    ) {
       once(state, 'tut_light');
-      pushLog(state, 'LOG-TUT-LIGHT');
       return 'UI-TUT-LIGHT';
     }
 
@@ -99,7 +101,7 @@ export const tutorialMechanic: Mechanic = {
       );
       if (wakeActive && !state.scriptedFired.tut_wake) {
         once(state, 'tut_wake');
-        pushLog(state, 'LOG-TUT-WAKE');
+        // Map wake lines already speak — hint only, no duplicate log.
         return 'UI-TUT-WAKE';
       }
 
