@@ -15,6 +15,8 @@ const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
   'UI-TUT-STALKER',
   'UI-TUT-FIGHT',
   'UI-TUT-EXIT',
+  'UI-TUT-HAZARD',
+  'UI-TUT-WAKE',
   'UI-HINT-USE-MED',
   'UI-HINT-USE-ENERGY',
   'UI-HINT-USE-ARMOR',
