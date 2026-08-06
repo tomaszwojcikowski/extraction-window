@@ -16,6 +16,17 @@ export const LIT_THRESHOLD = 0.12;
  */
 export const SHADOW_THRESHOLD = 0.4;
 
+const NEIGH8: ReadonlyArray<readonly [number, number]> = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1],
+];
+
 /**
  * Inverse-square irradiance with soft cutoff at `radius`.
  * At d=0 → ~intensity; falls as 1/(1+(d/near)²); windowed to 0 at radius.
@@ -32,7 +43,8 @@ export function irradiance(dist: number, radius: number, intensity: number): num
 
 /**
  * Supercover / Bresenham cells between two tile centers (exclusive of ends).
- * Returns transmittance 0–1: opaque walls block fully; scrub halves remaining light.
+ * LOS helper for presentation colour sampling; gameplay illumination uses
+ * Dijkstra flood (`floodAddLight`) — Brogue / classic tile-roguelike light.
  */
 export function lightTransmittance(
   tiles: Tile[][],
@@ -81,6 +93,96 @@ export function toneMap(hdr: number): number {
   return hdr / (1 + hdr);
 }
 
+/**
+ * Dijkstra flood light (Brogue-style). Path distance through transparent
+ * tiles; scrub attenuates; walls block further spread but still receive
+ * light on the facing cell. Adds irradiance(pathDist) * atten into `out`.
+ */
+export function floodAddLight(
+  tiles: Tile[][],
+  sx: number,
+  sy: number,
+  radius: number,
+  intensity: number,
+  out: number[][],
+): void {
+  if (radius <= 0 || intensity <= 0) return;
+  const h = tiles.length;
+  const w = tiles[0]?.length ?? 0;
+  if (sy < 0 || sx < 0 || sy >= h || sx >= w) return;
+
+  const n = w * h;
+  const bestD = new Float64Array(n);
+  const bestA = new Float64Array(n);
+  bestD.fill(Number.POSITIVE_INFINITY);
+  const start = sy * w + sx;
+  bestD[start] = 0;
+  bestA[start] = 1;
+
+  type Node = { x: number; y: number; d: number; a: number };
+  const open: Node[] = [{ x: sx, y: sy, d: 0, a: 1 }];
+
+  while (open.length > 0) {
+    let bi = 0;
+    for (let i = 1; i < open.length; i++) {
+      if (open[i]!.d < open[bi]!.d) bi = i;
+    }
+    const cur = open.splice(bi, 1)[0]!;
+    const cidx = cur.y * w + cur.x;
+    if (cur.d > bestD[cidx]! + 1e-9) continue;
+    if (cur.d >= radius) continue;
+
+    for (const [dx, dy] of NEIGH8) {
+      const nx = cur.x + dx;
+      const ny = cur.y + dy;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+      const step = dx !== 0 && dy !== 0 ? Math.SQRT2 : 1;
+      const nd = cur.d + step;
+      if (nd >= radius) continue;
+
+      const tile = tiles[ny]![nx]!;
+      let na = cur.a;
+      const nidx = ny * w + nx;
+
+      if (!tile.transparent) {
+        // Wall face: record light, do not propagate further.
+        if (nd + 1e-9 < bestD[nidx]!) {
+          bestD[nidx] = nd;
+          bestA[nidx] = na;
+        }
+        continue;
+      }
+
+      if (tile.kind === 'scrub' || tile.kind === 'scrub_nest') na *= 0.55;
+      if (na < 0.02) continue;
+
+      if (
+        nd + 1e-9 < bestD[nidx]! ||
+        (Math.abs(nd - bestD[nidx]!) < 1e-9 && na > bestA[nidx]!)
+      ) {
+        bestD[nidx] = nd;
+        bestA[nidx] = na;
+        open.push({ x: nx, y: ny, d: nd, a: na });
+      }
+    }
+  }
+
+  for (let y = 0; y < h; y++) {
+    const row = out[y]!;
+    for (let x = 0; x < w; x++) {
+      const idx = y * w + x;
+      const d = bestD[idx]!;
+      if (d >= radius) continue;
+      const E = irradiance(d, radius, intensity) * bestA[idx]!;
+      if (E > 0.001) row[x]! += E;
+    }
+  }
+}
+
+/**
+ * Single-tile query via Bresenham LOS + irradiance.
+ * Cheap enough for presentation colour sampling; gameplay uses `floodAddLight`.
+ */
 export function accumulateLight(
   tiles: Tile[][],
   sx: number,
@@ -272,7 +374,8 @@ export function tickLightSources(state: GameState): void {
 
 /**
  * Rebuild per-tile HDR illumination from lamp + world + ephemeral sources.
- * Ambient includes EM-HIGH scan wash so quiet hiding is harder when contaminated.
+ * Uses Dijkstra flood per emitter (Brogue-style). Ambient includes EM-HIGH
+ * scan wash so quiet hiding is harder when contaminated.
  */
 export function rebuildIllumination(state: GameState): void {
   if (!state.illumination || state.illumination.length !== state.height) {
@@ -282,16 +385,16 @@ export function rebuildIllumination(state: GameState): void {
   if (state.tutorialActive) ambient = Math.max(ambient, 0.22);
   if (state.emStress >= EM_HIGH) ambient += 0.08;
 
-  const sources = collectLightSources(state);
+  const amb = ambient * 0.85;
   for (let y = 0; y < state.height; y++) {
     const row = state.illumination[y]!;
     for (let x = 0; x < state.width; x++) {
-      let hdr = ambient * 0.85;
-      for (const s of sources) {
-        hdr += accumulateLight(state.tiles, s.x, s.y, x, y, s.radius, s.intensity);
-      }
-      row[x] = hdr;
+      row[x] = amb;
     }
+  }
+
+  for (const s of collectLightSources(state)) {
+    floodAddLight(state.tiles, s.x, s.y, s.radius, s.intensity, state.illumination);
   }
 }
 
