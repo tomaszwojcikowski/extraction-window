@@ -27,7 +27,6 @@ import { handleGameKey, type CommitTurnOpts } from '../game/input/InputControlle
 import {
   applyDirectionQueue,
   previewTile,
-  toMoveAction,
   type MovePreviewQueue,
 } from '../game/input/MovePreviewQueue';
 import { contextHint } from '../game/presenters/ContextHints';
@@ -76,7 +75,7 @@ export class GameScene extends Phaser.Scene {
   private npcViews = new Map<number, EnemyView>();
   private allyViews = new Map<number, EnemyView>();
   private animating = false;
-  /** Idle move preview — direction queues, `.` confirms one step. */
+  /** Optional Shift-peek — ghost + wake at adjacent tile; WASD still moves immediately. */
   private movePreviewQueue: MovePreviewQueue | null = null;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
@@ -440,6 +439,7 @@ export class GameScene extends Phaser.Scene {
 
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.handleKey(e));
+    this.input.keyboard!.on('keyup', (e: KeyboardEvent) => this.handleKeyUp(e));
     this.syncItems();
     this.syncActors(true);
     this.redrawTilesAndHud();
@@ -714,13 +714,12 @@ export class GameScene extends Phaser.Scene {
       queueAction: (action) => {
         this.queuedAction = action;
       },
-      queueMovePreview: (dx, dy) => {
+      setWakePeek: (dx, dy) => {
         this.movePreviewQueue = applyDirectionQueue(this.state, this.movePreviewQueue, dx, dy);
         this.applyFieldLighting();
       },
       getMovePreview: () => this.movePreviewQueue,
-      getQueuedAction: () =>
-        this.movePreviewQueue ? toMoveAction(this.movePreviewQueue) : this.queuedAction,
+      getQueuedAction: () => this.queuedAction,
       clearQueuedAction: () => {
         this.clearMovePreview();
       },
@@ -760,6 +759,12 @@ export class GameScene extends Phaser.Scene {
       },
       commitTurnAction: (action, opts) => this.commitTurnAction(action, opts),
     });
+  }
+
+  private handleKeyUp(e: KeyboardEvent): void {
+    if (e.key !== 'Shift' && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight') return;
+    if (!this.movePreviewQueue) return;
+    this.clearMovePreview(true);
   }
 
   private clearMovePreview(fade = true): void {
@@ -1428,7 +1433,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Queued move destination — preview wake footprint before commit. */
+  /** Shift-peek destination — wake footprint before you step. */
   private wakePreviewContext():
     | {
         originX: number;
@@ -1449,7 +1454,7 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  /** Commit ghost — player silhouette at queued destination, synced with wake preview. */
+  /** Peek ghost — player silhouette at Shift-aimed tile, synced with wake preview. */
   private showCommitGhost(dest: { x: number; y: number }): void {
     this.commitGhostFade?.stop();
     this.commitGhostFade = null;

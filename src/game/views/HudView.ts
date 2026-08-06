@@ -56,7 +56,7 @@ export type HudRedrawOpts = {
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
   /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
   shear?: ShearPressureSpec;
-  /** Queued move preview active — teach `.` commit without opening help. */
+  /** Shift-peek active — show wake-peek tip without opening help. */
   movePreviewActive?: boolean;
 };
 
