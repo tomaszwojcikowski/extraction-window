@@ -33,13 +33,14 @@ export function actionFloatLabels(
     let next: ActionFloat | null = null;
     switch (log.loreId) {
       case 'LOG-ARMOR-ABSORB':
-        next = { label: `SHD ${log.detail ?? 'HIT'}`, color: ThemeCss.inkBright };
+        next = { label: `SHIELD ${log.detail ?? 'HIT'}`, color: ThemeCss.inkBright };
         break;
       case 'LOG-DRAIN':
-        next = { label: `BUS ${log.detail ?? '-2E'}`, color: ThemeCss.arc };
+        next = { label: `BUS ${log.detail ?? 'DRAIN'}`, color: ThemeCss.arc };
         break;
       case 'LOG-QUIET-ON':
-        next = { label: 'QUIET · FOV -2 · AGGRO -3', color: ThemeCss.lampQuiet };
+      case 'LOG-USE-JAMMER':
+        next = { label: 'QUIET ON', color: ThemeCss.lampQuiet };
         break;
       case 'LOG-QUIET-OFF':
         next = { label: 'QUIET OFF', color: ThemeCss.inkDim };

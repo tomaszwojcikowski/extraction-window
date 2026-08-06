@@ -1371,7 +1371,7 @@ export class GameScene extends Phaser.Scene {
     this.lightPreferenceHints.add(enemy.id);
     this.preferenceHint = {
       id: ENEMIES[enemy.kind].lightPrefer === 'dark' ? 'UI-HINT-PREFER-DARK' : 'UI-HINT-PREFER-LIT',
-      until: this.time.now + 1800,
+      until: this.time.now + 800,
     };
   }
 
@@ -1394,9 +1394,9 @@ export class GameScene extends Phaser.Scene {
       this.entityLayer.bringToTop(text);
       this.tweens.add({
         targets: text,
-        y: text.y - 12,
+        y: text.y - 10,
         alpha: 0,
-        duration: 820,
+        duration: 220,
         ease: 'Quad.easeOut',
         onComplete: () => text.destroy(),
       });
@@ -1717,9 +1717,12 @@ export class GameScene extends Phaser.Scene {
       movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
+    // Preference tip fills an empty hint line only — never stomps tele/vitals/context.
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
-      this.hintText.setVisible(true);
-      this.hintText.setText(lore(this.preferenceHint.id));
+      if (!this.hintText.visible) {
+        this.hintText.setVisible(true);
+        this.hintText.setText(lore(this.preferenceHint.id));
+      }
     } else {
       this.preferenceHint = null;
     }

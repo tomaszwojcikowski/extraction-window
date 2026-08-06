@@ -18,7 +18,13 @@ describe('ActionFeedback', () => {
       ]),
     ).toEqual([
       { label: 'BUS Duct Drone -2E', color: ThemeCss.arc },
-      { label: 'QUIET · FOV -2 · AGGRO -3', color: ThemeCss.lampQuiet },
+      { label: 'QUIET ON', color: ThemeCss.lampQuiet },
+    ]);
+  });
+
+  it('uses Shield naming on armor absorb floats', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-ARMOR-ABSORB', detail: '-2' }])).toEqual([
+      { label: 'SHIELD -2', color: ThemeCss.inkBright },
     ]);
   });
 

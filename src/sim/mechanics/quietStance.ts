@@ -39,13 +39,18 @@ export const quietStanceMechanic: Mechanic = {
       return 'UI-HINT-QUIET-EM';
     }
     if (!isQuietStance(state)) return null;
-    // One-shot after activating Quiet.
+    // One-shot after activating Quiet (badge + meta timer already show stance).
     if (!state.scriptedFired.quiet_hint) {
       state.scriptedFired.quiet_hint = true;
       return 'UI-HINT-QUIET';
     }
-    // Soft-shadow + adjacent threat: Quiet hides telegraph — teach the trade.
-    if (inShadow(state, state.player.x, state.player.y) && adjacentVisibleThreat(state)) {
+    // Soft-shadow ambush trade — once; never hog the hint line every turn.
+    if (
+      !state.scriptedFired.quiet_ambush_hint &&
+      inShadow(state, state.player.x, state.player.y) &&
+      adjacentVisibleThreat(state)
+    ) {
+      state.scriptedFired.quiet_ambush_hint = true;
       return 'UI-HINT-QUIET';
     }
     return null;
