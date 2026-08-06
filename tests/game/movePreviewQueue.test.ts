@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyDirectionQueue,
+  previewMatchesCommit,
   previewTile,
   toMoveAction,
 } from '../../src/game/input/MovePreviewQueue';
@@ -44,37 +45,44 @@ describe('MovePreviewQueue', () => {
   it('queues adjacent tile on first direction press', () => {
     const st = stubState();
     const q = applyDirectionQueue(st, null, 0, -1);
-    expect(q).toEqual({ dx: 0, dy: -1, lead: 1 });
+    expect(q).toEqual({ dx: 0, dy: -1 });
     expect(previewTile(st, q!)).toEqual({ x: 5, y: 4 });
     expect(toMoveAction(q!)).toEqual({ type: 'move', dx: 0, dy: -1 });
+    expect(previewMatchesCommit(st, q!)).toBe(true);
   });
 
-  it('advances lead on same direction when next tile is walkable', () => {
+  it('same direction re-aims adjacent only — no peek lead', () => {
     const st = stubState();
     const first = applyDirectionQueue(st, null, 1, 0);
     const second = applyDirectionQueue(st, first, 1, 0);
-    expect(second).toEqual({ dx: 1, dy: 0, lead: 2 });
-    expect(previewTile(st, second!)).toEqual({ x: 7, y: 5 });
+    expect(second).toEqual({ dx: 1, dy: 0 });
+    expect(previewTile(st, second!)).toEqual({ x: 6, y: 5 });
+    expect(previewMatchesCommit(st, second!)).toBe(true);
   });
 
   it('retargets on different direction', () => {
     const st = stubState();
     const north = applyDirectionQueue(st, null, 0, -1);
     const east = applyDirectionQueue(st, north, 1, 0);
-    expect(east).toEqual({ dx: 1, dy: 0, lead: 1 });
+    expect(east).toEqual({ dx: 1, dy: 0 });
     expect(previewTile(st, east!)).toEqual({ x: 6, y: 5 });
-  });
-
-  it('does not advance lead into a wall', () => {
-    const st = stubState({ px: 5, py: 5, wallAt: [7, 5] });
-    const first = applyDirectionQueue(st, null, 1, 0);
-    const second = applyDirectionQueue(st, first, 1, 0);
-    expect(second).toEqual(first);
-    expect(previewTile(st, second!)).toEqual({ x: 6, y: 5 });
+    expect(previewMatchesCommit(st, east!)).toBe(true);
   });
 
   it('returns null when direction targets a wall', () => {
     const st = stubState({ wallAt: [5, 4] });
     expect(applyDirectionQueue(st, null, 0, -1)).toBeNull();
+  });
+
+  it('keeps honesty: preview dest always equals one-step commit tile', () => {
+    const st = stubState();
+    let q = applyDirectionQueue(st, null, 1, 0);
+    for (let i = 0; i < 5; i++) {
+      q = applyDirectionQueue(st, q, 1, 0);
+      expect(q).not.toBeNull();
+      expect(previewMatchesCommit(st, q!)).toBe(true);
+      const dest = previewTile(st, q!)!;
+      expect(dest).toEqual({ x: st.player.x + q!.dx, y: st.player.y + q!.dy });
+    }
   });
 });

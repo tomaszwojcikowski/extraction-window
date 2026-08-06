@@ -8,7 +8,12 @@ import {
   isQueueableAction,
   slotIndexFromKey,
 } from './Keymap';
-import { applyDirectionQueue, toMoveAction, type MovePreviewQueue } from './MovePreviewQueue';
+import { toMoveAction, type MovePreviewQueue } from './MovePreviewQueue';
+
+export type CommitTurnOpts = {
+  /** Keep queued move ghost/tells after a non-move turn (quiet toggle while queued). */
+  keepMovePreview?: boolean;
+};
 
 /**
  * Scene-facing hooks for chrome / turn commit. InputController owns key
@@ -33,7 +38,7 @@ export type InputHost = {
   /** After kit/chrome UI actions — redraw HUD (and items when needed). */
   afterUiChrome(opts?: { syncItems?: boolean }): void;
   showSkillHint(): void;
-  commitTurnAction(action: Action): void;
+  commitTurnAction(action: Action, opts?: CommitTurnOpts): void;
 };
 
 /**
@@ -116,7 +121,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   const slotIdx = slotIndexFromKey(e);
   if (slotIdx !== null) {
-    host.clearQueuedAction();
+    // Keep move preview so jammer can be selected/used while a step is queued.
     applyAction(state, { type: 'select_slot', index: slotIdx });
     if (!state.ui.inventoryOpen) applyAction(state, { type: 'toggle_inventory' });
     sfx.play('ui');
@@ -141,7 +146,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   if (action.type === 'toggle_inventory' || action.type === 'close_ui') {
-    host.clearQueuedAction();
+    // Kit open/close keeps preview — quiet toggle while queued needs selected jammer.
     applyAction(state, action);
     sfx.play('ui');
     host.afterUiChrome();
@@ -163,6 +168,12 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
       return;
     }
     host.commitTurnAction(action);
+    return;
+  }
+
+  // Use (e.g. jammer) while queued: apply stance, keep ghost so wake tells shrink live.
+  if (action.type === 'use' && host.getMovePreview()) {
+    host.commitTurnAction(action, { keepMovePreview: true });
     return;
   }
 

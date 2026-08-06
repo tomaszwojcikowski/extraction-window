@@ -23,7 +23,7 @@ import {
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
-import { handleGameKey } from '../game/input/InputController';
+import { handleGameKey, type CommitTurnOpts } from '../game/input/InputController';
 import {
   applyDirectionQueue,
   previewTile,
@@ -758,7 +758,7 @@ export class GameScene extends Phaser.Scene {
         this.hintText.setVisible(true);
         this.hintText.setText(lore('UI-HINT-SKILL'));
       },
-      commitTurnAction: (action) => this.commitTurnAction(action),
+      commitTurnAction: (action, opts) => this.commitTurnAction(action, opts),
     });
   }
 
@@ -775,9 +775,12 @@ export class GameScene extends Phaser.Scene {
     this.commitTurnAction(next);
   }
 
-  private commitTurnAction(action: Action): void {
-    this.movePreviewQueue = null;
-    this.hideCommitGhost(false);
+  private commitTurnAction(action: Action, opts?: CommitTurnOpts): void {
+    const keepPreview = opts?.keepMovePreview ? this.movePreviewQueue : null;
+    if (!keepPreview) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(false);
+    }
     this.queuedAction = null;
     this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
@@ -820,6 +823,8 @@ export class GameScene extends Phaser.Scene {
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
     if (fb.mapReloaded) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(false);
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -839,6 +844,12 @@ export class GameScene extends Phaser.Scene {
       stormTurns: this.state.stormTurns,
       inCombat: this.threatNearby(),
     });
+
+    // Drop keep-preview if the adjacent tile is no longer walkable after the turn.
+    if (keepPreview && !previewTile(this.state, keepPreview)) {
+      this.movePreviewQueue = null;
+      this.hideCommitGhost(true);
+    }
 
     // Light/FOV at the new tile immediately so the lamp isn't left behind the tween.
     // Full HUD (bars, log, hints) still waits for afterPresent.
@@ -1545,6 +1556,7 @@ export class GameScene extends Phaser.Scene {
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
+      movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
