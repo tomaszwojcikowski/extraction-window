@@ -3,15 +3,26 @@ import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
 import { EM_HIGH } from '../emStress';
 import { hasItem } from '../inventory';
+import { inShadow } from '../light';
+import { manhattan } from '../spatial';
 
 /**
- * Sensor quiet stance — active while jammer timer runs.
- * FOV shrinks by two tiles; field lamp dims (see light.playerLamp); fauna aggro shrinks.
- * At EM-HIGH, quiet also suppresses emAggroBonus (see emStress).
- * HUD shows SYS:Q.
+ * Quiet stance — active while EM Scrambler timer runs.
+ * FOV shrinks; field lamp dims; fauna aggro shrinks.
+ * At EM-HIGH, Quiet also suppresses emAggroBonus (see emStress).
  */
 export function isQuietStance(state: GameState): boolean {
   return state.player.jammerTurns > 0;
+}
+
+function adjacentVisibleThreat(state: GameState): boolean {
+  const { x, y } = state.player;
+  return state.enemies.some(
+    (e) =>
+      e.alive &&
+      (state.visible[e.y]?.[e.x] ?? false) &&
+      manhattan(e.x, e.y, x, y) === 1,
+  );
 }
 
 export const quietStanceMechanic: Mechanic = {
@@ -19,20 +30,28 @@ export const quietStanceMechanic: Mechanic = {
 
   modifyFov(state: GameState, base: number): number {
     if (!isQuietStance(state)) return base;
-    // Deep Quiet doctrine: no FOV shrink while scrambled
     if (state.doctrineQuiet >= 5) return base;
     return Math.max(3, base - 2);
   },
 
   contextHint(state: GameState): LoreId | null {
-    if (isQuietStance(state)) return 'UI-HINT-QUIET';
-    if (state.emStress < EM_HIGH) return null;
-    if (!hasItem(state, 'jammer')) return null;
-    return 'UI-HINT-QUIET-EM';
+    if (state.emStress >= EM_HIGH && !isQuietStance(state) && hasItem(state, 'jammer')) {
+      return 'UI-HINT-QUIET-EM';
+    }
+    if (!isQuietStance(state)) return null;
+    // One-shot after activating Quiet.
+    if (!state.scriptedFired.quiet_hint) {
+      state.scriptedFired.quiet_hint = true;
+      return 'UI-HINT-QUIET';
+    }
+    // Soft-shadow + adjacent threat: Quiet hides telegraph — teach the trade.
+    if (inShadow(state, state.player.x, state.player.y) && adjacentVisibleThreat(state)) {
+      return 'UI-HINT-QUIET';
+    }
+    return null;
   },
 
   autopilotHint(_state: GameState): Action | null {
-    // Autopilot uses jammer via generic policy (incl. EM-HIGH) — avoid double-spend
     return null;
   },
 };

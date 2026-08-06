@@ -29,6 +29,7 @@ const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
   'UI-HINT-FLARE',
   'UI-HINT-QUIET',
   'UI-HINT-QUIET-EM',
+  'UI-HINT-ION-FRONT',
   'UI-HINT-EXIT',
   'UI-HINT-BEACON',
   'UI-HINT-HANDSHAKE',

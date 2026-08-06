@@ -158,7 +158,7 @@ function tryRetreat(state: GameState): void {
   state.player.x = destination.x;
   state.player.y = destination.y;
   state.player.energy -= 4;
-  pushLog(state, 'LOG-RETREAT', '-4E');
+  pushLog(state, 'LOG-RETREAT', '-4 Bus');
   endPlayerTurn(state);
 }
 

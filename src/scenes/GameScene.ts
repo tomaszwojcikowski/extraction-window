@@ -1407,7 +1407,7 @@ export class GameScene extends Phaser.Scene {
   /** Lore-driven camera cues are cosmetic; filters never affect sim light/FOV. */
   private pulseCameraAtmosphere(logs: readonly LoreId[]): void {
     const has = (id: LoreId) => logs.includes(id);
-    if (has('LOG-ION-FRONT') || has('LOG-ION-PULSE')) {
+    if (has('LOG-ION-FRONT') || has('LOG-ION-CLEAR')) {
       this.cameraAtmosphere?.pulse(0.18, 240);
       this.cameras.main.shake(140, 0.0015);
       this.lightView.ignite(
@@ -1418,6 +1418,11 @@ export class GameScene extends Phaser.Scene {
         7,
         LightTemp.scan,
       );
+      return;
+    }
+    if (has('LOG-EVT-SHEAR') || has('LOG-EVT-APPROACH')) {
+      this.cameraAtmosphere?.pulse(0.1, 140);
+      this.cameras.main.shake(90, 0.001);
       return;
     }
     if (has('LOG-USE-FLARE')) {
