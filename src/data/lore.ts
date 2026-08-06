@@ -32,13 +32,13 @@ export const LORE = {
   'UI-HELP': 'Survey team manual',
   'UI-HELP-TUT':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
+    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
     '\n',
   'UI-HELP-BODY':
     'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Storm clock and bus drip pause here. Real drop starts after the hatch.\n' +
+    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
+    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
     '\n' +
     'MOVE    WASD or arrow keys — one tile per turn\n' +
     'PEEK    Shift+direction — ghost + wake preview (who you would wake); release Shift to clear\n' +
@@ -68,6 +68,7 @@ export const LORE = {
     'HUD READOUT\n' +
     'HP / SHD / BUS / WINDOW / XP — vitals, shields, bus, shear window, proficiency\n' +
     'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant; quiet suppresses EM-HIGH aggro)\n' +
+    'LIGHT — hooded lamp fills a wall-cut pool · LIT / SHADOW / QUIET badge = how fauna reads you (Quiet = EM Scrambler)\n' +
     'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping, Q quiet)\n' +
     'QUEST — optional survey procedure tracker (step text + 1/N); chevron prefers nearby steps\n' +
     'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
@@ -95,10 +96,12 @@ export const LORE = {
   'UI-HINT-SEALED': 'Sealed hatch adjacent — need sealant or baton pry (>)',
   'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with pulse baton (>)',
   'UI-HINT-QUIET':
-    'Quiet stance — fauna less interested, but soft shadow lets adjacent pounces skip their telegraph',
+    'Quiet stance — lamp dims red, fauna interest down; soft shadow lets adjacent pounces skip telegraph',
   'UI-HINT-QUIET-EM':
     'EM critical — use EM Scrambler (u) for quiet stance; suppresses fauna aggro bump (FOV shrinks)',
   'UI-HINT-FLARE': 'Standing dark near hostiles — plasma flare lights the fight',
+  'UI-HINT-LIGHT':
+    'LIT = your lamp holds the tile · SHADOW = soft band ambush likes · QUIET = scrambler dims the lamp',
   'UI-HINT-EQUIP': 'Wearable gear in kit — open kit (i), select, press u to equip',
   'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
@@ -113,13 +116,19 @@ export const LORE = {
   'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear · . waits',
   'UI-HINT-PEEK-TEACH':
     'Wake lines at your feet — Shift+direction peeks the next tile before you step',
-  'UI-TUT-MOVE': 'WASD / arrows — one tile per turn · Shift+dir peeks · . waits',
-  'UI-TUT-GET': 'g — pick up',
-  'UI-TUT-KIT': 'i kit · u use',
-  'UI-TUT-FIGHT': 'Bump hostiles to fight · flare if dark',
-  'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip past through the side alcove',
-  'UI-TUT-GOTO-HATCH': 'Walk east onto the hatch tile to begin',
-  'UI-TUT-EXIT': 'On hatch — walk off and back, or press Enter / Space / = / >',
+  'UI-TUT-MOVE': 'WASD moves · Shift+dir peeks who you’d wake · . waits',
+  'UI-TUT-LIGHT':
+    'Hooded lamp fills the pool (walls cut it). Badge LIT / SHADOW / QUIET = how fauna reads you',
+  'UI-TUT-GET': 'g — pick up salvage underfoot',
+  'UI-TUT-KIT': 'i kit · u use — ID salvage / fire flare / seal hazards',
+  'UI-TUT-HAZARD':
+    'Ion hazard — known bus tax. Cross it, seal with Sealant Foam (u), or take the south alcove',
+  'UI-TUT-WAKE':
+    'Lines from your feet = fauna that notices you here · Shift+dir peeks the next tile',
+  'UI-TUT-FIGHT': 'Bump to fight · b brace · r retreat · flare if dark',
+  'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip south past hazard',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — shear window clock starts on the real drop',
+  'UI-TUT-EXIT': 'On hatch — walk off/back or Enter / Space / = / > to begin the drop',
   'UI-SURVEY': 'SRV',
   'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
@@ -181,8 +190,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Survey anomaly',
-  'OBJ-TUT-HATCH': '→ Drill hatch',
-  'OBJ-TUT-BRIEF': 'Training — not the real drop yet',
+  'OBJ-TUT-HATCH': '→ Drill hatch (learn wake, hazard, kit)',
+  'OBJ-TUT-BRIEF': 'Training bay — storm paused; hatch starts the real shear window',
   'HAZ-STORM': 'Shear storm extraction window remaining.',
   'UI-CODEX': 'PADD',
 
@@ -352,8 +361,15 @@ export const LORE = {
   // Logs
   'LOG-DROP':
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
-  'LOG-TUT-WELCOME': 'Drill bay — reach the hatch east.',
-  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats.',
+  'LOG-TUT-WELCOME':
+    'Drill bay — storm paused. Wake lines show who notices you; ion tiles tax the bus (alcove or sealant). Hatch east starts the real drop.',
+  'LOG-TUT-LIGHT':
+    'Hooded work lamp — pool stops at walls. HUD badge: LIT (clear), SHADOW (ambush likes it), QUIET (scrambler dims lamp red).',
+  'LOG-TUT-HAZARD':
+    'Ion hazard underfoot drains bus — visible path tax, not a surprise trap. Sealant Foam (u) clears it this visit, or walk the south alcove.',
+  'LOG-TUT-WAKE':
+    'Wake lines track fauna interest. Step carefully — Shift+direction peeks the next tile’s footprint without moving.',
+  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats. Shear window is live.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',

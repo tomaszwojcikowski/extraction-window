@@ -13,6 +13,9 @@ function floor(): Tile {
 function scrub(): Tile {
   return { kind: 'scrub', walkable: true, transparent: false };
 }
+function hazard(): Tile {
+  return { kind: 'hazard', walkable: true, transparent: true };
+}
 function exitTile(): Tile {
   return { kind: 'exit', walkable: true, transparent: true };
 }
@@ -26,8 +29,8 @@ function carveRect(tiles: Tile[][], x0: number, y0: number, x1: number, y1: numb
 }
 
 /**
- * Hand-authored ~24×16 drill bay — west start, east hatch, flare-ready stalker beat.
- * Not a campaign sector; used only while `tutorialActive`.
+ * Hand-authored ~24×16 drill bay — west start, east hatch, visible hazard tax,
+ * scrub FOV beat, flare-ready stalker. Not a campaign sector; `tutorialActive` only.
  */
 export function generateTutorialMap(seed: number): GeneratedMap {
   const rng = mulberry32(seed >>> 0);
@@ -41,7 +44,7 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   carveRect(tiles, 1, 4, 7, 11);
   // Mid corridor
   carveRect(tiles, 7, 6, 16, 9);
-  // Small south alcove gives a quiet route around the contact.
+  // Small south alcove — quiet route around the stalker *and* the ion hazard.
   carveRect(tiles, 9, 9, 15, 11);
   // East chamber (hatch)
   carveRect(tiles, 16, 5, 22, 10);
@@ -50,8 +53,10 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   const exit: Pos = { x: 21, y: 7 };
   tiles[exit.y]![exit.x] = exitTile();
 
-  // One scrub mid-corridor for later FOV teaching (non-blocking path south)
+  // Scrub mid-corridor — blocks sight; south floor stays clear.
   tiles[6]![11] = scrub();
+  // Visible ion hazard on the straight lane — bus tax if you walk it; alcove bypasses.
+  tiles[7]![12] = hazard();
 
   const itemKind = rng() < 0.5 ? 'salvage' : 'field_sample';
   const items: GroundItem[] = [
