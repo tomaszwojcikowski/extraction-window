@@ -45,6 +45,7 @@ import {
   captureNoticeSnap,
   noticeImpactIds,
 } from '../game/presenters/NoticeImpact';
+import { pickCameraCue, type CameraCue } from '../game/presenters/EventCamera';
 import {
   markPeekTeachDone,
   shouldShowPeekTeach,
@@ -132,6 +133,14 @@ export class GameScene extends Phaser.Scene {
   private noticeImpactIds = new Set<number>();
   /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
   private noticeChaseLatched = new Set<number>();
+  /** Event camera kick — decays in updateCamera; world layers only (HUD stays 1:1). */
+  private camNudgeX = 0;
+  private camNudgeY = 0;
+  private camNudgeUntil = 0;
+  /** Peak world scale (>1 zooms in); eases to 1 over camZoomUntil. */
+  private camZoomPeak = 1;
+  private camZoomUntil = 0;
+  private camZoomMs = 1;
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -866,8 +875,9 @@ export class GameScene extends Phaser.Scene {
       flash: (color, alpha) => this.flashFx(color, alpha),
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
-    this.pulseCameraAtmosphere(fb.newLogs);
-    this.presentNoticeImpact(noticeImpactIds(this.state, prevNotice, this.noticeChaseLatched));
+    const impactIds = noticeImpactIds(this.state, prevNotice, this.noticeChaseLatched);
+    this.presentNoticeImpact(impactIds);
+    this.playEventCamera(fb.newLogs, impactIds.length > 0);
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen));
 
@@ -1192,13 +1202,42 @@ export class GameScene extends Phaser.Scene {
       this.camX += (targetX - this.camX) * 0.2;
       this.camY += (targetY - this.camY) * 0.2;
     }
-    const ox = -this.camX;
-    const oy = -this.camY + TOP;
-    this.mapLayer.setPosition(ox, oy);
-    this.shadowLayer.setPosition(ox, oy);
-    this.lightLayer.setPosition(ox, oy);
-    this.itemLayer.setPosition(ox, oy);
-    this.entityLayer.setPosition(ox, oy);
+    let nudgeX = 0;
+    let nudgeY = 0;
+    if (this.time.now < this.camNudgeUntil) {
+      const remain = this.camNudgeUntil - this.time.now;
+      const t = Math.min(1, remain / 200);
+      nudgeX = this.camNudgeX * t;
+      nudgeY = this.camNudgeY * t;
+    } else {
+      this.camNudgeX = 0;
+      this.camNudgeY = 0;
+    }
+    // World-layer zoom toward the player (not Phaser camera — HUD stays unzoomed).
+    let zoom = 1;
+    if (this.time.now < this.camZoomUntil && this.camZoomPeak > 1) {
+      const remain = this.camZoomUntil - this.time.now;
+      const u = Math.min(1, remain / Math.max(1, this.camZoomMs));
+      // Ease-out: hold punch early, settle back to 1.
+      const ease = u * u;
+      zoom = 1 + (this.camZoomPeak - 1) * ease;
+    } else {
+      this.camZoomPeak = 1;
+    }
+    const fx = this.playerSprite.x;
+    const fy = this.playerSprite.y;
+    const ox = -this.camX + nudgeX + fx * (1 - zoom);
+    const oy = -this.camY + TOP + nudgeY + fy * (1 - zoom);
+    for (const layer of [
+      this.mapLayer,
+      this.shadowLayer,
+      this.lightLayer,
+      this.itemLayer,
+      this.entityLayer,
+    ]) {
+      layer.setScale(zoom);
+      layer.setPosition(ox, oy);
+    }
     // Keep chevron fresh as camera drifts
     if (!snap) this.syncGoalVisuals(describeObjective(this.state).pos);
   }
@@ -1370,7 +1409,7 @@ export class GameScene extends Phaser.Scene {
 
   /**
    * Notice Impact — one ≤~200ms punch when a wake tell becomes real engage.
-   * Presentation only; never delays the input queue.
+   * Sprite juice here; camera kick via playEventCamera(notice).
    */
   private presentNoticeImpact(ids: number[]): void {
     if (ids.length === 0) return;
@@ -1399,60 +1438,54 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    this.cameras.main.shake(90, 0.0011);
-    this.cameraAtmosphere?.pulse(0.1, 140);
     this.applyFieldLighting();
   }
 
-  /** Lore-driven camera cues are cosmetic; filters never affect sim light/FOV. */
-  private pulseCameraAtmosphere(logs: readonly LoreId[]): void {
-    const has = (id: LoreId) => logs.includes(id);
-    if (has('LOG-ION-FRONT') || has('LOG-ION-CLEAR')) {
-      this.cameraAtmosphere?.pulse(0.18, 240);
-      this.cameras.main.shake(140, 0.0015);
+  /**
+   * Event camera — one strongest cue per turn (shake + vignette + nudge + zoom-in).
+   * Cosmetic only; never delays input. World layers zoom; HUD stays 1:1.
+   */
+  private playEventCamera(logs: readonly LoreId[], noticeImpact: boolean): void {
+    const cue = pickCameraCue(logs, { noticeImpact });
+    if (!cue) return;
+    this.applyCameraCue(cue);
+  }
+
+  private applyCameraCue(cue: CameraCue): void {
+    if (cue.shakeMs > 0 && cue.shakeIntensity > 0) {
+      this.cameras.main.shake(cue.shakeMs, cue.shakeIntensity);
+    }
+    if (cue.vignette > 0) {
+      this.cameraAtmosphere?.pulse(cue.vignette, cue.vignetteMs);
+    }
+    const kickMs = Math.max(200, cue.shakeMs, cue.vignetteMs * 0.5, cue.zoomMs * 0.6);
+    if (cue.nudgePx > 0) {
+      const ang = (this.state.turn * 2.399) % (Math.PI * 2);
+      this.camNudgeX = Math.cos(ang) * cue.nudgePx;
+      this.camNudgeY = Math.sin(ang) * cue.nudgePx;
+      this.camNudgeUntil = this.time.now + kickMs;
+    }
+    if (cue.zoomScale > 1 && cue.zoomMs > 0) {
+      this.camZoomPeak = cue.zoomScale;
+      this.camZoomMs = cue.zoomMs;
+      this.camZoomUntil = this.time.now + cue.zoomMs;
+    }
+    if (cue.ignite) {
+      const color =
+        cue.ignite === 'flare'
+          ? LightTemp.flare
+          : cue.ignite === 'fauna'
+            ? LightTemp.fauna
+            : LightTemp.scan;
+      const radius = cue.ignite === 'flare' ? 6 : cue.ignite === 'fauna' ? 4 : 7;
       this.lightView.ignite(
         this,
         this.lightLayer,
         this.state.player.x,
         this.state.player.y,
-        7,
-        LightTemp.scan,
+        radius,
+        color,
       );
-      return;
-    }
-    if (has('LOG-EVT-SHEAR') || has('LOG-EVT-APPROACH')) {
-      this.cameraAtmosphere?.pulse(0.1, 140);
-      this.cameras.main.shake(90, 0.001);
-      return;
-    }
-    if (has('LOG-USE-FLARE')) {
-      // A flare is an event: ignition front, kick, and the room changing.
-      this.lightView.ignite(
-        this,
-        this.lightLayer,
-        this.state.player.x,
-        this.state.player.y,
-        6,
-        LightTemp.flare,
-      );
-      this.cameraAtmosphere?.pulse(0.13, 160);
-      this.cameras.main.shake(120, 0.0016);
-      return;
-    }
-    if (has('LOG-SPORE-BURST')) {
-      this.lightView.ignite(
-        this,
-        this.lightLayer,
-        this.state.player.x,
-        this.state.player.y,
-        4,
-        LightTemp.fauna,
-      );
-      this.cameras.main.shake(90, 0.0012);
-      return;
-    }
-    if (has('LOG-EXTRACT')) {
-      this.cameraAtmosphere?.pulse(0.14, 280);
     }
   }
 
