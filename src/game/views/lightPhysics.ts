@@ -9,4 +9,5 @@ export {
   lightTransmittance,
   toneMap,
   accumulateLight,
+  floodAddLight,
 } from '../../sim/light';

@@ -4,6 +4,7 @@ import {
   LIT_THRESHOLD,
   SHADOW_THRESHOLD,
   accumulateLight,
+  floodAddLight,
   inShadow,
   irradiance,
   isLit,
@@ -62,6 +63,42 @@ describe('sim light physics', () => {
     const tiles = grid(5, 5, { kind: 'floor', walkable: true, transparent: true });
     expect(accumulateLight(tiles, 2, 2, 2, 2, 3, 1)).toBeGreaterThan(0);
     expect(accumulateLight(tiles, 0, 0, 4, 4, 2, 1)).toBe(0);
+  });
+
+  it('Dijkstra flood lights open floor and stops through solid walls', () => {
+    // Sealed corridor — no wrap around the wall.
+    const tiles = grid(7, 3, { kind: 'wall', walkable: false, transparent: false });
+    for (let x = 0; x < 7; x++) {
+      tiles[1]![x] = { kind: 'floor', walkable: true, transparent: true };
+    }
+    tiles[1]![3] = { kind: 'wall', walkable: false, transparent: false };
+    const out = Array.from({ length: 3 }, () => Array.from({ length: 7 }, () => 0));
+    floodAddLight(tiles, 0, 1, 6, 1, out);
+    expect(out[1]![0]!).toBeGreaterThan(0);
+    expect(out[1]![1]!).toBeGreaterThan(0);
+    // Far side of a sealing wall: no path around.
+    expect(out[1]![5]!).toBe(0);
+    expect(out[1]![6]!).toBe(0);
+  });
+
+  it('Dijkstra flood wraps around open corners (unlike Bresenham LOS)', () => {
+    const tiles = grid(5, 5, { kind: 'wall', walkable: false, transparent: false });
+    for (const [x, y] of [
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [2, 1],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+    ] as const) {
+      tiles[y]![x] = { kind: 'floor', walkable: true, transparent: true };
+    }
+    const out = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0));
+    floodAddLight(tiles, 0, 0, 8, 1, out);
+    expect(out[2]![4]!).toBeGreaterThan(0);
+    // Straight LOS through the wall still fails.
+    expect(lightTransmittance(tiles, 0, 0, 4, 2)).toBe(0);
   });
 });
 
