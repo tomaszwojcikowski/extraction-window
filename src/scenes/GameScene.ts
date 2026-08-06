@@ -7,7 +7,7 @@ import {
   playerTextureKey,
   wallTextureKey,
 } from './textures';
-import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss, floorTextureKey } from './theme';
+import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { NPCS, ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
@@ -52,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private mapLayer!: Phaser.GameObjects.Container;
   private lightLayer!: Phaser.GameObjects.Container;
   private itemLayer!: Phaser.GameObjects.Container;
+  private shadowLayer!: Phaser.GameObjects.Container;
   private entityLayer!: Phaser.GameObjects.Container;
   private lightView!: LightView;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
@@ -69,6 +70,9 @@ export class GameScene extends Phaser.Scene {
   private cameraAtmosphere: CameraAtmosphere | null = null;
   private animFrame = 0;
   private animAccum = 0;
+  /** First-light sweep radius in tiles, or null when the gate is released. */
+  private firstLight: number | null = null;
+  private firstLightTween: Phaser.Tweens.Tween | null = null;
   private fovVignette!: Phaser.GameObjects.Graphics;
   private fieldMotes!: Phaser.GameObjects.Graphics;
   private idleBob = 0;
@@ -129,6 +133,8 @@ export class GameScene extends Phaser.Scene {
     this.allyViews.clear();
     this.lightPreferenceHints.clear();
     this.preferenceHint = null;
+    this.firstLight = null;
+    this.firstLightTween = null;
   }
 
   create(): void {
@@ -136,12 +142,15 @@ export class GameScene extends Phaser.Scene {
     this.cameraAtmosphere = addCameraAtmosphere(this);
     this.mapLayer = this.add.container(0, 0);
     this.itemLayer = this.add.container(0, 0);
+    // Contact shadows sit between the floor and the things casting them.
+    this.shadowLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
     // Bloom above actors so the player lamp isn't buried under the sprite.
     this.lightLayer = this.add.container(0, 0);
     this.fieldMotes = this.add.graphics();
+    this.fieldMotes.setBlendMode(Phaser.BlendModes.ADD);
     this.lightLayer.add(this.fieldMotes);
-    this.lightView = new LightView(this, this.lightLayer);
+    this.lightView = new LightView(this, this.lightLayer, this.shadowLayer);
 
     this.playerSprite = this.add.image(0, 0, 't_player');
     this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
@@ -676,6 +685,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private commitTurnAction(action: Action): void {
+    this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
     const prevTutorialActive = this.state.tutorialActive;
     const prevMapWidth = this.state.width;
@@ -723,6 +733,7 @@ export class GameScene extends Phaser.Scene {
       this.redrawTilesAndHud();
       this.updateCamera(true);
       this.syncFieldAudio(true);
+      this.startFirstLight();
       if (this.state.player.hp < prevHp) this.flashHit();
       this.maybeEnd();
       this.flushQueuedAction();
@@ -1027,6 +1038,7 @@ export class GameScene extends Phaser.Scene {
     const ox = -this.camX;
     const oy = -this.camY + TOP;
     this.mapLayer.setPosition(ox, oy);
+    this.shadowLayer.setPosition(ox, oy);
     this.lightLayer.setPosition(ox, oy);
     this.itemLayer.setPosition(ox, oy);
     this.entityLayer.setPosition(ox, oy);
@@ -1199,11 +1211,40 @@ export class GameScene extends Phaser.Scene {
     if (has('LOG-ION-FRONT') || has('LOG-ION-PULSE')) {
       this.cameraAtmosphere?.pulse(0.18, 240);
       this.cameras.main.shake(140, 0.0015);
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        7,
+        LightTemp.scan,
+      );
       return;
     }
     if (has('LOG-USE-FLARE')) {
+      // A flare is an event: ignition front, kick, and the room changing.
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        6,
+        LightTemp.flare,
+      );
       this.cameraAtmosphere?.pulse(0.13, 160);
-      this.cameras.main.shake(90, 0.001);
+      this.cameras.main.shake(120, 0.0016);
+      return;
+    }
+    if (has('LOG-SPORE-BURST')) {
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        this.state.player.x,
+        this.state.player.y,
+        4,
+        LightTemp.fauna,
+      );
+      this.cameras.main.shake(90, 0.0012);
       return;
     }
     if (has('LOG-EXTRACT')) {
@@ -1247,12 +1288,66 @@ export class GameScene extends Phaser.Scene {
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles);
+    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
     for (const patch of st.contamination) {
       const tile = this.tileSprites[patch.y]?.[patch.x];
       if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
       tile.setTint(Theme.biolum);
     }
+    if (this.firstLight !== null) {
+      this.lightView.applySweep(st, this.tileSprites, this.firstLight);
+    }
+  }
+
+  /** Everything solid enough to throw a shadow this frame. */
+  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean }> {
+    const st = this.state;
+    yield { gx: st.player.x, gy: st.player.y };
+    for (const en of st.enemies) {
+      if (!en.alive) continue;
+      yield { gx: en.x, gy: en.y, tall: en.tier !== 'normal' };
+    }
+    for (const a of st.allies) {
+      if (!a.alive) continue;
+      yield { gx: a.x, gy: a.y };
+    }
+    for (const n of st.npcs) yield { gx: n.x, gy: n.y };
+  }
+
+  /**
+   * First light — a new sector arrives behind an expanding front instead of
+   * hard-cutting the fog open. One wonder beat per sector, ~1.1s, skippable by
+   * simply acting (the gate releases on the next committed turn).
+   */
+  private startFirstLight(): void {
+    this.firstLightTween?.stop();
+    const st = this.state;
+    const reach = Math.hypot(st.width, st.height);
+    this.firstLight = 0;
+    this.firstLightTween = this.tweens.addCounter({
+      from: 0,
+      to: reach,
+      duration: 1100,
+      ease: 'Quad.easeOut',
+      onUpdate: (tw) => {
+        this.firstLight = tw.getValue() ?? reach;
+        this.lightView.applySweep(this.state, this.tileSprites, this.firstLight);
+      },
+      onComplete: () => {
+        this.firstLight = null;
+        this.firstLightTween = null;
+        this.lightView.applySweep(this.state, this.tileSprites, null);
+      },
+    });
+  }
+
+  private releaseFirstLight(): void {
+    if (this.firstLight === null) return;
+    this.firstLightTween?.stop();
+    this.firstLightTween = null;
+    this.firstLight = null;
+    this.lightView.applySweep(this.state, this.tileSprites, null);
   }
 
   private redrawTilesAndHud(): void {
