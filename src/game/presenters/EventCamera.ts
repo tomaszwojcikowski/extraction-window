@@ -8,7 +8,8 @@ import type { LoreId } from '../../data/lore';
  * silence routine motion (no cue for ordinary WASD).
  *
  * Intensities are tuned to read clearly at 60fps without nausea —
- * Phaser shake ~0.003–0.006, world nudge ~4–10px.
+ * Phaser shake ~0.003–0.006, world nudge ~4–10px, world zoom ~1.04–1.12.
+ * Zoom is applied to world layers only (HUD stays 1:1).
  */
 
 export type CameraIgnite = 'scan' | 'flare' | 'fauna';
@@ -24,6 +25,9 @@ export type CameraCue = {
   vignetteMs: number;
   /** Brief world-space nudge (px) — felt as a camera kick without zooming HUD. */
   nudgePx: number;
+  /** Peak world-layer scale (1 = none). Eases back to 1 over zoomMs. */
+  zoomScale: number;
+  zoomMs: number;
   ignite?: CameraIgnite;
 };
 
@@ -36,6 +40,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.28,
     vignetteMs: 400,
     nudgePx: 6,
+    zoomScale: 1.1,
+    zoomMs: 420,
   },
   ion_form: {
     id: 'ion_form',
@@ -45,6 +51,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.3,
     vignetteMs: 280,
     nudgePx: 8,
+    zoomScale: 1.08,
+    zoomMs: 320,
     ignite: 'scan',
   },
   ion_clear: {
@@ -55,6 +63,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.24,
     vignetteMs: 240,
     nudgePx: 5,
+    zoomScale: 1.06,
+    zoomMs: 260,
     ignite: 'scan',
   },
   flare: {
@@ -65,6 +75,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.22,
     vignetteMs: 200,
     nudgePx: 9,
+    zoomScale: 1.09,
+    zoomMs: 280,
     ignite: 'flare',
   },
   spore: {
@@ -75,6 +87,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.18,
     vignetteMs: 180,
     nudgePx: 5,
+    zoomScale: 1.06,
+    zoomMs: 220,
     ignite: 'fauna',
   },
   hurt: {
@@ -85,6 +99,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.26,
     vignetteMs: 200,
     nudgePx: 10,
+    zoomScale: 1.1,
+    zoomMs: 260,
   },
   kill: {
     id: 'kill',
@@ -94,6 +110,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.16,
     vignetteMs: 150,
     nudgePx: 5,
+    zoomScale: 1.06,
+    zoomMs: 200,
   },
   tele: {
     id: 'tele',
@@ -103,6 +121,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.2,
     vignetteMs: 180,
     nudgePx: 7,
+    zoomScale: 1.09,
+    zoomMs: 240,
   },
   uplink_wave: {
     id: 'uplink_wave',
@@ -112,6 +132,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.28,
     vignetteMs: 240,
     nudgePx: 8,
+    zoomScale: 1.08,
+    zoomMs: 280,
   },
   uplink_done: {
     id: 'uplink_done',
@@ -121,6 +143,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.2,
     vignetteMs: 260,
     nudgePx: 5,
+    zoomScale: 1.05,
+    zoomMs: 280,
   },
   handshake: {
     id: 'handshake',
@@ -130,6 +154,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.16,
     vignetteMs: 200,
     nudgePx: 4,
+    zoomScale: 1.04,
+    zoomMs: 220,
   },
   approach_shear: {
     id: 'approach_shear',
@@ -139,6 +165,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.18,
     vignetteMs: 180,
     nudgePx: 6,
+    zoomScale: 1.07,
+    zoomMs: 240,
   },
   quiet: {
     id: 'quiet',
@@ -148,6 +176,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.18,
     vignetteMs: 220,
     nudgePx: 0,
+    zoomScale: 1.03,
+    zoomMs: 260,
   },
   elite: {
     id: 'elite',
@@ -157,6 +187,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.2,
     vignetteMs: 220,
     nudgePx: 7,
+    zoomScale: 1.07,
+    zoomMs: 260,
   },
   desync: {
     id: 'desync',
@@ -166,6 +198,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.18,
     vignetteMs: 180,
     nudgePx: 5,
+    zoomScale: 1.05,
+    zoomMs: 220,
   },
   notice: {
     id: 'notice',
@@ -175,6 +209,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.18,
     vignetteMs: 170,
     nudgePx: 5,
+    zoomScale: 1.06,
+    zoomMs: 220,
   },
   hatch: {
     id: 'hatch',
@@ -184,6 +220,8 @@ const CUES: Record<string, CameraCue> = {
     vignette: 0.16,
     vignetteMs: 170,
     nudgePx: 5,
+    zoomScale: 1.05,
+    zoomMs: 220,
   },
 };
 

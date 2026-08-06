@@ -133,10 +133,14 @@ export class GameScene extends Phaser.Scene {
   private noticeImpactIds = new Set<number>();
   /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
   private noticeChaseLatched = new Set<number>();
-  /** Event camera kick — decays in updateCamera without zooming HUD. */
+  /** Event camera kick — decays in updateCamera; world layers only (HUD stays 1:1). */
   private camNudgeX = 0;
   private camNudgeY = 0;
   private camNudgeUntil = 0;
+  /** Peak world scale (>1 zooms in); eases to 1 over camZoomUntil. */
+  private camZoomPeak = 1;
+  private camZoomUntil = 0;
+  private camZoomMs = 1;
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -1209,13 +1213,31 @@ export class GameScene extends Phaser.Scene {
       this.camNudgeX = 0;
       this.camNudgeY = 0;
     }
-    const ox = -this.camX + nudgeX;
-    const oy = -this.camY + TOP + nudgeY;
-    this.mapLayer.setPosition(ox, oy);
-    this.shadowLayer.setPosition(ox, oy);
-    this.lightLayer.setPosition(ox, oy);
-    this.itemLayer.setPosition(ox, oy);
-    this.entityLayer.setPosition(ox, oy);
+    // World-layer zoom toward the player (not Phaser camera — HUD stays unzoomed).
+    let zoom = 1;
+    if (this.time.now < this.camZoomUntil && this.camZoomPeak > 1) {
+      const remain = this.camZoomUntil - this.time.now;
+      const u = Math.min(1, remain / Math.max(1, this.camZoomMs));
+      // Ease-out: hold punch early, settle back to 1.
+      const ease = u * u;
+      zoom = 1 + (this.camZoomPeak - 1) * ease;
+    } else {
+      this.camZoomPeak = 1;
+    }
+    const fx = this.playerSprite.x;
+    const fy = this.playerSprite.y;
+    const ox = -this.camX + nudgeX + fx * (1 - zoom);
+    const oy = -this.camY + TOP + nudgeY + fy * (1 - zoom);
+    for (const layer of [
+      this.mapLayer,
+      this.shadowLayer,
+      this.lightLayer,
+      this.itemLayer,
+      this.entityLayer,
+    ]) {
+      layer.setScale(zoom);
+      layer.setPosition(ox, oy);
+    }
     // Keep chevron fresh as camera drifts
     if (!snap) this.syncGoalVisuals(describeObjective(this.state).pos);
   }
@@ -1420,8 +1442,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Event camera — one strongest cue per turn (shake + vignette + world nudge).
-   * Cosmetic only; never delays input. HUD stays un-zoomed.
+   * Event camera — one strongest cue per turn (shake + vignette + nudge + zoom-in).
+   * Cosmetic only; never delays input. World layers zoom; HUD stays 1:1.
    */
   private playEventCamera(logs: readonly LoreId[], noticeImpact: boolean): void {
     const cue = pickCameraCue(logs, { noticeImpact });
@@ -1436,11 +1458,17 @@ export class GameScene extends Phaser.Scene {
     if (cue.vignette > 0) {
       this.cameraAtmosphere?.pulse(cue.vignette, cue.vignetteMs);
     }
+    const kickMs = Math.max(200, cue.shakeMs, cue.vignetteMs * 0.5, cue.zoomMs * 0.6);
     if (cue.nudgePx > 0) {
       const ang = (this.state.turn * 2.399) % (Math.PI * 2);
       this.camNudgeX = Math.cos(ang) * cue.nudgePx;
       this.camNudgeY = Math.sin(ang) * cue.nudgePx;
-      this.camNudgeUntil = this.time.now + Math.max(200, cue.shakeMs, cue.vignetteMs * 0.5);
+      this.camNudgeUntil = this.time.now + kickMs;
+    }
+    if (cue.zoomScale > 1 && cue.zoomMs > 0) {
+      this.camZoomPeak = cue.zoomScale;
+      this.camZoomMs = cue.zoomMs;
+      this.camZoomUntil = this.time.now + cue.zoomMs;
     }
     if (cue.ignite) {
       const color =

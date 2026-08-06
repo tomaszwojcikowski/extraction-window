@@ -30,4 +30,10 @@ describe('pickCameraCue', () => {
     expect(hurt?.shakeIntensity).toBeGreaterThanOrEqual(0.004);
     expect(hurt?.nudgePx).toBeGreaterThanOrEqual(8);
   });
+
+  it('zooms in on impactful events', () => {
+    expect(pickCameraCue(['LOG-HURT'])?.zoomScale).toBeGreaterThan(1);
+    expect(pickCameraCue(['LOG-USE-FLARE'])?.zoomScale).toBeGreaterThan(1);
+    expect(pickCameraCue(['LOG-EXTRACT'])?.zoomScale).toBeGreaterThanOrEqual(1.08);
+  });
 });
