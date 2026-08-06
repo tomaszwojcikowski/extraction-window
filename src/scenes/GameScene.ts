@@ -41,6 +41,8 @@ import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
+import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
+import { collectWakeTells, drawWakeTells } from '../game/presenters/WakeTells';
 
 const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
@@ -97,6 +99,10 @@ export class GameScene extends Phaser.Scene {
   private windowPulseTween: Phaser.Tweens.Tween | null = null;
   private hud!: HudView;
   private chevronGfx!: Phaser.GameObjects.Graphics;
+  private wakeTellGfx!: Phaser.GameObjects.Graphics;
+  private shearReadout!: Phaser.GameObjects.Text;
+  private lastShearState: ShearPressureState | null = null;
+  private shearFlashUntil = 0;
   private goalMarker!: Phaser.GameObjects.Image;
   private goalPulseTween: Phaser.Tweens.Tween | null = null;
   private readonly lightPreferenceHints = new Set<number>();
@@ -255,6 +261,21 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.chevronGfx = this.add.graphics().setScrollFactor(0).setDepth(94);
+
+    this.wakeTellGfx = this.add.graphics();
+    this.wakeTellGfx.setDepth(24);
+    this.entityLayer.add(this.wakeTellGfx);
+
+    this.shearReadout = this.add
+      .text(this.scale.width / 2, 6, '', {
+        fontFamily: FONT_DISPLAY,
+        fontSize: '12px',
+        color: ThemeCss.phosphorBright,
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(93)
+      .setAlpha(0.72);
 
     this.goalMarker = this.add.image(0, 0, 't_quest');
     this.goalMarker.setDisplaySize(TILE_DRAW + 4, TILE_DRAW + 4);
@@ -505,16 +526,46 @@ export class GameScene extends Phaser.Scene {
     img.setPosition(p.x, p.y);
   }
 
-  private drawChrome(): void {
+  private drawChrome(shear = computeShearPressure(this.state)): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    drawHudStripChrome(this.topPanel, { y: 0, height: TOP, width: w, side: 'top' });
+    drawHudStripChrome(this.topPanel, {
+      y: 0,
+      height: TOP,
+      width: w,
+      side: 'top',
+      corrosion: shear.value,
+      accent: shear.accent,
+    });
     drawHudStripChrome(this.bottomPanel, {
       y: h - BOTTOM,
       height: BOTTOM,
       width: w,
       side: 'bottom',
+      corrosion: shear.value,
+      accent: shear.accent,
     });
+  }
+
+  private syncShearPresentation(shear = computeShearPressure(this.state)): void {
+    if (this.lastShearState !== shear.state) {
+      this.lastShearState = shear.state;
+      this.shearFlashUntil = this.time.now + 2200;
+    }
+    const flash = this.shearFlashUntil > this.time.now;
+    this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
+    this.shearReadout.setColor(
+      shear.state === 'Breaching'
+        ? ThemeCss.arcWhite
+        : shear.state === 'Arcing'
+          ? ThemeCss.arc
+          : shear.state === 'Charged'
+            ? ThemeCss.tape
+            : ThemeCss.biolum,
+    );
+    this.shearReadout.setAlpha(flash ? 1 : 0.58);
+    this.shearReadout.setPosition(this.scale.width / 2, 6);
+    this.arcSweep?.setPressure(shear.value, shear.accent);
   }
 
   private rebuildAtmosphere(): void {
@@ -1290,6 +1341,7 @@ export class GameScene extends Phaser.Scene {
     this.lightView.drawBloom(sources, st.visible, st.tiles);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+    drawWakeTells(this.wakeTellGfx, st, collectWakeTells(st), this.animFrame);
     for (const patch of st.contamination) {
       const tile = this.tileSprites[patch.y]?.[patch.x];
       if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
@@ -1356,6 +1408,10 @@ export class GameScene extends Phaser.Scene {
 
     drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, BOTTOM);
 
+    const shear = computeShearPressure(st);
+    this.drawChrome(shear);
+    this.syncShearPresentation(shear);
+
     const pulseBox = { current: this.windowPulseTween };
     this.hud.redraw(st, {
       screenW: this.scale.width,
@@ -1364,6 +1420,7 @@ export class GameScene extends Phaser.Scene {
       pagesOpen: this.pagesOpen,
       tweens: this.tweens,
       windowPulseTween: pulseBox,
+      shear,
     });
     this.windowPulseTween = pulseBox.current;
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
