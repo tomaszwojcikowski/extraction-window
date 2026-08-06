@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { pickCameraCue } from '../../src/game/presenters/EventCamera';
 
 describe('pickCameraCue', () => {
-  it('returns null for routine logs', () => {
+  it('returns null for routine logs and status ticks', () => {
     expect(pickCameraCue(['LOG-WAIT', 'LOG-PICKUP'])).toBeNull();
+    expect(pickCameraCue(['LOG-STATUS-BLEED'])).toBeNull();
+    expect(pickCameraCue(['LOG-ION-PULSE'])).toBeNull();
+    expect(pickCameraCue(['LOG-PB-STRESS'])).toBeNull();
   });
 
   it('picks the highest-priority cue when several fire', () => {
@@ -11,29 +14,54 @@ describe('pickCameraCue', () => {
     expect(cue?.id).toBe('ion_form');
   });
 
-  it('prefers hurt over kill', () => {
-    expect(pickCameraCue(['LOG-KILL', 'LOG-HURT'])?.id).toBe('hurt');
+  it('prefers hurt punch over kill reward', () => {
+    const cue = pickCameraCue(['LOG-KILL', 'LOG-HURT']);
+    expect(cue?.id).toBe('hurt');
+    expect(cue?.profile).toBe('punch');
   });
 
-  it('can promote notice impact when no louder event', () => {
-    expect(pickCameraCue([], { noticeImpact: true })?.id).toBe('notice');
+  it('can promote notice snap when no louder event', () => {
+    expect(pickCameraCue([], { noticeImpact: true })?.profile).toBe('snap');
     expect(pickCameraCue(['LOG-HURT'], { noticeImpact: true })?.id).toBe('hurt');
   });
 
-  it('maps flare and extract', () => {
+  it('maps flare bloom and extract bloom', () => {
     expect(pickCameraCue(['LOG-USE-FLARE'])?.ignite).toBe('flare');
-    expect(pickCameraCue(['LOG-EXTRACT'])?.id).toBe('extract');
+    expect(pickCameraCue(['LOG-USE-FLARE'])?.profile).toBe('bloom');
+    expect(pickCameraCue(['LOG-EXTRACT'])?.profile).toBe('bloom');
   });
 
-  it('keeps hurt kick readable (bumped intensity)', () => {
-    const hurt = pickCameraCue(['LOG-HURT']);
-    expect(hurt?.shakeIntensity).toBeGreaterThanOrEqual(0.004);
-    expect(hurt?.nudgePx).toBeGreaterThanOrEqual(8);
+  it('keeps combat punches inside the ~200ms juice budget', () => {
+    for (const id of ['LOG-HURT', 'LOG-TELE-POUNCE'] as const) {
+      const cue = pickCameraCue([id])!;
+      expect(cue.zoomMs).toBeLessThanOrEqual(200);
+      expect(cue.shakeMs).toBeLessThanOrEqual(200);
+      expect(cue.zoomScale).toBeGreaterThan(1);
+    }
+    const notice = pickCameraCue([], { noticeImpact: true })!;
+    expect(notice.zoomMs).toBeLessThanOrEqual(200);
+    expect(notice.shakeMs).toBeLessThanOrEqual(200);
   });
 
-  it('zooms in on impactful events', () => {
-    expect(pickCameraCue(['LOG-HURT'])?.zoomScale).toBeGreaterThan(1);
-    expect(pickCameraCue(['LOG-USE-FLARE'])?.zoomScale).toBeGreaterThan(1);
-    expect(pickCameraCue(['LOG-EXTRACT'])?.zoomScale).toBeGreaterThanOrEqual(1.08);
+  it('keeps Quiet as hush (vignette only — no zoom/shake hog)', () => {
+    const quiet = pickCameraCue(['LOG-QUIET-ON'])!;
+    expect(quiet.profile).toBe('hush');
+    expect(quiet.zoomScale).toBe(1);
+    expect(quiet.shakeMs).toBe(0);
+    expect(quiet.vignette).toBeGreaterThan(0);
+  });
+
+  it('treats approach shear as pressure, not a punch', () => {
+    const shear = pickCameraCue(['LOG-EVT-SHEAR'])!;
+    expect(shear.profile).toBe('pressure');
+    expect(shear.shakeMs).toBe(0);
+  });
+
+  it('softens kills relative to hurt', () => {
+    const kill = pickCameraCue(['LOG-KILL'])!;
+    const hurt = pickCameraCue(['LOG-HURT'])!;
+    expect(kill.profile).toBe('reward');
+    expect(kill.shakeMs).toBe(0);
+    expect(kill.zoomScale).toBeLessThan(hurt.zoomScale);
   });
 });

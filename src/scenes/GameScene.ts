@@ -1442,7 +1442,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Event camera — one strongest cue per turn (shake + vignette + nudge + zoom-in).
+   * Event camera — one ranked cue per turn (profiles: punch/snap/pressure/bloom/reward/hush).
    * Cosmetic only; never delays input. World layers zoom; HUD stays 1:1.
    */
   private playEventCamera(logs: readonly LoreId[], noticeImpact: boolean): void {

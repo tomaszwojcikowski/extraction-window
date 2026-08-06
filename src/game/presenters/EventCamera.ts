@@ -2,230 +2,217 @@ import type { LoreId } from '../../data/lore';
 
 /**
  * Event-driven camera cues — presentation only.
- * One strongest cue per turn (juice budget); never delays input.
  *
- * Aligns with DESIGN_PRINCIPLES: amplify meaningful state changes,
- * silence routine motion (no cue for ordinary WASD).
- *
- * Intensities are tuned to read clearly at 60fps without nausea —
- * Phaser shake ~0.003–0.006, world nudge ~4–10px, world zoom ~1.04–1.12.
- * Zoom is applied to world layers only (HUD stays 1:1).
+ * DESIGN_PRINCIPLES §7 (juice with a budget):
+ * - Amplify meaningful state changes; silence routine motion / status ticks.
+ * - ≤ ~200ms for notice/combat punches; climaxes may linger slightly.
+ * - Prefer one lead channel per beat (punch ≠ bloom ≠ pressure ≠ hush).
+ * - Never delays input; world-layer zoom only (HUD stays 1:1).
  */
 
 export type CameraIgnite = 'scan' | 'flare' | 'fauna';
 
+/** Lead feel for the cue — keeps channels from all shouting at once. */
+export type CameraProfile = 'punch' | 'snap' | 'pressure' | 'bloom' | 'reward' | 'hush';
+
 export type CameraCue = {
-  /** Stable id for tests / debug. */
   id: string;
-  /** Higher wins when multiple logs fire in one turn. */
   priority: number;
+  profile: CameraProfile;
   shakeMs: number;
   shakeIntensity: number;
   vignette: number;
   vignetteMs: number;
-  /** Brief world-space nudge (px) — felt as a camera kick without zooming HUD. */
   nudgePx: number;
-  /** Peak world-layer scale (1 = none). Eases back to 1 over zoomMs. */
+  /** Peak world-layer scale (1 = none). */
   zoomScale: number;
   zoomMs: number;
   ignite?: CameraIgnite;
 };
 
+function cue(
+  id: string,
+  priority: number,
+  profile: CameraProfile,
+  partial: Omit<CameraCue, 'id' | 'priority' | 'profile'>,
+): CameraCue {
+  return { id, priority, profile, ...partial };
+}
+
+/**
+ * Profile recipes (tuned once; per-event overrides stay rare):
+ * - punch: threat to the operator (shake + zoom lead)
+ * - snap: Notice Impact resolve (short, Pass 4 budget)
+ * - pressure: shelf/Window stress (vignette lead; soft zoom)
+ * - bloom: player power / milestone (zoom + vignette; little shake)
+ * - reward: kill resolve (soft zoom; no trauma stack)
+ * - hush: Quiet stance (vignette only — Quiet must not hog chrome)
+ */
 const CUES: Record<string, CameraCue> = {
-  extract: {
-    id: 'extract',
-    priority: 100,
-    shakeMs: 160,
-    shakeIntensity: 0.0035,
-    vignette: 0.28,
-    vignetteMs: 400,
-    nudgePx: 6,
-    zoomScale: 1.1,
-    zoomMs: 420,
-  },
-  ion_form: {
-    id: 'ion_form',
-    priority: 90,
-    shakeMs: 180,
-    shakeIntensity: 0.0045,
-    vignette: 0.3,
-    vignetteMs: 280,
-    nudgePx: 8,
-    zoomScale: 1.08,
-    zoomMs: 320,
-    ignite: 'scan',
-  },
-  ion_clear: {
-    id: 'ion_clear',
-    priority: 85,
-    shakeMs: 140,
-    shakeIntensity: 0.0035,
-    vignette: 0.24,
-    vignetteMs: 240,
-    nudgePx: 5,
-    zoomScale: 1.06,
-    zoomMs: 260,
-    ignite: 'scan',
-  },
-  flare: {
-    id: 'flare',
-    priority: 88,
-    shakeMs: 150,
-    shakeIntensity: 0.0048,
-    vignette: 0.22,
-    vignetteMs: 200,
-    nudgePx: 9,
-    zoomScale: 1.09,
-    zoomMs: 280,
-    ignite: 'flare',
-  },
-  spore: {
-    id: 'spore',
-    priority: 70,
-    shakeMs: 120,
-    shakeIntensity: 0.0035,
-    vignette: 0.18,
-    vignetteMs: 180,
-    nudgePx: 5,
-    zoomScale: 1.06,
-    zoomMs: 220,
-    ignite: 'fauna',
-  },
-  hurt: {
-    id: 'hurt',
-    priority: 80,
-    shakeMs: 140,
-    shakeIntensity: 0.0055,
+  extract: cue('extract', 100, 'bloom', {
+    shakeMs: 80,
+    shakeIntensity: 0.002,
     vignette: 0.26,
-    vignetteMs: 200,
-    nudgePx: 10,
+    vignetteMs: 320,
+    nudgePx: 4,
     zoomScale: 1.1,
-    zoomMs: 260,
-  },
-  kill: {
-    id: 'kill',
-    priority: 65,
+    zoomMs: 360,
+  }),
+  ion_form: cue('ion_form', 90, 'pressure', {
+    shakeMs: 70,
+    shakeIntensity: 0.002,
+    vignette: 0.28,
+    vignetteMs: 220,
+    nudgePx: 3,
+    zoomScale: 1.06,
+    zoomMs: 240,
+    ignite: 'scan',
+  }),
+  ion_clear: cue('ion_clear', 85, 'pressure', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.2,
+    vignetteMs: 200,
+    nudgePx: 0,
+    zoomScale: 1.04,
+    zoomMs: 200,
+    ignite: 'scan',
+  }),
+  flare: cue('flare', 88, 'bloom', {
+    shakeMs: 60,
+    shakeIntensity: 0.0022,
+    vignette: 0.18,
+    vignetteMs: 160,
+    nudgePx: 5,
+    zoomScale: 1.08,
+    zoomMs: 200,
+    ignite: 'flare',
+  }),
+  spore: cue('spore', 70, 'punch', {
     shakeMs: 100,
-    shakeIntensity: 0.003,
-    vignette: 0.16,
-    vignetteMs: 150,
+    shakeIntensity: 0.0035,
+    vignette: 0.14,
+    vignetteMs: 140,
     nudgePx: 5,
     zoomScale: 1.06,
-    zoomMs: 200,
-  },
-  tele: {
-    id: 'tele',
-    priority: 75,
-    shakeMs: 130,
-    shakeIntensity: 0.0042,
-    vignette: 0.2,
-    vignetteMs: 180,
-    nudgePx: 7,
-    zoomScale: 1.09,
-    zoomMs: 240,
-  },
-  uplink_wave: {
-    id: 'uplink_wave',
-    priority: 82,
-    shakeMs: 160,
-    shakeIntensity: 0.005,
-    vignette: 0.28,
-    vignetteMs: 240,
-    nudgePx: 8,
-    zoomScale: 1.08,
-    zoomMs: 280,
-  },
-  uplink_done: {
-    id: 'uplink_done',
-    priority: 78,
-    shakeMs: 110,
-    shakeIntensity: 0.0032,
-    vignette: 0.2,
-    vignetteMs: 260,
-    nudgePx: 5,
-    zoomScale: 1.05,
-    zoomMs: 280,
-  },
-  handshake: {
-    id: 'handshake',
-    priority: 60,
-    shakeMs: 90,
-    shakeIntensity: 0.0025,
-    vignette: 0.16,
-    vignetteMs: 200,
-    nudgePx: 4,
-    zoomScale: 1.04,
-    zoomMs: 220,
-  },
-  approach_shear: {
-    id: 'approach_shear',
-    priority: 72,
+    zoomMs: 180,
+    ignite: 'fauna',
+  }),
+  hurt: cue('hurt', 80, 'punch', {
     shakeMs: 120,
-    shakeIntensity: 0.0035,
-    vignette: 0.18,
-    vignetteMs: 180,
+    shakeIntensity: 0.005,
+    vignette: 0.16,
+    vignetteMs: 140,
+    nudgePx: 8,
+    zoomScale: 1.09,
+    zoomMs: 180,
+  }),
+  kill: cue('kill', 65, 'reward', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.1,
+    vignetteMs: 120,
+    nudgePx: 2,
+    zoomScale: 1.04,
+    zoomMs: 140,
+  }),
+  tele: cue('tele', 75, 'punch', {
+    shakeMs: 110,
+    shakeIntensity: 0.004,
+    vignette: 0.14,
+    vignetteMs: 140,
     nudgePx: 6,
+    zoomScale: 1.08,
+    zoomMs: 180,
+  }),
+  uplink_wave: cue('uplink_wave', 82, 'punch', {
+    shakeMs: 130,
+    shakeIntensity: 0.0045,
+    vignette: 0.18,
+    vignetteMs: 160,
+    nudgePx: 7,
     zoomScale: 1.07,
-    zoomMs: 240,
-  },
-  quiet: {
-    id: 'quiet',
-    priority: 45,
+    zoomMs: 200,
+  }),
+  uplink_done: cue('uplink_done', 78, 'bloom', {
     shakeMs: 0,
     shakeIntensity: 0,
     vignette: 0.18,
     vignetteMs: 220,
-    nudgePx: 0,
-    zoomScale: 1.03,
-    zoomMs: 260,
-  },
-  elite: {
-    id: 'elite',
-    priority: 68,
-    shakeMs: 130,
-    shakeIntensity: 0.004,
-    vignette: 0.2,
-    vignetteMs: 220,
-    nudgePx: 7,
-    zoomScale: 1.07,
-    zoomMs: 260,
-  },
-  desync: {
-    id: 'desync',
-    priority: 55,
-    shakeMs: 100,
-    shakeIntensity: 0.0028,
-    vignette: 0.18,
+    nudgePx: 2,
+    zoomScale: 1.05,
+    zoomMs: 240,
+  }),
+  handshake: cue('handshake', 60, 'bloom', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.14,
     vignetteMs: 180,
-    nudgePx: 5,
-    zoomScale: 1.05,
-    zoomMs: 220,
-  },
-  notice: {
-    id: 'notice',
-    priority: 50,
-    shakeMs: 110,
-    shakeIntensity: 0.0035,
-    vignette: 0.18,
-    vignetteMs: 170,
-    nudgePx: 5,
-    zoomScale: 1.06,
-    zoomMs: 220,
-  },
-  hatch: {
-    id: 'hatch',
-    priority: 58,
-    shakeMs: 110,
-    shakeIntensity: 0.0032,
+    nudgePx: 0,
+    zoomScale: 1.04,
+    zoomMs: 200,
+  }),
+  approach_shear: cue('approach_shear', 72, 'pressure', {
+    shakeMs: 0,
+    shakeIntensity: 0,
     vignette: 0.16,
-    vignetteMs: 170,
-    nudgePx: 5,
+    vignetteMs: 160,
+    nudgePx: 2,
+    zoomScale: 1.04,
+    zoomMs: 180,
+  }),
+  quiet: cue('quiet', 45, 'hush', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.14,
+    vignetteMs: 180,
+    nudgePx: 0,
+    zoomScale: 1,
+    zoomMs: 0,
+  }),
+  elite: cue('elite', 68, 'reward', {
+    shakeMs: 50,
+    shakeIntensity: 0.002,
+    vignette: 0.14,
+    vignetteMs: 160,
+    nudgePx: 3,
     zoomScale: 1.05,
-    zoomMs: 220,
-  },
+    zoomMs: 180,
+  }),
+  desync: cue('desync', 55, 'pressure', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.16,
+    vignetteMs: 160,
+    nudgePx: 2,
+    zoomScale: 1.04,
+    zoomMs: 180,
+  }),
+  notice: cue('notice', 50, 'snap', {
+    shakeMs: 90,
+    shakeIntensity: 0.003,
+    vignette: 0.12,
+    vignetteMs: 120,
+    nudgePx: 4,
+    zoomScale: 1.05,
+    zoomMs: 160,
+  }),
+  hatch: cue('hatch', 58, 'bloom', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.12,
+    vignetteMs: 160,
+    nudgePx: 2,
+    zoomScale: 1.04,
+    zoomMs: 180,
+  }),
 };
 
-/** Lore → cue id (first match contributes; priority still picks winner). */
+/**
+ * Lore → cue. Intentionally omits routine ticks:
+ * bleed ticks, ion pulses, uplink hold ticks, Quiet-off, PB soft stress
+ * (approach already cues via LOG-EVT-APPROACH).
+ */
 const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-EXTRACT', 'extract'],
   ['LOG-ION-FRONT', 'ion_form'],
@@ -233,7 +220,7 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-USE-FLARE', 'flare'],
   ['LOG-SPORE-BURST', 'spore'],
   ['LOG-HURT', 'hurt'],
-  ['LOG-STATUS-BLEED', 'hurt'],
+  // Enemy beams that damage the operator — same punch as hurt (one cue if both fire).
   ['LOG-BEAM-FIRE', 'hurt'],
   ['LOG-OVERWATCH-FIRE', 'hurt'],
   ['LOG-UPLINK-WAVE-HIT', 'uplink_wave'],
@@ -251,14 +238,13 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-USE-JAMMER', 'quiet'],
   ['LOG-QUIET-ON', 'quiet'],
   ['LOG-PB-DESYNC', 'desync'],
-  ['LOG-PB-STRESS', 'desync'],
   ['LOG-SEALED-OPEN', 'hatch'],
   ['LOG-SEALED-PRY', 'hatch'],
 ];
 
 /**
  * Pick at most one camera cue for this turn’s new logs.
- * Returns null when nothing warrants a kick (routine movement).
+ * Returns null when nothing warrants a kick (routine movement / ticks).
  */
 export function pickCameraCue(
   logs: readonly LoreId[],
@@ -268,8 +254,8 @@ export function pickCameraCue(
   const seen = new Set(logs);
   for (const [loreId, cueKey] of LOG_TO_CUE) {
     if (!seen.has(loreId)) continue;
-    const cue = CUES[cueKey]!;
-    if (!best || cue.priority > best.priority) best = cue;
+    const next = CUES[cueKey]!;
+    if (!best || next.priority > best.priority) best = next;
   }
   if (opts?.noticeImpact) {
     const notice = CUES.notice!;
