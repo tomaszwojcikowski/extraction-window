@@ -233,6 +233,42 @@ export function drawMenuChrome(
  * In-run HUD rails — bolted brackets top and bottom of the map viewport.
  * `corrosion` (0–1) is driven by Shear Pressure so the kit visibly degrades.
  */
+function drawShearLegGlyphs(
+  g: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  leg: ShearLegGlyph,
+  accent: number,
+  animFrame: number,
+  corrosion: number,
+): void {
+  const pulse = 0.45 + (animFrame % 4) * 0.14;
+  const stormX = x;
+  const busX = x + 52;
+  const stormHot = leg === 'storm' || leg === 'both';
+  const busHot = leg === 'bus' || leg === 'both';
+
+  // Window / storm tick marks
+  g.lineStyle(1, Theme.storm, (stormHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  for (let i = 0; i < 3; i++) {
+    const tx = stormX + i * 4;
+    g.beginPath();
+    g.moveTo(tx, y + 1);
+    g.lineTo(tx, y + 4);
+    g.strokePath();
+  }
+
+  // Bus reserve capsule
+  g.lineStyle(1, Theme.energy, (busHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  g.strokeRect(busX, y, 10, 5);
+  if (busHot) {
+    g.fillStyle(Theme.energy, 0.35 * pulse);
+    g.fillRect(busX + 1, y + 1, 8, 3);
+  }
+}
+
+export type ShearLegGlyph = 'storm' | 'bus' | 'both';
+
 export function drawHudStripChrome(
   g: Phaser.GameObjects.Graphics,
   opts: {
@@ -242,6 +278,9 @@ export function drawHudStripChrome(
     side: 'top' | 'bottom';
     corrosion?: number;
     accent?: number;
+    /** Which clock leg drives shear — pulsing sub-glyphs on the top strip tape. */
+    drainingLeg?: ShearLegGlyph;
+    animFrame?: number;
   },
 ): void {
   const { y, height, width, side } = opts;
@@ -263,6 +302,17 @@ export function drawHudStripChrome(
     g.fillRect(0, y + height - 1, width, 1);
     drawStencilTicks(g, 12, y + height - 8, width - 150, false, Theme.inkMute);
     drawTapeStrip(g, width - 128, y + 4, 116, 6, accent, 0.55);
+    if (corrosion > 0.12 && opts.drainingLeg) {
+      drawShearLegGlyphs(
+        g,
+        width - 118,
+        y + 5,
+        opts.drainingLeg,
+        accent,
+        opts.animFrame ?? 0,
+        corrosion,
+      );
+    }
   } else {
     g.fillStyle(Theme.panelEdge, 0.9);
     g.fillRect(0, y + 2, width, 1);

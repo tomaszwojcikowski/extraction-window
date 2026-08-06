@@ -42,7 +42,8 @@ import { drawFovVignette } from '../game/views/MapView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
-import { collectWakeTells, drawWakeTells } from '../game/presenters/WakeTells';
+import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters/WakeTells';
+import { pressureRevealTint } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
@@ -536,6 +537,8 @@ export class GameScene extends Phaser.Scene {
       side: 'top',
       corrosion: shear.value,
       accent: shear.accent,
+      drainingLeg: shear.drainingLeg,
+      animFrame: this.animFrame,
     });
     drawHudStripChrome(this.bottomPanel, {
       y: h - BOTTOM,
@@ -689,6 +692,12 @@ export class GameScene extends Phaser.Scene {
       isPagesOpen: () => this.pagesOpen,
       queueAction: (action) => {
         this.queuedAction = action;
+        this.applyFieldLighting();
+      },
+      getQueuedAction: () => this.queuedAction,
+      clearQueuedAction: () => {
+        this.queuedAction = null;
+        this.applyFieldLighting();
       },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
@@ -736,6 +745,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private commitTurnAction(action: Action): void {
+    this.queuedAction = null;
     this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
     const prevTutorialActive = this.state.tutorialActive;
@@ -1334,6 +1344,7 @@ export class GameScene extends Phaser.Scene {
 
   private applyFieldLighting(): void {
     const st = this.state;
+    const shear = computeShearPressure(st);
     this.lightView.syncTurn(st.turn);
     const sources = this.lightView.allSources(st, this.animFrame);
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
@@ -1341,15 +1352,59 @@ export class GameScene extends Phaser.Scene {
     this.lightView.drawBloom(sources, st.visible, st.tiles);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
-    drawWakeTells(this.wakeTellGfx, st, collectWakeTells(st), this.animFrame);
-    for (const patch of st.contamination) {
-      const tile = this.tileSprites[patch.y]?.[patch.x];
-      if (!tile || !st.visible[patch.y]?.[patch.x]) continue;
-      tile.setTint(Theme.biolum);
+
+    const preview = this.wakePreviewContext();
+    const tells = preview ? preview.tells : collectWakeTells(st);
+    drawWakeTells(this.wakeTellGfx, st, tells, this.animFrame, {
+      originX: preview?.originX,
+      originY: preview?.originY,
+      previewDest: preview?.previewDest,
+    });
+
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        const tile = this.tileSprites[y]?.[x];
+        if (!tile) continue;
+        const reveal = pressureRevealTint(st, shear, x, y, this.animFrame);
+        if (reveal !== null) {
+          tile.setTint(reveal);
+          continue;
+        }
+        const patch = st.contamination.some((c) => c.x === x && c.y === y);
+        if (patch && st.visible[y]?.[x]) {
+          tile.setTint(Theme.biolum);
+        } else {
+          tile.clearTint();
+        }
+      }
     }
     if (this.firstLight !== null) {
       this.lightView.applySweep(st, this.tileSprites, this.firstLight);
     }
+  }
+
+  /** Queued move destination — preview wake footprint before commit. */
+  private wakePreviewContext():
+    | {
+        originX: number;
+        originY: number;
+        previewDest: { x: number; y: number };
+        tells: ReturnType<typeof wakeTellsAt>;
+      }
+    | null {
+    const qa = this.queuedAction;
+    if (qa?.type !== 'move') return null;
+    const px = this.state.player.x + qa.dx;
+    const py = this.state.player.y + qa.dy;
+    if (px < 0 || py < 0 || px >= this.state.width || py >= this.state.height) return null;
+    const dest = this.state.tiles[py]?.[px];
+    if (!dest?.walkable) return null;
+    return {
+      originX: px,
+      originY: py,
+      previewDest: { x: px, y: py },
+      tells: wakeTellsAt(this.state, px, py),
+    };
   }
 
   /** Everything solid enough to throw a shadow this frame. */

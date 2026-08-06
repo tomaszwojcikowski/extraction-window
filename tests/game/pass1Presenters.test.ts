@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { STORM_TURNS } from '../../src/campaign/spine';
-import { collectWakeTells } from '../../src/game/presenters/WakeTells';
+import {
+  collectWakeTells,
+  wakeTellsAt,
+  wouldNoticeEnemy,
+} from '../../src/game/presenters/WakeTells';
 import { computeShearPressure } from '../../src/game/presenters/ShearPressure';
 import type { Enemy, GameState } from '../../src/sim/types';
 
@@ -87,6 +91,7 @@ describe('computeShearPressure', () => {
     const spec = computeShearPressure(stubState({}));
     expect(spec.value).toBe(0);
     expect(spec.state).toBe('Calm');
+    expect(spec.drainingLeg).toBe('both');
   });
 
   it('maps 62/38 blend to named thresholds', () => {
@@ -102,6 +107,14 @@ describe('computeShearPressure', () => {
     );
     expect(breaching.state).toBe('Breaching');
     expect(breaching.value).toBeGreaterThanOrEqual(0.75);
+    expect(breaching.drainingLeg).toBe('storm');
+  });
+
+  it('names bus as draining leg when window is full and reserve low', () => {
+    const spec = computeShearPressure(
+      stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
+    );
+    expect(spec.drainingLeg).toBe('bus');
   });
 });
 
@@ -134,11 +147,54 @@ describe('collectWakeTells', () => {
     expect(collectWakeTells(st)).toHaveLength(0);
   });
 
-  it('flags guard false-positive: aggro range exceeds engage gate', () => {
+  it('guard engage gate: no ring beyond dist 2 without loot or alert', () => {
     const st = stubState({
-      enemies: [stubEnemy('crawler', 9, 5)], // guard, aggro 3, dist=4 from player
+      enemies: [stubEnemy('crawler', 9, 5)], // guard, dist=4
     });
-    // QA documents this as feel bug — tell shows but AI guard won't engage until dist<=2.
+    expect(collectWakeTells(st)).toHaveLength(0);
+    expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(false);
+  });
+
+  it('guard engage gate: ring at dist 2', () => {
+    const st = stubState({
+      enemies: [stubEnemy('crawler', 7, 5)], // dist=2
+    });
     expect(collectWakeTells(st)).toHaveLength(1);
+  });
+
+  it('guard engage gate: ring at extended range when loot taken', () => {
+    const st = stubState({
+      lootTakenThisSector: true,
+      enemies: [stubEnemy('crawler', 9, 5)],
+    });
+    expect(collectWakeTells(st)).toHaveLength(1);
+  });
+
+  it('sentinel mirrors aggro-range notice', () => {
+    const st = stubState({
+      enemies: [stubEnemy('sentinel', 8, 5)], // dist=3, aggro 5
+    });
+    expect(collectWakeTells(st)).toHaveLength(1);
+  });
+
+  it('marks wander as neutral notice', () => {
+    const st = stubState({
+      enemies: [stubEnemy('mite', 6, 5)],
+    });
+    const tells = collectWakeTells(st);
+    expect(tells).toHaveLength(1);
+    expect(tells[0]!.neutralNotice).toBe(true);
+    expect(tells[0]!.litBoost).toBe(false);
+  });
+
+  it('wakeTellsAt preview differs from live when stepping into lit tile', () => {
+    const st = stubState({
+      enemies: [stubEnemy('wasp', 6, 6)], // lit-prefer
+    });
+    st.illumination[5]![5] = 0;
+    st.illumination[6]![6] = 4;
+    expect(collectWakeTells(st).every((t) => !t.litBoost)).toBe(true);
+    const preview = wakeTellsAt(st, 6, 6);
+    expect(preview.some((t) => t.litBoost)).toBe(true);
   });
 });

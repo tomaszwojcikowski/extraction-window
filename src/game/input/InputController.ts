@@ -19,6 +19,8 @@ export type InputHost = {
   isHelpOpen(): boolean;
   isPagesOpen(): boolean;
   queueAction(action: Action): void;
+  getQueuedAction(): Action | null;
+  clearQueuedAction(): void;
   syncFieldAudio(force?: boolean): void;
   /** Brief mute on/off tip in the hint line. */
   showMuteHint(muted: boolean): void;
@@ -138,5 +140,23 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
     return;
   }
 
+  // Move preview: first direction queues footprint; matching direction again commits.
+  if (action.type === 'move' && !host.isAnimating()) {
+    const queued = host.getQueuedAction();
+    if (
+      queued?.type === 'move' &&
+      queued.dx === action.dx &&
+      queued.dy === action.dy
+    ) {
+      host.clearQueuedAction();
+      host.commitTurnAction(action);
+      return;
+    }
+    host.queueAction(action);
+    sfx.play('ui');
+    return;
+  }
+
+  host.clearQueuedAction();
   host.commitTurnAction(action);
 }
