@@ -82,6 +82,7 @@ describe('drill bay tutorial', () => {
   it('visible ion hazard still taxes bus in the drill (path-tax lesson)', () => {
     const st = drill(7);
     clearHostiles(st);
+    st.scriptedFired.tut_light = true;
     st.player.x = 12;
     st.player.y = 7;
     expect(st.tiles[7]![12]!.kind).toBe('hazard');
@@ -106,6 +107,18 @@ describe('drill bay tutorial', () => {
     expect(st.player.statuses.bleed).toBe(4);
   });
 
+  it('shows lamp / LIT·SHADOW·QUIET tip after the first turn', () => {
+    const st = drill(7);
+    expect(contextHint(st)).toBe('UI-TUT-MOVE');
+    clearHostiles(st);
+    st.player.x = 2;
+    st.player.y = 7;
+    applyAction(st, { type: 'wait' });
+    expect(contextHint(st)).toBe('UI-TUT-LIGHT');
+    expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(true);
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
+  });
+
   it('shows get hint when standing on ground loot after turn 0', () => {
     const st = drill(7);
     const loot = st.items.find((i) => i.kind === 'salvage' || i.kind === 'field_sample')!;
@@ -120,6 +133,7 @@ describe('drill bay tutorial', () => {
     const st = drill(7);
     const loot = st.items.find((i) => i.kind === 'salvage' || i.kind === 'field_sample')!;
     st.turn = 1;
+    st.scriptedFired.tut_light = true;
     clearHostiles(st);
     st.player.x = loot.x;
     st.player.y = loot.y;
@@ -132,6 +146,7 @@ describe('drill bay tutorial', () => {
     const st = drill(7);
     const stalker = st.enemies.find((enemy) => enemy.kind === 'stalker')!;
     st.turn = 2;
+    st.scriptedFired.tut_light = true;
     stalker.windup = 0;
     st.visible[stalker.y]![stalker.x] = true;
     // Avoid kit / hazard hints dominating
@@ -153,6 +168,7 @@ describe('drill bay tutorial', () => {
     const st = drill(7);
     const stalker = st.enemies.find((enemy) => enemy.kind === 'stalker')!;
     st.turn = 2;
+    st.scriptedFired.tut_light = true;
     stalker.windup = 1;
     st.visible[stalker.y]![stalker.x] = true;
 
@@ -166,6 +182,7 @@ describe('drill bay tutorial', () => {
     st.turn = 3;
     stalker.windup = 0;
     st.scriptedFired.tut_wake = true;
+    st.scriptedFired.tut_light = true;
     st.inventory = st.inventory.filter(
       (s) =>
         s.kind !== 'salvage' &&
@@ -188,6 +205,7 @@ describe('drill bay tutorial', () => {
   it('hints walk-to-hatch until standing on exit, then press-to-exit', () => {
     const st = drill(7);
     st.turn = 2;
+    st.scriptedFired.tut_light = true;
     clearHostiles(st);
     st.player.x = 2;
     st.player.y = 7;

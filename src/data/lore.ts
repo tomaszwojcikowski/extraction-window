@@ -68,6 +68,7 @@ export const LORE = {
     'HUD READOUT\n' +
     'HP / SHD / BUS / WINDOW / XP — vitals, shields, bus, shear window, proficiency\n' +
     'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant; quiet suppresses EM-HIGH aggro)\n' +
+    'LIGHT — hooded lamp fills a wall-cut pool · LIT / SHADOW / QUIET badge = how fauna reads you (Quiet = EM Scrambler)\n' +
     'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping, Q quiet)\n' +
     'QUEST — optional survey procedure tracker (step text + 1/N); chevron prefers nearby steps\n' +
     'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
@@ -95,10 +96,12 @@ export const LORE = {
   'UI-HINT-SEALED': 'Sealed hatch adjacent — need sealant or baton pry (>)',
   'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with pulse baton (>)',
   'UI-HINT-QUIET':
-    'Quiet stance — fauna less interested, but soft shadow lets adjacent pounces skip their telegraph',
+    'Quiet stance — lamp dims red, fauna interest down; soft shadow lets adjacent pounces skip telegraph',
   'UI-HINT-QUIET-EM':
     'EM critical — use EM Scrambler (u) for quiet stance; suppresses fauna aggro bump (FOV shrinks)',
   'UI-HINT-FLARE': 'Standing dark near hostiles — plasma flare lights the fight',
+  'UI-HINT-LIGHT':
+    'LIT = your lamp holds the tile · SHADOW = soft band ambush likes · QUIET = scrambler dims the lamp',
   'UI-HINT-EQUIP': 'Wearable gear in kit — open kit (i), select, press u to equip',
   'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
@@ -114,6 +117,8 @@ export const LORE = {
   'UI-HINT-PEEK-TEACH':
     'Wake lines at your feet — Shift+direction peeks the next tile before you step',
   'UI-TUT-MOVE': 'WASD moves · Shift+dir peeks who you’d wake · . waits',
+  'UI-TUT-LIGHT':
+    'Hooded lamp fills the pool (walls cut it). Badge LIT / SHADOW / QUIET = how fauna reads you',
   'UI-TUT-GET': 'g — pick up salvage underfoot',
   'UI-TUT-KIT': 'i kit · u use — ID salvage / fire flare / seal hazards',
   'UI-TUT-HAZARD':
@@ -358,6 +363,8 @@ export const LORE = {
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
   'LOG-TUT-WELCOME':
     'Drill bay — storm paused. Wake lines show who notices you; ion tiles tax the bus (alcove or sealant). Hatch east starts the real drop.',
+  'LOG-TUT-LIGHT':
+    'Hooded work lamp — pool stops at walls. HUD badge: LIT (clear), SHADOW (ambush likes it), QUIET (scrambler dims lamp red).',
   'LOG-TUT-HAZARD':
     'Ion hazard underfoot drains bus — visible path tax, not a surprise trap. Sealant Foam (u) clears it this visit, or walk the south alcove.',
   'LOG-TUT-WAKE':

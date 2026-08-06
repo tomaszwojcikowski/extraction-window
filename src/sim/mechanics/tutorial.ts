@@ -53,6 +53,13 @@ export const tutorialMechanic: Mechanic = {
     );
     if (underfoot) return 'UI-TUT-GET';
 
+    // Once: how the hooded lamp / LIT·SHADOW·QUIET badge works
+    if (!state.scriptedFired.tut_light) {
+      once(state, 'tut_light');
+      pushLog(state, 'LOG-TUT-LIGHT');
+      return 'UI-TUT-LIGHT';
+    }
+
     // Visible ion hazard — known path tax, not a hidden trap
     if (onOrAdjacentHazard(state)) {
       if (once(state, 'tut_hazard_log')) pushLog(state, 'LOG-TUT-HAZARD');

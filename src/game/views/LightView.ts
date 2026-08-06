@@ -15,11 +15,11 @@ export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
-/** Rays per light pool. 28 is enough for wall-shaped edges at this tile size. */
-const POOL_RAYS = 28;
-const POOL_STEP = 0.34;
-/** Additive shells per pool — more shells, smoother falloff, same silhouette. */
-const POOL_SHELLS = 9;
+/** Rays per light pool — enough to read as a soft wall-cut shape, not a star. */
+const POOL_RAYS = 48;
+const POOL_STEP = 0.28;
+/** Additive shells per pool — fewer shells = less banding; rays carry the silhouette. */
+const POOL_SHELLS = 7;
 
 function multiplyTint(base: number, light: number, amount: number): number {
   const br = (base >> 16) & 0xff;
@@ -181,8 +181,8 @@ export class LightView {
   }
 
   /**
-   * Wall-aware bloom. Each source gets three nested ray-marched pools rather
-   * than three circles, so light stops at geometry and spills down corridors.
+   * Wall-aware bloom. Ray-marched pools stop at geometry and spill down corridors.
+   * Personal lamp (hooded work light) stays soft; flares/beacons keep a hotter core.
    */
   drawBloom(
     sources: LightSource[],
@@ -195,22 +195,25 @@ export class LightView {
       if (!row?.[s.x]) continue;
       const wx = s.x * TILE_DRAW + TILE_DRAW / 2;
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
+      const personal =
+        s.color === LightTemp.lamp || s.color === LightTemp.lampQuiet;
       const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity)));
-      const aCore = Math.min(0.62, 0.12 + s.intensity * 0.3);
+      // Personal lamp: readable pool without a white-hot blob on the sprite.
+      const aCore = personal
+        ? Math.min(0.34, 0.07 + s.intensity * 0.16)
+        : Math.min(0.62, 0.12 + s.intensity * 0.3);
 
       if (tiles) {
         // Stacked shells cut to the room's shape. Each shell's alpha is the
         // *increment* of `irradiance()` between two radii, so the additive
-        // stack reproduces the sim's windowed inverse-square falloff instead
-        // of a soft brush — and a wall clips every shell at once.
+        // stack reproduces the sim's windowed inverse-square falloff.
         const reach = this.poolReach(tiles, s.x, s.y, s.radius);
         const peak = irradiance(s.radius / POOL_SHELLS, s.radius, 1) || 1;
         let prev = 0;
         for (let k = POOL_SHELLS; k >= 1; k--) {
           const scale = k / POOL_SHELLS;
-          // Gamma on the profile: keeps the inverse-square shape but lets the
-          // mid-field read on a dark screen instead of collapsing to a dot.
-          const f = Math.pow(Math.min(1, irradiance(scale * s.radius, s.radius, 1) / peak), 0.55);
+          // Milder gamma — mid-field stays visible without banding into rings.
+          const f = Math.pow(Math.min(1, irradiance(scale * s.radius, s.radius, 1) / peak), 0.62);
           const inc = f - prev;
           prev = f;
           if (inc <= 0.001) continue;
@@ -224,12 +227,18 @@ export class LightView {
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
       }
 
-      // Filament: the emitter itself, always the hottest thing on screen.
-      const core = Math.max(5, TILE_DRAW * 0.26 * gain);
-      this.lightsGfx.fillStyle(s.color, aCore * 0.55);
-      this.lightsGfx.fillCircle(wx, wy, core);
-      this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.7), Math.min(0.9, aCore * 1.6));
-      this.lightsGfx.fillCircle(wx, wy, core * 0.4);
+      // Emitter filament — soft for the hooded lamp, hot for flares / tech.
+      if (personal) {
+        const core = Math.max(3, TILE_DRAW * 0.14 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.45);
+        this.lightsGfx.fillCircle(wx, wy, core);
+      } else {
+        const core = Math.max(5, TILE_DRAW * 0.26 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.55);
+        this.lightsGfx.fillCircle(wx, wy, core);
+        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.7), Math.min(0.9, aCore * 1.6));
+        this.lightsGfx.fillCircle(wx, wy, core * 0.4);
+      }
     }
   }
 
