@@ -74,15 +74,15 @@ export function tickEnemyStatusEffects(state: GameState, enemy: Enemy): void {
 
 export function statusHud(statuses: StatusMap): string {
   const parts: string[] = [];
-  if ((statuses.stun ?? 0) > 0) parts.push(`STN${statuses.stun}`);
-  if ((statuses.bleed ?? 0) > 0) parts.push(`BLD${statuses.bleed}`);
-  if ((statuses.blind ?? 0) > 0) parts.push(`BLN${statuses.blind}`);
-  if ((statuses.jam ?? 0) > 0) parts.push(`JAM${statuses.jam}`);
-  if ((statuses.fatigue ?? 0) > 0) parts.push(`FAT${statuses.fatigue}`);
-  if ((statuses.marked ?? 0) > 0) parts.push(`MRK${statuses.marked}`);
-  if ((statuses.ion_burn ?? 0) > 0) parts.push(`PLS${statuses.ion_burn}`);
-  if ((statuses.expose ?? 0) > 0) parts.push(`XPS${statuses.expose}`);
-  return parts.join(' ');
+  if ((statuses.stun ?? 0) > 0) parts.push(`Stun ${statuses.stun}`);
+  if ((statuses.bleed ?? 0) > 0) parts.push(`Bleed ${statuses.bleed}`);
+  if ((statuses.blind ?? 0) > 0) parts.push(`Blind ${statuses.blind}`);
+  if ((statuses.jam ?? 0) > 0) parts.push(`Jam ${statuses.jam}`);
+  if ((statuses.fatigue ?? 0) > 0) parts.push(`Fatigue ${statuses.fatigue}`);
+  if ((statuses.marked ?? 0) > 0) parts.push(`Marked ${statuses.marked}`);
+  if ((statuses.ion_burn ?? 0) > 0) parts.push(`Burn ${statuses.ion_burn}`);
+  if ((statuses.expose ?? 0) > 0) parts.push(`Exposed ${statuses.expose}`);
+  return parts.join(' · ');
 }
 
 const SCAR_BADGE: Record<ScanScar['id'], string> = {

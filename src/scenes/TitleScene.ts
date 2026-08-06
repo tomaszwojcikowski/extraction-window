@@ -130,8 +130,8 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(width / 2, height * 0.78, lore('UI-CONTROLS'), {
         fontFamily: FONT_DATA,
-        fontSize: '11px',
-        color: ThemeCss.inkMute,
+        fontSize: '12px',
+        color: ThemeCss.inkDim,
         align: 'center',
         wordWrap: { width: width - 120 },
       })
@@ -140,8 +140,8 @@ export class TitleScene extends Phaser.Scene {
     this.add
       .text(width / 2, height * 0.86, lore('UI-BRIEF-TUT'), {
         fontFamily: FONT_DATA,
-        fontSize: '11px',
-        color: ThemeCss.inkMute,
+        fontSize: '13px',
+        color: ThemeCss.ink,
       })
       .setOrigin(0.5);
 

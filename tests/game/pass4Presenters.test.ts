@@ -221,11 +221,11 @@ describe('fluid-lock copy', () => {
     }
     expect(body).toMatch(/WASD/);
     expect(body).toMatch(/Shift/);
-    expect(body).toMatch(/WAIT\s+\./);
+    expect(body).toMatch(/\. — wait/);
     expect(controls).toMatch(/WASD move/);
-    expect(controls).toMatch(/Shift\+dir peek/);
+    expect(controls).toMatch(/Shift peek/);
     expect(controls).toMatch(/\. wait/);
-    expect(tut).toMatch(/\. waits/);
-    expect(teach).toMatch(/Shift\+direction/);
+    expect(tut).toMatch(/\. wait/);
+    expect(teach).toMatch(/Shift\+dir/);
   });
 });
