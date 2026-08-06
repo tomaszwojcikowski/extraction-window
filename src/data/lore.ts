@@ -6,19 +6,19 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Recover spare Nav Lattice · reach drop skiff before the shear window collapses',
-  'UI-BRIEF-TUT': 'Short drill bay first · then Meridian Shelf extract',
+  'UI-BRIEF': 'Recover the Nav Lattice · reach the drop skiff before the shear window closes',
+  'UI-BRIEF-TUT': 'Training bay first — then extract before the shear window closes',
   'UI-MISSION-STATUS': 'MISSION STATUS',
-  'UI-PRESS-START': 'ENTER — begin survey mission',
+  'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
   'UI-SEED-HINT': '← → adjust · R randomize',
   'UI-HP': 'Vitals',
   'UI-ENERGY': 'Bus / life-support',
   'UI-WINDOW': 'Shear window',
   'UI-BAR-HP': 'HP',
-  'UI-BAR-SHD': 'SHD',
-  'UI-BAR-EPS': 'BUS',
-  'UI-BAR-WINDOW': 'WINDOW',
+  'UI-BAR-SHD': 'Shield',
+  'UI-BAR-EPS': 'Bus',
+  'UI-BAR-WINDOW': 'Window',
   'UI-BAR-XP': 'XP',
   'UI-SECTOR': 'Sector',
   'UI-ION-FRONT': 'ION FRONT',
@@ -27,108 +27,97 @@ export const LORE = {
   'UI-ATK': 'ATK',
   'UI-DEF': 'DEF',
   'UI-INV': 'Field kit',
-  'UI-LOG': 'Mission log',
+  'UI-LOG': 'Log',
   'UI-OBJECTIVE': 'Objective',
-  'UI-HELP': 'Survey team manual',
+  'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
-    'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
-    '\n',
+    'TRAINING BAY\n' +
+    'Reach the east hatch.\n' +
+    '\n' +
+    'WASD move · Shift+dir peek wake · . wait\n' +
+    'g get · i kit · u use · Enter on hatch\n' +
+    '\n' +
+    'Ion tiles tax Bus — sealant (u) or south alcove.\n' +
+    'Storm clock starts after you leave.\n' +
+    '\n' +
+    '? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
-    'DRILL BAY (first run)\n' +
-    'Reach the east hatch — WASD move, Shift+dir peeks wake, g get, i kit, u use, >/=/Enter exit.\n' +
-    'Visible ion tiles tax the bus (sealant or south alcove). Storm clock starts after the hatch.\n' +
+    'CONTROLS\n' +
+    'WASD / arrows — move one tile\n' +
+    'Shift+dir — peek wake (release to clear)\n' +
+    '. — wait · b — brace · r — retreat (4 Bus)\n' +
+    'g — get · i — kit · u — use / equip\n' +
+    'Enter / Space / > — hatch, beacon, pad, scan, hail\n' +
+    'p — PADD notes · 1/2 — pick skill · ? — help · m — mute\n' +
+    'Esc — close peek / kit / PADD / help\n' +
     '\n' +
-    'MOVE    WASD or arrow keys — one tile per turn\n' +
-    'PEEK    Shift+direction — ghost + wake preview (who you would wake); release Shift to clear\n' +
-    'WAIT    . (period) — hold position, time still passes\n' +
-    'BRACE   b — +2 DEF for the enemy phase; pounces lose their bonus\n' +
-    'RETREAT r — step away from a visible close/winding hostile; costs 4 bus\n' +
-    'GET     g — pick up salvage under your boots\n' +
-    'KIT     i — open field kit; ↑↓ or 1–9 to select; esc closes\n' +
-    'USE     u — use consumables, or equip/stow tool·suit·utility gear\n' +
-    'EXIT    Enter / Space / = / > — hatch, beacon, drop skiff pad, anomaly, or hail a field contact\n' +
-    'PADD    p — mission notes recovered this run\n' +
-    'SKILL   1 or 2 — choose a field skill when prompted (move locked until then)\n' +
-    'DART    u on Microdart, then a direction — hits a seen target within 3 tiles\n' +
-    'HELP    ? — this manual\n' +
-    'MUTE    m — toggle sound\n' +
-    'ESC     clear peek / close kit / PADD / help (opens help if nothing is open)\n' +
+    'PRIORITIES\n' +
+    'Kit keeps you alive (med / Bus / shields).\n' +
+    'Splice Key + Nav Lattice unlock extract — they are not consumables.\n' +
+    'Survey procedures refund Window and grant XP / PADD.\n' +
+    'Drop skiff: > start uplink · . hold · Coolant skips a hold · Flare repels the wave.\n' +
     '\n' +
-    'WHY GATHER\n' +
-    'Kit keeps you alive through the shear window (med / bus / shields / tactics).\n' +
-    'Splice Key + Nav Lattice are spine objectives — use fails; they unlock extract.\n' +
-    'Survey procedures grant XP, PADD mods, and storm refunds. Survey rooms and hatch explore% also refund window.\n' +
-    'Elites and campaign bosses are optional prizes — rare kit, XP, and storm.\n' +
-    'Field contacts (hail with >) grant PADD lore; ensign/tech can loan a short-lived ally.\n' +
-    'Full kit + salvage converts to shear-window time instead of a dead pickup.\n' +
-    'At the drop skiff, > starts uplink and . holds it; coolant skips a hold and flare repels its pressure wave.\n' +
-    '\n' +
-    'HUD READOUT\n' +
-    'HP / SHD / BUS / WINDOW / XP — vitals, shields, bus, shear window, proficiency\n' +
-    'ATK DEF — attack / defense · EM — contamination (flush with coolant / sealant; quiet suppresses EM-HIGH aggro)\n' +
-    'LIGHT — hooded lamp fills a wall-cut pool · LIT / SHADOW / QUIET badge = how fauna reads you (Quiet = EM Scrambler)\n' +
-    'SYS — active gear timers (P probe, S stim, F filter, J jammer, L lens, M nav ping, Q quiet)\n' +
-    'QUEST — optional survey procedure tracker (step text + 1/N); chevron prefers nearby steps\n' +
-    'STN BLD PLS XPS — stun, bleed, plasma burn, exposed\n' +
-    'KEY / CORE / BEACON OPEN — mission plates on the top-right',
+    'HUD\n' +
+    'HP · Shield · Bus · Window · XP\n' +
+    'ATK / DEF combat · EM contamination (Coolant / Sealant / Quiet)\n' +
+    'LIT / SHADOW / QUIET — how fauna reads your lamp (Quiet = Scrambler)\n' +
+    'KEY / CORE — mission plates · SYS line — active gear timers',
   'UI-KIT-PURPOSE':
-    'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
+    'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
   'UI-CONTROLS':
-    'WASD move · Shift+dir peek · . wait · b brace · r retreat · g get · i kit · u use · >/=/Enter hatch · ? help',
+    'WASD move · Shift peek · . wait · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
-  'UI-HINT-EXIT': 'On hatch — press Enter / Space / = / > to advance',
-  'UI-HINT-BEACON': 'Emergency beacon — press > to start splice handshake',
-  'UI-HINT-HANDSHAKE': 'Handshake syncing — hold position on the beacon',
-  'UI-HINT-SHUTTLE': 'Drop skiff pad — press > with Nav Lattice',
-  'UI-HINT-UPLINK-HOLD': 'Uplink live — press . to hold; coolant skips a hold, flare repels the wave',
-  'UI-HINT-DESYNC': 'Pattern buffer desynced — use Bus Coolant before skiff lock',
-  'UI-HINT-ITEM': 'Salvage underfoot — press g to recover',
-  'UI-HINT-POI': 'Anomaly underfoot — press > to scan',
-  'UI-HINT-AIM': 'Aim microdart — direction toward a visible, lit target (within 3)',
-  'UI-HINT-USE-MED': 'Vitals critical — open kit (i) and use Field Hypo (u)',
-  'UI-HINT-USE-ENERGY': 'Bus low — open kit (i) and use Power Cell / Coolant (u)',
-  'UI-HINT-USE-ARMOR': 'Shields thin — use Shield Charge plate (u)',
-  'UI-HINT-USE-PATCH': 'Bleeding — open kit (i) and use Medpatch (u)',
-  'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
-  'UI-HINT-SEALED': 'Sealed hatch adjacent — need sealant or baton pry (>)',
-  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with pulse baton (>)',
+  'UI-HINT-EXIT': 'On hatch — Enter to advance',
+  'UI-HINT-BEACON': 'Beacon — press > to start handshake',
+  'UI-HINT-HANDSHAKE': 'Handshake syncing — hold on the beacon',
+  'UI-HINT-SHUTTLE': 'Drop skiff — press > with Nav Lattice',
+  'UI-HINT-UPLINK-HOLD': 'Uplink live — . hold · Coolant skips · Flare repels',
+  'UI-HINT-DESYNC': 'Pattern desync — use Bus Coolant before skiff lock',
+  'UI-HINT-ITEM': 'Salvage here — press g',
+  'UI-HINT-POI': 'Anomaly here — press > to scan',
+  'UI-HINT-AIM': 'Aim dart — direction to a lit target within 3',
+  'UI-HINT-USE-MED': 'HP critical — kit (i) · Field Hypo (u)',
+  'UI-HINT-USE-ENERGY': 'Bus low — kit (i) · Power Cell / Coolant (u)',
+  'UI-HINT-USE-ARMOR': 'Shields thin — Shield Charge (u)',
+  'UI-HINT-USE-PATCH': 'Bleeding — kit (i) · Medpatch (u)',
+  'UI-HINT-USE-SEALANT': 'Hazard here — Sealant Foam (u)',
+  'UI-HINT-SEALED': 'Sealed hatch — Sealant or baton pry (>)',
+  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with baton (>)',
   'UI-HINT-QUIET':
-    'Quiet stance — lamp dims red, fauna interest down; soft shadow lets adjacent pounces skip telegraph',
+    'Quiet — lamp dims; fauna less interested; adjacent pounces may skip telegraph',
   'UI-HINT-QUIET-EM':
-    'EM critical — use EM Scrambler (u) for quiet stance; suppresses fauna aggro bump (FOV shrinks)',
-  'UI-HINT-FLARE': 'Standing dark near hostiles — plasma flare lights the fight',
+    'EM high — Scrambler (u) for Quiet (cuts aggro; FOV shrinks)',
+  'UI-HINT-FLARE': 'Dark near hostiles — Flare lights the fight',
   'UI-HINT-LIGHT':
-    'LIT = your lamp holds the tile · SHADOW = soft band ambush likes · QUIET = scrambler dims the lamp',
-  'UI-HINT-EQUIP': 'Wearable gear in kit — open kit (i), select, press u to equip',
-  'UI-HINT-EXPLORE': 'Explore more floor — hatch survey bonus near 55%',
-  'UI-HINT-SKILL': 'Field skill ready — press 1 or 2 to choose (movement locked)',
-  'UI-HINT-TELE': 'Hostile winding up — b brace or r retreat; strike to interrupt',
-  'UI-HINT-BRAND': 'Branded hostile visible — optional elite reward; route around or use its counter-kit',
-  'UI-HINT-ALLY-DRONE': 'DRONE LAMP active — it can interrupt one visible overwatch every few turns',
-  'UI-HINT-ALLY-ESCORT': 'ESCORT COVER active while adjacent — +1 DEF during the enemy phase',
-  'UI-HINT-PREFER-DARK': 'Fauna favors shadow — stay lit to reduce its interest',
-  'UI-HINT-PREFER-LIT': 'Hunter favors light — break line or move into shadow',
-  'UI-HINT-QUEST': 'Survey procedure underfoot — press >',
-  'UI-HINT-NPC': 'Field contact nearby — press > to hail',
-  'UI-HINT-COMMIT': 'Shift+direction peeks wake · release Shift to clear · . waits',
+    'LIT clear · SHADOW ambush band · QUIET scrambler dims the lamp',
+  'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
+  'UI-HINT-EXPLORE': 'Explore more — hatch survey bonus near 55%',
+  'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
+  'UI-HINT-TELE': 'Hostile winding up — b brace · r retreat · or strike',
+  'UI-HINT-BRAND': 'Branded elite — optional reward; route around or counter-kit',
+  'UI-HINT-ALLY-DRONE': 'Drone lamp — can interrupt one overwatch every few turns',
+  'UI-HINT-ALLY-ESCORT': 'Escort cover while adjacent — +1 DEF',
+  'UI-HINT-PREFER-DARK': 'Fauna likes shadow — stay LIT',
+  'UI-HINT-PREFER-LIT': 'Hunter likes light — break line or find shadow',
+  'UI-HINT-QUEST': 'Survey procedure here — press >',
+  'UI-HINT-NPC': 'Field contact — press > to hail',
+  'UI-HINT-COMMIT': 'Shift+dir peeks wake · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
-    'Wake lines at your feet — Shift+direction peeks the next tile before you step',
-  'UI-TUT-MOVE': 'WASD moves · Shift+dir peeks who you’d wake · . waits',
+    'Wake lines at your feet — Shift+dir peeks before you step',
+  'UI-TUT-MOVE': 'WASD move · Shift+dir peek wake · . wait',
   'UI-TUT-LIGHT':
-    'Hooded lamp fills the pool (walls cut it). Badge LIT / SHADOW / QUIET = how fauna reads you',
-  'UI-TUT-GET': 'g — pick up salvage underfoot',
-  'UI-TUT-KIT': 'i kit · u use — ID salvage / fire flare / seal hazards',
+    'Your lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dim',
+  'UI-TUT-GET': 'g — pick up salvage',
+  'UI-TUT-KIT': 'i kit · u use — ID salvage / flare / seal',
   'UI-TUT-HAZARD':
-    'Ion hazard — known bus tax. Cross it, seal with Sealant Foam (u), or take the south alcove',
+    'Ion hazard taxes Bus — cross, Sealant (u), or south alcove',
   'UI-TUT-WAKE':
-    'Lines from your feet = fauna that notices you here · Shift+dir peeks the next tile',
+    'Lines from your feet = who notices you · Shift+dir peeks next tile',
   'UI-TUT-FIGHT': 'Bump to fight · b brace · r retreat · flare if dark',
-  'UI-TUT-STALKER': 'Scrub stalker winding up — flare it, brace, or slip south past hazard',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — shear window clock starts on the real drop',
-  'UI-TUT-EXIT': 'On hatch — walk off/back or Enter / Space / = / > to begin the drop',
+  'UI-TUT-STALKER': 'Stalker winding up — flare, brace, or slip south',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window clock starts after',
+  'UI-TUT-EXIT': 'On hatch — Enter (or walk off) to begin the drop',
   'UI-SURVEY': 'SRV',
   'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
@@ -147,7 +136,7 @@ export const LORE = {
   'UI-PAGES-EMPTY': 'No PADD pages recovered this survey mission.',
   'UI-PAGES-HINT': 'p or esc — close',
   'UI-PAGES-PURPOSE':
-    'Field kit = survive the shear window. Key/Lattice = extract. Procedures = PADD + storm. Elites/bosses = rare kit + XP.',
+    'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective / proficiency',
   'UI-QUEST-KEY': 'KEY',
@@ -191,8 +180,8 @@ export const LORE = {
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Survey anomaly',
   'OBJ-TUT-HATCH': '→ Drill hatch (learn wake, hazard, kit)',
-  'OBJ-TUT-BRIEF': 'Training bay — storm paused; hatch starts the real shear window',
-  'HAZ-STORM': 'Shear storm extraction window remaining.',
+  'OBJ-TUT-BRIEF': 'Training bay — Window paused until you leave the hatch',
+  'HAZ-STORM': 'Window critical',
   'UI-CODEX': 'PADD',
 
   // Sectors
@@ -362,14 +351,14 @@ export const LORE = {
   'LOG-DROP':
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
   'LOG-TUT-WELCOME':
-    'Drill bay — storm paused. Wake lines show who notices you; ion tiles tax the bus (alcove or sealant). Hatch east starts the real drop.',
+    'Training bay — Window paused. Wake lines show who notices you; ion tiles tax Bus. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
-    'Hooded work lamp — pool stops at walls. HUD badge: LIT (clear), SHADOW (ambush likes it), QUIET (scrambler dims lamp red).',
+    'Lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET scrambler dims lamp.',
   'LOG-TUT-HAZARD':
-    'Ion hazard underfoot drains bus — visible path tax, not a surprise trap. Sealant Foam (u) clears it this visit, or walk the south alcove.',
+    'Ion hazard drains Bus — seal with Sealant (u) or take the south alcove.',
   'LOG-TUT-WAKE':
-    'Wake lines track fauna interest. Step carefully — Shift+direction peeks the next tile’s footprint without moving.',
-  'LOG-TUT-DONE': 'Drill complete — real drop on Relay Scar Flats. Shear window is live.',
+    'Wake lines = fauna interest. Shift+dir peeks the next tile without moving.',
+  'LOG-TUT-DONE': 'Training complete — Relay Scar Flats. Shear window is live.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',

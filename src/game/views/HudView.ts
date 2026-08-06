@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { lore } from '../../data/lore';
-import { shortEquipName } from '../../data/items';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import { describeObjective, stickyMilestone, type GameState } from '../../sim';
@@ -152,52 +151,53 @@ export class HudView {
     );
     this.syncWindowPulse(400, barY, 100, barH, st.stormTurns <= 80, opts);
 
-    const probe = st.player.probeTurns > 0 ? ` P${st.player.probeTurns}` : '';
-    const stim = st.player.stimTurns > 0 ? ` S${st.player.stimTurns}` : '';
-    const filter = st.player.filterTurns > 0 ? ` F${st.player.filterTurns}` : '';
-    const jam = st.player.jammerTurns > 0 ? ` J${st.player.jammerTurns}` : '';
-    const quiet = isQuietStance(st) ? ' Q' : '';
-    const lens = st.player.lensTurns > 0 ? ` L${st.player.lensTurns}` : '';
-    const map = st.player.mapperTurns > 0 ? ` M${st.player.mapperTurns}` : '';
-    const desync = st.patternDesync > 0 ? ` DS${st.patternDesync}` : '';
+    const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
+    const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
+    const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
+    const jam = st.player.jammerTurns > 0 ? `Quiet ${st.player.jammerTurns}` : '';
+    const quiet = isQuietStance(st) && st.player.jammerTurns <= 0 ? 'Quiet' : '';
+    const lens = st.player.lensTurns > 0 ? `Lens ${st.player.lensTurns}` : '';
+    const map = st.player.mapperTurns > 0 ? `Nav ${st.player.mapperTurns}` : '';
+    const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
-      ? ` ${lore('UI-ALLY-DRONE')}`
+      ? lore('UI-ALLY-DRONE')
       : st.allies.some(
             (a) =>
               a.alive &&
               a.kind === 'away_escort' &&
               Math.abs(a.x - st.player.x) + Math.abs(a.y - st.player.y) === 1,
           )
-        ? ` ${lore('UI-ALLY-ESCORT')}`
+        ? lore('UI-ALLY-ESCORT')
         : '';
-    const doctrine =
-      st.doctrineQuiet > 0 || st.doctrineProbe > 0
-        ? `  ${lore('UI-DOCTRINE')}:Q${st.doctrineQuiet}${st.doctrineQuiet >= 3 ? '(-1EM)' : '/3'} P${st.doctrineProbe}${st.doctrineProbe >= 3 ? '(+5W)' : '/3'}`
-        : '';
-    const activeSys = `${probe}${stim}${filter}${jam}${quiet}${lens}${map}${desync}${allyRole}`;
-    const systems = activeSys ? `  ${lore('UI-ACTIVE')}:${activeSys}` : '';
-    const tool = st.player.equip.tool
-      ? `  ${lore('UI-TOOL')}:${shortEquipName(st.player.equip.tool)}`
-      : '';
-    const armorEq = st.player.equip.armor
-      ? `  ${lore('UI-EQUIP-ARMOR')}:${shortEquipName(st.player.equip.armor)}`
-      : '';
-    const utilEq = st.player.equip.utility
-      ? `  ${lore('UI-EQUIP-UTIL')}:${shortEquipName(st.player.equip.utility)}`
-      : '';
+    const doctrineBits: string[] = [];
+    if (st.doctrineQuiet > 0) {
+      doctrineBits.push(
+        st.doctrineQuiet >= 3 ? 'Quiet doctrine' : `Quiet ${st.doctrineQuiet}/3`,
+      );
+    }
+    if (st.doctrineProbe > 0) {
+      doctrineBits.push(
+        st.doctrineProbe >= 3 ? 'Probe doctrine' : `Probe ${st.doctrineProbe}/3`,
+      );
+    }
+    const doctrine = doctrineBits.length ? ` · ${doctrineBits.join(' · ')}` : '';
+    const sysBits = [probe, stim, filter, jam, quiet, lens, map, desync, allyRole].filter(
+      Boolean,
+    );
+    const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
     const statuses = statusHud(st.player.statuses);
     const scars = scarHud(st.scanScars);
-    const statusLine = statuses ? `  ${statuses}` : '';
-    const scarLine = scars ? `  SCAR:${scars}` : '';
+    const statusLine = statuses ? ` · ${statuses}` : '';
+    const scarLine = scars ? ` · Scar ${scars}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0) +
       (st.scanScars.some((s) => s.id === 'array_bleed') ? 1 : 0);
     const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
-    const emPart = shearPrimary ? '' : `  ${lore('UI-EM')} ${st.emStress}`;
+    const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${doctrine}${systems}${tool}${armorEq}${utilEq}${statusLine}${scarLine}`,
+      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${doctrine}${systems}${statusLine}${scarLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -215,7 +215,8 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
-    if (opts.shear) {
+    // Center shear readout covers Calm — badge only when pressure matters.
+    if (opts.shear && opts.shear.state !== 'Calm') {
       badgeSpecs.push({
         label: `SHEAR · ${opts.shear.state.toUpperCase()}`,
         fill: opts.shear.accent,
@@ -308,7 +309,7 @@ export class HudView {
       const base = lore(l.loreId);
       return l.detail ? `› ${base} (${l.detail})` : `› ${base}`;
     });
-    r.logText.setText(`${lore('UI-LOG')}   [? help]\n${logs.join('\n')}`);
+    r.logText.setText(`${lore('UI-LOG')}  ·  ? help\n${logs.join('\n')}`);
 
     let hint =
       opts.movePreviewActive && !st.ui.inventoryOpen && !st.skillPick && !st.ui.aimingDart

@@ -17,10 +17,10 @@ import { applyAction } from '../../src/sim';
 describe('statusHud', () => {
   it('formats active status badges including Wave-1 statuses', () => {
     expect(statusHud({ stun: 1, bleed: 3, ion_burn: 2, expose: 4 })).toBe(
-      'STN1 BLD3 PLS2 XPS4',
+      'Stun 1 · Bleed 3 · Burn 2 · Exposed 4',
     );
     expect(statusHud({ blind: 2, jam: 1, fatigue: 3, marked: 4 })).toBe(
-      'BLN2 JAM1 FAT3 MRK4',
+      'Blind 2 · Jam 1 · Fatigue 3 · Marked 4',
     );
     expect(statusHud({})).toBe('');
   });

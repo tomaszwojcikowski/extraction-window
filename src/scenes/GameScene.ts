@@ -208,8 +208,8 @@ export class GameScene extends Phaser.Scene {
         this.add
           .text(0, 0, '', {
             fontFamily: FONT_DATA,
-            fontSize: '9px',
-            color: ThemeCss.phosphorDim,
+            fontSize: '10px',
+            color: ThemeCss.inkDim,
           })
           .setScrollFactor(0)
           .setDepth(92),
@@ -218,8 +218,8 @@ export class GameScene extends Phaser.Scene {
         this.add
           .text(0, 0, '', {
             fontFamily: FONT_DATA,
-            fontSize: '10px',
-            color: ThemeCss.phosphor,
+            fontSize: '11px',
+            color: ThemeCss.ink,
           })
           .setScrollFactor(0)
           .setDepth(92),
@@ -237,7 +237,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 48, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphor,
+        color: ThemeCss.ink,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -247,7 +247,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 64, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorDim,
+        color: ThemeCss.inkDim,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -346,8 +346,8 @@ export class GameScene extends Phaser.Scene {
     this.logText = this.add
       .text(12, this.scale.height - BOTTOM + 10, '', {
         fontFamily: FONT_DATA,
-        fontSize: '12px',
-        color: ThemeCss.phosphorDim,
+        fontSize: '13px',
+        color: ThemeCss.ink,
         wordWrap: { width: this.scale.width - 24 },
       })
       .setScrollFactor(0)
@@ -356,10 +356,10 @@ export class GameScene extends Phaser.Scene {
     this.hintText = this.add
       .text(this.scale.width / 2, this.scale.height - BOTTOM - 16, '', {
         fontFamily: FONT_DATA,
-        fontSize: '13px',
-        color: ThemeCss.phosphorBright,
+        fontSize: '14px',
+        color: ThemeCss.inkBright,
         backgroundColor: ThemeCss.hintBg,
-        padding: { x: 10, y: 5 },
+        padding: { x: 12, y: 6 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -416,9 +416,9 @@ export class GameScene extends Phaser.Scene {
     this.helpText = this.add
       .text(0, 0, '', {
         fontFamily: FONT_DATA,
-        fontSize: '11px',
-        color: ThemeCss.phosphor,
-        lineSpacing: 3,
+        fontSize: '12px',
+        color: ThemeCss.ink,
+        lineSpacing: 4,
       })
       .setScrollFactor(0)
       .setDepth(112)
@@ -600,18 +600,24 @@ export class GameScene extends Phaser.Scene {
       this.shearFlashUntil = this.time.now + 2200;
     }
     const flash = this.shearFlashUntil > this.time.now;
-    this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
-    this.shearReadout.setColor(
-      shear.state === 'Breaching'
-        ? ThemeCss.arcWhite
-        : shear.state === 'Arcing'
-          ? ThemeCss.arc
-          : shear.state === 'Charged'
-            ? ThemeCss.tape
-            : ThemeCss.biolum,
-    );
-    this.shearReadout.setAlpha(flash ? 1 : 0.58);
-    this.shearReadout.setPosition(this.scale.width / 2, 6);
+    // Calm is quiet chrome — don't compete with bars / LIT badge.
+    if (shear.state === 'Calm' && !flash) {
+      this.shearReadout.setVisible(false);
+    } else {
+      this.shearReadout.setVisible(true);
+      this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
+      this.shearReadout.setColor(
+        shear.state === 'Breaching'
+          ? ThemeCss.arcWhite
+          : shear.state === 'Arcing'
+            ? ThemeCss.arc
+            : shear.state === 'Charged'
+              ? ThemeCss.tape
+              : ThemeCss.biolum,
+      );
+      this.shearReadout.setAlpha(flash ? 1 : 0.88);
+      this.shearReadout.setPosition(this.scale.width / 2, 6);
+    }
     this.arcSweep?.setPressure(shear.value, shear.accent);
   }
 
@@ -1278,7 +1284,13 @@ export class GameScene extends Phaser.Scene {
     this.helpPanel.setVisible(this.helpOpen);
     this.helpText.setVisible(this.helpOpen);
     if (this.helpOpen) {
-      drawHelpOverlay(this.helpPanel, this.helpText, this.scale.width, this.scale.height);
+      drawHelpOverlay(
+        this.helpPanel,
+        this.helpText,
+        this.scale.width,
+        this.scale.height,
+        this.state.tutorialActive,
+      );
     }
   }
 
