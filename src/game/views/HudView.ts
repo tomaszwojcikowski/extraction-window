@@ -117,7 +117,7 @@ export class HudView {
       st.player.energy / st.player.maxEnergy,
       Theme.energy,
       Theme.storm,
-      shearPrimary ? lore('UI-BAR-EPS') : lore('UI-BAR-EPS'),
+      shearPrimary ? '' : lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
       secondaryCss,
       secondaryValCss,
@@ -131,7 +131,7 @@ export class HudView {
       st.stormTurns / STORM_TURNS,
       Theme.storm,
       Theme.danger,
-      lore('UI-BAR-WINDOW'),
+      shearPrimary ? '' : lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
       secondaryCss,
       secondaryValCss,
@@ -215,13 +215,7 @@ export class HudView {
     }
 
     const badgeSpecs: { label: string; fill: number }[] = [];
-    // Center shear readout covers Calm — badge only when pressure matters.
-    if (opts.shear && opts.shear.state !== 'Calm') {
-      badgeSpecs.push({
-        label: `SHEAR · ${opts.shear.state.toUpperCase()}`,
-        fill: opts.shear.accent,
-      });
-    }
+    // Shear state lives on the center readout only (Charged+) — no badge duplicate.
     const stanceBadge = stanceBadgeSpec(st);
     if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.ionFrontTurns > 0) {
@@ -283,10 +277,9 @@ export class HudView {
     }
 
     const stormHot = st.stormTurns <= 80;
-    const stormWarn = st.stormTurns <= 200;
     const urgencyParts: string[] = [];
+    // Window bar + pulse already signal warn; urgency only when critical.
     if (stormHot) urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
-    else if (stormWarn) urgencyParts.push(`${lore('LOG-STORM-WARN')}  (${st.stormTurns})`);
     if (st.skillPick) {
       urgencyParts.push(
         `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
@@ -296,7 +289,7 @@ export class HudView {
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
-    r.urgencyText.setColor(stormHot ? '#cc4444' : stormWarn ? '#ff9933' : ThemeCss.phosphorDim);
+    r.urgencyText.setColor(stormHot ? '#cc4444' : ThemeCss.phosphorDim);
 
     const sticky = stickyMilestone(st.loreEvents);
     if (hasUrgency) {

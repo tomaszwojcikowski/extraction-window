@@ -1,5 +1,5 @@
 import type { Enemy, GameState } from '../../sim/types';
-import { wouldNoticeEnemy } from './WakeTells';
+import { isJammerSilenced, wouldNoticeEnemy } from '../../sim/notice';
 
 /** Pre-turn fauna snapshot for Notice Impact deltas (presentation only). */
 export type NoticeSnap = {
@@ -19,12 +19,7 @@ function manhattan(ax: number, ay: number, bx: number, by: number): number {
   return Math.abs(ax - bx) + Math.abs(ay - by);
 }
 
-/** Mirrors WakeTells jammer silence — presentation honesty only. */
-export function isJammerSilenced(state: GameState, enemy: Enemy): boolean {
-  if (state.player.jammerTurns <= 0) return false;
-  const kind = enemy.kind;
-  return kind === 'mite' || kind === 'wasp' || kind === 'reef_skitter';
-}
+export { isJammerSilenced } from '../../sim/notice';
 
 /** Capture notice predicates before applyAction. */
 export function captureNoticeSnap(state: GameState): NoticeSnap[] {

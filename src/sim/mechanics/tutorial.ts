@@ -3,6 +3,7 @@ import { bfsPath } from '../fov';
 import { inShadow } from '../light';
 import { hasItem } from '../inventory';
 import { pushLog } from '../log';
+import { isJammerSilenced, wouldNoticeEnemy } from '../notice';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 
@@ -86,8 +87,17 @@ export const tutorialMechanic: Mechanic = {
       );
       if (stalkerWinding) return 'UI-TUT-STALKER';
 
-      // Teach wake lines once before generic fight coaching
-      if (!state.scriptedFired.tut_wake) {
+      // Teach wake only when lines would actually show (visible + would notice).
+      const px = state.player.x;
+      const py = state.player.y;
+      const wakeActive = state.enemies.some(
+        (e) =>
+          e.alive &&
+          (state.visible[e.y]?.[e.x] ?? false) &&
+          !isJammerSilenced(state, e) &&
+          wouldNoticeEnemy(state, e, px, py),
+      );
+      if (wakeActive && !state.scriptedFired.tut_wake) {
         once(state, 'tut_wake');
         pushLog(state, 'LOG-TUT-WAKE');
         return 'UI-TUT-WAKE';

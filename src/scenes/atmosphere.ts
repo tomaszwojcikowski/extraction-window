@@ -302,7 +302,7 @@ export function drawHudStripChrome(
     g.fillRect(0, y + height - 1, width, 1);
     drawStencilTicks(g, 12, y + height - 8, width - 150, false, Theme.inkMute);
     drawTapeStrip(g, width - 128, y + 4, 116, 6, accent, 0.55);
-    if (corrosion > 0.12 && opts.drainingLeg) {
+    if (corrosion >= 0.25 && opts.drainingLeg) {
       drawShearLegGlyphs(
         g,
         width - 118,
@@ -325,7 +325,8 @@ export function drawHudStripChrome(
     drawBolt(g, bx, side === 'top' ? y + 6 : y + height - 7);
   }
 
-  if (corrosion > 0.02) {
+  // Calm (value < 0.25) stays quiet — no corrosion etch on the strip.
+  if (corrosion >= 0.25) {
     drawCorrosion(g, 0, side === 'top' ? y + height - 14 : y + 4, width, 14, corrosion, 5);
   }
 }
@@ -422,7 +423,7 @@ export function createArcSweep(scene: Phaser.Scene, depth: number): ArcSweep {
     setPressure(value: number, color: number): void {
       const v = Math.max(0, Math.min(1, value));
       line.setFillStyle(color, 1);
-      line.setAlpha(v < 0.2 ? 0 : 0.05 + v * 0.22);
+      line.setAlpha(v < 0.25 ? 0 : 0.05 + v * 0.22);
       const bucket = Math.floor(v * 4);
       if (bucket !== lastBucket) {
         lastBucket = bucket;

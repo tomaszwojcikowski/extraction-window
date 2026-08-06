@@ -597,11 +597,16 @@ export class GameScene extends Phaser.Scene {
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
     if (this.lastShearState !== shear.state) {
       this.lastShearState = shear.state;
-      this.shearFlashUntil = this.time.now + 2200;
+      // Juice budget ~200ms — never flash-show Calm.
+      if (shear.state !== 'Calm') {
+        this.shearFlashUntil = this.time.now + 200;
+      } else {
+        this.shearFlashUntil = 0;
+      }
     }
     const flash = this.shearFlashUntil > this.time.now;
-    // Calm is quiet chrome — don't compete with bars / LIT badge.
-    if (shear.state === 'Calm' && !flash) {
+    // Single loud channel: center readout for Charged+ only (no Calm, no badge).
+    if (shear.state === 'Calm') {
       this.shearReadout.setVisible(false);
     } else {
       this.shearReadout.setVisible(true);
@@ -611,9 +616,7 @@ export class GameScene extends Phaser.Scene {
           ? ThemeCss.arcWhite
           : shear.state === 'Arcing'
             ? ThemeCss.arc
-            : shear.state === 'Charged'
-              ? ThemeCss.tape
-              : ThemeCss.biolum,
+            : ThemeCss.tape,
       );
       this.shearReadout.setAlpha(flash ? 1 : 0.88);
       this.shearReadout.setPosition(this.scale.width / 2, 6);

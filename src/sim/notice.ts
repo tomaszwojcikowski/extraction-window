@@ -1,0 +1,100 @@
+import { ENEMIES } from '../data/enemies';
+import { emAggroBonus } from './emStress';
+import { inShadow, isLit } from './light';
+import { hasScar, hasStatus, scarStabilized } from './status';
+import { shadowboundDarkAggro } from './brands';
+import { manhattan } from './spatial';
+import type { Enemy, GameState } from './types';
+
+/** Quiet (jammer) silences mite / wasp / reef_skitter interest. */
+export function isJammerSilenced(state: GameState, enemy: Enemy): boolean {
+  if (state.player.jammerTurns <= 0) return false;
+  const kind = enemy.kind;
+  return kind === 'mite' || kind === 'wasp' || kind === 'reef_skitter';
+}
+
+/**
+ * Detection radius as if the player stood on (px, py).
+ * Shared by AI (`effectiveAggro`) and wake/peek presentation.
+ */
+export function effectiveAggroAt(
+  state: GameState,
+  enemy: Enemy,
+  px: number,
+  py: number,
+): number {
+  const def = ENEMIES[enemy.kind];
+  let r = def.aggroRange;
+  if (
+    enemy.kind === 'mite' ||
+    enemy.kind === 'wasp' ||
+    enemy.kind === 'mastling' ||
+    enemy.kind === 'reef_skitter'
+  ) {
+    r += emAggroBonus(state);
+  }
+  if (state.sectorId === 'vault' && state.lootTakenThisSector && !state.paddMods.quietVault) {
+    if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
+  }
+  if (hasStatus(state.player, 'marked')) r += 2;
+  if (state.player.jammerTurns > 0) {
+    const shrink =
+      hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 2 : 3;
+    r = Math.max(1, r - shrink);
+  }
+  if (def.lightPrefer) {
+    const lit = isLit(state, px, py);
+    const dark = inShadow(state, px, py);
+    if (def.lightPrefer === 'dark') {
+      if (lit) r = Math.max(1, r - 2);
+      else if (dark) r += 1;
+    } else if (def.lightPrefer === 'lit') {
+      if (lit) r += 2;
+      else if (dark) r = Math.max(1, r - 1);
+    }
+    if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
+  }
+  r += shadowboundDarkAggro(enemy, inShadow(state, px, py));
+  return r;
+}
+
+/** Detection radius at the player's current tile. */
+export function effectiveAggro(state: GameState, enemy: Enemy): number {
+  return effectiveAggroAt(state, enemy, state.player.x, state.player.y);
+}
+
+/** Whether fauna would notice / engage from player tile (px, py). */
+export function wouldNoticeEnemy(
+  st: GameState,
+  enemy: Enemy,
+  px: number,
+  py: number,
+): boolean {
+  const dist = manhattan(enemy.x, enemy.y, px, py);
+  const aggro = effectiveAggroAt(st, enemy, px, py);
+  const def = ENEMIES[enemy.kind];
+  const inFov = st.visible[enemy.y]?.[enemy.x] ?? false;
+
+  switch (def.behavior) {
+    case 'ambush':
+      if (!enemy.alerted) {
+        const playerDark = inShadow(st, px, py);
+        return dist <= 1 || inFov || (playerDark && dist <= aggro);
+      }
+      return dist <= aggro;
+    case 'guard':
+      return (
+        st.lootTakenThisSector || dist <= 2 || (enemy.alerted && dist <= aggro)
+      );
+    case 'sentinel':
+      return dist <= aggro;
+    case 'swell':
+    case 'wander':
+    case 'skirmish':
+    case 'drain':
+    case 'hunter':
+      return dist <= aggro;
+    default:
+      return dist <= aggro;
+  }
+}

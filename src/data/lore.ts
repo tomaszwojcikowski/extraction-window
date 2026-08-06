@@ -6,15 +6,15 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Recover the Nav Lattice · reach the drop skiff before the shear window closes',
-  'UI-BRIEF-TUT': 'Training bay first — then extract before the shear window closes',
+  'UI-BRIEF': 'Recover the Nav Lattice · reach the drop skiff before the Window closes',
+  'UI-BRIEF-TUT': 'Training bay first — then extract before the Window closes',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
   'UI-SEED-HINT': '← → adjust · R randomize',
   'UI-HP': 'Vitals',
-  'UI-ENERGY': 'Bus / life-support',
-  'UI-WINDOW': 'Shear window',
+  'UI-ENERGY': 'Bus',
+  'UI-WINDOW': 'Window',
   'UI-BAR-HP': 'HP',
   'UI-BAR-SHD': 'Shield',
   'UI-BAR-EPS': 'Bus',
@@ -38,7 +38,7 @@ export const LORE = {
     'g get · i kit · u use · Enter on hatch\n' +
     '\n' +
     'Ion tiles tax Bus — sealant (u) or south alcove.\n' +
-    'Storm clock starts after you leave.\n' +
+    'Window clock starts after you leave.\n' +
     '\n' +
     '? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
@@ -60,7 +60,7 @@ export const LORE = {
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
     'ATK / DEF combat · EM contamination (Coolant / Sealant / Quiet)\n' +
-    'LIT / SHADOW / QUIET — how fauna reads your lamp (Quiet = Scrambler)\n' +
+    'LIT / SHADOW / QUIET — how fauna reads your lamp (Quiet stance via EM Scrambler)\n' +
     'KEY / CORE — mission plates · SYS line — active gear timers',
   'UI-KIT-PURPOSE':
     'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
@@ -90,7 +90,7 @@ export const LORE = {
     'EM high — Scrambler (u) for Quiet (cuts aggro; FOV shrinks)',
   'UI-HINT-FLARE': 'Dark near hostiles — Flare lights the fight',
   'UI-HINT-LIGHT':
-    'LIT clear · SHADOW ambush band · QUIET scrambler dims the lamp',
+    'LIT clear · SHADOW ambush band · QUIET dims the lamp (Scrambler)',
   'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
   'UI-HINT-EXPLORE': 'Explore more — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
@@ -144,23 +144,23 @@ export const LORE = {
   'UI-RELAY-OPEN': 'BEACON OPEN',
   'UI-PROBE': 'ARY',
   'UI-STIM': 'STIM',
-  'UI-PLATE': 'SHLD',
-  'UI-ARMOR': 'SHD',
+  'UI-PLATE': 'Shield',
+  'UI-ARMOR': 'Shield',
   'UI-TOOL': 'TOOL',
   'UI-EQUIP-ARMOR': 'SUIT',
   'UI-EQUIP-UTIL': 'UTIL',
   'UI-ALLY-DRONE': 'DRONE LAMP',
   'UI-ALLY-ESCORT': 'ESCORT COVER',
   'UI-FILTER': 'FILTER',
-  'UI-JAMMER': 'JAM',
+  'UI-JAMMER': 'Quiet',
   'UI-WIN': 'EXTRACTION COMPLETE',
   'UI-WIN-BODY': 'Nav lock restored. Halcyon confirms drop skiff pickup.',
   'UI-LOSE-HP': 'SURVEY OFFICER DOWN',
   'UI-LOSE-HP-BODY': 'Vital signs lost. Hostile contact fatal.',
   'UI-LOSE-ENERGY': 'BUS FAILURE',
-  'UI-LOSE-ENERGY-BODY': 'Life-support bus depleted under ion stress.',
+  'UI-LOSE-ENERGY-BODY': 'Bus depleted under ion stress.',
   'UI-LOSE-STORM': 'WINDOW COLLAPSED',
-  'UI-LOSE-STORM-BODY': 'Shear storm sealed the ridge pad. Halcyon cannot lock.',
+  'UI-LOSE-STORM-BODY': 'Window sealed the ridge pad. Halcyon cannot lock.',
   'UI-LOSE-STUCK': 'MISSION ABORT',
   'UI-LOSE-STUCK-BODY': 'No viable extraction path remaining.',
   'UI-RETRY': 'ENTER — new survey team · ESC — title',
@@ -235,7 +235,7 @@ export const LORE = {
   'ITEM-MED': 'Field Hypo',
   'ITEM-MED-DESC': 'Primary heal — restore +18 HP. Use when vitals drop.',
   'ITEM-ENERGY': 'Power Cell',
-  'ITEM-ENERGY-DESC': 'Standard bus recharge — +20 Power. Tier-1 life support.',
+  'ITEM-ENERGY-DESC': 'Standard Bus recharge — +20 Bus.',
   'ITEM-RATION': 'Field Ration',
   'ITEM-RATION-DESC': 'Emergency both — +8 HP and +8 Power. Not a full heal.',
   'ITEM-PROBE': 'Field Array Pulse',
@@ -243,7 +243,7 @@ export const LORE = {
   'ITEM-STIM': 'Combat Stim',
   'ITEM-STIM-DESC': 'Short ATK surge (+3 ATK, 15 turns).',
   'ITEM-PLATE': 'Shield Charge',
-  'ITEM-PLATE-DESC': 'Repair personal shield pool (+10 SHD).',
+  'ITEM-PLATE-DESC': 'Repair personal Shield pool (+10 Shield).',
   'ITEM-FLARE': 'Plasma Flare',
   'ITEM-FLARE-DESC':
     '4-turn light; burst damage + stun adjacent hostiles; cancels sentinel overwatch and repels the skiff uplink wave.',
@@ -272,7 +272,7 @@ export const LORE = {
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC': 'Neutralize hazard/vent underfoot for this sector visit.',
   'ITEM-BATTERY': 'Reserve Bus Pack',
-  'ITEM-BATTERY-DESC': 'Legacy pack — converts to Bus Coolant (+35 Power).',
+  'ITEM-BATTERY-DESC': 'Legacy pack — converts to Bus Coolant (+35 Bus).',
   'ITEM-PATCH': 'Dermal Seal',
   'ITEM-PATCH-DESC': 'Clears bleed status and restores +8 HP. Not a substitute for Field Hypo.',
   'ITEM-LENS': 'Array Lens',
@@ -353,12 +353,12 @@ export const LORE = {
   'LOG-TUT-WELCOME':
     'Training bay — Window paused. Wake lines show who notices you; ion tiles tax Bus. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
-    'Lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET scrambler dims lamp.',
+    'Lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dims lamp (Scrambler).',
   'LOG-TUT-HAZARD':
     'Ion hazard drains Bus — seal with Sealant (u) or take the south alcove.',
   'LOG-TUT-WAKE':
     'Wake lines = fauna interest. Shift+dir peeks the next tile without moving.',
-  'LOG-TUT-DONE': 'Training complete — Relay Scar Flats. Shear window is live.',
+  'LOG-TUT-DONE': 'Training complete — Relay Scar Flats. Window is live.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',
@@ -405,7 +405,7 @@ export const LORE = {
   'LOG-USE-PLATE': 'Shield charge bonded — pool repaired.',
   'LOG-USE-FLARE': 'Plasma flare discharged — adjacent hostiles stunned.',
   'LOG-USE-FILTER': 'Plasma filter online — drain and plasma hits reduced.',
-  'LOG-USE-COOLANT': 'Bus coolant cycled into life support.',
+  'LOG-USE-COOLANT': 'Bus Coolant cycled into the Bus.',
   'LOG-USE-BLADE': 'Combat knife equipped — ATK up while worn.',
   'LOG-USE-BATON': 'Pulse baton equipped — ATK up; melee stuns.',
   'LOG-USE-HARNESS': 'EVA harness equipped — shield capacity up.',
@@ -522,9 +522,9 @@ export const LORE = {
   'LOG-UPLINK-COOLANT': 'Coolant overclocks the uplink.',
   'LOG-UPLINK-FLARE': 'Flare primed for the incoming pressure wave.',
   'LOG-UPLINK-INTERRUPT': 'Uplink interrupted — left the ridge pad.',
-  'LOG-STORM-WARN': 'Shear window critical.',
+  'LOG-STORM-WARN': 'Window low.',
   'LOG-WINDUP-KILL': 'Windup interrupted — salvage bonus.',
-  'LOG-USE-BATTERY': 'Reserve bus pack cycled — life support topped.',
+  'LOG-USE-BATTERY': 'Reserve Bus Pack cycled — Bus topped.',
   'LOG-USE-PATCH': 'Dermal seal applied — wound closed.',
   'LOG-USE-LENS': 'Array lens online — ranging extended.',
   'LOG-USE-MAPPER': 'Nav ping — hatch bearing locked.',

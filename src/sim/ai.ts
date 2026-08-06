@@ -3,54 +3,22 @@ import { lore } from '../data/lore';
 import { applyPlayerDamage, enemyAttack } from './combat';
 import { pushLog } from './log';
 import { bfsPath } from './fov';
-import { addStatus, hasScar, hasStatus, scarStabilized, tickEnemyStatusEffects } from './status';
+import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
-import { emAggroBonus } from './emStress';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
-import { inShadow, isLit } from './light';
+import { inShadow } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
 import { leaveContamination } from './contamination';
-import { shadowboundDarkAggro } from './brands';
+import { effectiveAggro, isJammerSilenced } from './notice';
 import type { Enemy, GameState, Pos } from './types';
+
+export { effectiveAggro } from './notice';
 
 function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: number): boolean {
   if (enemyAt(state, x, y, skipEnemyId)) return true;
   if (livingAllyAt(state, x, y)) return true;
   if (npcAt(state, x, y)) return true;
   return false;
-}
-
-/** Detection radius after player stance, light, and campaign modifiers. */
-export function effectiveAggro(state: GameState, enemy: Enemy): number {
-  const def = ENEMIES[enemy.kind];
-  let r = def.aggroRange;
-  if (enemy.kind === 'mite' || enemy.kind === 'wasp' || enemy.kind === 'mastling' || enemy.kind === 'reef_skitter') {
-    r += emAggroBonus(state);
-  }
-  if (state.sectorId === 'vault' && state.lootTakenThisSector && !state.paddMods.quietVault) {
-    if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
-  }
-  if (hasStatus(state.player, 'marked')) r += 2;
-  // Quiet stance (jammer): substantially shrink interest radius — hunter_eye softens shrink
-  if (state.player.jammerTurns > 0) {
-    const shrink = hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 2 : 3;
-    r = Math.max(1, r - shrink);
-  }
-  // Light mastery: dark-prefer fauna shy from lamps; lit-prefer hunt bright tiles
-  if (def.lightPrefer) {
-    const lit = isLit(state, state.player.x, state.player.y);
-    const dark = inShadow(state, state.player.x, state.player.y);
-    if (def.lightPrefer === 'dark') {
-      if (lit) r = Math.max(1, r - 2);
-      else if (dark) r += 1;
-    } else if (def.lightPrefer === 'lit') {
-      if (lit) r += 2;
-      else if (dark) r = Math.max(1, r - 1);
-    }
-    if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
-  }
-  r += shadowboundDarkAggro(enemy, inShadow(state, state.player.x, state.player.y));
-  return r;
 }
 
 function stepToward(
@@ -324,9 +292,7 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
 }
 
 function silenced(state: GameState, enemy: Enemy): boolean {
-  if (state.player.jammerTurns <= 0) return false;
-  const kind = enemy.kind;
-  return kind === 'mite' || kind === 'wasp' || kind === 'reef_skitter';
+  return isJammerSilenced(state, enemy);
 }
 
 /**
