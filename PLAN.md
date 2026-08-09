@@ -49,7 +49,7 @@ Partly procedural per seed: layouts, room templates, multiroom quests, branches,
 - Inventory **16** slots; quest items occupy slots; two equip slots (tool + armor); **18** item kinds, one clear tool per job
 - In-run XP/skills (levels 1–8); three room quests (salvage / purge / vent_seal) billing Window, HP and kit; mission PADD panel
 - FOV + fog of war
-- ~22 enemy types + elites/bosses; biome encounter tables; telegraph punish (pounce/swell)
+- 21 enemy kinds + elites/bosses; biome encounter tables; silhouette reads the behaviour family, and armed windups paint the ground they threaten (lunge / reach / zone / beam / overwatch / swell)
 - Mechanics registry: room quests, beacon handshake, quiet stance, pattern buffer, scripted events
 - Seeded RNG (mulberry32)
 

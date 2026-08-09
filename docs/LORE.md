@@ -63,7 +63,31 @@ Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and
 - **Scar Mite** — grazes residual field-array bleed
 - **Wash Spore** — blooms on stirred shear-water EM; swell burst
 - **Pulse Wasp** — hunts bloom trails / probe signatures
-- Later biomes: Array Feeder, Fault Skitter, Fissure Rift, Reef Skitter, Duct Drone, Shear Wraith *(display rename Phase 2)*
+- Later biomes: Array Feeder, Fault Skitter, Fissure Rift, Reef Skitter, Duct Drone
+
+21 kinds across 8 behaviours. The roster is built so each family asks a
+different question, and so the answer is readable before it lands:
+
+| Family | Reads as | The question |
+| --- | --- | --- |
+| Wander / swell | Low scuttler; inflating pod | Ignore it, or kill the pod before it bursts? |
+| Skirmish | Winged darter | It bites and gives ground — chase or let it go? |
+| Ambush | Crouched, waiting | Light the room, or accept a strike from the dark? |
+| Drain | Segmented siphon | Spend the Bus, or spend a filter? |
+| Guard | Planted plated shell | Take the loot and wake it, or route around? |
+| Sentinel — turret | Levelled barrel | Do not step into the arc while it is locked |
+| Sentinel — emitter | Dish and lane prongs | Break the lane, or brace the beam? |
+| Hunter — lunge | Coiled, raised head | Brace it, or clear the two-tile ring |
+| Hunter — reach | Long swept limbs | Brace — it covers two tiles, so backing off fails |
+| Hunter — zone | Ring around a core | Leave the ring; plating does nothing |
+
+Elites and bosses are crowned versions of a family, not new creatures.
+
+**Telegraphs.** An armed windup paints the ground it threatens, colour-coded by
+the answer it wants: rust for a charge you can brace, sallow wash for the rift's
+pulse you have to step out of, hazard tape for a held shot, arc-white for a beam
+lane. A two-tile charge overcommits and lands winded, so reading the tell buys a
+free turn against it.
 
 ### Death drops
 

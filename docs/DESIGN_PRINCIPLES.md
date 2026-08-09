@@ -131,6 +131,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 - Illumination / LIT / SHADOW / QUIET drive combat hooks; bloom is decoration around that grid.
 - Wake Impact only for fauna the player could already read via live/peek tells.
+- Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use.
 - Autopilot + playtests are the balance oracle (55–85% WR) — feel changes that break legality are bugs.
 
 **Anti-pattern:** PointLight (or any FX) that reads as light through walls while help says “pool stops at walls.”

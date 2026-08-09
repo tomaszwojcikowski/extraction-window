@@ -70,6 +70,29 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 
 ---
 
+## 4a. Hostiles
+
+- **Silhouette is the behaviour, not the species.** `silhouetteFor` in
+  [`tex/deluxe.ts`](../../src/scenes/tex/deluxe.ts) derives the body plan from the
+  `EnemyDef` behaviour fields — never from `kind`. Adding a hostile that reuses an
+  existing family should reuse its shape; a genuinely new question earns a new shape.
+- Twelve plans: scuttler, bloom, darter, crouched, annelid, bulwark, turret, emitter,
+  chassis, coil, reacher, aperture.
+- **Elites and bosses are crowned, not redesigned.** Tier styling is runtime: the crown
+  comes from `def.brand` at bake time, extra bulk from `en.tier` in `syncActors`.
+- Two hostiles sharing a body plan must be far apart in colour. Enforced by
+  [`huntStyles.test.ts`](../../tests/sim/huntStyles.test.ts) — distance ≥ 70 for peers,
+  ≥ 40 where one is the elite of the other. Glyphs are unique across the roster.
+- **Damage type has a temperature.** Kinetic reads warm (amber, orange, rust), ion reads
+  cool (cyan, blue, violet). This is the one colour rule that survives biome tint.
+- **An armed windup paints the tiles it threatens.**
+  [`ThreatView.ts`](../../src/game/views/ThreatView.ts) hatches the ground using
+  `enemyThreatTiles` from the sim, so the overlay cannot drift from what actually
+  resolves. Colour encodes the answer, not the attacker: rust = brace it, sallow = leave
+  the ring, hazard tape = held shot, arc-white = beam lane.
+
+---
+
 ## 5. Chrome budget
 
 Enforcing `DESIGN_PRINCIPLES` §2 and §7:
@@ -112,7 +135,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 
 | Item | State |
 |------|-------|
-| LCARS / silhouette audit | Open — sweep chrome and terrain silhouettes against §4 and §7 |
+| LCARS / silhouette audit | Hostiles done (§4a); chrome and terrain silhouettes still to sweep against §4 and §7 |
 | `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
 | Breaching climax juice | Deferred — one-bet discipline |
 | Per-sector crack-path art | Deferred |
@@ -124,4 +147,5 @@ An art or chrome change ships when:
 1. Biomes still read with tint removed.
 2. No new hex outside `theme.ts` / `light.ts`.
 3. Chrome budget respected — no new always-on element without removing one.
-4. `npm run build` and `npm run playtest:smoke` pass; presentation-only changes must not move sim legality.
+4. Hostile changes are eyeballed on the contact sheet — `npm run dev`, open `/sheet.html`. It bakes every kind in `ENEMIES` and every telegraph, so a silhouette collision or an unpainted threat shows up there before it reaches a run.
+5. `npm run build` and `npm run playtest:smoke` pass; presentation-only changes must not move sim legality.
