@@ -91,6 +91,7 @@ export const ThemeCss = {
   tape: '#e8b93c',
   arc: '#e4622f',
   arcWhite: '#cfefff',
+  scanWash: '#bfd45e',
   safe: '#6fa87a',
   /** Quiet stance's red night filter. */
   lampQuiet: '#d8734a',

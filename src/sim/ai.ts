@@ -1,4 +1,5 @@
 import { ENEMIES } from '../data/enemies';
+import type { HuntStyle } from '../data/enemies';
 import { lore } from '../data/lore';
 import { applyPlayerDamage, enemyAttack } from './combat';
 import { pushLog } from './log';
@@ -189,6 +190,53 @@ export function triggerOverwatchOnAttack(state: GameState, target: Enemy): boole
   return true;
 }
 
+/**
+ * Ground an armed enemy threatens once its windup resolves.
+ *
+ * Derived from the same ranges the AI acts on, so the on-screen telegraph
+ * cannot drift from what the resolve actually does.
+ */
+export function enemyThreatTiles(state: GameState, enemy: Enemy): Pos[] {
+  if (!enemy.alive || enemy.windup <= 0 || !enemy.intent) return [];
+  const tiles: Pos[] = [];
+  const add = (x: number, y: number): void => {
+    if (state.tiles[y]?.[x]?.walkable) tiles.push({ x, y });
+  };
+
+  if (enemy.intent === 'beam') {
+    const dx = Math.sign(state.player.x - enemy.x);
+    const dy = Math.sign(state.player.y - enemy.y);
+    if (dx !== 0 && dy !== 0) return [];
+    for (let step = 1; step <= 3; step++) {
+      const x = enemy.x + dx * step;
+      const y = enemy.y + dy * step;
+      const tile = state.tiles[y]?.[x];
+      if (!tile) break;
+      add(x, y);
+      if (!tile.transparent) break;
+    }
+    return tiles;
+  }
+
+  // Melee charges cover their move allowance plus the strike; the zone pulse
+  // covers a fixed radius and never moves.
+  const radius =
+    enemy.intent === 'overwatch'
+      ? 1
+      : enemy.intent === 'zone'
+        ? ZONE_PULSE_RADIUS
+        : HUNT_RANGE[enemy.intent === 'reach' ? 'reach' : 'lunge'];
+
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      if (Math.abs(dx) + Math.abs(dy) > radius) continue;
+      if (dx === 0 && dy === 0) continue;
+      add(enemy.x + dx, enemy.y + dy);
+    }
+  }
+  return tiles;
+}
+
 /** Flares and stun interrupt a visible sentinel's held shot. */
 export function cancelOverwatch(state: GameState): void {
   for (const enemy of state.enemies) {
@@ -198,7 +246,67 @@ export function cancelOverwatch(state: GameState): void {
   }
 }
 
-/** Hunter/ambush/wraith: windup then pounce with bonus damage. */
+/** How far out each style commits to a telegraph. */
+const HUNT_RANGE: Record<HuntStyle, number> = { lunge: 2, reach: 3, zone: 3 };
+const HUNT_INTENT: Record<HuntStyle, 'pounce' | 'reach' | 'zone'> = {
+  lunge: 'pounce',
+  reach: 'reach',
+  zone: 'zone',
+};
+const HUNT_TELE_LOG = {
+  lunge: 'LOG-TELE-POUNCE',
+  reach: 'LOG-TELE-REACH',
+  zone: 'LOG-TELE-ZONE',
+} as const;
+
+/** Tiles the rift's standoff pulse covers, measured from the rift itself. */
+export const ZONE_PULSE_RADIUS = 2;
+
+function huntStyle(enemy: Enemy): HuntStyle {
+  return ENEMIES[enemy.kind].hunt ?? 'lunge';
+}
+
+/**
+ * Close the gap and strike. `steps` is how much ground the style covers.
+ *
+ * A two-tile charge cannot be walked away from, so it pays for that reach by
+ * overcommitting: it lands winded and gives up the following turn. That is the
+ * reward for reading the tell — the counter is the punish, not the dodge.
+ */
+function resolveCharge(state: GameState, enemy: Enemy, steps: number): void {
+  const bonus = state.player.braceTurns > 0 ? 0 : 3;
+  let moved = 0;
+  for (let i = 0; i < steps; i++) {
+    if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) break;
+    if (!stepToward(state, enemy, state.player.x, state.player.y)) break;
+    moved++;
+  }
+  if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) {
+    tryMelee(state, enemy, bonus);
+  }
+  // Two turns, because the status tick spends one before the skip check.
+  if (steps > 1 && moved > 1) {
+    addStatus(enemy, 'stun', 2);
+    pushLog(state, 'LOG-CHARGE-WINDED');
+  }
+}
+
+/**
+ * Standoff ion pulse. It never closes and never touches you, so bracing is the
+ * wrong answer — the counter is to leave the radius or kill it mid-charge.
+ */
+function resolveZonePulse(state: GameState, enemy: Enemy): void {
+  const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+  if (dist > ZONE_PULSE_RADIUS) {
+    pushLog(state, 'LOG-ZONE-FIZZLE');
+    return;
+  }
+  pushLog(state, 'LOG-ZONE-PULSE');
+  applyPlayerDamage(state, 2, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
+  addStatus(state.player, 'expose', 2);
+}
+
+/** Hunters and alerted ambushers: telegraph a windup, then resolve by style. */
 function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): void {
   const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
   if (dist > defAggro) {
@@ -206,28 +314,30 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
     enemy.intent = undefined;
     return;
   }
+  const style = huntStyle(enemy);
+
   if (enemy.windup > 0) {
     enemy.windup = 0;
     enemy.intent = undefined;
-    if (dist === 1) {
-      tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
-    } else {
-      // One lunge step — no double-step pounce (keeps telegraph readable).
-      stepToward(state, enemy, state.player.x, state.player.y);
-      const d2 = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
-      if (d2 === 1) tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
-    }
+    if (style === 'zone') resolveZonePulse(state, enemy);
+    else resolveCharge(state, enemy, style === 'reach' ? 2 : 1);
     return;
   }
+
   // Soft-shadow player (quiet lamp / dark tile): skip telegraph and strike if adjacent
-  if (dist === 1 && inShadow(state, state.player.x, state.player.y)) {
+  if (style !== 'zone' && dist === 1 && inShadow(state, state.player.x, state.player.y)) {
     tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
     return;
   }
-  if (dist <= 2) {
+  if (dist <= HUNT_RANGE[style]) {
     enemy.windup = 1;
-    enemy.intent = 'pounce';
-    pushLog(state, 'LOG-TELE-POUNCE');
+    enemy.intent = HUNT_INTENT[style];
+    pushLog(state, HUNT_TELE_LOG[style]);
+    return;
+  }
+  if (style === 'zone') {
+    // Walks to the edge of its own pulse and holds there.
+    stepToward(state, enemy, state.player.x, state.player.y);
     return;
   }
   if (!tryMelee(state, enemy)) {
@@ -423,7 +533,7 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'sentinel': {
-        if (enemy.kind === 'sentinel') {
+        if (def.overwatch) {
           if (enemy.intent === 'overwatch' && enemy.windup > 0) {
             if (dist === 1) {
               enemy.windup = 0;

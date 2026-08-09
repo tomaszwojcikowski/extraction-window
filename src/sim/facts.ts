@@ -15,7 +15,6 @@ const FAUNA_BUCKET: Partial<Record<EnemyKind, SectorFact>> = {
   leech: 'fauna_hunter',
   serpent: 'fauna_hunter',
   wraith: 'fauna_hunter',
-  shear_wraith: 'fauna_hunter',
   crawler: 'fauna_hunter',
   mastling: 'fauna_hunter',
   rift: 'fauna_hunter',

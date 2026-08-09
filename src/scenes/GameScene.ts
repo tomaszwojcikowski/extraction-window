@@ -51,6 +51,7 @@ import { markPeekTeachDone } from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
+import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
@@ -118,6 +119,7 @@ export class GameScene extends Phaser.Scene {
   private hud!: HudView;
   private chevronGfx!: Phaser.GameObjects.Graphics;
   private wakeTellGfx!: Phaser.GameObjects.Graphics;
+  private threatGfx!: Phaser.GameObjects.Graphics;
   private shearReadout!: Phaser.GameObjects.Text;
   private lastShearState: ShearPressureState | null = null;
   private shearFlashUntil = 0;
@@ -301,6 +303,11 @@ export class GameScene extends Phaser.Scene {
     this.wakeTellGfx = this.add.graphics();
     this.wakeTellGfx.setDepth(24);
     this.entityLayer.add(this.wakeTellGfx);
+
+    // Ground marking sits over the floor but under items and actors.
+    this.threatGfx = this.add.graphics();
+    this.threatGfx.setDepth(80);
+    this.mapLayer.add(this.threatGfx);
 
     this.shearReadout = this.add
       .text(this.scale.width / 2, 6, '', {
@@ -1032,7 +1039,10 @@ export class GameScene extends Phaser.Scene {
       let view = this.enemyViews.get(en.id);
       if (!view) {
         const img = this.add.image(0, 0, enemyTextureKey(en.kind, this.animFrame % 3));
-        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
+        // Tier reads as physical presence, sourced from sim state rather than
+        // baked per kind, so a scaled-up spawn still looks like what it is.
+        const bulk = en.tier === 'boss' ? 6 : en.tier === 'elite' ? 3 : 0;
+        img.setDisplaySize(TILE_DRAW - 2 + bulk, TILE_DRAW - 2 + bulk);
         const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
           fontFamily: FONT_DATA,
           fontSize: '11px',
@@ -1169,6 +1179,7 @@ export class GameScene extends Phaser.Scene {
       view.label.setFontSize(11);
       return;
     }
+    // Each marker names the answer, not just the threat: brace it, or leave.
     const marker =
       enemy.intent === 'beam'
         ? 'BEAM'
@@ -1176,13 +1187,19 @@ export class GameScene extends Phaser.Scene {
           ? 'OW'
           : enemy.intent === 'pounce'
             ? 'P!'
-            : 'CHARGE';
+            : enemy.intent === 'reach'
+              ? 'REACH'
+              : enemy.intent === 'zone'
+                ? 'PULSE'
+                : 'CHARGE';
     const color =
       enemy.intent === 'beam'
         ? ThemeCss.arcWhite
         : enemy.intent === 'overwatch'
           ? ThemeCss.tape
-          : ThemeCss.rust;
+          : enemy.intent === 'zone'
+            ? ThemeCss.scanWash
+            : ThemeCss.rust;
     view.label.setText(marker);
     view.label.setColor(color);
     view.label.setFontSize(marker.length > 2 ? 8 : 10);
@@ -1496,6 +1513,8 @@ export class GameScene extends Phaser.Scene {
     this.lightView.drawBloom(sources, st.visible, st.tiles);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+
+    drawThreatZones(this.threatGfx, st, this.animFrame);
 
     const preview = this.wakePreviewContext();
     const liveTells = collectWakeTells(st);

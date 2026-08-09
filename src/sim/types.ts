@@ -97,7 +97,7 @@ export interface Enemy {
   /** Turns remaining in telegraph windup (0 = ready) */
   windup: number;
   /** Telegraph type carried by the shared windup counter. */
-  intent?: 'pounce' | 'beam' | 'overwatch';
+  intent?: 'pounce' | 'reach' | 'zone' | 'beam' | 'overwatch';
   /** Enemy AI turns before the next beam can be prepared. */
   beamCooldown: number;
   /** Combat prize tier — elites/bosses grant storm + kit on kill */

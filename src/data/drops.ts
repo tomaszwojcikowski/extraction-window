@@ -67,10 +67,6 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'sealant', weight: 2 },
     { kind: 'jammer', weight: 1 },
   ],
-  shear_wraith: [
-    { kind: 'sealant', weight: 2 },
-    { kind: 'filter', weight: 1 },
-  ],
   elite_skirmisher: [
     { kind: 'pulse_baton', weight: 2 },
     { kind: 'stim', weight: 2 },

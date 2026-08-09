@@ -356,7 +356,7 @@ export const SECTORS: SectorDef[] = [
     width: 36,
     height: 24,
     roomCount: [4, 6],
-    enemyTable: ['serpent', 'wraith', 'crawler', 'rift', 'shear_wraith'],
+    enemyTable: ['serpent', 'wraith', 'crawler', 'rift', 'rift'],
     enemyCount: [2, 4],
     lootTable: ['med', 'energy', 'sealant', 'stim', 'filter', 'plate'],
     lootCount: [2, 4],

@@ -19,7 +19,6 @@ export type EnemyKind =
   | 'rift'
   | 'reef_skitter'
   | 'duct_drone'
-  | 'shear_wraith'
   | 'elite_skirmisher'
   | 'elite_ward'
   | 'elite_apex'
@@ -39,6 +38,15 @@ export type EnemyBehavior =
 
 export type EnemyBrand = 'flarebound' | 'warded' | 'shadowbound';
 
+/**
+ * How a windup resolves. Each style has a different correct answer, so the
+ * player has to read which hunter is charging before deciding:
+ * - `lunge` — one step then a bonus strike. Brace it or leave the 2-tile ring.
+ * - `reach` — closes up to two tiles. Stepping back does not break it; brace.
+ * - `zone`  — stationary ion pulse over a radius. Brace does nothing; step out.
+ */
+export type HuntStyle = 'lunge' | 'reach' | 'zone';
+
 export interface EnemyDef {
   kind: EnemyKind;
   loreName: LoreId;
@@ -53,6 +61,10 @@ export interface EnemyDef {
   damageType: DamageType;
   /** Prefer dark (hunt shadows) or lit (hunt lamps) tiles for aggro bias. */
   lightPrefer?: 'dark' | 'lit';
+  /** Windup resolution for pouncing hunters and alerted ambushers. */
+  hunt?: HuntStyle;
+  /** Arms a shot against the tile the player steps into. */
+  overwatch?: boolean;
   /** Named elite/boss field modifier and its deterministic recovery. */
   brand?: EnemyBrand;
   brandDrop?: ItemKind;
@@ -146,6 +158,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 5,
     damageType: 'kinetic',
+    overwatch: true,
   },
   serpent: {
     kind: 'serpent',
@@ -158,6 +171,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'hunter',
     aggroRange: 12,
     damageType: 'ion',
+    hunt: 'lunge',
   },
   wraith: {
     kind: 'wraith',
@@ -165,11 +179,12 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     hp: 5,
     atk: 4,
     def: 0,
-    glyph: 'W',
+    glyph: 'Y',
     color: 0x88e0ff,
     behavior: 'hunter',
     aggroRange: 12,
     damageType: 'ion',
+    hunt: 'reach',
   },
   drone: {
     kind: 'drone',
@@ -221,6 +236,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'hunter',
     aggroRange: 13,
     damageType: 'ion',
+    hunt: 'zone',
   },
   reef_skitter: {
     kind: 'reef_skitter',
@@ -248,18 +264,6 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     damageType: 'kinetic',
     lightPrefer: 'lit',
   },
-  shear_wraith: {
-    kind: 'shear_wraith',
-    loreName: 'ENEMY-SHEAR-WRAITH',
-    hp: 6,
-    atk: 5,
-    def: 0,
-    glyph: 'H',
-    color: 0xc0e0ff,
-    behavior: 'hunter',
-    aggroRange: 11,
-    damageType: 'ion',
-  },
   elite_skirmisher: {
     kind: 'elite_skirmisher',
     loreName: 'ENEMY-ELITE-SKIRM',
@@ -285,6 +289,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'sentinel',
     aggroRange: 5,
     damageType: 'kinetic',
+    overwatch: true,
     brand: 'warded',
     brandDrop: 'plate',
   },
@@ -295,10 +300,11 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     atk: 4,
     def: 1,
     glyph: 'A',
-    color: 0xff6688,
+    color: 0xcc44ff,
     behavior: 'hunter',
     aggroRange: 8,
     damageType: 'ion',
+    hunt: 'reach',
     brand: 'shadowbound',
     brandDrop: 'probe',
   },
