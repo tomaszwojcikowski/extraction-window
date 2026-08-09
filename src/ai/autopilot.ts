@@ -381,15 +381,6 @@ export function chooseAction(
     }
   }
 
-  // Always recover quest items underfoot (pathing targets them but old code skipped get)
-  const here = state.items.find((i) => i.x === x && i.y === y);
-  if (here) {
-    if (here.kind === 'relay_key' || here.kind === 'nav_core') {
-      return { type: 'get' };
-    }
-    if (state.inventory.length < INVENTORY_SLOTS) return { type: 'get' };
-  }
-
   const goal = currentObjectivePos(state);
   if (!goal) return randomStep(state);
 
@@ -505,7 +496,6 @@ export function runAutopilot(
       pos === lastPos &&
       !inMelee &&
       action.type !== 'use' &&
-      action.type !== 'get' &&
       action.type !== 'aim' &&
       action.type !== 'exit'
     ) {

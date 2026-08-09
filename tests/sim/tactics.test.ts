@@ -137,7 +137,7 @@ describe('Iteration 2 player tactics', () => {
     expect(st.player.hp).toBe(hp - 4);
   });
 
-  it('retreat moves away from a visible adjacent enemy and spends bus', () => {
+  it('walking away from an adjacent enemy costs no bus', () => {
     const st = combatArena();
     st.player.x = 5;
     st.player.y = 5;
@@ -146,13 +146,9 @@ describe('Iteration 2 player tactics', () => {
     st.enemies = [foe];
     st.visible[5]![6] = true;
     floor(st, 4, 5);
-    floor(st, 5, 4);
-    floor(st, 5, 6);
 
-    applyAction(st, { type: 'retreat' });
+    applyAction(st, { type: 'move', dx: -1, dy: 0 });
     expect(st.player.x).toBe(4);
-    expect(st.player.y).toBe(5);
-    expect(st.player.energy).toBeLessThanOrEqual(26);
-    expect(lastLog(st, 'LOG-RETREAT')).toBeTruthy();
+    expect(st.player.energy).toBe(30);
   });
 });

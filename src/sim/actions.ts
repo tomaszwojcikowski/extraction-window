@@ -1,13 +1,4 @@
-import { INVENTORY_SLOTS, ITEMS } from '../data/items';
-import { lore } from '../data/lore';
-import {
-  hasItem,
-  tryPickup,
-  useSelected,
-  findSlot,
-  fireDart,
-  addItem,
-} from './inventory';
+import { hasItem, tryPickup, useSelected, fireDart, addItem } from './inventory';
 import { playerAttack } from './combat';
 import { pushLog, recordLoreEvent } from './log';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
@@ -82,17 +73,10 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   triggerOverwatch(state, { x: nx, y: ny });
   state.player.x = nx;
   state.player.y = ny;
-  const ground = state.items.find((i) => i.x === nx && i.y === ny);
-  if (ground) {
-    if (ground.kind === 'relay_key' || ground.kind === 'nav_core') {
-      tryPickup(state);
-    } else if (
-      ground.kind === 'salvage' ||
-      state.inventory.length < INVENTORY_SLOTS ||
-      findSlot(state, ground.kind) >= 0
-    ) {
-      tryPickup(state);
-    }
+  // Walking over kit is the pickup: no separate verb, and the tile is cleared
+  // of everything it can hold.
+  while (state.items.some((i) => i.x === nx && i.y === ny)) {
+    if (!tryPickup(state)) break;
   }
 
   // Drill bay: stepping onto the hatch starts the real drop (no extra key).
@@ -104,62 +88,6 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   endPlayerTurn(state);
 }
 
-function tryRetreat(state: GameState): void {
-  const threats = state.enemies.filter((enemy) => {
-    const distance = Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y);
-    return (
-      enemy.alive &&
-      (state.visible[enemy.y]?.[enemy.x] ?? false) &&
-      (distance === 1 || enemy.windup > 0)
-    );
-  });
-  if (threats.length === 0) {
-    pushLog(state, 'LOG-RETREAT-FAIL');
-    return;
-  }
-  if (state.player.energy < 4) {
-    pushLog(state, 'LOG-RETREAT-FAIL');
-    return;
-  }
-
-  const threat = threats.reduce((nearest, enemy) => {
-    const current = Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y);
-    const nearestDistance =
-      Math.abs(nearest.x - state.player.x) + Math.abs(nearest.y - state.player.y);
-    return current < nearestDistance ? enemy : nearest;
-  });
-  const currentDistance = Math.abs(threat.x - state.player.x) + Math.abs(threat.y - state.player.y);
-  const destinations = [
-    { x: state.player.x + 1, y: state.player.y },
-    { x: state.player.x - 1, y: state.player.y },
-    { x: state.player.x, y: state.player.y + 1 },
-    { x: state.player.x, y: state.player.y - 1 },
-  ];
-  const destination = destinations
-    .filter((pos) => {
-      const tile = state.tiles[pos.y]?.[pos.x];
-      return tile?.walkable && !enemyAt(state, pos.x, pos.y) && !livingAllyAt(state, pos.x, pos.y) && !npcAt(state, pos.x, pos.y);
-    })
-    .sort(
-      (a, b) =>
-        Math.abs(threat.x - b.x) + Math.abs(threat.y - b.y) -
-        (Math.abs(threat.x - a.x) + Math.abs(threat.y - a.y)),
-    )[0];
-  if (
-    !destination ||
-    Math.abs(threat.x - destination.x) + Math.abs(threat.y - destination.y) <= currentDistance
-  ) {
-    pushLog(state, 'LOG-RETREAT-FAIL');
-    return;
-  }
-
-  triggerOverwatch(state, destination);
-  state.player.x = destination.x;
-  state.player.y = destination.y;
-  state.player.energy -= 4;
-  pushLog(state, 'LOG-RETREAT', '-4 Bus');
-  endPlayerTurn(state);
-}
 
 function tryExit(state: GameState): void {
   // Mechanics first (room quest, future beacon handshake, …)
@@ -271,10 +199,6 @@ export function applyAction(state: GameState, action: Action): GameState {
       endPlayerTurn(state);
       return state;
 
-    case 'get':
-      if (tryPickup(state)) endPlayerTurn(state);
-      return state;
-
     case 'wait':
       if (state.ui.aimingDart) {
         state.ui.aimingDart = false;
@@ -293,10 +217,6 @@ export function applyAction(state: GameState, action: Action): GameState {
       state.player.braceTurns = 2;
       pushLog(state, 'LOG-BRACE');
       endPlayerTurn(state);
-      return state;
-
-    case 'retreat':
-      tryRetreat(state);
       return state;
 
     case 'exit':

@@ -124,25 +124,15 @@ describe('drill bay tutorial', () => {
     expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
   });
 
-  it('shows get hint when standing on ground loot after turn 0', () => {
-    const st = drill(7);
-    const loot = st.items.find((i) => i.kind === 'salvage')!;
-    st.turn = 1;
-    clearHostiles(st);
-    st.player.x = loot.x;
-    st.player.y = loot.y;
-    expect(contextHint(st)).toBe('UI-TUT-GET');
-  });
-
   it('shows kit hint early after picking identification loot', () => {
     const st = drill(7);
     const loot = st.items.find((i) => i.kind === 'salvage')!;
     st.turn = 1;
     st.scriptedFired.tut_light = true;
     clearHostiles(st);
-    st.player.x = loot.x;
+    st.player.x = loot.x - 1;
     st.player.y = loot.y;
-    applyAction(st, { type: 'get' });
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
     expect(st.inventory.some((s) => s.kind === loot.kind)).toBe(true);
     expect(contextHint(st)).toBe('UI-TUT-KIT');
   });

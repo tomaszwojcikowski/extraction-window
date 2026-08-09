@@ -332,13 +332,11 @@ export interface GameState {
 export type Action =
   | { type: 'move'; dx: number; dy: number }
   | { type: 'wait' }
-  | { type: 'get' }
   | { type: 'toggle_inventory' }
   | { type: 'select_slot'; index: number }
   | { type: 'use' }
   | { type: 'aim'; dx: number; dy: number }
   | { type: 'brace' }
-  | { type: 'retreat' }
   | { type: 'exit' }
   | { type: 'close_ui' }
   | { type: 'pick_skill'; id: SkillId };

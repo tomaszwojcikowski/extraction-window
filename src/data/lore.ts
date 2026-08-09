@@ -35,7 +35,7 @@ export const LORE = {
     'Reach the east hatch.\n' +
     '\n' +
     'WASD move · Shift+dir peek wake · . wait\n' +
-    'g get · i kit · u use · Enter on hatch\n' +
+    'Step on kit to take it · i kit · u use · Enter on hatch\n' +
     '\n' +
     'Ion tiles tax Bus — sealant (u) or south alcove.\n' +
     'Window clock starts after you leave.\n' +
@@ -45,8 +45,8 @@ export const LORE = {
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
     'Shift+dir — peek wake (release to clear)\n' +
-    '. — wait · b — brace · r — retreat (4 Bus)\n' +
-    'g — get · i — kit · u — use / equip\n' +
+    '. — wait · b — brace\n' +
+    'i — kit · u — use / equip (step on kit to take it)\n' +
     'Enter / Space / > — hatch, beacon, pad, scan, hail\n' +
     'p — PADD notes · 1/2 — pick skill · ? — help · m — mute\n' +
     'Esc — close peek / kit / PADD / help\n' +
@@ -95,7 +95,7 @@ export const LORE = {
   'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
   'UI-HINT-EXPLORE': 'Explore more — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
-  'UI-HINT-TELE': 'Hostile winding up — b brace · r retreat · or strike',
+  'UI-HINT-TELE': 'Hostile winding up — b brace · step away · or strike',
   'UI-HINT-BRAND': 'Branded elite — optional reward; route around or counter-kit',
   'UI-HINT-ALLY-DRONE': 'Drone lamp — can interrupt one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort cover while adjacent — +1 DEF',
@@ -109,13 +109,12 @@ export const LORE = {
   'UI-TUT-MOVE': 'WASD move · Shift+dir peek wake · . wait',
   'UI-TUT-LIGHT':
     'Your lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dim',
-  'UI-TUT-GET': 'g — pick up salvage',
   'UI-TUT-KIT': 'i kit · u use — ID salvage / flare / seal',
   'UI-TUT-HAZARD':
     'Ion hazard taxes Bus — cross, Sealant (u), or south alcove',
   'UI-TUT-WAKE':
     'Lines from your feet = who notices you · Shift+dir peeks next tile',
-  'UI-TUT-FIGHT': 'Bump to fight · b brace · r retreat · flare if dark',
+  'UI-TUT-FIGHT': 'Bump to fight · b brace · flare if dark',
   'UI-TUT-STALKER': 'Stalker winding up — flare, brace, or slip south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window clock starts after',
   'UI-TUT-EXIT': 'On hatch — Enter (or walk off) to begin the drop',
@@ -412,8 +411,6 @@ export const LORE = {
   'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
   'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
   'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
-  'LOG-RETREAT': 'Tactical retreat — Bus diverted.',
-  'LOG-RETREAT-FAIL': 'No safe retreat vector or insufficient Bus.',
   'LOG-CONTAMINATION': 'Spore contamination tile tax drains the Bus.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',

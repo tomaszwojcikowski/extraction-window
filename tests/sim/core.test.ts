@@ -205,12 +205,18 @@ describe('expansion phase 2 mechanics', () => {
 });
 
 describe('turn economy', () => {
-  it('failed get does not spend a turn', () => {
+  it('walking over kit picks it up without a second turn', () => {
     const st = createGame(42);
-    st.items = st.items.filter((i) => i.x !== st.player.x || i.y !== st.player.y);
+    const to = { x: st.player.x + 1, y: st.player.y };
+    st.tiles[to.y]![to.x] = { kind: 'floor', walkable: true, transparent: true };
+    st.items = [{ id: st.nextEntityId++, kind: 'med', x: to.x, y: to.y }];
     const turn = st.turn;
-    applyAction(st, { type: 'get' });
-    expect(st.turn).toBe(turn);
+
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+
+    expect(st.items.length).toBe(0);
+    expect(st.inventory.some((slot) => slot.kind === 'med')).toBe(true);
+    expect(st.turn).toBe(turn + 1);
   });
 
   it('empty kit use does not spend a turn', () => {
@@ -322,16 +328,15 @@ describe('survey and surplus salvage', () => {
   it('leaves salvage on the ground when the kit is full', () => {
     const st = createGame(42);
     while (st.inventory.length < 16) {
-      st.inventory.push({ kind: 'med', count: 1 });
+      st.inventory.push({ kind: 'plate', count: 1 });
     }
     const storm0 = st.stormTurns;
-    st.items.push({
-      id: st.nextEntityId++,
-      kind: 'salvage',
-      x: st.player.x,
-      y: st.player.y,
-    });
-    applyAction(st, { type: 'get' });
+    const to = { x: st.player.x + 1, y: st.player.y };
+    st.tiles[to.y]![to.x] = { kind: 'floor', walkable: true, transparent: true };
+    st.items = [{ id: st.nextEntityId++, kind: 'salvage', x: to.x, y: to.y }];
+
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+
     // A full kit is a full kit — no hidden conversion into Window time.
     expect(st.stormTurns).toBeLessThanOrEqual(storm0);
     expect(st.items.some((i) => i.kind === 'salvage' && i.x === st.player.x && i.y === st.player.y)).toBe(

@@ -58,9 +58,6 @@ export function actionFloatLabels(
       case 'LOG-BRACE':
         next = { label: 'BRACE · DEF +2', color: ThemeCss.inkBright };
         break;
-      case 'LOG-RETREAT':
-        next = { label: 'RETREAT · -4 BUS', color: ThemeCss.biolum };
-        break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };
@@ -287,7 +284,6 @@ export function playActionSfx(
   }
   if (
     has('LOG-BRACE') ||
-    has('LOG-RETREAT') ||
     has('LOG-USE-MED') ||
     has('LOG-USE-ENERGY') ||
     has('LOG-USE-PROBE') ||

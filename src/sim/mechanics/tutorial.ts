@@ -49,11 +49,6 @@ export const tutorialMechanic: Mechanic = {
     // Until first turn resolves — teach movement + peek
     if (state.turn === 0) return 'UI-TUT-MOVE';
 
-    const underfoot = state.items.some(
-      (i) => i.x === state.player.x && i.y === state.player.y,
-    );
-    if (underfoot) return 'UI-TUT-GET';
-
     // Once: hooded lamp / LIT·SHADOW·QUIET — teach when SHADOW/Quiet first matters (map already speaks LIT).
     if (
       !state.scriptedFired.tut_light &&
