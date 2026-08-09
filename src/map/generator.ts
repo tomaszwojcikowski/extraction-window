@@ -716,7 +716,11 @@ export function generateSectorMap(
       }
     }
   }
-  // Decorative POI only when quest build failed
+  // Decorative POI only when quest build failed.
+  // NOTE: a room quest always builds when the sector has >= 3 rooms, so this branch
+  // currently never fires — POIs are unreachable content. Enabling them naively
+  // (45% on every map) cost 10 points of win rate and wedged 5/30 seeds; see
+  // docs/ADOM_DEPTH.md "POI content is unreachable" before re-enabling.
   if (!roomQuest && rng() < 0.45 && rooms.length >= 2) {
     const poiRoom = rooms[randInt(rng, 1, rooms.length - 1)]!;
     const candidates = [

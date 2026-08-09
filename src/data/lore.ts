@@ -221,6 +221,29 @@ export const LORE = {
   'CODEX-APPROACH':
     'Approach brief: Window pressure desyncs nav pattern buffers — Coolant before skiff lock.',
   'CODEX-GENERIC': 'PADD fragment recovered — Halcyon survey hand, incomplete.',
+  // Fact-bound pages — each may only claim what src/data/codex.ts requires of it.
+  'CODEX-FACT-SCARRED':
+    'Prior hand, shaky: scan scars set in before we understood the streak. Purge early or wear it home.',
+  'CODEX-FACT-NEST-SWARM':
+    'Scrub note: nests hatch on footfall. Swarms read motion first, light second — skirt the beds.',
+  'CODEX-FACT-BRINE-HUNTER':
+    'Waterline note: pool glare hides the approach. Something patient works this flat — do not wade blind.',
+  'CODEX-FACT-VENT-EM':
+    'Conduit note: venting under contamination doubles the bus bill. Seal it or hold your breath and move.',
+  'CODEX-FACT-TRIPWIRE':
+    'Prior team strung wire across the approach. It still answers — and it tells the whole room.',
+  'CODEX-FACT-SEALED':
+    'Hatch memo: pressure seals held. Whatever is behind them cost the last crew their window.',
+  'CODEX-FACT-MACHINE':
+    'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
+  'CODEX-FACT-BRANDED':
+    'Contact brief: marked specimen on this ground. Counter-kit first — it answers flare and dark differently.',
+  'CODEX-FACT-BRINE':
+    'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
+  'CODEX-FACT-VENT':
+    'Vent field: bus junctions still bleed here. Sealant pays for itself within a corridor.',
+  'CODEX-FACT-RUBBLE':
+    'Collapse note: rubble reads as cover until it shifts. Prior hand lost a window to a wrong line.',
   'CODEX-HOLO':
     'Archive holo: prior survey noted Splice Key wreckage inland — Window clock is the real enemy.',
   'CODEX-ENSIGN':

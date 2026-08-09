@@ -8,6 +8,7 @@ import { pushLog } from './log';
 import { gainXp } from './progression';
 import { pick, randInt } from './rng';
 import { favorForQuest, grantExtractFavor } from './extractFavor';
+import { pickFactCodex } from './facts';
 import type { GameState, Pos, QuestStep, RoomQuest, RoomQuestKind } from './types';
 
 const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
@@ -197,7 +198,10 @@ function addLoot(state: GameState, kind: ItemKind): void {
 
 export function grantCodex(state: GameState): void {
   state.codexPages += 1;
-  const page = CODEX_BY_SECTOR[state.sectorId] ?? 'CODEX-GENERIC';
+  // Room facts first: prefer a page this ground can actually justify, and fall
+  // back to the sector brief only when nothing binds.
+  const page =
+    pickFactCodex(state, state.codexLog) ?? CODEX_BY_SECTOR[state.sectorId] ?? 'CODEX-GENERIC';
   if (!state.codexLog.includes(page)) state.codexLog.push(page);
   applyPaddModifier(state, page);
   pushLog(state, 'LOG-CODEX');

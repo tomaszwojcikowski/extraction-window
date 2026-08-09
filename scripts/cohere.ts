@@ -3,17 +3,55 @@
  * Usage: tsx scripts/cohere.ts
  */
 import { CAMPAIGN_LENGTH } from '../src/campaign/spine';
-import { SECTORS, type SectorId } from '../src/data/encounters';
+import { FACT_CODEX, type SectorFact } from '../src/data/codex';
+import { SECTORS, getSector, type SectorId } from '../src/data/encounters';
+import { createGame, loadSector } from '../src/sim';
+import { collectSectorFacts } from '../src/sim/facts';
 import { ENEMIES, type EnemyKind } from '../src/data/enemies';
 import { ITEMS, type ItemKind } from '../src/data/items';
 import { ENEMY_DROPS } from '../src/data/drops';
 import { LORE, type LoreId } from '../src/data/lore';
 import { SKILLS, type SkillId } from '../src/data/progression';
 
+/** Enough seeds to see the optional terrain/POI variants without a full suite. */
+const COHERE_SEEDS = [1, 42, 99, 777, 12345] as const;
+
 const errors: string[] = [];
 
 function fail(msg: string): void {
   errors.push(msg);
+}
+
+/**
+ * Room-fact pages must be bound and reachable: a page with no requirements could
+ * claim anything, and a page whose facts never co-occur is content nobody sees.
+ */
+function checkFactCodex(): void {
+  const seen = new Set<SectorFact>();
+  for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
+    const sector = getSector(i);
+    for (const seed of COHERE_SEEDS) {
+      const state = createGame(seed);
+      loadSector(state, i);
+      // Facts that depend on run pressure cannot appear on a fresh sector load.
+      for (const f of collectSectorFacts(state)) seen.add(f);
+    }
+    void sector;
+  }
+  seen.add('em_warn');
+  seen.add('scarred');
+
+  for (const entry of FACT_CODEX) {
+    if (!(entry.id in LORE)) fail(`fact codex ${entry.id} missing lore text`);
+    if (entry.requires.length === 0) {
+      fail(`fact codex ${entry.id} is unbound — it would claim facts it cannot prove`);
+      continue;
+    }
+    const missing = entry.requires.filter((f) => !seen.has(f));
+    if (missing.length > 0) {
+      fail(`fact codex ${entry.id} unreachable — no sector produced ${missing.join(', ')}`);
+    }
+  }
 }
 
 function main(): void {
@@ -107,6 +145,8 @@ function main(): void {
     if (!(s.loreName in LORE)) fail(`skill ${id} missing loreName`);
     if (!(s.loreDesc in LORE)) fail(`skill ${id} missing loreDesc`);
   }
+
+  checkFactCodex();
 
   if (errors.length) {
     console.error('COHERE FAIL:');

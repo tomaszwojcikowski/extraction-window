@@ -99,9 +99,37 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
 | Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
 | `GameScene` shrink — extract remaining orchestration to presenters | Pending |
-| Room facts → optional text binds to what is actually in the room; `cohere` fails unbound templates | Pending |
-| Distinct failure modes per path (GEM §2); death-mix diversity as a reported dynamic | Pending |
-| Oracle telemetry: peak EM, IDs used, fork chosen, stuck reason codes | Pending |
+| Oracle telemetry: peak EM, IDs used, doctrine tallies, stuck reason codes | Done |
+| Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
+| Room facts → optional text binds to what is actually in the room; `cohere` fails unbound and unreachable pages | Done |
+| Distinct failure modes per path (GEM §2) | **Measured — tuning deferred**, see below |
+
+### Path-failure measurement (first read)
+
+Full suite on `stable`: **19/30 (63%)**, hp 8 · storm 3 · energy 0 · stuck 0 — one channel owns **73%** of deaths. Persona sweep over smoke seeds:
+
+| Persona | WR | Lose mix | Dominant | emPeak avg/max | Scars |
+|---------|-----|----------|----------|----------------|-------|
+| stable | 50% | hp 3, storm 1 | 75% | 25 / 44 | 0.0 |
+| quiet | 50% | hp 3, storm 1 | 75% | 30 / 50 | 0.0 |
+| probe | 38% | hp 5 | 100% | 25 / 49 | 0.0 |
+| reckless | 50% | hp 1, storm 2, energy 1 | 50% | 22 / 40 | 0.0 |
+
+Three findings for the tuning pass, in priority order:
+
+1. **Scan scars are unreachable content.** Scars need `SCAR_STREAK_TURNS` (12) consecutive end-turns at `EM_HIGH` (65). Observed peak never exceeds **50** on any seed or persona, and EM has no passive decay — it is simply out-accumulated by purges (coolant, `purge`/`stabilize` quests, quiet doctrine). Either EM sources need to bite harder in late sectors or the scar streak needs to start below `EM_HIGH`.
+2. **Quiet is not one option among several — it is the tax you must pay.** Dropping the jammer (`probe` persona) costs 12 points of win rate and makes deaths **100%** hp. That is a single curve with a mandatory item, not a doctrine choice.
+3. **The bus clock is nearly dead as a channel.** Only `reckless` ever produced an energy loss. Bus pressure currently converts into hp deaths instead of its own failure.
+
+Do **not** retune these from the oracle alone: the personas are reporting instruments, and the identify counts (0.6 per run) partly reflect how rarely the policy holds unknown salvage rather than how rare the content is. Pair the retune with human play, and re-gate `test:balance` after each step.
+
+### POI content is unreachable
+
+Found by the new fact-codex reachability check. POIs spawn only `if (!roomQuest && …)` in [`generator.ts`](../src/map/generator.ts), but a room quest always builds when a sector has three or more rooms — so **0 of 600 generated maps** (40 seeds x 15 sectors) contain a POI. The console / nest / cache-scar tile, its three log lines, its light emitter, `UI-HINT-POI`, and the pressure-reveal flicker are all dead.
+
+Naively enabling it (45% roll on every map, POI kept off quest tiles) produced **44%** POI coverage and a healthier death mix (3 channels, dominant 50%, peak EM up to 61 — the nest is a real EM source), but cost **10 points of win rate (63% -> 53%, below band)** and wedged **5/30** seeds. Reverted; the branch is left in place with a comment.
+
+Re-enabling needs its own pass: find why the policy wedges near POIs (likely repeated pathing to the nest), then rebalance for the band. Restore the three withheld POI pages (`CODEX-FACT-POI-NEST` / `-CACHE` / `-CONSOLE`, described in [`codex.ts`](../src/data/codex.ts)) in the same pass — `playtest:cohere` will fail them as unreachable until POIs exist.
 
 **Not in Wave 4** (reviewed and rejected as wrong-project imports): React/Zustand HUD, fullscreen SDF or clustered lighting, cyber-psychosis / mutation fantasy, WFC megastructure generation, hub-every-5-sectors spine, cross-run meta of any kind.
 
