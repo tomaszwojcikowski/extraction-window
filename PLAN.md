@@ -1,12 +1,12 @@
 # Extraction Window — Build Spec
 
-> **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Balance numbers and layout below are authoritative; player-facing names live in lore / WORLD.
+> **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (storm budget, WR band, playtest gates); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 
 ## Stack
 
-- Phaser 3 + Vite + TypeScript
+- Phaser **4.2.1** + Vite + TypeScript
 - **Headless sim** in `src/sim/` (no Phaser imports) — all game rules live here
 - Phaser scenes only render state and forward keyboard actions via `applyAction`
 - Minimal 24×24 procedural pixel art (`pixelArt: true`), survey-chrome UI
@@ -49,7 +49,7 @@ Partly procedural per seed: layouts, room templates, multiroom quests, branches,
 - Inventory **16** slots; quest items occupy slots; knife/EVA equip; power cell/coolant two-tier recharge
 - In-run XP/skills (levels 1–8); room quests with window/kit payoffs; mission PADD panel
 - FOV + fog of war
-- ~16 enemy types; biome encounter tables; telegraph punish (pounce/swell)
+- ~22 enemy types + elites/bosses; biome encounter tables; telegraph punish (pounce/swell)
 - Mechanics registry: room quests, beacon handshake, quiet stance, pattern buffer, scripted events
 - Seeded RNG (mulberry32)
 

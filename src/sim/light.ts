@@ -220,7 +220,7 @@ export const LIGHT_TEMP = {
   beacon: 0xffb347,
   /** Halcyon pad floods. */
   shuttle: 0xffe0a0,
-  /** Isolinear pattern tech — hard blue-white. */
+  /** Pattern-buffer tech — hard blue-white. */
   pattern: 0xbfe6ff,
   /** Survey flagging / relay-key marker. */
   marker: 0xff7fb0,

@@ -88,6 +88,27 @@ the optional quest route remains outside the extraction spine.
 
 ---
 
+## Wave 4 — Craft & Coherence (in progress)
+
+Depth of *craft* rather than new systems: lock the filters, bind optional text to real rooms, and make the mastery paths fail differently. Sourced from a design review against the sibling project `ruin-protocol`.
+
+| Ticket | Status |
+|--------|--------|
+| Scope filter doc ([`GEM.md`](GEM.md)) + land [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) on main | Done |
+| Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
+| Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
+| Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Pending |
+| `GameScene` shrink — extract remaining orchestration to presenters | Pending |
+| Room facts → optional text binds to what is actually in the room; `cohere` fails unbound templates | Pending |
+| Distinct failure modes per path (GEM §2); death-mix diversity as a reported dynamic | Pending |
+| Oracle telemetry: peak EM, IDs used, fork chosen, stuck reason codes | Pending |
+
+**Not in Wave 4** (reviewed and rejected as wrong-project imports): React/Zustand HUD, fullscreen SDF or clustered lighting, cyber-psychosis / mutation fantasy, WFC megastructure generation, hub-every-5-sectors spine, cross-run meta of any kind.
+
+**Exit gate:** unit + cohere + smoke + balance in band; no new always-on chrome; optional content still never required for extract.
+
+---
+
 ## Guardrails
 
 | Rule | Why |

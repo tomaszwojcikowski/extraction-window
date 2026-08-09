@@ -9,10 +9,14 @@ Prior team’s field array never shut down cleanly; residual scan pressure keeps
 | Doc | Role |
 |-----|------|
 | [docs/V1.md](./docs/V1.md) | **First-version scope** — pillars, cut list, engine, ship gates |
+| [docs/GEM.md](./docs/GEM.md) | Scope filter — simulation-face test, mastery paths, cut rule |
+| [docs/DESIGN_PRINCIPLES.md](./docs/DESIGN_PRINCIPLES.md) | Applied UI/feel principles + decision checklist |
 | [docs/WORLD.md](./docs/WORLD.md) | Glossary, ecology thesis, rename checklist |
 | [docs/LORE.md](./docs/LORE.md) | Mission lore bible (lore IDs) |
+| [docs/art/ART_BIBLE.md](./docs/art/ART_BIBLE.md) | Locked look — palette, tiles, chrome, motion, rejects |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Layer rules (`sim/` never imports Phaser) |
-| [PLAN.md](./PLAN.md) | Build/balance harness notes *(franchise framing stale — prefer V1 + WORLD)* |
+| [docs/ADOM_DEPTH.md](./docs/ADOM_DEPTH.md) | Post-v1 depth waves |
+| [PLAN.md](./PLAN.md) | Harness / balance numbers only (storm budget, WR band, playtest gates) |
 
 ## Run
 
