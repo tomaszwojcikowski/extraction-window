@@ -14,7 +14,7 @@ export type DeluxePropKind =
   | 'exit'
   | 'beacon'
   | 'shuttle'
-  | 'poi'
+  | 'landmark'
   | 'quest'
   | 'sealed'
   | 'tripwire'
@@ -353,7 +353,7 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       g.fillRect(q(8), q(8), q(8), q(2));
       g.fillRect(q(32), q(38), q(8), q(2));
       break;
-    case 'poi':
+    case 'landmark':
     case 'quest': {
       const color = kind === 'quest' ? Theme.quest : Theme.phosphor;
       g.fillStyle(color, 0.9);

@@ -317,7 +317,7 @@ function drawProp(
     | 'exit'
     | 'beacon'
     | 'shuttle'
-    | 'poi'
+    | 'landmark'
     | 'quest'
     | 'sealed'
     | 'tripwire'
@@ -457,7 +457,7 @@ function drawProp(
       g.fillRect(5, T - 6, 4, 1);
       g.fillRect(T - 9, T - 6, 4, 1);
       break;
-    case 'poi':
+    case 'landmark':
       // Landmark asterisk stamp
       ink(g, Theme.quest);
       g.fillRect(1, 1, T - 2, T - 2);
@@ -476,7 +476,7 @@ function drawProp(
       }
       break;
     case 'quest':
-      // Distinct chevron console — not the cosmetic POI asterisk
+      // Distinct chevron console — not the cosmetic landmark asterisk
       ink(g, Theme.storm);
       g.fillRect(2, 2, T - 4, T - 4);
       ink(g, Theme.groundDeep);
@@ -939,8 +939,8 @@ export function registerTextures(scene: Phaser.Scene): void {
     bake(g, f === 0 ? 't_brine_pool' : `t_brine_pool_${f}`, T);
     drawDeluxeProp(g, T, 'beacon', f);
     bake(g, f === 0 ? 't_beacon' : `t_beacon_${f}`, T);
-    drawDeluxeProp(g, T, 'poi', f);
-    bake(g, f === 0 ? 't_poi' : `t_poi_${f}`, T);
+    drawDeluxeProp(g, T, 'landmark', f);
+    bake(g, f === 0 ? 't_landmark' : `t_landmark_${f}`, T);
     drawDeluxeProp(g, T, 'quest', f);
     bake(g, f === 0 ? 't_quest_tile' : `t_quest_tile_${f}`, T);
   }

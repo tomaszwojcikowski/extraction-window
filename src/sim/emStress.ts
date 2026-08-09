@@ -1,14 +1,10 @@
 import { pushLog } from './log';
-import { hasScar, scarStabilized } from './status';
 import type { GameState } from './types';
 
 /** ADOM-style corruption lite: field-array EM agitates Meridian Shelf ecology. */
 export const EM_WARN = 35;
 export const EM_HIGH = 65;
 export const EM_MAX = 100;
-
-/** Consecutive EM-HIGH end-turns before a scan scar may brand. */
-export const SCAR_STREAK_TURNS = 12;
 
 export function addEmStress(state: GameState, amount: number, detail?: string): void {
   if (amount <= 0) return;
@@ -36,14 +32,6 @@ export function emEnergyTax(state: GameState): number {
   if (state.player.equip.utility === 'eps_coupler') return 0;
   let tax = 0;
   if (state.emStress >= EM_HIGH) tax += 1;
-  // array_bleed stacks +1 EM tax unless stabilized
-  if (
-    state.emStress >= EM_HIGH &&
-    hasScar(state, 'array_bleed') &&
-    !scarStabilized(state, 'array_bleed')
-  ) {
-    tax += 1;
-  }
   return tax;
 }
 

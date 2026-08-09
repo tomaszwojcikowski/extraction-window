@@ -9,16 +9,16 @@ import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
-import { addStatus, addPlayerMarked, hasScar, hasStatus, tickPlayerStatusEffects } from './status';
+import { addStatus, addPlayerMarked, hasStatus, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, emEnergyTax, EM_HIGH, SCAR_STREAK_TURNS } from './emStress';
+import { addEmStress, emEnergyTax, EM_HIGH } from './emStress';
 import { mechanicsOnEndTurn } from './mechanics';
 import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
 import { consumeExtractFavor } from './extractFavor';
-import type { Enemy, GameState, ScanScarId } from './types';
+import type { Enemy, GameState } from './types';
 import { pick } from './rng';
 
 function trySpawnNestMite(state: GameState): void {
@@ -92,27 +92,17 @@ export function finishSectorTransition(state: GameState): void {
   checkLose(state);
 }
 
-function tickScanScars(state: GameState): void {
-  if (state.emStress >= EM_HIGH) {
-    state.emHighStreak += 1;
-    // Soft fatigue pressure while hot and not quiet
-    if (state.player.jammerTurns <= 0 && state.rng() < 0.06) {
-      addStatus(state.player, 'fatigue', 3);
-      pushLog(state, 'LOG-STATUS-FATIGUE');
-    }
-  } else {
+/** Sustained EM-HIGH wears the suit down. */
+function tickEmHighPressure(state: GameState): void {
+  if (state.emStress < EM_HIGH) {
     state.emHighStreak = 0;
+    return;
   }
-
-  if (state.emHighStreak < SCAR_STREAK_TURNS || state.scanScars.length >= 2) return;
-  const pool: ScanScarId[] = (['array_bleed', 'hunter_eye'] as ScanScarId[]).filter(
-    (id) => !hasScar(state, id),
-  );
-  if (pool.length === 0) return;
-  const id = pick(state.rng, pool);
-  state.scanScars.push({ id, stabilized: false });
-  state.emHighStreak = 0;
-  pushLog(state, id === 'array_bleed' ? 'LOG-SCAR-ARRAY' : 'LOG-SCAR-EYE');
+  state.emHighStreak += 1;
+  if (state.player.jammerTurns <= 0 && state.rng() < 0.06) {
+    addStatus(state.player, 'fatigue', 3);
+    pushLog(state, 'LOG-STATUS-FATIGUE');
+  }
 }
 
 /** Underfoot terrain tax — shared so the drill can teach visible hazards. */
@@ -195,7 +185,7 @@ function tickEnvironment(state: GameState): void {
     if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
     tickContamination(state);
     tickPlayerStatusEffects(state);
-    tickScanScars(state);
+    tickEmHighPressure(state);
     mechanicsOnEndTurn(state);
     return;
   }
@@ -254,7 +244,7 @@ function tickEnvironment(state: GameState): void {
   if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
 
   tickPlayerStatusEffects(state);
-  tickScanScars(state);
+  tickEmHighPressure(state);
   mechanicsOnEndTurn(state);
 }
 

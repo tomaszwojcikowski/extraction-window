@@ -26,7 +26,7 @@ describe('contextHint coaching', () => {
     // Clear tile/item tips
     st.items = st.items.filter((i) => !(i.x === st.player.x && i.y === st.player.y));
     const tile = st.tiles[st.player.y]![st.player.x]!;
-    if (tile.kind === 'exit' || tile.kind === 'poi' || tile.kind === 'quest') {
+    if (tile.kind === 'exit' || tile.kind === 'quest') {
       tile.kind = 'floor';
     }
     expect(hasItem(st, 'med')).toBe(true);

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, createGame } from '../../src/sim';
 import { addItem, hasItem, useSelected } from '../../src/sim/inventory';
-import { bumpDoctrine } from '../../src/sim/progression';
 import { endPlayerTurn } from '../../src/sim/turn';
 import { tryPrySealed, tryOpenAdjacentSealed } from '../../src/sim/mechanics/sealedHatch';
 import { ENEMIES } from '../../src/data/enemies';
@@ -93,29 +92,6 @@ describe('ADOM Wave 2 — field craft', () => {
     expect(useSelected(st)).toBe(true);
     expect(hasItem(st, 'pattern_balm')).toBe(true);
     expect(st.log.some((e) => e.loreId === 'LOG-CRAFT-BALM')).toBe(true);
-  });
-});
-
-describe('ADOM Wave 2 — doctrine', () => {
-  it('tallies jammer/probe and logs at 3', () => {
-    const st = createGame(42);
-    st.emStress = 10;
-    bumpDoctrine(st, 'quiet');
-    bumpDoctrine(st, 'quiet');
-    expect(st.doctrineQuiet).toBe(2);
-    expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-QUIET')).toBe(false);
-    bumpDoctrine(st, 'quiet');
-    expect(st.doctrineQuiet).toBe(3);
-    expect(st.emStress).toBe(9);
-    expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-QUIET')).toBe(true);
-
-    const storm = st.stormTurns;
-    bumpDoctrine(st, 'probe');
-    bumpDoctrine(st, 'probe');
-    bumpDoctrine(st, 'probe');
-    expect(st.doctrineProbe).toBe(3);
-    expect(st.stormTurns).toBe(storm + 5);
-    expect(st.log.some((e) => e.loreId === 'LOG-DOCTRINE-PROBE')).toBe(true);
   });
 });
 

@@ -372,15 +372,6 @@ export function chooseAction(
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;
 
-  // Decorative / safe POI only — skip optional room quests (campaign spine for suite WR)
-  if (
-    tile.kind === 'poi' &&
-    !state.poiUsed &&
-    (state.poiKind === 'console' || state.poiKind === 'cache_scar')
-  ) {
-    return { type: 'exit' };
-  }
-
   // Mapper when exploring without clear path
   if (state.player.mapperTurns <= 0 && state.sectorIndex >= 2) {
     const mIdx = state.inventory.findIndex((s) => s.kind === 'mapper');

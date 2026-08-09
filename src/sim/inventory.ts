@@ -12,10 +12,10 @@ import type { SectorId } from '../data/encounters';
 import { playerAttack } from './combat';
 import { killEnemy } from './death';
 import { pushLog, recordLoreEvent } from './log';
-import { addStatus, addPlayerMarked, hasStatus, tryStabilizeScar } from './status';
+import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { tryStabilizeQuest } from './roomQuest';
-import { gainXp, hasSkill, bumpDoctrine } from './progression';
+import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
@@ -312,7 +312,6 @@ export function useSelected(state: GameState): boolean {
       state.player.probeTurns = Math.max(state.player.probeTurns, 20);
       removeOne(state, kind);
       addEmStress(state, 4, 'array pulse');
-      bumpDoctrine(state, 'probe');
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
@@ -350,7 +349,6 @@ export function useSelected(state: GameState): boolean {
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
-      tryStabilizeScar(state);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'battery':
@@ -362,7 +360,6 @@ export function useSelected(state: GameState): boolean {
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
       removeOne(state, kind);
       purgeEmStress(state, 12);
-      tryStabilizeScar(state);
       pushLog(state, 'LOG-USE-COOLANT');
       break;
     case 'patch':
@@ -433,7 +430,6 @@ export function useSelected(state: GameState): boolean {
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
       addEmStress(state, 5, 'scrambler');
-      bumpDoctrine(state, 'quiet');
       pushLog(state, 'LOG-USE-JAMMER');
       if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
@@ -494,17 +490,14 @@ export function useSelected(state: GameState): boolean {
         };
         removeOne(state, kind);
         purgeEmStress(state, state.paddMods.brineSeal ? 18 : 8);
-        tryStabilizeScar(state);
         pushLog(state, 'LOG-USE-SEALANT');
       } else if (tryOpenAdjacentSealed(state)) {
         removeOne(state, kind);
         purgeEmStress(state, 6);
-        tryStabilizeScar(state);
       } else {
         // Flush EM without sealing terrain
         removeOne(state, kind);
         purgeEmStress(state, 20);
-        tryStabilizeScar(state);
         pushLog(state, 'LOG-EM-PURGE', 'sealant flush');
       }
       break;

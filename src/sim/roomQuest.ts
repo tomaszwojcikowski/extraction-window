@@ -472,7 +472,7 @@ function clearAllQuestTiles(state: GameState): void {
     if (seen.has(key)) continue;
     seen.add(key);
     const t = state.tiles[step.pos.y]?.[step.pos.x];
-    if (t && (t.kind === 'poi' || t.kind === 'quest')) {
+    if (t && (t.kind === 'landmark' || t.kind === 'quest')) {
       state.tiles[step.pos.y]![step.pos.x] = {
         kind: 'floor',
         walkable: true,

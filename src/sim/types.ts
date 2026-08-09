@@ -26,7 +26,8 @@ export type TileKind =
   | 'exit'
   | 'beacon'
   | 'shuttle'
-  | 'poi'
+  /** Purely decorative room centrepiece — no interaction. */
+  | 'landmark'
   | 'quest';
 
 export type EnemyTier = 'normal' | 'elite' | 'boss';
@@ -75,15 +76,6 @@ export type StatusId =
   | 'marked';
 
 export type StatusMap = Partial<Record<StatusId, number>>;
-
-/** Sustained EM-HIGH scars (ADOM corruption-lite brands). */
-export type ScanScarId = 'array_bleed' | 'hunter_eye';
-
-export interface ScanScar {
-  id: ScanScarId;
-  /** Coolant/sealant can stabilize without removing the scar. */
-  stabilized: boolean;
-}
 
 export interface Enemy {
   id: number;
@@ -160,8 +152,6 @@ export interface ObjectiveFlags {
   hasNavCore: boolean;
   beaconOpen: boolean;
 }
-
-export type PoiKind = 'console' | 'nest' | 'cache_scar';
 
 export type RoomQuestKind =
   | 'salvage'
@@ -273,9 +263,6 @@ export interface GameState {
   exitPos: Pos | null;
   shuttlePos: Pos | null;
   beaconPos: Pos | null;
-  poiPos: Pos | null;
-  poiKind: PoiKind | null;
-  poiUsed: boolean;
   roomQuest: RoomQuest | null;
   /** Sector room layout for survey / pulse (reset each sector). */
   rooms: MapRoom[];
@@ -298,12 +285,6 @@ export interface GameState {
   emStress: number;
   /** Consecutive end-turns at EM-HIGH (resets below EM_HIGH). */
   emHighStreak: number;
-  /** Sustained scan scars from prolonged EM-HIGH (max 2). */
-  scanScars: ScanScar[];
-  /** Quiet-doctrine tally (successful jammer uses). */
-  doctrineQuiet: number;
-  /** Probe-doctrine tally (successful probe uses). */
-  doctrineProbe: number;
   /** Unknown salvage resolved into a known kit item this run. */
   salvageIdentified: number;
   /** Unknown salvage that bit back instead of resolving. */

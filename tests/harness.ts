@@ -42,9 +42,6 @@ export interface SeedReport {
   level: number;
   /** Highest scan pressure reached — how hard this run leaned on probing. */
   emPeak: number;
-  scanScars: number;
-  doctrineQuiet: number;
-  doctrineProbe: number;
   salvageIdentified: number;
   salvageBacklash: number;
   skills: string[];
@@ -110,9 +107,6 @@ export function runSeed(
       hasNavCoreAtEnd: end.objectives.hasNavCore,
       level: end.level,
       emPeak,
-      scanScars: end.scanScars.length,
-      doctrineQuiet: end.doctrineQuiet,
-      doctrineProbe: end.doctrineProbe,
       salvageIdentified: end.salvageIdentified,
       salvageBacklash: end.salvageBacklash,
       skills: [...end.skills],
@@ -135,9 +129,6 @@ export function runSeed(
       hasNavCoreAtEnd: false,
       level: 1,
       emPeak: 0,
-      scanScars: 0,
-      doctrineQuiet: 0,
-      doctrineProbe: 0,
       salvageIdentified: 0,
       salvageBacklash: 0,
       skills: [],
@@ -195,9 +186,6 @@ export function summarize(results: SeedReport[]) {
     },
     avgEmPeak: avg((r) => r.emPeak),
     maxEmPeak: results.length === 0 ? 0 : Math.max(...results.map((r) => r.emPeak)),
-    avgScanScars: avg((r) => r.scanScars),
-    avgDoctrineQuiet: avg((r) => r.doctrineQuiet),
-    avgDoctrineProbe: avg((r) => r.doctrineProbe),
     avgIdentified: avg((r) => r.salvageIdentified),
     avgBacklash: avg((r) => r.salvageBacklash),
     skillPicks: results

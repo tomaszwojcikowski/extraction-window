@@ -39,7 +39,6 @@ function checkFactCodex(): void {
     void sector;
   }
   seen.add('em_warn');
-  seen.add('scarred');
 
   for (const entry of FACT_CODEX) {
     if (!(entry.id in LORE)) fail(`fact codex ${entry.id} missing lore text`);

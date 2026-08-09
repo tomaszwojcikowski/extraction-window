@@ -110,9 +110,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     exitPos: map.exit,
     shuttlePos: map.shuttlePos,
     beaconPos: map.beaconPos,
-    poiPos: map.poiPos,
-    poiKind: map.poiKind,
-    poiUsed: false,
     roomQuest: map.roomQuest,
     rooms: map.rooms.map((r) => ({ ...r })),
     surveyedRoomIds: [],
@@ -127,9 +124,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     codexLog: [],
     emStress: 0,
     emHighStreak: 0,
-    scanScars: [],
-    doctrineQuiet: 0,
-    doctrineProbe: 0,
     salvageIdentified: 0,
     salvageBacklash: 0,
     handshake: null,
@@ -212,9 +206,6 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.exitPos = map.exit;
   state.shuttlePos = map.shuttlePos;
   state.beaconPos = map.beaconPos;
-  state.poiPos = map.poiPos;
-  state.poiKind = map.poiKind;
-  state.poiUsed = false;
   state.roomQuest = map.roomQuest;
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.surveyedRoomIds = [];

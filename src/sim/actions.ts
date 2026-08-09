@@ -17,7 +17,6 @@ import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
-import { grantPoiXp } from './mechanics/survey';
 import { livingAllyAt } from './allyAi';
 import { enemyAt, npcAt } from './spatial';
 import { triggerOverwatch, triggerOverwatchOnAttack } from './ai';
@@ -162,60 +161,12 @@ function tryRetreat(state: GameState): void {
   endPlayerTurn(state);
 }
 
-function tryPoi(state: GameState): boolean {
-  const tile = state.tiles[state.player.y]![state.player.x]!;
-  if (tile.kind !== 'poi' || !state.poiPos || state.poiUsed) return false;
-  if (state.player.x !== state.poiPos.x || state.player.y !== state.poiPos.y) return false;
-
-  state.poiUsed = true;
-  const kind = state.poiKind ?? 'console';
-  if (kind === 'console') {
-    pushLog(state, 'LOG-POI-CONSOLE');
-    state.stormTurns += 25;
-    const loot: IK[] = ['energy', 'dart', 'jammer', 'probe'];
-    const got = pick(state.rng, loot);
-    addItem(state, got);
-    pushLog(state, 'LOG-PICKUP', lore(ITEMS[got].loreName));
-    grantPoiXp(state);
-  } else if (kind === 'nest') {
-    pushLog(state, 'LOG-POI-NEST');
-    addStatus(state.player, 'ion_burn', 3);
-    addEmStress(state, 12, 'nest');
-    // Wake / spawn pressure: alert nearby enemies
-    for (const en of state.enemies) {
-      if (!en.alive) continue;
-      if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 6) {
-        en.alerted = true;
-      }
-    }
-    state.lootTakenThisSector = true;
-  } else {
-    pushLog(state, 'LOG-POI-CACHE');
-    const loot: IK[] = ['med', 'coolant', 'sealant', 'plate', 'flare', 'salvage'];
-    const a = pick(state.rng, loot);
-    const b = pick(state.rng, ['salvage', 'energy', 'patch'] as IK[]);
-    addItem(state, a);
-    addItem(state, b);
-    pushLog(state, 'LOG-PICKUP', `${lore(ITEMS[a].loreName)}, ${lore(ITEMS[b].loreName)}`);
-    grantPoiXp(state);
-  }
-  // Convert POI to floor after use
-  state.tiles[state.poiPos.y]![state.poiPos.x] = {
-    kind: 'floor',
-    walkable: true,
-    transparent: true,
-  };
-  endPlayerTurn(state);
-  return true;
-}
-
 function tryExit(state: GameState): void {
   // Mechanics first (room quest, future beacon handshake, …)
   if (mechanicsTryAction(state, { type: 'exit' })) {
     endPlayerTurn(state);
     return;
   }
-  if (tryPoi(state)) return;
 
   const { x, y } = state.player;
   const tile = state.tiles[y]![x]!;

@@ -5,7 +5,7 @@ import {
   scaleEnemyCombat,
 } from '../data/difficulty';
 import type { ItemKind } from '../data/items';
-import type { Enemy, EnemyTier, FieldNpc, GroundItem, Pos, PoiKind, RoomQuest, Tile } from '../sim/types';
+import type { Enemy, EnemyTier, FieldNpc, GroundItem, Pos, RoomQuest, Tile } from '../sim/types';
 import { npcKindForSector } from '../data/npcs';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
@@ -39,8 +39,6 @@ export interface GeneratedMap {
   npcs: FieldNpc[];
   beaconPos: Pos | null;
   shuttlePos: Pos | null;
-  poiPos: Pos | null;
-  poiKind: PoiKind | null;
   roomQuest: RoomQuest | null;
   nextEntityId: number;
 }
@@ -85,8 +83,8 @@ function beaconTile(): Tile {
 function shuttleTile(): Tile {
   return { kind: 'shuttle', walkable: true, transparent: true };
 }
-function poiTile(): Tile {
-  return { kind: 'poi', walkable: true, transparent: true };
+function landmarkTile(): Tile {
+  return { kind: 'landmark', walkable: true, transparent: true };
 }
 function questTile(): Tile {
   return { kind: 'quest', walkable: true, transparent: true };
@@ -394,7 +392,7 @@ function dressRoomTemplate(
   };
 
   if (template === 'chamber') {
-    placeIfFloor(room.cx, room.cy, poiTile());
+    placeIfFloor(room.cx, room.cy, landmarkTile());
     return;
   }
   if (template === 'gallery') {
@@ -402,7 +400,7 @@ function dressRoomTemplate(
       const x = room.x + 1 + ((y - room.y) % Math.max(2, room.w - 2));
       if (x > room.x && x < room.x + room.w - 1) placeIfFloor(x, y, scrub(true));
     }
-    placeIfFloor(room.cx, room.cy, poiTile());
+    placeIfFloor(room.cx, room.cy, landmarkTile());
     return;
   }
   if (template === 'machine') {
@@ -410,19 +408,19 @@ function dressRoomTemplate(
     for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
       if (rng() < 0.55) placeIfFloor(x, wallY, vent());
     }
-    placeIfFloor(room.cx, room.cy, poiTile());
+    placeIfFloor(room.cx, room.cy, landmarkTile());
     return;
   }
   if (template === 'cross') {
     // Stub arms — short corridors already exist; add rubble choke near center
     placeIfFloor(room.cx + 1, room.cy, rubble());
     placeIfFloor(room.cx - 1, room.cy, rubble());
-    placeIfFloor(room.cx, room.cy, poiTile());
+    placeIfFloor(room.cx, room.cy, landmarkTile());
     return;
   }
   // cache — guaranteed loot pile later; rubble choke near door-ish edge
   placeIfFloor(room.x + 1, room.cy, rubble());
-  placeIfFloor(room.cx, room.cy, poiTile());
+  placeIfFloor(room.cx, room.cy, landmarkTile());
 }
 
 function dressAllRoomTemplates(
@@ -568,8 +566,6 @@ export function generateSectorMap(
 
   let beaconPos: Pos | null = null;
   let shuttlePos: Pos | null = null;
-  let poiPos: Pos | null = null;
-  let poiKind: PoiKind | null = null;
   let roomQuest: RoomQuest | null = null;
   let nextEntityId = 1;
   const enemies: Enemy[] = [];
@@ -716,33 +712,6 @@ export function generateSectorMap(
       }
     }
   }
-  // Decorative POI only when quest build failed.
-  // NOTE: a room quest always builds when the sector has >= 3 rooms, so this branch
-  // currently never fires — POIs are unreachable content. Enabling them naively
-  // (45% on every map) cost 10 points of win rate and wedged 5/30 seeds; see
-  // docs/ADOM_DEPTH.md "POI content is unreachable" before re-enabling.
-  if (!roomQuest && rng() < 0.45 && rooms.length >= 2) {
-    const poiRoom = rooms[randInt(rng, 1, rooms.length - 1)]!;
-    const candidates = [
-      { x: poiRoom.cx, y: poiRoom.cy },
-      { x: poiRoom.cx + 1, y: poiRoom.cy },
-      { x: poiRoom.cx, y: poiRoom.cy + 1 },
-    ].filter(
-      (p) =>
-        tiles[p.y]?.[p.x]?.walkable &&
-        !(p.x === start.x && p.y === start.y) &&
-        !(p.x === exit.x && p.y === exit.y) &&
-        canReach(tiles, start, p),
-    );
-    if (candidates.length) {
-      poiPos = candidates[0]!;
-      const kinds: PoiKind[] = ['console', 'nest', 'cache_scar'];
-      poiKind = pick(rng, kinds);
-      tiles[poiPos.y]![poiPos.x] = poiTile();
-      specials.push(poiPos);
-    }
-  }
-
   // Loot — fewer piles, more variety (already in tables)
   const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
   let placed = 0;
@@ -925,7 +894,6 @@ export function generateSectorMap(
     if (sector.isBeacon && beaconPos) tiles[beaconPos.y]![beaconPos.x] = beaconTile();
     if (sector.isShuttle && shuttlePos) tiles[shuttlePos.y]![shuttlePos.x] = shuttleTile();
     else tiles[exit.y]![exit.x] = exitTile();
-    if (poiPos && poiKind) tiles[poiPos.y]![poiPos.x] = poiTile();
     if (roomQuest) {
       for (const step of roomQuest.steps) {
         tiles[step.pos.y]![step.pos.x] = questTile();
@@ -950,8 +918,6 @@ export function generateSectorMap(
     npcs,
     beaconPos,
     shuttlePos,
-    poiPos,
-    poiKind,
     roomQuest,
     nextEntityId,
   };

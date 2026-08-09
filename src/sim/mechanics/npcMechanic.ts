@@ -5,7 +5,6 @@ import { addItem, hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { gainXp } from '../progression';
 import { randInt } from '../rng';
-import { tryStabilizeScar } from '../status';
 import { allyAt, enemyAt, manhattan, npcAt } from '../spatial';
 import type { Action, Ally, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
@@ -132,12 +131,6 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
         removeOne(state, 'mapper');
       }
       ok = true;
-      // Matching Probe doctrine pays a little extra storm
-      if (state.doctrineProbe > state.doctrineQuiet) {
-        const extra = randInt(state.rng, 2, 4);
-        state.stormTurns += extra;
-        pushLog(state, 'LOG-AGENDA-PROBE-BONUS', `+${extra}`);
-      }
     }
   } else {
     // archive_holo — no agenda
@@ -154,7 +147,6 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
   const storm = randInt(state.rng, 4, 8);
   state.stormTurns += storm;
   gainXp(state, XP_NPC_AGENDA, 'agenda');
-  tryStabilizeScar(state);
   npc.agendaDone = true;
   pushLog(state, 'LOG-AGENDA-DONE', `+${storm}`);
   return true;

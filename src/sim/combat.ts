@@ -3,7 +3,7 @@ import { lore } from '../data/lore';
 import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS, equipOnHitBleed, equipOnHitStun } from '../data/items';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
-import { addStatus, addPlayerMarked, hasScar, hasStatus } from './status';
+import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { hasSkill } from './progression';
 import { brandIonAttackPenalty } from './brands';
 import type { DamageType, Enemy, GameState } from './types';
@@ -90,15 +90,13 @@ export function applyPlayerDamage(
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
   const overcharge =
     hasSkill(state, 'overcharge') && state.player.hp <= state.player.maxHp * 0.5 ? 1 : 0;
-  const scarAtk = hasScar(state, 'array_bleed') ? 1 : 0;
   const atk =
     state.player.atk +
     toolAtkBonus(state) +
     (state.player.probeTurns > 0 ? 2 : 0) +
     (state.player.stimTurns > 0 ? 3 : 0) +
     (hasStatus(enemy, 'expose') ? 4 : 0) +
-    overcharge +
-    scarAtk;
+    overcharge;
   const def = enemy.def - (hasStatus(enemy, 'expose') ? 2 : 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
   enemy.hp -= dmg;

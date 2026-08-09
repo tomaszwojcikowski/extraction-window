@@ -3,11 +3,9 @@ import { lore } from '../../src/data/lore';
 import { ENEMIES } from '../../src/data/enemies';
 import {
   addStatus,
-  scarHud,
   statusHud,
   tickEnemyStatusEffects,
   tickPlayerStatusEffects,
-  tryStabilizeScar,
 } from '../../src/sim/status';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
 import { visionRadius } from '../../src/sim/vision';
@@ -23,19 +21,6 @@ describe('statusHud', () => {
       'Blind 2 · Jam 1 · Fatigue 3 · Marked 4',
     );
     expect(statusHud({})).toBe('');
-  });
-});
-
-describe('scarHud', () => {
-  it('formats scar badges and stabilized mark', () => {
-    expect(scarHud([])).toBe('');
-    expect(scarHud([{ id: 'array_bleed', stabilized: false }])).toBe('ARR');
-    expect(
-      scarHud([
-        { id: 'array_bleed', stabilized: true },
-        { id: 'hunter_eye', stabilized: false },
-      ]),
-    ).toBe('ARR+ EYE');
   });
 });
 
@@ -130,22 +115,9 @@ describe('Wave-1 status effects', () => {
     expect(taxed2).toBeLessThan(taxed);
   });
 
-  it('array_bleed adds EM tax; stabilize mutes it', () => {
-    const st = combatArena();
-    st.emStress = EM_HIGH;
-    expect(emEnergyTax(st)).toBe(1);
-    st.scanScars = [{ id: 'array_bleed', stabilized: false }];
-    expect(emEnergyTax(st)).toBe(2);
-    expect(tryStabilizeScar(st)).toBe(true);
-    expect(st.scanScars[0]!.stabilized).toBe(true);
-    expect(emEnergyTax(st)).toBe(1);
-    expect(lastLog(st, 'LOG-SCAR-STABLE')).toBeTruthy();
-  });
-
   it('eps_coupler zeroes EM energy tax', () => {
     const st = combatArena();
     st.emStress = EM_HIGH;
-    st.scanScars = [{ id: 'array_bleed', stabilized: false }];
     st.player.equip.utility = 'eps_coupler';
     expect(emEnergyTax(st)).toBe(0);
   });

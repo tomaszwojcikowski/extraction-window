@@ -92,7 +92,6 @@ export const XP_ROOM_QUEST = 15;
 export const XP_QUEST_ITEM = 22;
 export const XP_BEACON = 15;
 export const XP_ROOM_SURVEY = 4;
-export const XP_POI = 6;
 export const XP_SECTOR_SURVEY = 10;
 export const XP_ELITE = 24;
 export const XP_BOSS = 40;

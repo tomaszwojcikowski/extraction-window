@@ -30,7 +30,6 @@ export const quietStanceMechanic: Mechanic = {
 
   modifyFov(state: GameState, base: number): number {
     if (!isQuietStance(state)) return base;
-    if (state.doctrineQuiet >= 5) return base;
     return Math.max(3, base - 2);
   },
 

@@ -2,7 +2,7 @@ import { Theme } from '../../scenes/theme';
 import type { ShearPressureSpec } from './ShearPressure';
 import type { GameState } from '../../sim/types';
 
-const REVEAL_KINDS = new Set(['quest', 'poi']);
+const REVEAL_KINDS = new Set(['quest']);
 
 /** Arcing+ stress-fracture on optional paths — presentation-only, no loot sim changes. */
 export function pressureRevealTint(
@@ -17,7 +17,6 @@ export function pressureRevealTint(
 
   const kind = st.tiles[y]?.[x]?.kind;
   if (!kind || !REVEAL_KINDS.has(kind)) return null;
-  if (kind === 'poi' && st.poiUsed) return null;
 
   const urgent = shear.state === 'Breaching';
   const flicker = (animFrame + x + y) % (urgent ? 2 : 3) === 0;

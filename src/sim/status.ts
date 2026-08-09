@@ -1,4 +1,4 @@
-import type { StatusId, StatusMap, GameState, Enemy, ScanScar } from './types';
+import type { StatusId, StatusMap, GameState, Enemy } from './types';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
 
@@ -7,11 +7,8 @@ export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: 
   target.statuses[id] = Math.max(cur, turns);
 }
 
-/** Marked with Quiet-doctrine soft: duration −1 when Quiet ahead of Probe. */
 export function addPlayerMarked(state: GameState, turns: number): void {
-  let t = turns;
-  if (state.doctrineQuiet > state.doctrineProbe) t = Math.max(1, t - 1);
-  addStatus(state.player, 'marked', t);
+  addStatus(state.player, 'marked', turns);
 }
 
 export function hasStatus(target: { statuses: StatusMap }, id: StatusId): boolean {
@@ -85,32 +82,3 @@ export function statusHud(statuses: StatusMap): string {
   return parts.join(' · ');
 }
 
-const SCAR_BADGE: Record<ScanScar['id'], string> = {
-  array_bleed: 'ARR',
-  hunter_eye: 'EYE',
-};
-
-/** Compact scan-scar badges for HUD (stabilized scars get a +). */
-export function scarHud(scars: ScanScar[]): string {
-  if (scars.length === 0) return '';
-  return scars
-    .map((s) => `${SCAR_BADGE[s.id]}${s.stabilized ? '+' : ''}`)
-    .join(' ');
-}
-
-export function hasScar(state: GameState, id: ScanScar['id']): boolean {
-  return state.scanScars.some((s) => s.id === id);
-}
-
-export function scarStabilized(state: GameState, id: ScanScar['id']): boolean {
-  return state.scanScars.some((s) => s.id === id && s.stabilized);
-}
-
-/** Stabilize one unstabilized scar; returns true if any changed. */
-export function tryStabilizeScar(state: GameState): boolean {
-  const scar = state.scanScars.find((s) => !s.stabilized);
-  if (!scar) return false;
-  scar.stabilized = true;
-  pushLog(state, 'LOG-SCAR-STABLE', SCAR_BADGE[scar.id]);
-  return true;
-}

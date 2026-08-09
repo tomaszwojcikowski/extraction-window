@@ -538,7 +538,7 @@ export class GameScene extends Phaser.Scene {
           kind !== 'hazard' &&
           kind !== 'vent' &&
           kind !== 'brine_pool' &&
-          kind !== 'poi' &&
+          kind !== 'landmark' &&
           kind !== 'quest' &&
           kind !== 'beacon'
         )
@@ -726,8 +726,8 @@ export class GameScene extends Phaser.Scene {
         return animated('t_beacon');
       case 'shuttle':
         return 't_shuttle';
-      case 'poi':
-        return animated('t_poi');
+      case 'landmark':
+        return animated('t_landmark');
       case 'quest':
         return animated('t_quest_tile');
       case 'floor': {

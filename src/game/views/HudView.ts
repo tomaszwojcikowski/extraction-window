@@ -3,7 +3,7 @@ import { lore } from '../../data/lore';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import { describeObjective, stickyMilestone, type GameState } from '../../sim';
-import { scarHud, statusHud } from '../../sim/status';
+import { statusHud } from '../../sim/status';
 import { armorDefBonus, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import {
@@ -176,35 +176,20 @@ export class HudView {
           )
         ? lore('UI-ALLY-ESCORT')
         : '';
-    const doctrineBits: string[] = [];
-    if (st.doctrineQuiet > 0) {
-      doctrineBits.push(
-        st.doctrineQuiet >= 3 ? 'Quiet doctrine' : `Quiet ${st.doctrineQuiet}/3`,
-      );
-    }
-    if (st.doctrineProbe > 0) {
-      doctrineBits.push(
-        st.doctrineProbe >= 3 ? 'Probe doctrine' : `Probe ${st.doctrineProbe}/3`,
-      );
-    }
-    const doctrine = doctrineBits.length ? ` · ${doctrineBits.join(' · ')}` : '';
     const sysBits = [probe, stim, filter, jam, quiet, lens, map, desync, allyRole].filter(
       Boolean,
     );
     const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
     const statuses = statusHud(st.player.statuses);
-    const scars = scarHud(st.scanScars);
     const statusLine = statuses ? ` · ${statuses}` : '';
-    const scarLine = scars ? ` · Scar ${scars}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
-      (st.player.stimTurns > 0 ? 3 : 0) +
-      (st.scanScars.some((s) => s.id === 'array_bleed') ? 1 : 0);
+      (st.player.stimTurns > 0 ? 3 : 0);
     const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
     const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${doctrine}${systems}${statusLine}${scarLine}`,
+      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${systems}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

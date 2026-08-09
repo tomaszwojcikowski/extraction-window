@@ -76,15 +76,9 @@ export function collectSectorFacts(state: GameState): Set<SectorFact> {
     if (ENEMIES[en.kind].brand) facts.add('fauna_branded');
   }
 
-  if (state.poiPos && !state.poiUsed) {
-    if (state.poiKind === 'nest') facts.add('poi_nest');
-    else if (state.poiKind === 'cache_scar') facts.add('poi_cache');
-    else facts.add('poi_console');
-  }
   if (state.roomQuest && !state.roomQuest.done) facts.add('quest_site');
   if (state.npcs.length > 0) facts.add('npc');
   if (state.emStress >= EM_WARN) facts.add('em_warn');
-  if (state.scanScars.length > 0) facts.add('scarred');
 
   return facts;
 }

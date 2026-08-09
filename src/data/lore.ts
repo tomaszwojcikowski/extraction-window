@@ -75,7 +75,6 @@ export const LORE = {
   'UI-HINT-UPLINK-HOLD': 'Uplink live — . hold · Coolant skips · Flare repels',
   'UI-HINT-DESYNC': 'Pattern desync — use Bus Coolant before skiff lock',
   'UI-HINT-ITEM': 'Salvage here — press g',
-  'UI-HINT-POI': 'Anomaly here — press > to scan',
   'UI-HINT-AIM': 'Aim dart — direction to a lit target within 3',
   'UI-HINT-USE-MED': 'HP critical — kit (i) · Field Hypo (u)',
   'UI-HINT-USE-ENERGY': 'Bus low — kit (i) · Power Cell / Coolant (u)',
@@ -222,8 +221,6 @@ export const LORE = {
     'Approach brief: Window pressure desyncs nav pattern buffers — Coolant before skiff lock.',
   'CODEX-GENERIC': 'PADD fragment recovered — Halcyon survey hand, incomplete.',
   // Fact-bound pages — each may only claim what src/data/codex.ts requires of it.
-  'CODEX-FACT-SCARRED':
-    'Prior hand, shaky: scan scars set in before we understood the streak. Purge early or wear it home.',
   'CODEX-FACT-NEST-SWARM':
     'Scrub note: nests hatch on footfall. Swarms read motion first, light second — skirt the beds.',
   'CODEX-FACT-BRINE-HUNTER':
@@ -403,7 +400,6 @@ export const LORE = {
   'LOG-AGENDA-WANT-SURVEY': 'Contact wants a surveyed room this sector or a Nav Ping.',
   'LOG-AGENDA-NONE': 'Contact has nothing further.',
   'LOG-AGENDA-DONE': 'Favor repaid — Window refund.',
-  'LOG-AGENDA-PROBE-BONUS': 'Probe doctrine bonus — extra Window.',
   'LOG-ALLY-UP': 'Ally online.',
   'LOG-ALLY-HIT': 'Ally strikes',
   'LOG-ALLY-KILL': 'Ally downs hostile',
@@ -452,8 +448,6 @@ export const LORE = {
   'LOG-CRAFT-BALM': 'Field craft: shard + Coolant → Pattern Balm.',
   'LOG-CRAFT-NEED': 'Need Sealant or Power Cell with the field sample to craft.',
   'LOG-USE-BALM': 'Pattern balm applied — desync cleared, EM purged.',
-  'LOG-DOCTRINE-QUIET': 'Quiet doctrine threshold — EM scrub applied; Quiet5 later restores FOV.',
-  'LOG-DOCTRINE-PROBE': 'Probe doctrine threshold — survey window refunded.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
   'LOG-AIM-MISS': 'Microdart spent — no valid visible target in range.',
@@ -483,13 +477,7 @@ export const LORE = {
   'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Probe or Scrambler.',
   'LOG-STATUS-FATIGUE': 'Fatigue — Bus tax until it clears (harness cancels).',
   'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
-  'LOG-SCAR-ARRAY': 'Scan scar: array bleed — melee sharper, EM bus bite harder.',
-  'LOG-SCAR-EYE': 'Scan scar: hunter eye — ranging up; quiet aggro shrink softens.',
-  'LOG-SCAR-STABLE': 'Scan scar stabilized — downside muted.',
   'LOG-ID-PARTIAL': 'Partial array ID — category locked.',
-  'LOG-POI-CONSOLE': 'Dead survey console — partial Window refund and salvage.',
-  'LOG-POI-NEST': 'Disturbed EM nest — sensor wake and plasma burn.',
-  'LOG-POI-CACHE': 'Cache scar cracked — field kit recovered.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-BRAND-SIGHT': 'Branded hostile identified.',
   'LOG-BRAND-DROP': 'Branded field kit recovered.',

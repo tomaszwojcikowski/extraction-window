@@ -37,8 +37,6 @@ function sweepPersonas(): void {
         `hp=${lose.hp} storm=${lose.storm} energy=${lose.energy} stuck=${lose.stuck}  ` +
         `dominant=${(s.dominantLoseShare * 100).toFixed(0)}%  ` +
         `emPeak avg=${s.avgEmPeak.toFixed(0)} max=${s.maxEmPeak}  ` +
-        `scars=${s.avgScanScars.toFixed(1)}  ` +
-        `quiet=${s.avgDoctrineQuiet.toFixed(1)} probe=${s.avgDoctrineProbe.toFixed(1)}  ` +
         `ids=${s.avgIdentified.toFixed(1)}`,
     );
   }
@@ -82,7 +80,7 @@ function main(): void {
     `Lose mix: hp=${lose.hp} storm=${lose.storm} energy=${lose.energy} stuck=${lose.stuck} · channels=${summary.loseChannels} dominant=${(summary.dominantLoseShare * 100).toFixed(0)}%`,
   );
   console.log(
-    `Pressure: emPeak avg=${summary.avgEmPeak.toFixed(0)} max=${summary.maxEmPeak} · scars=${summary.avgScanScars.toFixed(1)} · quiet=${summary.avgDoctrineQuiet.toFixed(1)} probe=${summary.avgDoctrineProbe.toFixed(1)} · ids=${summary.avgIdentified.toFixed(1)} backlash=${summary.avgBacklash.toFixed(1)}`,
+    `Pressure: emPeak avg=${summary.avgEmPeak.toFixed(0)} max=${summary.maxEmPeak} · ids=${summary.avgIdentified.toFixed(1)} backlash=${summary.avgBacklash.toFixed(1)}`,
   );
 
   // GEM §2: paths must fail differently. Reported, not gated — tuning signal only.

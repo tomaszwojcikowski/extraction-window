@@ -263,7 +263,7 @@ function fovRadius(state: GameState): number {
     state.paddMods.fovBonus +
     (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
   // Mirror quietStance.modifyFov without importing the registry (avoid cycles).
-  if (isQuietStance(state) && state.doctrineQuiet < 5) base = Math.max(3, base - 1);
+  if (isQuietStance(state)) base = Math.max(3, base - 1);
   return base;
 }
 
@@ -302,7 +302,7 @@ function tileEmitter(kind: TileKind): Omit<SimLightSource, 'x' | 'y'> | null {
       return { radius: 6, intensity: 1.15, color: LIGHT_TEMP.shuttle };
     case 'exit':
       return { radius: 2.5, intensity: 0.7, color: LIGHT_TEMP.standby };
-    case 'poi':
+    case 'landmark':
       return { radius: 3, intensity: 0.75, color: LIGHT_TEMP.pattern };
     case 'quest':
       return { radius: 3.5, intensity: 0.9, color: LIGHT_TEMP.marker };

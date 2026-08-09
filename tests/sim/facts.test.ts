@@ -73,8 +73,6 @@ describe('fact-bound codex', () => {
     st.emStress = 0;
     st.enemies = [];
     st.npcs = [];
-    st.scanScars = [];
-    st.poiPos = null;
     for (const row of st.tiles) {
       for (const tile of row) {
         if (tile.kind !== 'wall' && tile.kind !== 'exit') tile.kind = 'floor';

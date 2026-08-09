@@ -111,8 +111,6 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     npcs: [],
     beaconPos: null,
     shuttlePos: null,
-    poiPos: null,
-    poiKind: null,
     roomQuest: null,
     nextEntityId: 4,
   };

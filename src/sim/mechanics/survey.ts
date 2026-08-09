@@ -3,7 +3,6 @@ import {
   STORM_ROOM_SURVEY,
   STORM_SECTOR_SURVEY,
   SURVEY_ROOM_CAP,
-  XP_POI,
   XP_ROOM_SURVEY,
   XP_SECTOR_SURVEY,
 } from '../../data/progression';
@@ -58,10 +57,6 @@ export function grantSectorSurveyBonus(state: GameState): void {
   state.stormTurns += storm;
   gainXp(state, XP_SECTOR_SURVEY, 'survey_sector');
   pushLog(state, 'LOG-SURVEY-SECTOR', `+${storm}`);
-}
-
-export function grantPoiXp(state: GameState): void {
-  gainXp(state, XP_POI, 'poi');
 }
 
 export const surveyMechanic: Mechanic = {

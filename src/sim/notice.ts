@@ -1,7 +1,7 @@
 import { ENEMIES } from '../data/enemies';
 import { emAggroBonus } from './emStress';
 import { inShadow, isLit } from './light';
-import { hasScar, hasStatus, scarStabilized } from './status';
+import { hasStatus } from './status';
 import { shadowboundDarkAggro } from './brands';
 import { manhattan } from './spatial';
 import type { Enemy, GameState } from './types';
@@ -37,11 +37,7 @@ export function effectiveAggroAt(
     if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
   }
   if (hasStatus(state.player, 'marked')) r += 2;
-  if (state.player.jammerTurns > 0) {
-    const shrink =
-      hasScar(state, 'hunter_eye') && !scarStabilized(state, 'hunter_eye') ? 2 : 3;
-    r = Math.max(1, r - shrink);
-  }
+  if (state.player.jammerTurns > 0) r = Math.max(1, r - 3);
   if (def.lightPrefer) {
     const lit = isLit(state, px, py);
     const dark = inShadow(state, px, py);

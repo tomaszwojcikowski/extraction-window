@@ -51,7 +51,6 @@ export function contextHint(st: GameState): LoreId | null {
   if (tile.kind === 'exit') return 'UI-HINT-EXIT';
   if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
-  if (tile.kind === 'poi' && !st.poiUsed) return 'UI-HINT-POI';
   if (tile.kind === 'quest') return 'UI-HINT-QUEST';
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
 

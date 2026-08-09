@@ -37,7 +37,6 @@ const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
   'UI-HINT-UPLINK-HOLD',
   'UI-HINT-DESYNC',
   'UI-HINT-ITEM',
-  'UI-HINT-POI',
   'UI-HINT-QUEST',
   'UI-HINT-NPC',
   'UI-HINT-BRAND',
