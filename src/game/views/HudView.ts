@@ -12,8 +12,7 @@ import {
 } from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawStencilBadge } from '../../scenes/atmosphere';
-import { contextHint } from '../presenters/ContextHints';
-import { shouldShowPeekTeach } from '../presenters/PeekTeach';
+import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
@@ -327,20 +326,7 @@ export class HudView {
     });
     r.logText.setText(`${lore('UI-LOG')}  ·  ? help\n${logs.join('\n')}`);
 
-    let hint =
-      opts.movePreviewActive && !st.ui.inventoryOpen && !st.skillPick && !st.ui.aimingDart
-        ? ('UI-HINT-COMMIT' as const)
-        : contextHint(st);
-    // One-shot Shift-peek teach — yields to drill/tele/vitals coaching.
-    if (
-      !opts.movePreviewActive &&
-      !st.ui.inventoryOpen &&
-      !st.skillPick &&
-      !st.ui.aimingDart &&
-      shouldShowPeekTeach(st, hint)
-    ) {
-      hint = 'UI-HINT-PEEK-TEACH';
-    }
+    const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));

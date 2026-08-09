@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, applyAction } from '../../src/sim';
-import { contextHint } from '../../src/game/presenters/ContextHints';
+import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
 import { hasItem } from '../../src/sim/inventory';
 import { makeEnemy } from '../sim/fixtures';
@@ -93,6 +93,49 @@ describe('contextHint coaching', () => {
     st.visible[sentinel.y]![sentinel.x] = true;
 
     expect(contextHint(st)).toBe('UI-HINT-TELE');
+  });
+});
+
+describe('hint line resolver', () => {
+  /** Early sector with a visible mite in notice range — peek teach conditions. */
+  function peekTeachState() {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorIndex = 0;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    const mite = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
+    st.enemies = [mite];
+    st.visible[mite.y]![mite.x] = true;
+    return st;
+  }
+
+  it('gives the line to the one-shot teach when nothing outranks it', () => {
+    expect(resolveHintLine(peekTeachState())).toBe('UI-HINT-PEEK-TEACH');
+  });
+
+  it('yields the teach to the peek commit tip while Shift is held', () => {
+    expect(resolveHintLine(peekTeachState(), { movePreviewActive: true })).toBe('UI-HINT-COMMIT');
+  });
+
+  it('yields the teach to a pending skill pick', () => {
+    const st = peekTeachState();
+    st.skillPick = ['triage', 'deep_reserve'];
+    expect(resolveHintLine(st)).toBe('UI-HINT-SKILL');
+  });
+
+  it('yields the teach to a visible windup', () => {
+    const st = peekTeachState();
+    const sentinel = makeEnemy({
+      kind: 'sentinel',
+      x: st.player.x + 2,
+      y: st.player.y,
+      windup: 1,
+    });
+    sentinel.intent = 'overwatch';
+    st.enemies.push(sentinel);
+    st.visible[sentinel.y]![sentinel.x] = true;
+    expect(resolveHintLine(st)).toBe('UI-HINT-TELE');
   });
 });
 

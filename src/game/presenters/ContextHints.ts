@@ -9,6 +9,7 @@ import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { exploredFloorRatio } from '../../sim/mechanics/survey';
+import { shouldShowPeekTeach } from './PeekTeach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -124,4 +125,25 @@ export function contextHint(st: GameState): LoreId | null {
   }
 
   return null;
+}
+
+export type HintLineContext = {
+  /** Shift-peek held — the commit tip owns the line. */
+  movePreviewActive?: boolean;
+};
+
+/**
+ * The single hint-line channel, resolved once: peek tip → context coaching →
+ * one-shot Shift-peek teach. HUD drawing and the Escape handler must agree on
+ * what is actually on screen, so both go through here (DESIGN_PRINCIPLES §2).
+ */
+export function resolveHintLine(st: GameState, ctx: HintLineContext = {}): LoreId | null {
+  const overlayOwnsLine = Boolean(st.ui.inventoryOpen || st.skillPick || st.ui.aimingDart);
+  if (ctx.movePreviewActive) {
+    if (!overlayOwnsLine) return 'UI-HINT-COMMIT';
+    return contextHint(st);
+  }
+  const hint = contextHint(st);
+  if (!overlayOwnsLine && shouldShowPeekTeach(st, hint)) return 'UI-HINT-PEEK-TEACH';
+  return hint;
 }

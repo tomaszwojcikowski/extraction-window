@@ -29,7 +29,7 @@ import {
   previewTile,
   type MovePreviewQueue,
 } from '../game/input/MovePreviewQueue';
-import { contextHint } from '../game/presenters/ContextHints';
+import { resolveHintLine } from '../game/presenters/ContextHints';
 import {
   bumpAttack,
   bumpMeleeAttackers,
@@ -46,10 +46,7 @@ import {
   noticeImpactIds,
 } from '../game/presenters/NoticeImpact';
 import { pickCameraCue, type CameraCue } from '../game/presenters/EventCamera';
-import {
-  markPeekTeachDone,
-  shouldShowPeekTeach,
-} from '../game/presenters/PeekTeach';
+import { markPeekTeachDone } from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
@@ -746,6 +743,11 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /** Hint line the HUD is currently showing (same resolver as HudView). */
+  private hintLine(): LoreId | null {
+    return resolveHintLine(this.state, { movePreviewActive: this.movePreviewQueue !== null });
+  }
+
   private handleKey(e: KeyboardEvent): void {
     handleGameKey(e, {
       getState: () => this.state,
@@ -767,19 +769,19 @@ export class GameScene extends Phaser.Scene {
         this.clearMovePreview();
       },
       dismissPeekTeach: () => {
-        if (shouldShowPeekTeach(this.state)) {
-          markPeekTeachDone(this.state);
-          this.redrawTilesAndHud();
-          return true;
-        }
-        return false;
+        // Only consume the one-shot teach when it is the line actually on screen —
+        // otherwise Escape would burn a tip the player never saw.
+        if (this.hintLine() !== 'UI-HINT-PEEK-TEACH') return false;
+        markPeekTeachDone(this.state);
+        this.redrawTilesAndHud();
+        return true;
       },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
         this.hintText.setVisible(true);
         this.hintText.setText(muted ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
         this.time.delayedCall(900, () => {
-          const hint = contextHint(this.state);
+          const hint = this.hintLine();
           if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
             this.hintText.setText(lore(hint));
           } else {

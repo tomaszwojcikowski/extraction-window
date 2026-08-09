@@ -70,6 +70,8 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
     scriptedFired: {},
     tutorialActive: false,
     paddMods: {},
+    skillPick: null,
+    ui: { inventoryOpen: false, selectedSlot: 0, aimingDart: false, questFlash: 0 },
     ...over,
   } as GameState;
 }
