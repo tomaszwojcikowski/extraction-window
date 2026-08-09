@@ -2,7 +2,7 @@
  * Shared headless playtest helpers — used by scripts/playtest.ts and Vitest suites.
  */
 import { CAMPAIGN_LENGTH } from '../src/campaign/spine';
-import { runAutopilot } from '../src/ai/autopilot';
+import { PERSONAS, runAutopilot, type PersonaId, type StuckReason } from '../src/ai/autopilot';
 import { getSector } from '../src/data/encounters';
 import { generateSectorMap } from '../src/map/generator';
 import {
@@ -25,18 +25,29 @@ export const WIN_RATE_MAX = 0.85;
 
 export interface SeedReport {
   seed: number;
+  persona: PersonaId;
   status: string;
   loseReason: string | null;
   turns: number;
   actions: number;
   sectorReached: number;
   stuck: boolean;
+  /** Which give-up path fired: wedged in place, no legal action, or ran out of budget. */
+  stuckReason: StuckReason | null;
   winLegal: boolean;
   loreLegal: boolean;
   objectivesReachable: boolean;
   crash: string | null;
   hasNavCoreAtEnd: boolean;
   level: number;
+  /** Highest scan pressure reached — how hard this run leaned on probing. */
+  emPeak: number;
+  scanScars: number;
+  doctrineQuiet: number;
+  doctrineProbe: number;
+  salvageIdentified: number;
+  salvageBacklash: number;
+  skills: string[];
 }
 
 export function checkObjectivesReachable(seed: number): boolean {
@@ -53,11 +64,26 @@ export function checkObjectivesReachable(seed: number): boolean {
   return true;
 }
 
-export function runSeed(seed: number, maxActions = 10000): SeedReport {
+export function runSeed(
+  seed: number,
+  maxActions = 10000,
+  persona: PersonaId = 'stable',
+): SeedReport {
   try {
     const objectivesReachable = checkObjectivesReachable(seed);
     const state = createGame(seed);
-    const { state: end, actions, stuck } = runAutopilot(state, maxActions);
+    let emPeak = state.emStress;
+    const {
+      state: end,
+      actions,
+      stuck,
+      stuckReason,
+    } = runAutopilot(state, maxActions, {
+      persona: PERSONAS[persona],
+      onStep: (s) => {
+        if (s.emStress > emPeak) emPeak = s.emStress;
+      },
+    });
 
     if (stuck && end.status === 'playing') {
       end.status = 'lost';
@@ -69,34 +95,52 @@ export function runSeed(seed: number, maxActions = 10000): SeedReport {
 
     return {
       seed,
+      persona,
       status: end.status,
       loseReason: end.loseReason,
       turns: end.turn,
       actions,
       sectorReached: end.sectorIndex,
       stuck,
+      stuckReason,
       winLegal,
       loreLegal,
       objectivesReachable,
       crash: null,
       hasNavCoreAtEnd: end.objectives.hasNavCore,
       level: end.level,
+      emPeak,
+      scanScars: end.scanScars.length,
+      doctrineQuiet: end.doctrineQuiet,
+      doctrineProbe: end.doctrineProbe,
+      salvageIdentified: end.salvageIdentified,
+      salvageBacklash: end.salvageBacklash,
+      skills: [...end.skills],
     };
   } catch (e) {
     return {
       seed,
+      persona,
       status: 'crash',
       loseReason: null,
       turns: 0,
       actions: 0,
       sectorReached: 0,
       stuck: false,
+      stuckReason: null,
       winLegal: false,
       loreLegal: false,
       objectivesReachable: false,
       crash: e instanceof Error ? e.message : String(e),
       hasNavCoreAtEnd: false,
       level: 1,
+      emPeak: 0,
+      scanScars: 0,
+      doctrineQuiet: 0,
+      doctrineProbe: 0,
+      salvageIdentified: 0,
+      salvageBacklash: 0,
+      skills: [],
     };
   }
 }
@@ -115,6 +159,10 @@ export function summarize(results: SeedReport[]) {
     stuck: losses.filter((r) => r.loseReason === 'stuck').length,
   };
 
+  const channels = Object.values(loseReasons).filter((n) => n > 0);
+  const avg = (pick: (r: SeedReport) => number) =>
+    results.length === 0 ? 0 : results.reduce((s, r) => s + pick(r), 0) / results.length;
+
   return {
     seeds: results.length,
     wins: wins.length,
@@ -132,5 +180,31 @@ export function summarize(results: SeedReport[]) {
       losses.length === 0
         ? 0
         : losses.reduce((s, r) => s + r.sectorReached, 0) / losses.length,
+    /**
+     * Death-mix diversity (GEM §2): how many lose channels fired, and how much of
+     * the mix the biggest one owns. One channel over ~0.7 means the mastery paths
+     * have collapsed into a single curve — retune before adding content.
+     */
+    loseChannels: channels.length,
+    dominantLoseShare:
+      losses.length === 0 ? 0 : Math.max(0, ...channels) / losses.length,
+    stuckReasons: {
+      idle: results.filter((r) => r.stuckReason === 'idle').length,
+      noAction: results.filter((r) => r.stuckReason === 'no_action').length,
+      actionCap: results.filter((r) => r.stuckReason === 'action_cap').length,
+    },
+    avgEmPeak: avg((r) => r.emPeak),
+    maxEmPeak: results.length === 0 ? 0 : Math.max(...results.map((r) => r.emPeak)),
+    avgScanScars: avg((r) => r.scanScars),
+    avgDoctrineQuiet: avg((r) => r.doctrineQuiet),
+    avgDoctrineProbe: avg((r) => r.doctrineProbe),
+    avgIdentified: avg((r) => r.salvageIdentified),
+    avgBacklash: avg((r) => r.salvageBacklash),
+    skillPicks: results
+      .flatMap((r) => r.skills)
+      .reduce<Record<string, number>>((acc, s) => {
+        acc[s] = (acc[s] ?? 0) + 1;
+        return acc;
+      }, {}),
   };
 }

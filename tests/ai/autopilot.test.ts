@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { chooseAction, runAutopilot } from '../../src/ai/autopilot';
+import { chooseAction, PERSONAS, runAutopilot } from '../../src/ai/autopilot';
 import { applyAction, createGame, hasItem } from '../../src/sim';
+import { summarize, type SeedReport } from '../harness';
+import { makeEnemy } from '../sim/fixtures';
 
 describe('autopilot chooseAction', () => {
   it('returns a non-null action on a fresh mission', () => {
@@ -77,5 +79,107 @@ describe('autopilot runAutopilot', () => {
       expect(action).not.toBeNull();
       expect(() => applyAction(st, action!)).not.toThrow();
     }
+  });
+
+  it('reports a stuck reason only when it gives up', () => {
+    const finished = runAutopilot(createGame(99), 5000);
+    if (!finished.stuck) expect(finished.stuckReason).toBeNull();
+
+    const capped = runAutopilot(createGame(99), 5);
+    expect(capped.stuck).toBe(true);
+    expect(capped.stuckReason).toBe('action_cap');
+  });
+
+  it('samples every applied action for telemetry', () => {
+    let steps = 0;
+    const { actions } = runAutopilot(createGame(42), 300, { onStep: () => steps++ });
+    expect(steps).toBe(actions);
+  });
+});
+
+describe('autopilot personas', () => {
+  it('stable keeps the calibrated thresholds the WR band is tuned to', () => {
+    expect(PERSONAS.stable.healAt).toBe(0.65);
+    expect(PERSONAS.stable.rechargeAt).toBe(0.65);
+    expect(PERSONAS.stable.useQuiet).toBe(true);
+    expect(PERSONAS.stable.useFlare).toBe(true);
+    expect(PERSONAS.stable.pushProbe).toBe(false);
+  });
+
+  it('reckless leaves healing later than stable', () => {
+    const st = createGame(42);
+    st.player.hp = Math.floor(st.player.maxHp * 0.5);
+    expect(chooseAction(st, PERSONAS.stable)).toEqual({ type: 'use' });
+
+    const reckless = createGame(42);
+    reckless.player.hp = Math.floor(reckless.player.maxHp * 0.5);
+    const action = chooseAction(reckless, PERSONAS.reckless);
+    const kind = reckless.inventory[reckless.ui.selectedSlot]?.kind;
+    expect(action?.type === 'use' && (kind === 'med' || kind === 'ration')).toBe(false);
+  });
+
+  it('probe refuses the quiet crutch that stable reaches for', () => {
+    /** Healthy, one jammer in kit, one noisy mite in range — the jammer decision. */
+    function jammerChoice() {
+      const st = createGame(42);
+      st.player.hp = st.player.maxHp;
+      st.player.energy = st.player.maxEnergy;
+      st.player.armor = st.player.maxArmor;
+      st.inventory = [{ kind: 'jammer', count: 1 }];
+      st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 3, y: st.player.y })];
+      return st;
+    }
+
+    const quiet = jammerChoice();
+    expect(chooseAction(quiet, PERSONAS.quiet)).toEqual({ type: 'use' });
+    expect(quiet.inventory[quiet.ui.selectedSlot]?.kind).toBe('jammer');
+
+    const probe = jammerChoice();
+    expect(chooseAction(probe, PERSONAS.probe)).not.toEqual({ type: 'use' });
+  });
+});
+
+describe('summarize death-mix diversity', () => {
+  function loss(reason: string): SeedReport {
+    return {
+      seed: 1,
+      persona: 'stable',
+      status: 'lost',
+      loseReason: reason,
+      turns: 10,
+      actions: 10,
+      sectorReached: 3,
+      stuck: false,
+      stuckReason: null,
+      winLegal: true,
+      loreLegal: true,
+      objectivesReachable: true,
+      crash: null,
+      hasNavCoreAtEnd: false,
+      level: 1,
+      emPeak: 20,
+      scanScars: 0,
+      doctrineQuiet: 0,
+      doctrineProbe: 0,
+      salvageIdentified: 0,
+      salvageBacklash: 0,
+      skills: [],
+    };
+  }
+
+  it('flags a single dominant channel', () => {
+    const s = summarize([loss('hp'), loss('hp'), loss('hp'), loss('storm')]);
+    expect(s.loseChannels).toBe(2);
+    expect(s.dominantLoseShare).toBeCloseTo(0.75, 5);
+  });
+
+  it('reads an even spread as diverse', () => {
+    const s = summarize([loss('hp'), loss('storm'), loss('energy'), loss('stuck')]);
+    expect(s.loseChannels).toBe(4);
+    expect(s.dominantLoseShare).toBeCloseTo(0.25, 5);
+  });
+
+  it('stays at zero with no losses', () => {
+    expect(summarize([]).dominantLoseShare).toBe(0);
   });
 });

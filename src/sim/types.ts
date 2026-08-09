@@ -304,6 +304,10 @@ export interface GameState {
   doctrineQuiet: number;
   /** Probe-doctrine tally (successful probe uses). */
   doctrineProbe: number;
+  /** Unknown salvage resolved into a known kit item this run. */
+  salvageIdentified: number;
+  /** Unknown salvage that bit back instead of resolving. */
+  salvageBacklash: number;
   /** Beacon multi-turn handshake (null when idle / not on beacon sector). */
   handshake: BeaconHandshake | null;
   /** Optional room-quest extraction favor; only one can be carried. */

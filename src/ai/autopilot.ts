@@ -8,8 +8,77 @@ import {
   type GameState,
 } from '../sim';
 import { INVENTORY_SLOTS } from '../data/items';
+import type { SkillId } from '../data/progression';
 import { EM_HIGH } from '../sim/emStress';
 import { inShadow, isLit } from '../sim/light';
+
+/**
+ * Playtest personas — the oracle needs to exercise each mastery path, because a
+ * single policy only ever reports its own habits (GEM §2: paths must fail
+ * differently). `stable` is the CI gate and must keep the historical thresholds;
+ * the others are reporting instruments, not balance targets.
+ */
+export type PersonaId = 'stable' | 'quiet' | 'probe' | 'reckless';
+
+export interface Persona {
+  id: PersonaId;
+  /** HP fraction at or below which it spends a heal. */
+  healAt: number;
+  /** Energy fraction at or below which it spends a charge. */
+  rechargeAt: number;
+  /** Spend jammer/quiet to duck notice. */
+  useQuiet: boolean;
+  /** Burn probe/lens for clarity whenever idle — buys read, pays EM. */
+  pushProbe: boolean;
+  /** Light as a weapon; when false the persona hoards flares. */
+  useFlare: boolean;
+  skillPrefer: readonly SkillId[];
+}
+
+const SURVIVAL_FORKS = ['triage', 'ion_skin', 'deep_reserve'] as const;
+
+export const PERSONAS: Record<PersonaId, Persona> = {
+  /** Historical suite policy — do not retune; the WR band is calibrated to it. */
+  stable: {
+    id: 'stable',
+    healAt: 0.65,
+    rechargeAt: 0.65,
+    useQuiet: true,
+    pushProbe: false,
+    useFlare: true,
+    skillPrefer: SURVIVAL_FORKS,
+  },
+  /** Quiet survey: hides instead of shooting, hoards light. */
+  quiet: {
+    id: 'quiet',
+    healAt: 0.6,
+    rechargeAt: 0.7,
+    useQuiet: true,
+    pushProbe: false,
+    useFlare: false,
+    skillPrefer: ['deep_reserve', 'triage', 'last_window'],
+  },
+  /** Probe doctrine: buys clarity with scan pressure. */
+  probe: {
+    id: 'probe',
+    healAt: 0.65,
+    rechargeAt: 0.65,
+    useQuiet: false,
+    pushProbe: true,
+    useFlare: true,
+    skillPrefer: ['overcharge', 'scavenger', 'last_window'],
+  },
+  /** Kinetic greed: fights at low vitals, heals late. */
+  reckless: {
+    id: 'reckless',
+    healAt: 0.35,
+    rechargeAt: 0.4,
+    useQuiet: false,
+    pushProbe: false,
+    useFlare: true,
+    skillPrefer: ['overcharge', 'triage'],
+  },
+};
 
 function dartAim(
   state: GameState,
@@ -68,12 +137,15 @@ function randomStep(state: GameState): Action {
  * Headless autopilot: path to objectives, fight blockers, heal when low,
  * use tactical tools, key/core interactions, exit sectors.
  */
-export function chooseAction(state: GameState): Action | null {
+export function chooseAction(
+  state: GameState,
+  persona: Persona = PERSONAS.stable,
+): Action | null {
   if (state.status !== 'playing') return null;
 
-  // Talent fork — prefer survival skills for suite stability
+  // Talent fork — persona picks its own doctrine; stable prefers survival forks
   if (state.skillPick && state.skillPick.length > 0) {
-    const prefer = ['triage', 'ion_skin', 'deep_reserve'] as const;
+    const prefer = persona.skillPrefer;
     for (const id of prefer) {
       if (state.skillPick.includes(id)) return { type: 'pick_skill', id };
     }
@@ -111,8 +183,8 @@ export function chooseAction(state: GameState): Action | null {
     state.ui.aimingDart = false;
   }
 
-  // Heal / recharge aggressively
-  if (state.player.hp <= state.player.maxHp * 0.65) {
+  // Heal / recharge — how late the persona leaves it is its main survival lever
+  if (state.player.hp <= state.player.maxHp * persona.healAt) {
     const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
     const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
     const idx = medIdx >= 0 ? medIdx : rationIdx;
@@ -121,7 +193,7 @@ export function chooseAction(state: GameState): Action | null {
       return { type: 'use' };
     }
   }
-  if (state.player.energy <= state.player.maxEnergy * 0.65) {
+  if (state.player.energy <= state.player.maxEnergy * persona.rechargeAt) {
     const batIdx = state.inventory.findIndex((s) => s.kind === 'battery' || s.kind === 'coolant');
     const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
@@ -178,8 +250,18 @@ export function chooseAction(state: GameState): Action | null {
     }
   }
 
+  // Probe doctrine: keep the read up even when nothing is wrong yet — the EM bill
+  // is the point, so this is where scan pressure actually accumulates.
+  if (persona.pushProbe && state.player.probeTurns <= 0 && state.emStress < EM_HIGH) {
+    const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe' || s.kind === 'lens');
+    if (probeIdx >= 0) {
+      state.ui.selectedSlot = probeIdx;
+      return { type: 'use' };
+    }
+  }
+
   // Jammer: mites/wasps nearby, or EM-HIGH (quiet suppresses contamination aggro bump)
-  if (state.player.jammerTurns <= 0) {
+  if (persona.useQuiet && state.player.jammerTurns <= 0) {
     const emCritical = state.emStress >= EM_HIGH;
     const noisyNear = state.enemies.some(
       (e) =>
@@ -219,8 +301,9 @@ export function chooseAction(state: GameState): Action | null {
   );
   const playerDark = inShadow(state, state.player.x, state.player.y);
   if (
-    (adjHostile && state.player.hp <= state.player.maxHp * 0.7) ||
-    (playerDark && nearHostile)
+    persona.useFlare &&
+    ((adjHostile && state.player.hp <= state.player.maxHp * 0.7) ||
+      (playerDark && nearHostile))
   ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'flare');
     if (fIdx >= 0) {
@@ -401,25 +484,44 @@ export function chooseAction(state: GameState): Action | null {
   return randomStep(state);
 }
 
+/** Why the policy gave up — distinguishes a wedged run from a slow one. */
+export type StuckReason = 'idle' | 'no_action' | 'action_cap';
+
 export interface AutopilotResult {
   state: GameState;
   actions: number;
   stuck: boolean;
+  stuckReason: StuckReason | null;
+}
+
+export interface AutopilotOpts {
+  /** Called after every applied action — telemetry sampling only, never mutate. */
+  onStep?: (state: GameState) => void;
+  /** Defaults to the calibrated `stable` policy. */
+  persona?: Persona;
 }
 
 export function runAutopilot(
   state: GameState,
   maxActions = 8000,
+  opts: AutopilotOpts = {},
 ): AutopilotResult {
   let actions = 0;
   let idleStreak = 0;
   let lastPos = `${state.player.x},${state.player.y},${state.sectorIndex}`;
 
+  let noAction = false;
+  const persona = opts.persona ?? PERSONAS.stable;
+
   while (state.status === 'playing' && actions < maxActions) {
-    const action = chooseAction(state);
-    if (!action) break;
+    const action = chooseAction(state, persona);
+    if (!action) {
+      noAction = true;
+      break;
+    }
     applyAction(state, action);
     actions++;
+    opts.onStep?.(state);
 
     const pos = `${state.player.x},${state.player.y},${state.sectorIndex},${state.objectives.beaconOpen},${state.objectives.hasRelayKey},${state.objectives.hasNavCore}`;
     const inMelee = state.enemies.some(
@@ -442,9 +544,11 @@ export function runAutopilot(
     }
 
     if (idleStreak > 80) {
-      return { state, actions, stuck: true };
+      return { state, actions, stuck: true, stuckReason: 'idle' };
     }
   }
 
-  return { state, actions, stuck: state.status === 'playing' };
+  const stuck = state.status === 'playing';
+  if (!stuck) return { state, actions, stuck: false, stuckReason: null };
+  return { state, actions, stuck, stuckReason: noAction ? 'no_action' : 'action_cap' };
 }

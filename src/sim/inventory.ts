@@ -247,9 +247,11 @@ function identifyUnknown(state: GameState, kind: UnknownKind): void {
   const scav = hasSkill(state, 'scavenger');
   const failChance = failChanceFor(kind, scav);
   if (state.rng() < failChance) {
+    state.salvageBacklash++;
     applyIdentifyBacklash(state, kind);
     return;
   }
+  state.salvageIdentified++;
 
   // Partial ID: ~20% on array_shard with scavenger — log category then roll within it
   if (kind === 'array_shard' && scav && state.rng() < 0.2) {

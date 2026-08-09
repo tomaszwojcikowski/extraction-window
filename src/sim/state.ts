@@ -130,6 +130,8 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     scanScars: [],
     doctrineQuiet: 0,
     doctrineProbe: 0,
+    salvageIdentified: 0,
+    salvageBacklash: 0,
     handshake: null,
     extractFavor: null,
     uplink: null,
