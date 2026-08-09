@@ -162,9 +162,10 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Move (which is also how you pick things up), wait, brace, kit/use, interact (`>` / Enter), peek.
+- Move (which is also how you pick things up), wait, brace, shove, kit/use, interact (`>` / Enter), peek.
 - Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail).
 - Help lists verbs first; “why gather” second.
+- A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Bus. Shove passes both: it answers a windup already in reach, and on open floor it is a wasted turn.
 
 **Anti-pattern:** New letter per niche action when `u` / `>` / kit already covers it.
 

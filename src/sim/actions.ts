@@ -11,6 +11,7 @@ import { mechanicsTryAction } from './mechanics';
 import { livingAllyAt } from './allyAi';
 import { enemyAt, npcAt } from './spatial';
 import { triggerOverwatch, triggerOverwatchOnAttack } from './ai';
+import { shoveTargets, tryShove } from './shove';
 import type { Action, GameState } from './types';
 import type { ItemKind as IK } from '../data/items';
 
@@ -31,6 +32,12 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   if (state.ui.aimingDart) {
     fireDart(state, dx, dy);
     endPlayerTurn(state);
+    return;
+  }
+
+  if (state.ui.aimingShove) {
+    state.ui.aimingShove = false;
+    if (tryShove(state, dx, dy)) endPlayerTurn(state);
     return;
   }
 
@@ -178,6 +185,7 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'close_ui':
       state.ui.inventoryOpen = false;
       state.ui.aimingDart = false;
+      state.ui.aimingShove = false;
       return state;
 
     case 'toggle_inventory':
@@ -204,6 +212,7 @@ export function applyAction(state: GameState, action: Action): GameState {
         state.ui.aimingDart = false;
         pushLog(state, 'LOG-AIM-MISS');
       }
+      state.ui.aimingShove = false;
       // Already on the drill hatch — waiting also commits the drop (recover stuck players).
       if (state.tutorialActive && onExitTile(state)) {
         completeTutorialExit(state);
@@ -218,6 +227,32 @@ export function applyAction(state: GameState, action: Action): GameState {
       pushLog(state, 'LOG-BRACE');
       endPlayerTurn(state);
       return state;
+
+    case 'shove': {
+      if (action.dx !== undefined && action.dy !== undefined) {
+        state.ui.aimingShove = false;
+        if (tryShove(state, action.dx, action.dy)) endPlayerTurn(state);
+        return state;
+      }
+      // Asking which way is only worth a keystroke when the answer is unclear.
+      const reach = shoveTargets(state);
+      if (reach.length === 0) {
+        state.ui.aimingShove = false;
+        pushLog(state, 'LOG-SHOVE-EMPTY');
+        return state;
+      }
+      if (reach.length === 1) {
+        const only = reach[0]!;
+        state.ui.aimingShove = false;
+        if (tryShove(state, only.x - state.player.x, only.y - state.player.y)) {
+          endPlayerTurn(state);
+        }
+        return state;
+      }
+      state.ui.aimingShove = true;
+      pushLog(state, 'LOG-SHOVE-WHICH');
+      return state;
+    }
 
     case 'exit':
       tryExit(state);

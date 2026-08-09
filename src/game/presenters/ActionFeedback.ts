@@ -58,6 +58,12 @@ export function actionFloatLabels(
       case 'LOG-BRACE':
         next = { label: 'BRACE · DEF +2', color: ThemeCss.inkBright };
         break;
+      case 'LOG-SHOVE-SLAM':
+        next = { label: 'SLAM · STAGGERED', color: ThemeCss.rust };
+        break;
+      case 'LOG-SHOVE-GROUND':
+        next = { label: 'INTO LIVE GROUND', color: ThemeCss.arc };
+        break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };
@@ -280,6 +286,10 @@ export function playActionSfx(
   }
   if (has('LOG-HIT')) {
     sfx.play('hit');
+    return;
+  }
+  if (has('LOG-SHOVE')) {
+    sfx.play('move');
     return;
   }
   if (

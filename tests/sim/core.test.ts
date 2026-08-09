@@ -266,6 +266,12 @@ describe('turn economy', () => {
     en.x = nx;
     en.y = st.player.y;
     st.visible[en.y]![en.x] = true;
+    // Adjacent, so the shoulder can still break the set.
+    expect(contextHint(st)).toBe('UI-HINT-TELE-REACH');
+
+    // Out of reach, the answer is brace or ground instead.
+    en.x = Math.min(st.width - 2, st.player.x + 2);
+    st.visible[en.y]![en.x] = true;
     expect(contextHint(st)).toBe('UI-HINT-TELE');
   });
 });

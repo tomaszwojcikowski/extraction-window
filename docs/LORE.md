@@ -89,6 +89,15 @@ pulse you have to step out of, hazard tape for a held shot, arc-white for a beam
 lane. A two-tile charge overcommits and lands winded, so reading the tell buys a
 free turn against it.
 
+**Answers.** A windup that is still at range is answered by bracing it, killing
+it, or leaving the painted ground. Once it is standing next to you the shoulder
+is the answer: a shove drives it back a tile and breaks whatever it was setting
+up. On open floor that is all it does — no damage, one turn spent — so the verb
+is really a question about where you chose to fight. Cover behind the target
+turns the push into a slam that staggers it; caustic ground turns it into the
+sector doing the killing, and the burn keeps running after you walk away.
+Crowned hostiles absorb the impact without losing their footing.
+
 ### Death drops
 
 Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.

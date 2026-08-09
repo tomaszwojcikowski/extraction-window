@@ -935,14 +935,22 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (action.type === 'move') {
+    // A shove that put the target into cover leaves both actors in place, so
+    // the lunge is the only thing that sells the impact.
+    const lunge =
+      action.type === 'move'
+        ? { dx: action.dx, dy: action.dy }
+        : action.type === 'shove' && action.dx !== undefined && action.dy !== undefined
+          ? { dx: action.dx, dy: action.dy }
+          : null;
+    if (lunge) {
       bumpAttack(
         this.tweens,
         this.playerSprite,
         (gx, gy) => this.worldXY(gx, gy),
         { x: this.state.player.x, y: this.state.player.y },
-        action.dx,
-        action.dy,
+        lunge.dx,
+        lunge.dy,
       );
     }
     // Enemy melee bump when they struck without relocating

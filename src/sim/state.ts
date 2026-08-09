@@ -148,7 +148,13 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       beaconOpen: false,
     },
     log: [],
-    ui: { inventoryOpen: false, selectedSlot: 0, aimingDart: false, questFlash: 0 },
+    ui: {
+      inventoryOpen: false,
+      selectedSlot: 0,
+      aimingDart: false,
+      aimingShove: false,
+      questFlash: 0,
+    },
     nextEntityId: map.nextEntityId,
     loreEvents: [],
   };
@@ -216,6 +222,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.ionFrontTurns = 0;
   state.ionFrontDampened = false;
   state.ui.aimingDart = false;
+  state.ui.aimingShove = false;
   state.ui.questFlash = 0;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
 

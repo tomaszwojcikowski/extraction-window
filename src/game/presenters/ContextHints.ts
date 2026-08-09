@@ -21,13 +21,19 @@ export function contextHint(st: GameState): LoreId | null {
   // The first-run drill deliberately teaches its bespoke stalker response.
   if (st.tutorialActive && fromMechanic) return fromMechanic;
 
-  const telegraphed = st.enemies.some(
-    (e) =>
-      e.alive &&
-      (st.visible[e.y]?.[e.x] ?? false) &&
-      e.windup > 0,
+  if (st.ui.aimingShove) return 'UI-HINT-SHOVE-DIR';
+
+  // A shoulder only reaches what is already on top of you; everything winding
+  // up further out has to be braced, outrun, or killed.
+  const armed = st.enemies.filter(
+    (e) => e.alive && (st.visible[e.y]?.[e.x] ?? false) && e.windup > 0,
   );
-  if (telegraphed) return 'UI-HINT-TELE';
+  if (armed.length > 0) {
+    const inReach = armed.some(
+      (e) => Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
+    );
+    return inReach ? 'UI-HINT-TELE-REACH' : 'UI-HINT-TELE';
+  }
 
   if (fromMechanic) return fromMechanic;
 

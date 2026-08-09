@@ -44,7 +44,8 @@ Partly procedural per seed: layouts, room templates, multiroom quests, branches,
 
 ## Mechanics
 
-- Turn-based grid; WASD/arrows move (stepping onto kit takes it); bump = melee; Shift+dir peek; `.` wait; `b` brace; `i` kit; `u` use; `p` PADD; `>` interact; Esc close
+- Turn-based grid; WASD/arrows move (stepping onto kit takes it); bump = melee; Shift+dir peek; `.` wait; `b` brace; `f` shove; `i` kit; `u` use; `p` PADD; `>` interact; Esc close
+- Combat answers: strike, brace a windup at range, or shove one already in reach — a shove breaks the set and spends the ground behind the target (cover slams, caustic footing burns)
 - HP, bus Power (slow drain + hazards), ATK, DEF, personal Shields
 - Inventory **16** slots; quest items occupy slots; two equip slots (tool + armor); **18** item kinds, one clear tool per job
 - In-run XP/skills (levels 1–8); three room quests (salvage / purge / vent_seal) billing Window, HP and kit; mission PADD panel

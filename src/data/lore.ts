@@ -45,11 +45,19 @@ export const LORE = {
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
     'Shift+dir — peek wake (release to clear)\n' +
-    '. — wait · b — brace\n' +
+    '. — wait · b — brace · f — shove (then a direction)\n' +
     'i — kit · u — use / equip (step on kit to take it)\n' +
     'Enter / Space / > — hatch, beacon, pad, scan, hail\n' +
     'p — PADD notes · 1/2 — pick skill · ? — help · m — mute\n' +
     'Esc — close peek / kit / PADD / help\n' +
+    '\n' +
+    'COMBAT\n' +
+    'Walk into a hostile to strike it.\n' +
+    'A windup paints the ground it threatens. Winding up at range —\n' +
+    'brace, or leave the painted tiles. Winding up next to you —\n' +
+    'f shoves it and breaks the set.\n' +
+    'A shove deals nothing on open floor, so pick your ground: cover\n' +
+    'behind it turns the push into a slam, caustic footing does worse.\n' +
     '\n' +
     'PRIORITIES\n' +
     'Kit keeps you alive (med / Bus / Shield).\n' +
@@ -95,7 +103,9 @@ export const LORE = {
   'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
   'UI-HINT-EXPLORE': 'Explore more — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
-  'UI-HINT-TELE': 'Hostile winding up — b brace · step away · or strike',
+  'UI-HINT-TELE': 'Hostile winding up — b brace · clear the ground · or kill it',
+  'UI-HINT-TELE-REACH': 'Winding up in reach — f shove breaks its set',
+  'UI-HINT-SHOVE-DIR': 'Shove which way? — press a direction',
   'UI-HINT-BRAND': 'Branded elite — optional reward; route around or counter-kit',
   'UI-HINT-ALLY-DRONE': 'Drone lamp — can interrupt one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort cover while adjacent — +1 DEF',
@@ -417,6 +427,11 @@ export const LORE = {
   'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
   'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
   'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
+  'LOG-SHOVE': 'Shoulder in — driven back a tile.',
+  'LOG-SHOVE-SLAM': 'Backed against cover — it eats the impact.',
+  'LOG-SHOVE-GROUND': 'Thrown into live ground.',
+  'LOG-SHOVE-EMPTY': 'Nothing in reach to shove.',
+  'LOG-SHOVE-WHICH': 'Shove which way?',
   'LOG-CONTAMINATION': 'Spore contamination tile tax drains the Bus.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
