@@ -137,6 +137,45 @@ describe('declared behaviour is the behaviour that runs', () => {
       seen.set(color, kind);
     }
   });
+
+  it('enemies drawn with the same body plan are far apart in colour', () => {
+    // Silhouette is chosen from these fields, so two kinds that agree on all of
+    // them render as the same shape and colour is the only thing left to tell
+    // them apart. Kinds that already look different may sit closer.
+    const bodyPlan = (kind: EnemyKind): string => {
+      const d = ENEMIES[kind];
+      return `${d.behavior}/${d.hunt ?? ''}/${d.overwatch ? 'ow' : ''}/${d.beam ? 'beam' : ''}`;
+    };
+    const distance = (a: number, b: number): number =>
+      Math.hypot(
+        ((a >> 16) & 0xff) - ((b >> 16) & 0xff),
+        ((a >> 8) & 0xff) - ((b >> 8) & 0xff),
+        (a & 0xff) - (b & 0xff),
+      );
+
+    const kinds = Object.keys(ENEMIES) as EnemyKind[];
+    for (let i = 0; i < kinds.length; i++) {
+      for (let j = i + 1; j < kinds.length; j++) {
+        const a = kinds[i]!;
+        const b = kinds[j]!;
+        if (bodyPlan(a) !== bodyPlan(b)) continue;
+        // The two beam drones are deliberately a matched pair: same silhouette,
+        // same threat, same answer. Everything else has to be separable.
+        if ([a, b].every((k) => ENEMIES[k].beam)) continue;
+
+        // An elite is meant to read as the crowned version of its base family,
+        // so it only has to avoid looking like the same creature. Two kinds at
+        // the same tier have nothing but colour to separate them.
+        const elitePair = !ENEMIES[a].brand !== !ENEMIES[b].brand;
+        const floor = elitePair ? 40 : 70;
+        const gap = distance(ENEMIES[a].color, ENEMIES[b].color);
+        expect(
+          gap,
+          `${a} and ${b} share a body plan but sit ${Math.round(gap)} apart`,
+        ).toBeGreaterThan(floor);
+      }
+    }
+  });
 });
 
 describe('threat tiles match what the resolve does', () => {

@@ -246,8 +246,15 @@ export function cancelOverwatch(state: GameState): void {
   }
 }
 
-/** How far out each style commits to a telegraph. */
-const HUNT_RANGE: Record<HuntStyle, number> = { lunge: 2, reach: 3, zone: 3 };
+/** Tiles the rift's standoff pulse covers, measured from the rift itself. */
+export const ZONE_PULSE_RADIUS = 2;
+
+/**
+ * How far out each style commits to a telegraph. Charge styles cover their
+ * move allowance plus the strike; the zone telegraph matches its own pulse
+ * radius exactly, so an armed rift always means "you are standing in it".
+ */
+const HUNT_RANGE: Record<HuntStyle, number> = { lunge: 2, reach: 3, zone: ZONE_PULSE_RADIUS };
 const HUNT_INTENT: Record<HuntStyle, 'pounce' | 'reach' | 'zone'> = {
   lunge: 'pounce',
   reach: 'reach',
@@ -258,9 +265,6 @@ const HUNT_TELE_LOG = {
   reach: 'LOG-TELE-REACH',
   zone: 'LOG-TELE-ZONE',
 } as const;
-
-/** Tiles the rift's standoff pulse covers, measured from the rift itself. */
-export const ZONE_PULSE_RADIUS = 2;
 
 function huntStyle(enemy: Enemy): HuntStyle {
   return ENEMIES[enemy.kind].hunt ?? 'lunge';
@@ -430,11 +434,7 @@ export function moveEnemies(state: GameState): void {
     const quiet = silenced(state, enemy);
     const aggro = effectiveAggro(state, enemy);
 
-    if (
-      (enemy.kind === 'drone' || enemy.kind === 'duct_drone') &&
-      dist <= aggro &&
-      tryBeamPattern(state, enemy)
-    ) {
+    if (def.beam && dist <= aggro && tryBeamPattern(state, enemy)) {
       continue;
     }
 

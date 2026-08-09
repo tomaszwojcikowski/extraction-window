@@ -414,7 +414,9 @@ type Silhouette =
   | 'crouched'
   | 'annelid'
   | 'bulwark'
-  | 'machine'
+  | 'turret'
+  | 'emitter'
+  | 'chassis'
   | 'coil'
   | 'reacher'
   | 'aperture';
@@ -435,7 +437,10 @@ function silhouetteFor(kind: EnemyKind): Silhouette {
     case 'guard':
       return 'bulwark';
     case 'sentinel':
-      return 'machine';
+      // Machines split by what they actually do, or five of them read alike.
+      if (def.overwatch) return 'turret';
+      if (def.beam) return 'emitter';
+      return 'chassis';
     case 'hunter':
       if (def.hunt === 'reach') return 'reacher';
       if (def.hunt === 'zone') return 'aperture';
@@ -572,26 +577,70 @@ function drawSilhouette(
       hostileEyes(g, q, 24, 21 + bob, 5, 4);
       break;
     }
-    case 'machine': {
-      // Hard rectilinear chassis and a single optic — machines are not fauna.
+    case 'turret': {
+      // Squat mount under a swivelling head with a levelled barrel: it is
+      // aiming at ground, which is exactly what overwatch punishes.
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(8), q(12 + bob), q(32), q(26));
+      g.fillTriangle(q(6), q(42 + bob), q(14), q(26 + bob), q(34), q(26 + bob));
+      g.fillTriangle(q(42), q(42 + bob), q(34), q(26 + bob), q(14), q(26 + bob));
       g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(10), q(14 + bob), q(28), q(22));
-      // Mast and mount.
-      g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(22), q(4 + bob), q(4), q(9));
-      g.fillRect(q(17), q(3 + bob), q(14), q(3));
-      g.fillRect(q(14), q(38 + bob), q(20), q(4));
-      // Chassis banding in the kind colour, then the optic.
+      g.fillRect(q(13), q(30 + bob), q(22), q(10));
+      // Swivel head, tracking across frames.
+      const swivel = frame === 1 ? 3 : frame === 2 ? -3 : 0;
       g.fillStyle(color, 1);
-      g.fillRect(q(10), q(31 + bob), q(28), q(4));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillRect(q(15), q(18 + bob), q(18), q(10));
+      g.fillRect(q(13 + swivel), q(12 + bob), q(22), q(16));
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(15 + swivel), q(14 + bob), q(18), q(6));
+      // Levelled barrel — the aimed line reads even at tile size.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(33 + swivel), q(20 + bob), q(13), q(5));
+      g.fillStyle(Theme.tape, 1);
+      g.fillRect(q(43 + swivel), q(20 + bob), q(3), q(5));
       g.fillStyle(Theme.danger, 1);
-      g.fillRect(q(17 + frame * 5), q(20 + bob), q(6), q(6));
-      g.fillStyle(Theme.arcWhite, 0.8);
-      g.fillRect(q(17 + frame * 5), q(20 + bob), q(2), q(2));
+      g.fillRect(q(17 + swivel), q(21 + bob), q(5), q(5));
+      break;
+    }
+    case 'emitter': {
+      // Dish and focusing prongs across a lane — it threatens a line, not a tile.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(12), q(14 + bob), q(24), q(20));
+      g.fillStyle(Theme.panel, 1);
+      g.fillRect(q(14), q(16 + bob), q(20), q(16));
+      // Lane prongs reach out to both sides.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(2), q(22 + bob), q(11), q(4));
+      g.fillRect(q(35), q(22 + bob), q(11), q(4));
+      g.fillStyle(color, 1);
+      g.fillRect(q(2), q(20 + bob), q(3), q(9));
+      g.fillRect(q(43), q(20 + bob), q(3), q(9));
+      // Charging aperture at the centre.
+      g.fillStyle(Theme.groundDeep, 1);
+      g.fillCircle(q(24), q(24 + bob), q(9));
+      g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
+      g.fillCircle(q(24), q(24 + bob), q(4 + frame));
+      // Rotor keeps it visibly airborne.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(14 - frame), q(8 + bob), q(20 + frame * 2), q(3));
+      break;
+    }
+    case 'chassis': {
+      // Plain hard-cased machine — no lane, no held shot, just armour.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(8), q(10 + bob), q(32), q(30));
+      g.fillStyle(Theme.panel, 1);
+      g.fillRect(q(11), q(13 + bob), q(26), q(24));
+      g.fillStyle(color, 1);
+      g.fillRect(q(11), q(13 + bob), q(26), q(5));
+      g.fillRect(q(11), q(32 + bob), q(26), q(5));
+      // Recessed visor band.
+      g.fillStyle(Theme.groundDeep, 1);
+      g.fillRect(q(13), q(21 + bob), q(22), q(8));
+      g.fillStyle(Theme.danger, 1);
+      g.fillRect(q(15 + frame * 7), q(23 + bob), q(6), q(4));
+      // Bolted feet.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(10), q(40 + bob), q(7), q(4));
+      g.fillRect(q(31), q(40 + bob), q(7), q(4));
       break;
     }
     case 'coil': {
@@ -662,9 +711,21 @@ const hoverShapes = new Set<Silhouette>(['darter', 'reacher', 'aperture', 'bloom
 
 export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number): void {
   const q = actorBase(g, T);
+  const def = ENEMIES[kind];
   const shape = silhouetteFor(kind);
   const bob = hoverShapes.has(shape) && frame === 1 ? -2 : frame === 2 ? 1 : 0;
-  drawSilhouette(g, q, shape, ENEMIES[kind].color, frame, bob);
+  drawSilhouette(g, q, shape, def.color, frame, bob);
+
+  // Branded field modifier — the crown says "this one drops kit and hits back
+  // harder" without disturbing the body plan underneath.
+  if (def.brand) {
+    g.fillStyle(Theme.tape, 1);
+    g.fillTriangle(q(9), q(9), q(14), q(1), q(19), q(9));
+    g.fillTriangle(q(19), q(9), q(24), q(0), q(29), q(9));
+    g.fillTriangle(q(29), q(9), q(34), q(1), q(39), q(9));
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(9), q(9), q(30), q(2));
+  }
 }
 
 export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'): void {

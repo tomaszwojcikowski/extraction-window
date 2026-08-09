@@ -65,6 +65,8 @@ export interface EnemyDef {
   hunt?: HuntStyle;
   /** Arms a shot against the tile the player steps into. */
   overwatch?: boolean;
+  /** Charges a cardinal ion beam down a clear lane. */
+  beam?: boolean;
   /** Named elite/boss field modifier and its deterministic recovery. */
   brand?: EnemyBrand;
   brandDrop?: ItemKind;
@@ -198,6 +200,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 4,
     damageType: 'kinetic',
     lightPrefer: 'lit',
+    beam: true,
   },
   mastling: {
     kind: 'mastling',
@@ -245,7 +248,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     atk: 3,
     def: 0,
     glyph: 'r',
-    color: 0x66ddaa,
+    color: 0x2fc0d8,
     behavior: 'ambush',
     aggroRange: 8,
     damageType: 'ion',
@@ -263,6 +266,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 5,
     damageType: 'kinetic',
     lightPrefer: 'lit',
+    beam: true,
   },
   elite_skirmisher: {
     kind: 'elite_skirmisher',
@@ -285,7 +289,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     atk: 4,
     def: 2,
     glyph: 'E',
-    color: 0xaa88ff,
+    color: 0xcf6cff,
     behavior: 'sentinel',
     aggroRange: 5,
     damageType: 'kinetic',
@@ -347,6 +351,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'hunter',
     aggroRange: 8,
     damageType: 'ion',
+    hunt: 'reach',
     brand: 'flarebound',
     brandDrop: 'flare',
   },
