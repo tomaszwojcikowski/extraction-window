@@ -139,16 +139,8 @@ describe('quest item inventory', () => {
 });
 
 describe('expansion phase 2 mechanics', () => {
-  it('quest HUD lore prompts exist for multiroom kinds', () => {
-    const ids = [
-      'UI-RQ-RELAY-A',
-      'UI-RQ-RELAY-B',
-      'UI-RQ-RELAY-RETURN',
-      'UI-RQ-CAL-A',
-      'UI-RQ-CAL-B',
-      'UI-RQ-VENT-A',
-      'UI-RQ-VENT-B',
-    ] as const;
+  it('quest HUD lore prompts exist for every quest kind', () => {
+    const ids = ['UI-RQ-SALVAGE', 'UI-RQ-PURGE', 'UI-RQ-VENT-A', 'UI-RQ-VENT-B'] as const;
     for (const id of ids) {
       expect(lore(id).length).toBeGreaterThan(0);
     }

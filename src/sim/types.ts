@@ -153,14 +153,11 @@ export interface ObjectiveFlags {
   beaconOpen: boolean;
 }
 
-export type RoomQuestKind =
-  | 'salvage'
-  | 'purge'
-  | 'decode'
-  | 'stabilize'
-  | 'relay_chain'
-  | 'calibrate'
-  | 'vent_seal';
+/**
+ * Three quests, each billing a different resource: salvage costs Window time,
+ * purge costs HP, vent_seal costs kit.
+ */
+export type RoomQuestKind = 'salvage' | 'purge' | 'vent_seal';
 
 export interface QuestStep {
   id: string;
@@ -247,7 +244,6 @@ export interface GameState {
     filterTurns: number;
     jammerTurns: number;
     mapperTurns: number;
-    stabilizeTurns: number;
     /** Brace persists through this enemy phase, then expires next player turn. */
     braceTurns: number;
     statuses: StatusMap;

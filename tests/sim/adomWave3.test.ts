@@ -4,11 +4,12 @@ import { rebuildIllumination } from '../../src/sim/light';
 import { startIonFront } from '../../src/sim/mechanics/ionFront';
 import { mechanicsOnEndTurn } from '../../src/sim/mechanics';
 import {
-  buildMultiRoomQuest,
+  buildVentSealQuest,
   buildSingleRoomQuest,
   pickRoomQuestKind,
+  tickRoomQuest,
   tryRoomQuest,
-  tryStabilizeQuest,
+  trySealVentSite,
 } from '../../src/sim/roomQuest';
 import { roomQuestHudLine } from '../../src/sim/mechanics/roomQuestMechanic';
 import { combatArena, makeEnemy } from './fixtures';
@@ -49,26 +50,33 @@ describe('ADOM Wave 3 — ion fronts', () => {
   });
 });
 
-describe('ADOM Wave 3 — relay chain', () => {
-  it('appears only in the midgame pool', () => {
-    expect(pickRoomQuestKind(() => 0.99, 4)).toBe('relay_chain');
-    expect(pickRoomQuestKind(() => 0.99, 11)).toBe('calibrate');
+describe('room quests', () => {
+  it('only ever offers the three kinds, at any depth', () => {
+    for (const roll of [0, 0.34, 0.5, 0.99]) {
+      expect(['salvage', 'purge', 'vent_seal']).toContain(pickRoomQuestKind(() => roll));
+    }
   });
 
-  it('grants a pattern-buffer fail-safe after all relays are closed', () => {
+  it('bills the kit for a vent seal, then pays a pattern fail-safe', () => {
     const st = combatArena();
     const room = { x: 1, y: 1, w: 3, h: 3 };
-    st.roomQuest = buildMultiRoomQuest('relay_chain', [
+    st.roomQuest = buildVentSealQuest([
       { pos: { x: 2, y: 2 }, room },
       { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
     ]);
+    st.player.x = 2;
+    st.player.y = 2;
 
-    for (const step of st.roomQuest.steps) {
-      st.player.x = step.pos.x;
-      st.player.y = step.pos.y;
-      expect(tryRoomQuest(st)).toBe(true);
-    }
+    // Site A is a vent: the console does nothing until sealant goes down.
+    expect(tryRoomQuest(st)).toBe(true);
+    expect(st.roomQuest.stepIndex).toBe(0);
 
+    expect(trySealVentSite(st)).toBe(true);
+    expect(st.roomQuest.stepIndex).toBe(1);
+
+    st.player.x = 4;
+    st.player.y = 2;
+    expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(true);
     expect(st.extractFavor).toEqual({ kind: 'pattern_fail_safe' });
   });
@@ -81,55 +89,28 @@ describe('ADOM Wave 3 — relay chain', () => {
   });
 });
 
-describe('ADOM Wave 3 — calibrate', () => {
-  it('appears only in late-mid and late sector pools', () => {
-    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('stabilize');
-    expect(pickRoomQuestKind(() => 0.99, 7)).toBe('calibrate');
-    expect(pickRoomQuestKind(() => 0.99, 12)).toBe('calibrate');
-    expect(pickRoomQuestKind(() => 0.99, 13)).toBe('decode');
-  });
-
-  it('grants a storm shelter after both masts are calibrated', () => {
+describe('room quest purge', () => {
+  it('bills HP: hostiles wake on entry and the console holds until they are down', () => {
     const st = combatArena();
-    const room = { x: 1, y: 1, w: 3, h: 3 };
-    st.roomQuest = buildMultiRoomQuest('calibrate', [
-      { pos: { x: 2, y: 2 }, room },
-      { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
-    ]);
+    const room = { x: 1, y: 1, w: 5, h: 5 };
+    st.roomQuest = buildSingleRoomQuest('purge', { x: 3, y: 3 }, room);
+    st.player.x = 3;
+    st.player.y = 3;
 
-    for (const step of st.roomQuest.steps) {
-      st.player.x = step.pos.x;
-      st.player.y = step.pos.y;
-      expect(tryRoomQuest(st)).toBe(true);
+    tickRoomQuest(st);
+    expect(st.roomQuest.spawnedIds.length).toBeGreaterThan(0);
+
+    // Console refuses while the nest is alive.
+    expect(tryRoomQuest(st)).toBe(true);
+    expect(st.roomQuest.done).toBe(false);
+
+    for (const id of st.roomQuest.spawnedIds) {
+      const en = st.enemies.find((e) => e.id === id);
+      if (en) en.alive = false;
     }
-
-    expect(st.roomQuest.done).toBe(true);
-    expect(st.extractFavor).toEqual({ kind: 'storm_shelter' });
-  });
-});
-
-describe('ADOM Wave 3 — stabilize', () => {
-  it('appears only in its short, lower-weight midgame pool', () => {
-    expect(pickRoomQuestKind(() => 0.99, 4)).toBe('relay_chain');
-    expect(pickRoomQuestKind(() => 0.99, 5)).toBe('stabilize');
-    expect(pickRoomQuestKind(() => 0.99, 6)).toBe('stabilize');
-    expect(pickRoomQuestKind(() => 0.99, 7)).toBe('calibrate');
-  });
-
-  it('grants a hazard pass after a cracked array node is stabilized', () => {
-    const st = combatArena();
-    const room = { x: 1, y: 1, w: 3, h: 3 };
-    st.roomQuest = buildSingleRoomQuest('stabilize', { x: 2, y: 2 }, room);
-    st.player.x = 2;
-    st.player.y = 2;
-    st.player.armor = 0;
-    st.emStress = 40;
-
-    expect(tryStabilizeQuest(st, 'sealant')).toBe(true);
-
+    tickRoomQuest(st);
+    expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(true);
     expect(st.extractFavor).toEqual({ kind: 'hazard_pass' });
-    expect(st.player.armor).toBe(st.player.maxArmor);
-    expect(st.emStress).toBe(0);
   });
 });

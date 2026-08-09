@@ -1,14 +1,11 @@
 import { pushLog } from './log';
 import type { ExtractFavorKind, GameState } from './types';
 
+/** One favor per quest, so which quest you took shows up at extraction. */
 const FAVOR_BY_QUEST = {
   salvage: 'storm_shelter',
   purge: 'hazard_pass',
-  decode: 'pattern_fail_safe',
-  stabilize: 'hazard_pass',
-  relay_chain: 'pattern_fail_safe',
-  calibrate: 'storm_shelter',
-  vent_seal: 'hazard_pass',
+  vent_seal: 'pattern_fail_safe',
 } as const satisfies Record<NonNullable<GameState['roomQuest']>['kind'], ExtractFavorKind>;
 
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {

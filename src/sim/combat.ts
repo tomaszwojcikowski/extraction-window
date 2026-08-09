@@ -132,7 +132,6 @@ export function enemyAttack(
   const def =
     state.player.def +
     armorDefBonus(state) +
-    (state.player.stabilizeTurns > 0 ? 1 : 0) +
     (state.player.braceTurns > 0 ? 2 : 0) +
     (hasEscortCover(state) ? 1 : 0) +
     lastWindow -

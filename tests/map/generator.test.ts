@@ -61,33 +61,25 @@ describe('map generator', () => {
     }
   });
 
-  it('keeps linked room quests within their sector gates', () => {
-    const base = new Set(['salvage', 'purge', 'vent_seal', 'decode']);
-    const relay = new Set([...base, 'relay_chain']);
-    const stabilize = new Set([...relay, 'stabilize']);
-    const dualMast = new Set([...relay, 'calibrate']);
-    const calibrate = new Set([...base, 'calibrate']);
+  it('generates only the three quest kinds, and puts vent seals on a vent', () => {
+    const kinds = new Set<string>();
     for (const seed of [1, 7, 42, 99, 256, 777, 1337, 4096, 9999, 12345]) {
       for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
         const sector = getSector(i);
         const map = generateSectorMap(sector, seed, i);
-        if (!map.roomQuest) continue;
-        const allowed =
-          i >= 7 && i <= 10
-            ? dualMast
-            : i >= 5 && i <= 6
-              ? stabilize
-              : i === 4
-              ? relay
-              : i >= 11 && i <= 12
-                ? calibrate
-                : base;
-        expect(
-          allowed.has(map.roomQuest.kind),
-          `seed=${seed} sector=${sector.id} kind=${map.roomQuest.kind}`,
-        ).toBe(true);
+        const rq = map.roomQuest;
+        if (!rq) continue;
+        expect(['salvage', 'purge', 'vent_seal'], `seed=${seed} sector=${sector.id}`).toContain(
+          rq.kind,
+        );
+        kinds.add(rq.kind);
+        if (rq.kind === 'vent_seal') {
+          expect(rq.steps.length).toBe(2);
+        }
       }
     }
+    // All three still show up across the campaign.
+    expect(kinds.size).toBe(3);
   });
 
   it('places exactly one elite on sector index ≥ 2 when mid-rooms exist', () => {

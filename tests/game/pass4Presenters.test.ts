@@ -51,7 +51,6 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
       filterTurns: 0,
       lensTurns: 0,
       mapperTurns: 0,
-      stabilizeTurns: 0,
       equip: {},
       inventory: [],
       statuses: {},

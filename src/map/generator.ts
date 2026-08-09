@@ -10,7 +10,7 @@ import { npcKindForSector } from '../data/npcs';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
 import {
-  buildMultiRoomQuest,
+  buildVentSealQuest,
   buildSingleRoomQuest,
   isMultiSiteKind,
   pickRoomQuestKind,
@@ -640,10 +640,9 @@ export function generateSectorMap(
   if (rooms.length >= 3) {
     const midRooms = rooms.filter((r, i) => i > 0 && i < rooms.length - 1 && r !== startRoom && r !== endRoom);
     const candidates = midRooms.length >= 1 ? midRooms : rooms.slice(1, -1);
-    const kind = pickRoomQuestKind(rng, sectorSalt);
+    const kind = pickRoomQuestKind(rng);
 
     if (isMultiSiteKind(kind) && candidates.length >= 2) {
-      const multiKind = kind as 'relay_chain' | 'calibrate' | 'vent_seal';
       const shuffled = shuffle(rng, [...candidates]);
       const aRoom = shuffled[0]!;
       let bRoom: Room | null = null;
@@ -662,28 +661,24 @@ export function generateSectorMap(
         }
       }
       if (bRoom) {
-        // Prefer a vent tile in room A for vent_seal
+        // Site A has to be a vent — that is what the sealant is for.
         let aPos = { x: aRoom.cx, y: aRoom.cy };
-        if (multiKind === 'vent_seal') {
-          let found: Pos | null = null;
-          for (let y = aRoom.y; y < aRoom.y + aRoom.h && !found; y++) {
-            for (let x = aRoom.x; x < aRoom.x + aRoom.w; x++) {
-              if (tiles[y]?.[x]?.kind === 'vent') {
-                found = { x, y };
-                break;
-              }
+        let vented: Pos | null = null;
+        for (let y = aRoom.y; y < aRoom.y + aRoom.h && !vented; y++) {
+          for (let x = aRoom.x; x < aRoom.x + aRoom.w; x++) {
+            if (tiles[y]?.[x]?.kind === 'vent') {
+              vented = { x, y };
+              break;
             }
           }
-          if (found) aPos = found;
-          else {
-            tiles[aPos.y]![aPos.x] = vent();
-          }
         }
+        if (vented) aPos = vented;
+        else tiles[aPos.y]![aPos.x] = vent();
         const bPos = { x: bRoom.cx, y: bRoom.cy };
         tiles[aPos.y]![aPos.x] = questTile();
         tiles[bPos.y]![bPos.x] = questTile();
         specials.push(aPos, bPos);
-        roomQuest = buildMultiRoomQuest(multiKind, [
+        roomQuest = buildVentSealQuest([
           { pos: aPos, room: { x: aRoom.x, y: aRoom.y, w: aRoom.w, h: aRoom.h } },
           { pos: bPos, room: { x: bRoom.x, y: bRoom.y, w: bRoom.w, h: bRoom.h } },
         ]);

@@ -185,7 +185,7 @@ export class HudView {
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
-    const defBonus = armorDefBonus(st) + (st.player.stabilizeTurns > 0 ? 1 : 0);
+    const defBonus = armorDefBonus(st);
     const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
       `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${systems}${statusLine}`,

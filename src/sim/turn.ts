@@ -175,7 +175,6 @@ function tickEnvironment(state: GameState): void {
       if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
     }
     if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
-    if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
     if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
     tickContamination(state);
     tickPlayerStatusEffects(state);
@@ -230,7 +229,6 @@ function tickEnvironment(state: GameState): void {
     if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
   }
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
-  if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
   if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
 
   tickPlayerStatusEffects(state);

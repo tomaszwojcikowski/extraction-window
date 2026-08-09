@@ -22,7 +22,6 @@ const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
   approach: 'CODEX-APPROACH',
 };
 
-const CALIBRATE_WINDOW = 12;
 
 export function activeQuestStep(rq: RoomQuest): QuestStep | null {
   if (rq.done || rq.steps.length === 0) return null;
@@ -70,88 +69,15 @@ export function buildSingleRoomQuest(
   const prompts: Record<RoomQuestKind, LoreId> = {
     salvage: 'UI-RQ-SALVAGE',
     purge: 'UI-RQ-PURGE',
-    decode: 'UI-RQ-DECODE',
-    stabilize: 'UI-RQ-STABILIZE',
-    relay_chain: 'UI-RQ-RELAY-A',
-    calibrate: 'UI-RQ-CAL-A',
     vent_seal: 'UI-RQ-VENT-A',
   };
   return makeSingleStep(kind, pos, room, prompts[kind]);
 }
 
-export function buildMultiRoomQuest(
-  kind: 'relay_chain' | 'calibrate' | 'vent_seal',
+/** Vent seal is the only two-site quest: seal the vent, then lock it at the console. */
+export function buildVentSealQuest(
   sites: Array<{ pos: Pos; room: { x: number; y: number; w: number; h: number } }>,
 ): RoomQuest {
-  if (kind === 'relay_chain' && sites.length >= 2) {
-    const a = sites[0]!;
-    const b = sites[1]!;
-    const steps: QuestStep[] = [
-      {
-        id: 'relay-a',
-        pos: { ...a.pos },
-        room: { ...a.room },
-        done: false,
-        prompt: 'UI-RQ-RELAY-A',
-      },
-      {
-        id: 'relay-b',
-        pos: { ...b.pos },
-        room: { ...b.room },
-        done: false,
-        prompt: 'UI-RQ-RELAY-B',
-      },
-      {
-        id: 'relay-return',
-        pos: { ...a.pos },
-        room: { ...a.room },
-        done: false,
-        prompt: 'UI-RQ-RELAY-RETURN',
-      },
-    ];
-    const rq: RoomQuest = {
-      kind,
-      steps,
-      stepIndex: 0,
-      pos: { ...a.pos },
-      room: { ...a.room },
-      stage: 0,
-      done: false,
-      spawnedIds: [],
-    };
-    return rq;
-  }
-  if (kind === 'calibrate' && sites.length >= 2) {
-    const a = sites[0]!;
-    const b = sites[1]!;
-    const steps: QuestStep[] = [
-      {
-        id: 'cal-a',
-        pos: { ...a.pos },
-        room: { ...a.room },
-        done: false,
-        prompt: 'UI-RQ-CAL-A',
-      },
-      {
-        id: 'cal-b',
-        pos: { ...b.pos },
-        room: { ...b.room },
-        done: false,
-        prompt: 'UI-RQ-CAL-B',
-      },
-    ];
-    return {
-      kind,
-      steps,
-      stepIndex: 0,
-      pos: { ...a.pos },
-      room: { ...a.room },
-      stage: 0,
-      done: false,
-      spawnedIds: [],
-    };
-  }
-  // vent_seal
   const a = sites[0]!;
   const b = sites[1] ?? sites[0]!;
   const steps: QuestStep[] = [
@@ -183,7 +109,6 @@ export function buildMultiRoomQuest(
 }
 
 function addLoot(state: GameState, kind: ItemKind): void {
-  if (kind === 'energy') kind = 'energy';
   const def = ITEMS[kind];
   if (def.stackable) {
     const idx = state.inventory.findIndex((s) => s.kind === kind);
@@ -368,53 +293,13 @@ function completeMultiQuest(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq || rq.done) return;
   rq.done = true;
-  const better = rq.kind === 'relay_chain' || rq.kind === 'calibrate' || rq.kind === 'vent_seal';
-  if (rq.kind === 'relay_chain') pushLog(state, 'LOG-RQ-RELAY');
-  else if (rq.kind === 'calibrate') pushLog(state, 'LOG-RQ-CALIBRATE');
-  else if (rq.kind === 'vent_seal') pushLog(state, 'LOG-RQ-VENT');
-  finishQuestLoot(state, better);
+  pushLog(state, 'LOG-RQ-VENT');
+  finishQuestLoot(state, true);
   clearAllQuestTiles(state);
 }
 
-/** Spawn a weak pack near the next step — used by scriptedEvents on relay step1. */
-export function spawnRelayAmbushNearStep(state: GameState, near: Pos): void {
-  const rq = state.roomQuest;
-  if (!rq) return;
-  const kinds = ['mite', 'reef_skitter'] as const;
-  const n = randInt(state.rng, 1, 2);
-  for (let i = 0; i < n; i++) {
-    const kind = pick(state.rng, [...kinds]);
-    const def = ENEMIES[kind];
-    const scaled = scaleEnemyCombat(def, state.sectorIndex, state.level, 'normal');
-    const ox = i === 0 ? 1 : -1;
-    const x = Math.max(1, Math.min(state.width - 2, near.x + ox));
-    const y = near.y;
-    if (!state.tiles[y]?.[x]?.walkable) continue;
-    state.enemies.push({
-      id: state.nextEntityId++,
-      kind,
-      x,
-      y,
-      hp: scaled.hp,
-      maxHp: scaled.hp,
-      atk: scaled.atk,
-      def: scaled.def,
-      alive: true,
-      statuses: {},
-      alerted: true,
-      swellTurns: 0,
-      homeX: x,
-      homeY: y,
-      skirmishRetreat: false,
-      windup: 0,
-      beamCooldown: 0,
-      tier: 'normal',
-    });
-  }
-  pushLog(state, 'LOG-RQ-RELAY-AMBUSH');
-}
-
 /** Call after player moves — purge wake / decode tick / calibrate timer. */
+/** Call after the player moves — purge is the only quest that wakes on entry. */
 export function tickRoomQuest(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq || rq.done) return;
@@ -426,41 +311,6 @@ export function tickRoomQuest(state: GameState): void {
   if (rq.kind === 'purge' && rq.stage === 1 && purgeCleared(state)) {
     rq.stage = 2;
   }
-  if (
-    rq.kind === 'decode' &&
-    state.player.x === rq.pos.x &&
-    state.player.y === rq.pos.y &&
-    rq.stage < 3
-  ) {
-    rq.stage += 1;
-    if (rq.stage < 3) pushLog(state, 'LOG-RQ-DECODE-TICK', `${rq.stage}/3`);
-    else completeDecode(state);
-  }
-
-  // Calibrate soft timer after mast A locked
-  if (rq.kind === 'calibrate' && rq.stepIndex === 1 && rq.stage > 0) {
-    rq.stage -= 1;
-    if (rq.stage <= 0) {
-      pushLog(state, 'LOG-RQ-CAL-FAIL');
-      rq.stepIndex = 0;
-      rq.stage = 0;
-      if (rq.steps[0]) rq.steps[0].done = false;
-      if (rq.steps[1]) rq.steps[1].done = false;
-      syncQuestActive(rq);
-    }
-  }
-}
-
-function completeDecode(state: GameState): void {
-  const rq = state.roomQuest;
-  if (!rq || rq.done) return;
-  rq.done = true;
-  if (rq.steps[0]) rq.steps[0].done = true;
-  pushLog(state, 'LOG-RQ-DECODE');
-  grantQuestPayoff(state, 'good');
-  grantCodex(state);
-  grantExtractFavor(state, favorForQuest(state));
-  clearAllQuestTiles(state);
 }
 
 function clearAllQuestTiles(state: GameState): void {
@@ -509,38 +359,6 @@ export function tryRoomQuest(state: GameState): boolean {
     clearAllQuestTiles(state);
     return true;
   }
-  if (rq.kind === 'decode') {
-    if (rq.stage >= 3 || rq.done) return false;
-    const pIdx = state.inventory.findIndex((s) => s.kind === 'probe');
-    if (pIdx >= 0) {
-      const slot = state.inventory[pIdx]!;
-      slot.count -= 1;
-      if (slot.count <= 0) state.inventory.splice(pIdx, 1);
-      completeDecode(state);
-      return true;
-    }
-    pushLog(state, 'LOG-RQ-DECODE-TICK', `${rq.stage}/3`);
-    return true;
-  }
-  if (rq.kind === 'stabilize') {
-    pushLog(state, 'LOG-RQ-NEED');
-    return true;
-  }
-  if (rq.kind === 'relay_chain') {
-    advanceStep(state);
-    return true;
-  }
-  if (rq.kind === 'calibrate') {
-    if (rq.stepIndex === 0) {
-      advanceStep(state);
-      rq.stage = CALIBRATE_WINDOW;
-      pushLog(state, 'LOG-RQ-CAL-TICK', `${CALIBRATE_WINDOW}`);
-      return true;
-    }
-    // mast B within window
-    advanceStep(state);
-    return true;
-  }
   if (rq.kind === 'vent_seal') {
     if (rq.stepIndex === 0) {
       pushLog(state, 'LOG-RQ-NEED');
@@ -552,81 +370,28 @@ export function tryRoomQuest(state: GameState): boolean {
   return false;
 }
 
-/**
- * Repair a cracked array node with sealant or a spare filter. Unlike vent_seal,
- * this is a single-site bus stabilization that grants a temporary hold charge.
- */
-export function tryStabilizeQuest(state: GameState, withKind: 'sealant' | 'filter'): boolean {
+/** Seal the first vent site with sealant — the kit cost that opens site B. */
+export function trySealVentSite(state: GameState): boolean {
   const rq = state.roomQuest;
   if (!rq || rq.done) return false;
   syncQuestActive(rq);
-
-  if (rq.kind === 'vent_seal' && rq.stepIndex === 0) {
-    if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
-    if (withKind !== 'sealant') {
-      pushLog(state, 'LOG-RQ-NEED');
-      return false;
-    }
-    advanceStep(state);
-    pushLog(state, 'LOG-RQ-VENT-SEALED');
-    void withKind;
-    return true;
-  }
-
-  if (rq.kind !== 'stabilize') return false;
+  if (rq.kind !== 'vent_seal' || rq.stepIndex !== 0) return false;
   if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
-  rq.done = true;
-  if (rq.steps[0]) rq.steps[0].done = true;
-  state.player.armor = state.player.maxArmor;
-  state.player.stabilizeTurns = Math.max(state.player.stabilizeTurns, 30);
-  state.emStress = Math.max(0, state.emStress - 35);
-  pushLog(state, 'LOG-RQ-STABILIZE');
-  pushLog(state, 'LOG-EM-PURGE', '-35');
-  grantQuestPayoff(state, 'good');
-  grantCodex(state);
-  grantExtractFavor(state, favorForQuest(state));
-  clearAllQuestTiles(state);
-  void withKind;
+  advanceStep(state);
+  pushLog(state, 'LOG-RQ-VENT-SEALED');
   return true;
 }
 
-const BASE_ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal', 'decode'];
-const RELAY_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'relay_chain'];
-const STABILIZE_ROOM_QUEST_KINDS: RoomQuestKind[] = [
-  ...BASE_ROOM_QUEST_KINDS,
-  'relay_chain',
-  'stabilize',
-];
-const CALIBRATE_ROOM_QUEST_KINDS: RoomQuestKind[] = [...BASE_ROOM_QUEST_KINDS, 'calibrate'];
-const DUAL_MAST_ROOM_QUEST_KINDS: RoomQuestKind[] = [
-  ...BASE_ROOM_QUEST_KINDS,
-  'relay_chain',
-  'calibrate',
-];
+const ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal'];
 
-/**
- * Relay-chain is a midgame optional route investment. Dual-mast calibration
- * starts only after the beacon, when linked arrays fit the shelf fiction. Cracked
- * array-node stabilization is a lower-weight, short midgame detour before the
- * linked-array content becomes available.
- */
-export function pickRoomQuestKind(rng: () => number, sectorIndex: number): RoomQuestKind {
-  const pool =
-    sectorIndex >= 7 && sectorIndex <= 10
-      ? DUAL_MAST_ROOM_QUEST_KINDS
-      : sectorIndex >= 5 && sectorIndex <= 6
-        ? STABILIZE_ROOM_QUEST_KINDS
-        : sectorIndex === 4
-        ? RELAY_ROOM_QUEST_KINDS
-        : sectorIndex >= 11 && sectorIndex <= 12
-          ? CALIBRATE_ROOM_QUEST_KINDS
-          : BASE_ROOM_QUEST_KINDS;
-  return pool[Math.floor(rng() * pool.length)]!;
+/** Every sector draws from the same three; depth changes the danger, not the ask. */
+export function pickRoomQuestKind(rng: () => number): RoomQuestKind {
+  return pick(rng, ROOM_QUEST_KINDS);
 }
 
 /** Multi-site builders for linked arrays and the vent-seal procedure. */
 export function isMultiSiteKind(kind: RoomQuestKind): boolean {
-  return kind === 'relay_chain' || kind === 'calibrate' || kind === 'vent_seal';
+  return kind === 'vent_seal';
 }
 
 export function questStepPrompt(rq: RoomQuest): LoreId | null {

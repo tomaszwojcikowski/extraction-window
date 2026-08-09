@@ -1,6 +1,6 @@
+import { activeQuestStep } from '../roomQuest';
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
-import { spawnRelayAmbushNearStep, activeQuestStep } from '../roomQuest';
 import type { GameState } from '../types';
 import type { Mechanic } from './types';
 
@@ -70,19 +70,6 @@ export const scriptedEventsMechanic: Mechanic = {
         state.approachShearAcc = 0;
         shearPulse(state);
       }
-    }
-
-    const rq = state.roomQuest;
-    if (
-      rq &&
-      !rq.done &&
-      rq.kind === 'relay_chain' &&
-      rq.stepIndex === 1 &&
-      rq.steps[0]?.done &&
-      once(state, `relay_ambush_${state.sectorIndex}`)
-    ) {
-      const step = activeQuestStep(rq);
-      if (step) spawnRelayAmbushNearStep(state, step.pos);
     }
 
     // Elite contact tell when first seen

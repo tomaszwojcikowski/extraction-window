@@ -14,7 +14,7 @@ import { killEnemy } from './death';
 import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
-import { tryStabilizeQuest } from './roomQuest';
+import { trySealVentSite } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
@@ -242,10 +242,6 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-PLATE');
       break;
     case 'filter': {
-      if (tryStabilizeQuest(state, 'filter')) {
-        removeOne(state, kind);
-        break;
-      }
       const filterDur = 50 + state.paddMods.filterBonus;
       state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
@@ -312,7 +308,7 @@ export function useSelected(state: GameState): boolean {
       identifyUnknown(state);
       break;
     case 'sealant': {
-      if (tryStabilizeQuest(state, 'sealant')) {
+      if (trySealVentSite(state)) {
         removeOne(state, kind);
         break;
       }

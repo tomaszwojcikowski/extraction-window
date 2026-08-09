@@ -61,7 +61,7 @@ export const patternBufferMechanic: Mechanic = {
       }
     } else if (state.patternDesync > 0) {
       // Passive bleed-off so shuttle isn't permanently softlocked without cells
-      if (state.player.stabilizeTurns > 0 || state.turn % 6 === 0) {
+      if (state.turn % 6 === 0) {
         state.patternDesync = Math.max(0, state.patternDesync - 1);
         if (state.patternDesync === 0) pushLog(state, 'LOG-PB-SYNC');
       }

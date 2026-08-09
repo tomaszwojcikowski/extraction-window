@@ -82,7 +82,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       filterTurns: 0,
       jammerTurns: 0,
       mapperTurns: 0,
-      stabilizeTurns: 0,
       braceTurns: 0,
       statuses: {},
       equip: { tool: null, armor: null },
