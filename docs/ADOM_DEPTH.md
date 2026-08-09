@@ -97,7 +97,7 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Scope filter doc ([`GEM.md`](GEM.md)) + land [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) on main | Done |
 | Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
-| Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Pending |
+| Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
 | `GameScene` shrink — extract remaining orchestration to presenters | Pending |
 | Room facts → optional text binds to what is actually in the room; `cohere` fails unbound templates | Pending |
 | Distinct failure modes per path (GEM §2); death-mix diversity as a reported dynamic | Pending |

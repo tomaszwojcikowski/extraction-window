@@ -4,6 +4,8 @@
 **Inputs:** [`PASS4_DESIGN.md`](./PASS4_DESIGN.md), [`PASS4_ART.md`](./PASS4_ART.md), [`PASS3_QA.md`](./PASS3_QA.md)  
 **Art commit reviewed:** `9a37a97` (`feat: pass4 art — notice impact, peek teach, fluid-lock copy`)
 
+> **Resolved since this report (Wave 4).** The two conditional code fixes landed: peek teach yields via `PEEK_TEACH_YIELDS_TO` (drill / tele / vitals), and chase Impact latches per enemy until it leaves notice (`pruneNoticeChaseLatch`). The hint line is now resolved once in `resolveHintLine`, so Escape no longer consumes a teach that was never displayed. The **human** gates below (Impact weight, Shift discoverability, dual-read glance) are still unpaid.
+
 Adjudication is **feel under fluid move**, not Pass 3 confirm-on-`.`. Autopilot never Shift-peeks and never sees Impact juice. Oracle validates spine/legal/stuck/WR direction — **not** Impact weight, peek discoverability in play, or dual-read glance. Headless-limited findings are marked.
 
 ---
