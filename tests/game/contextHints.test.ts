@@ -15,7 +15,7 @@ describe('contextHint coaching', () => {
   it('skips med tip when kit has no field hypo', () => {
     const st = createGame(42);
     st.player.hp = 5;
-    st.inventory = st.inventory.filter((s) => s.kind !== 'med' && s.kind !== 'ration');
+    st.inventory = st.inventory.filter((s) => s.kind !== 'med');
     expect(hasItem(st, 'med')).toBe(false);
     expect(contextHint(st)).not.toBe('UI-HINT-USE-MED');
   });

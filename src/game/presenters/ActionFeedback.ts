@@ -65,15 +65,6 @@ export function actionFloatLabels(
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };
         break;
-      case 'LOG-CRAFT-FILTER':
-        next = { label: 'CRAFT · FILTER', color: ThemeCss.flag };
-        break;
-      case 'LOG-CRAFT-RATION':
-        next = { label: 'CRAFT · RATION', color: ThemeCss.flag };
-        break;
-      case 'LOG-CRAFT-BALM':
-        next = { label: 'CRAFT · BALM', color: ThemeCss.flag };
-        break;
     }
     if (next) labels.push(next);
   }
@@ -167,7 +158,7 @@ export function emitActionLights(
     });
   }
 
-  if (has('LOG-USE-PROBE') || has('LOG-USE-LENS')) {
+  if (has('LOG-USE-PROBE')) {
     lights.addFxLight({
       x: player.x,
       y: player.y,
@@ -299,19 +290,15 @@ export function playActionSfx(
     has('LOG-RETREAT') ||
     has('LOG-USE-MED') ||
     has('LOG-USE-ENERGY') ||
-    has('LOG-USE-RATION') ||
     has('LOG-USE-PROBE') ||
     has('LOG-USE-STIM') ||
     has('LOG-USE-PLATE') ||
     has('LOG-USE-FLARE') ||
     has('LOG-USE-FILTER') ||
-    has('LOG-USE-COOLANT') ||
     has('LOG-USE-BLADE') ||
     has('LOG-USE-BATON') ||
     has('LOG-USE-HARNESS') ||
     has('LOG-USE-VEST') ||
-    has('LOG-USE-SENSOR') ||
-    has('LOG-USE-COUPLER') ||
     has('LOG-UNEQUIP') ||
     has('LOG-USE-DART') ||
     has('LOG-USE-JAMMER') ||

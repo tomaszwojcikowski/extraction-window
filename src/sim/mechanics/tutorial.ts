@@ -69,12 +69,7 @@ export const tutorialMechanic: Mechanic = {
       return 'UI-TUT-HAZARD';
     }
 
-    const hasUnusedId =
-      hasItem(state, 'salvage') ||
-      hasItem(state, 'field_sample') ||
-      hasItem(state, 'sealed_crate') ||
-      hasItem(state, 'array_shard');
-    if (hasUnusedId && state.turn < 8) return 'UI-TUT-KIT';
+    if (hasItem(state, 'salvage') && state.turn < 8) return 'UI-TUT-KIT';
 
     const hostileVisible = state.enemies.some(
       (e) => e.alive && (state.visible[e.y]?.[e.x] ?? false),

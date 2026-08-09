@@ -19,7 +19,7 @@ describe('generateTutorialMap', () => {
       const map = generateTutorialMap(seed);
       expect(map.items.some((i) => i.kind === 'flare')).toBe(true);
       expect(
-        map.items.some((i) => i.kind === 'salvage' || i.kind === 'field_sample'),
+        map.items.some((i) => i.kind === 'salvage'),
       ).toBe(true);
       expect(map.items).toHaveLength(2);
     }
@@ -44,13 +44,13 @@ describe('generateTutorialMap', () => {
     expect(canReach(map.tiles, { x: 10, y: 10 }, map.exit)).toBe(true);
   });
 
-  it('varies identification loot across seeds', () => {
+  it('teaches the same single unknown gamble on every seed', () => {
     const kinds = new Set(
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((seed) => {
         const map = generateTutorialMap(seed);
         return map.items.find((i) => i.kind !== 'flare')!.kind;
       }),
     );
-    expect(kinds.size).toBeGreaterThan(1);
+    expect([...kinds]).toEqual(['salvage']);
   });
 });

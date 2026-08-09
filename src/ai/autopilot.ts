@@ -9,7 +9,7 @@ import {
 } from '../sim';
 import { INVENTORY_SLOTS } from '../data/items';
 import type { SkillId } from '../data/progression';
-import { EM_HIGH } from '../sim/emStress';
+import { EM_WARN, EM_HIGH } from '../sim/emStress';
 import { inShadow, isLit } from '../sim/light';
 
 /**
@@ -163,9 +163,9 @@ export function chooseAction(
       }
     }
     if (state.uplink.progress < 2) {
-      const coolantIdx = state.inventory.findIndex((slot) => slot.kind === 'coolant');
-      if (coolantIdx >= 0) {
-        state.ui.selectedSlot = coolantIdx;
+      const energyIdx = state.inventory.findIndex((slot) => slot.kind === 'energy');
+      if (energyIdx >= 0) {
+        state.ui.selectedSlot = energyIdx;
         return { type: 'use' };
       }
     }
@@ -186,44 +186,37 @@ export function chooseAction(
   // Heal / recharge — how late the persona leaves it is its main survival lever
   if (state.player.hp <= state.player.maxHp * persona.healAt) {
     const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
-    const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
-    const idx = medIdx >= 0 ? medIdx : rationIdx;
-    if (idx >= 0) {
-      state.ui.selectedSlot = idx;
+    if (medIdx >= 0) {
+      state.ui.selectedSlot = medIdx;
       return { type: 'use' };
     }
   }
   if (state.player.energy <= state.player.maxEnergy * persona.rechargeAt) {
-    const batIdx = state.inventory.findIndex((s) => s.kind === 'battery' || s.kind === 'coolant');
-    const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
     const enIdx = state.inventory.findIndex((s) => s.kind === 'energy');
-    const rationIdx = state.inventory.findIndex((s) => s.kind === 'ration');
-    const idx =
-      coolIdx >= 0 ? coolIdx : batIdx >= 0 ? batIdx : enIdx >= 0 ? enIdx : rationIdx;
-    if (idx >= 0) {
-      state.ui.selectedSlot = idx;
+    if (enIdx >= 0) {
+      state.ui.selectedSlot = enIdx;
       return { type: 'use' };
     }
   }
   if (state.player.statuses.bleed && state.player.statuses.bleed > 0) {
-    const pIdx = state.inventory.findIndex((s) => s.kind === 'patch');
-    if (pIdx >= 0) {
-      state.ui.selectedSlot = pIdx;
+    const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
+    if (medIdx >= 0) {
+      state.ui.selectedSlot = medIdx;
       return { type: 'use' };
     }
   }
-  if (state.emStress >= 65) {
-    const coolIdx = state.inventory.findIndex((s) => s.kind === 'coolant');
-    if (coolIdx >= 0) {
-      state.ui.selectedSlot = coolIdx;
+  // Coolant used to flush EM as a side effect of every bus top-up. With the two
+  // jobs split, the flush has to be a deliberate call — make it before EM-HIGH.
+  if (state.emStress >= EM_WARN + 10) {
+    const sealIdx = state.inventory.findIndex((s) => s.kind === 'sealant');
+    if (sealIdx >= 0) {
+      state.ui.selectedSlot = sealIdx;
       return { type: 'use' };
     }
   }
-  // Identify unknown salvage / crate / shard when kit has space and not in combat crisis
+  // Scan unknown salvage when the kit has space and nothing is on fire
   if (state.player.hp > state.player.maxHp * 0.55 && state.emStress < 50) {
-    const sIdx = state.inventory.findIndex(
-      (s) => s.kind === 'salvage' || s.kind === 'sealed_crate' || s.kind === 'array_shard',
-    );
+    const sIdx = state.inventory.findIndex((s) => s.kind === 'salvage');
     if (sIdx >= 0 && state.inventory.length < INVENTORY_SLOTS - 1) {
       state.ui.selectedSlot = sIdx;
       return { type: 'use' };
@@ -253,7 +246,7 @@ export function chooseAction(
   // Probe doctrine: keep the read up even when nothing is wrong yet — the EM bill
   // is the point, so this is where scan pressure actually accumulates.
   if (persona.pushProbe && state.player.probeTurns <= 0 && state.emStress < EM_HIGH) {
-    const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe' || s.kind === 'lens');
+    const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
     if (probeIdx >= 0) {
       state.ui.selectedSlot = probeIdx;
       return { type: 'use' };
@@ -354,18 +347,6 @@ export function chooseAction(
   const harnessIdx = state.inventory.findIndex((s) => s.kind === 'harness');
   if (harnessIdx >= 0 && !state.player.equip.armor) {
     state.ui.selectedSlot = harnessIdx;
-    return { type: 'use' };
-  }
-  if (state.player.energy <= state.player.maxEnergy * 0.45) {
-    const coupIdx = state.inventory.findIndex((s) => s.kind === 'eps_coupler');
-    if (coupIdx >= 0 && state.player.equip.utility !== 'eps_coupler') {
-      state.ui.selectedSlot = coupIdx;
-      return { type: 'use' };
-    }
-  }
-  const sensIdx = state.inventory.findIndex((s) => s.kind === 'sensor_rig');
-  if (sensIdx >= 0 && !state.player.equip.utility) {
-    state.ui.selectedSlot = sensIdx;
     return { type: 'use' };
   }
 

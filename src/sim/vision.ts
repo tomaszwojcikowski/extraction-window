@@ -7,12 +7,10 @@ import type { GameState } from './types';
 
 export function visionRadius(state: GameState): number {
   let base =
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
-    state.paddMods.fovBonus +
-    (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
+    playerFovRadius(state.player.probeTurns) + state.paddMods.fovBonus;
   let r = mechanicsModifyFov(state, base);
   if (hasStatus(state.player, 'blind')) {
-    const pen = state.player.equip.utility === 'sensor_rig' ? 1 : 2;
+    const pen = 2;
     r = Math.max(2, r - pen);
   }
   return r;

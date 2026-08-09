@@ -74,13 +74,11 @@ describe('Wave-1 status effects', () => {
     expect(visionRadius(st)).toBe(Math.max(3, clear - 2));
   });
 
-  it('blind shrinks FOV; sensor_rig softens the penalty', () => {
+  it('blind shrinks FOV', () => {
     const st = combatArena();
     const clear = visionRadius(st);
     addStatus(st.player, 'blind', 2);
     expect(visionRadius(st)).toBe(Math.max(2, clear - 2));
-    st.player.equip.utility = 'sensor_rig';
-    expect(visionRadius(st)).toBe(Math.max(2, clear + 1 - 1));
   });
 
   it('jam blocks probe and jammer without consuming', () => {
@@ -115,12 +113,6 @@ describe('Wave-1 status effects', () => {
     expect(taxed2).toBeLessThan(taxed);
   });
 
-  it('eps_coupler zeroes EM energy tax', () => {
-    const st = combatArena();
-    st.emStress = EM_HIGH;
-    st.player.equip.utility = 'eps_coupler';
-    expect(emEnergyTax(st)).toBe(0);
-  });
 });
 
 describe('tickEnemyStatusEffects', () => {

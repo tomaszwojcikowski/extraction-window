@@ -28,8 +28,6 @@ export function purgeEmStress(state: GameState, amount: number): void {
 
 /** Extra bus drip while EM-stressed (ADOM hunger/corruption pressure). */
 export function emEnergyTax(state: GameState): number {
-  // eps_coupler cancels EM energy tax while worn
-  if (state.player.equip.utility === 'eps_coupler') return 0;
   let tax = 0;
   if (state.emStress >= EM_HIGH) tax += 1;
   return tax;

@@ -34,15 +34,9 @@ describe('ActionFeedback', () => {
     );
   });
 
-  it('includes hatch and craft feedback', () => {
-    expect(
-      actionFloatLabels([
-        { loreId: 'LOG-SEALED-PRY' },
-        { loreId: 'LOG-CRAFT-FILTER' },
-      ]),
-    ).toEqual([
+  it('includes hatch feedback', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-SEALED-PRY' }])).toEqual([
       { label: 'HATCH OPEN', color: ThemeCss.safe },
-      { label: 'CRAFT · FILTER', color: ThemeCss.flag },
     ]);
   });
 

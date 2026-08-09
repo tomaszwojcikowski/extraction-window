@@ -7,7 +7,7 @@ import { drawFieldPanel } from '../../../scenes/atmosphere';
 
 function isWorn(st: GameState, kind: string): boolean {
   const e = st.player.equip;
-  return e.tool === kind || e.armor === kind || e.utility === kind;
+  return e.tool === kind || e.armor === kind;
 }
 
 /** Draw the field kit / inventory modal into existing Phaser objects. */
@@ -38,7 +38,6 @@ export function drawKitOverlay(
   text.setPosition(px + 18, py + 22);
   const equipLine =
     `${lore('UI-TOOL')}: ${shortEquipName(st.player.equip.tool)}   ` +
-    `${lore('UI-EQUIP-ARMOR')}: ${shortEquipName(st.player.equip.armor)}   ` +
-    `${lore('UI-EQUIP-UTIL')}: ${shortEquipName(st.player.equip.utility)}`;
+    `${lore('UI-EQUIP-ARMOR')}: ${shortEquipName(st.player.equip.armor)}`;
   text.setText(`${lore('UI-INV')}\n${equipLine}\n\n${lines.join('\n')}\n\n${lore('UI-INV-HINT')}`);
 }

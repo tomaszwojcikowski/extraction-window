@@ -36,7 +36,7 @@ describe('autopilot chooseAction', () => {
     const action = chooseAction(st);
     expect(action).toEqual({ type: 'use' });
     const kind = st.inventory[st.ui.selectedSlot]?.kind;
-    expect(['coolant', 'battery', 'energy', 'ration']).toContain(kind);
+    expect(kind).toBe('energy');
   });
 });
 
@@ -115,7 +115,7 @@ describe('autopilot personas', () => {
     reckless.player.hp = Math.floor(reckless.player.maxHp * 0.5);
     const action = chooseAction(reckless, PERSONAS.reckless);
     const kind = reckless.inventory[reckless.ui.selectedSlot]?.kind;
-    expect(action?.type === 'use' && (kind === 'med' || kind === 'ration')).toBe(false);
+    expect(action?.type === 'use' && kind === 'med').toBe(false);
   });
 
   it('probe refuses the quiet crutch that stable reaches for', () => {

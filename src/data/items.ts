@@ -1,40 +1,32 @@
 import type { LoreId } from './lore';
 
+/**
+ * One clear tool per job. Every kit item owns a job no other item does:
+ * med heals, energy charges the bus, filter and sealant answer EM two
+ * different ways, probe sees, mapper remembers, jammer hides, flare and
+ * dart and plate fight, salvage gambles.
+ */
 export type ItemKind =
   | 'relay_key'
   | 'nav_core'
   | 'med'
   | 'energy'
-  | 'ration'
   | 'probe'
   | 'stim'
   | 'plate'
   | 'flare'
   | 'filter'
-  | 'coolant'
   | 'blade'
   | 'pulse_baton'
   | 'harness'
   | 'ablative_vest'
-  | 'sensor_rig'
-  | 'eps_coupler'
   | 'dart'
   | 'jammer'
   | 'sealant'
-  | 'battery'
-  | 'patch'
-  | 'lens'
   | 'mapper'
-  | 'salvage'
-  | 'sealed_crate'
-  | 'array_shard'
-  | 'field_sample'
-  | 'pattern_balm'
-  | 'flare_prism'
-  | 'ward_weave'
-  | 'shadow_lens';
+  | 'salvage';
 
-export type EquipSlotId = 'tool' | 'armor' | 'utility';
+export type EquipSlotId = 'tool' | 'armor';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -46,18 +38,18 @@ export interface ItemDef {
   equipSlot?: EquipSlotId;
 }
 
-/** Situational equip tags (Wave 1 ADOM brands). */
+/** Situational equip tags — worn gear reads as one line of consequence. */
 export const EQUIP_TAGS = {
   blade: { onHitBleed: 1 },
   pulse_baton: { onHitStun: 2 },
-  ablative_vest: { bleedDamage: 1 },
-  eps_coupler: { emEnergyTaxZero: true },
-  sensor_rig: { blindFovPenalty: 1 },
+  ablative_vest: { bleedDamage: 1, ionDamageReduction: 1 },
   harness: { cancelFatigueTax: true },
-  flare_prism: { flareLifeBonus: 2 },
-  ward_weave: { ionDamageReduction: 1 },
-  shadow_lens: { shadowScan: true },
 } as const;
+
+/** Ablative lattice blunts ion damage by a point while worn. */
+export function equipIonReduction(armor: ItemKind | null): number {
+  return armor === 'ablative_vest' ? EQUIP_TAGS.ablative_vest.ionDamageReduction : 0;
+}
 
 export function equipOnHitBleed(tool: ItemKind | null): number {
   if (tool === 'blade') return EQUIP_TAGS.blade.onHitBleed;
@@ -102,13 +94,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: true,
   },
-  ration: {
-    kind: 'ration',
-    loreName: 'ITEM-RATION',
-    loreDesc: 'ITEM-RATION-DESC',
-    quest: false,
-    stackable: true,
-  },
   probe: {
     kind: 'probe',
     loreName: 'ITEM-PROBE',
@@ -144,13 +129,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: true,
   },
-  coolant: {
-    kind: 'coolant',
-    loreName: 'ITEM-COOLANT',
-    loreDesc: 'ITEM-COOLANT-DESC',
-    quest: false,
-    stackable: true,
-  },
   blade: {
     kind: 'blade',
     loreName: 'ITEM-BLADE',
@@ -183,22 +161,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     stackable: false,
     equipSlot: 'armor',
   },
-  sensor_rig: {
-    kind: 'sensor_rig',
-    loreName: 'ITEM-SENSOR',
-    loreDesc: 'ITEM-SENSOR-DESC',
-    quest: false,
-    stackable: false,
-    equipSlot: 'utility',
-  },
-  eps_coupler: {
-    kind: 'eps_coupler',
-    loreName: 'ITEM-COUPLER',
-    loreDesc: 'ITEM-COUPLER-DESC',
-    quest: false,
-    stackable: false,
-    equipSlot: 'utility',
-  },
   dart: {
     kind: 'dart',
     loreName: 'ITEM-DART',
@@ -220,27 +182,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: true,
   },
-  battery: {
-    kind: 'battery',
-    loreName: 'ITEM-BATTERY',
-    loreDesc: 'ITEM-BATTERY-DESC',
-    quest: false,
-    stackable: true,
-  },
-  patch: {
-    kind: 'patch',
-    loreName: 'ITEM-PATCH',
-    loreDesc: 'ITEM-PATCH-DESC',
-    quest: false,
-    stackable: true,
-  },
-  lens: {
-    kind: 'lens',
-    loreName: 'ITEM-LENS',
-    loreDesc: 'ITEM-LENS-DESC',
-    quest: false,
-    stackable: true,
-  },
   mapper: {
     kind: 'mapper',
     loreName: 'ITEM-MAPPER',
@@ -254,58 +195,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     loreDesc: 'ITEM-SALVAGE-DESC',
     quest: false,
     stackable: true,
-  },
-  sealed_crate: {
-    kind: 'sealed_crate',
-    loreName: 'ITEM-CRATE',
-    loreDesc: 'ITEM-CRATE-DESC',
-    quest: false,
-    stackable: true,
-  },
-  array_shard: {
-    kind: 'array_shard',
-    loreName: 'ITEM-SHARD',
-    loreDesc: 'ITEM-SHARD-DESC',
-    quest: false,
-    stackable: true,
-  },
-  field_sample: {
-    kind: 'field_sample',
-    loreName: 'ITEM-SAMPLE',
-    loreDesc: 'ITEM-SAMPLE-DESC',
-    quest: false,
-    stackable: true,
-  },
-  pattern_balm: {
-    kind: 'pattern_balm',
-    loreName: 'ITEM-BALM',
-    loreDesc: 'ITEM-BALM-DESC',
-    quest: false,
-    stackable: true,
-  },
-  flare_prism: {
-    kind: 'flare_prism',
-    loreName: 'ITEM-FLARE-PRISM',
-    loreDesc: 'ITEM-FLARE-PRISM-DESC',
-    quest: false,
-    stackable: false,
-    equipSlot: 'utility',
-  },
-  ward_weave: {
-    kind: 'ward_weave',
-    loreName: 'ITEM-WARD-WEAVE',
-    loreDesc: 'ITEM-WARD-WEAVE-DESC',
-    quest: false,
-    stackable: false,
-    equipSlot: 'armor',
-  },
-  shadow_lens: {
-    kind: 'shadow_lens',
-    loreName: 'ITEM-SHADOW-LENS',
-    loreDesc: 'ITEM-SHADOW-LENS-DESC',
-    quest: false,
-    stackable: false,
-    equipSlot: 'utility',
   },
 };
 
@@ -339,16 +228,6 @@ export function shortEquipName(kind: ItemKind | null): string {
       return 'eva';
     case 'ablative_vest':
       return 'vest';
-    case 'sensor_rig':
-      return 'sensor';
-    case 'eps_coupler':
-      return 'coupler';
-    case 'flare_prism':
-      return 'prism';
-    case 'ward_weave':
-      return 'weave';
-    case 'shadow_lens':
-      return 'shadow';
     default:
       return kind;
   }

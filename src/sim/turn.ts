@@ -109,7 +109,6 @@ function tickEmHighPressure(state: GameState): void {
 function tickUnderfootTerrain(state: GameState): void {
   const sector = getSector(state.sectorIndex);
   const filter = state.player.filterTurns > 0;
-  const coupler = state.player.equip.utility === 'eps_coupler';
   const tile = state.tiles[state.player.y]![state.player.x]!;
   const hazardCrossing =
     tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
@@ -117,23 +116,19 @@ function tickUnderfootTerrain(state: GameState): void {
     pushLog(state, 'LOG-FAVOR-HAZARD');
   } else if (tile.kind === 'hazard') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
-    let hazardDrain = (filter ? 1 : 2) + brineExtra;
-    if (coupler) hazardDrain = Math.max(0, hazardDrain - 1);
-    state.player.energy -= hazardDrain;
+    state.player.energy -= (filter ? 1 : 2) + brineExtra;
     addStatus(state.player, 'ion_burn', 1);
     pushLog(state, 'LOG-HAZARD');
   } else if (tile.kind === 'brine_pool') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
-    let poolDrain = (filter ? 1 : 2) + brineExtra;
-    if (coupler) poolDrain = Math.max(0, poolDrain - 1);
-    state.player.energy -= poolDrain;
+    state.player.energy -= (filter ? 1 : 2) + brineExtra;
     if (state.rng() < 0.18) {
       addStatus(state.player, 'fatigue', 2);
       pushLog(state, 'LOG-STATUS-FATIGUE');
     }
     pushLog(state, 'LOG-BRINE-POOL');
   } else if (tile.kind === 'vent') {
-    state.player.energy -= filter || coupler ? 0 : 1;
+    state.player.energy -= filter ? 0 : 1;
     if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
     const ventRoll = state.rng();
     if (ventRoll < 0.12) {
@@ -179,7 +174,6 @@ function tickEnvironment(state: GameState): void {
       state.player.jammerTurns -= 1;
       if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
     }
-    if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
     if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
     if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
     if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
@@ -208,19 +202,16 @@ function tickEnvironment(state: GameState): void {
   }
 
   const filter = state.player.filterTurns > 0;
-  const coupler = state.player.equip.utility === 'eps_coupler';
   if (state.turn % 5 === 0) {
     const skipDrip =
       hasSkill(state, 'deep_reserve') && state.turn % 10 === 0;
     if (!skipDrip) {
-      state.player.energy -= filter ? 0 : Math.max(0, 1 - (coupler ? 1 : 0));
+      state.player.energy -= filter ? 0 : 1;
     }
   }
   state.player.energy -= emEnergyTax(state);
   state.player.energy -= progressEnergyTax(state.level, state.turn, filter);
-  let drain = filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
-  if (coupler) drain = Math.max(0, drain - 1);
-  state.player.energy -= drain;
+  state.player.energy -= filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
 
   // Fatigue status: +1 energy tax / turn unless harness worn
   if (hasStatus(state.player, 'fatigue') && !equipCancelsFatigueTax(state.player.equip.armor)) {
@@ -238,7 +229,6 @@ function tickEnvironment(state: GameState): void {
     state.player.jammerTurns -= 1;
     if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
   }
-  if (state.player.lensTurns > 0) state.player.lensTurns -= 1;
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
   if (state.player.stabilizeTurns > 0) state.player.stabilizeTurns -= 1;
   if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
@@ -267,6 +257,12 @@ export function advanceSector(state: GameState): boolean {
   if (state.sectorIndex >= CAMPAIGN_LENGTH - 1) return false;
   grantSectorSurveyBonus(state);
   gainXp(state, XP_SECTOR, 'sector');
+  // Plating is a per-sector shield, not a one-time buffer for the whole run:
+  // you re-seat it in the hatch. Plate stays the mid-sector repair.
+  if (state.player.armor < state.player.maxArmor) {
+    state.player.armor = state.player.maxArmor;
+    pushLog(state, 'LOG-ARMOR-RESEAT');
+  }
   loadSector(state, state.sectorIndex + 1);
   return true;
 }

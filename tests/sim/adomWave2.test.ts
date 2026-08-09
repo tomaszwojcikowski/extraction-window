@@ -67,31 +67,14 @@ describe('ADOM Wave 2 — tripwire', () => {
   });
 });
 
-describe('ADOM Wave 2 — field craft', () => {
-  it('crafts filter from field_sample + sealant', () => {
+describe('ADOM Wave 2 — unknown salvage', () => {
+  it('resolves salvage into a known kit item', () => {
     const st = createGame(42);
-    st.inventory = [
-      { kind: 'field_sample', count: 1 },
-      { kind: 'sealant', count: 1 },
-    ];
+    st.inventory = [{ kind: 'salvage', count: 1 }];
     st.ui.selectedSlot = 0;
     expect(useSelected(st)).toBe(true);
-    expect(hasItem(st, 'filter')).toBe(true);
-    expect(hasItem(st, 'field_sample')).toBe(false);
-    expect(hasItem(st, 'sealant')).toBe(false);
-    expect(st.log.some((e) => e.loreId === 'LOG-CRAFT-FILTER')).toBe(true);
-  });
-
-  it('crafts pattern_balm from array_shard + coolant', () => {
-    const st = createGame(42);
-    st.inventory = [
-      { kind: 'array_shard', count: 1 },
-      { kind: 'coolant', count: 1 },
-    ];
-    st.ui.selectedSlot = 0;
-    expect(useSelected(st)).toBe(true);
-    expect(hasItem(st, 'pattern_balm')).toBe(true);
-    expect(st.log.some((e) => e.loreId === 'LOG-CRAFT-BALM')).toBe(true);
+    expect(hasItem(st, 'salvage')).toBe(false);
+    expect(st.salvageIdentified + st.salvageBacklash).toBe(1);
   });
 });
 

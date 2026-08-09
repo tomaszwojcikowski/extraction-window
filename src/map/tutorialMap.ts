@@ -58,9 +58,8 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   // Visible ion hazard on the straight lane — bus tax if you walk it; alcove bypasses.
   tiles[7]![12] = hazard();
 
-  const itemKind = rng() < 0.5 ? 'salvage' : 'field_sample';
   const items: GroundItem[] = [
-    { id: 1, kind: itemKind, x: 3, y: 8 },
+    { id: 1, kind: 'salvage', x: 3, y: 8 },
     { id: 2, kind: 'flare', x: 10, y: 9 },
   ];
 

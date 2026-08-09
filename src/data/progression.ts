@@ -105,7 +105,6 @@ export const EXPLORE_BONUS_THRESHOLD = 0.55;
 export const STORM_SECTOR_SURVEY = [8, 12] as const;
 export const STORM_ELITE_KILL = [6, 10] as const;
 export const STORM_BOSS_KILL = [12, 18] as const;
-export const STORM_SURPLUS_SALVAGE = [3, 5] as const;
 
 export function xpToNextForLevel(level: number): number {
   if (level >= MAX_LEVEL) return 0;

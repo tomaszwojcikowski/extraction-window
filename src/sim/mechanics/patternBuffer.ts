@@ -8,13 +8,12 @@ import type { LoreId } from '../../data/lore';
 
 /**
  * Nav Core pattern buffer — desyncs under plasma/vent/EM stress.
- * Shuttle rejects lock until coolant restabilizes the buffer.
+ * Shuttle rejects lock until a fresh cell restabilizes the buffer.
  */
 export function tryClearPatternDesync(state: GameState): boolean {
   if (state.patternDesync <= 0) return false;
-  if (!hasItem(state, 'coolant') && !hasItem(state, 'battery')) return false;
-  if (hasItem(state, 'coolant')) removeOne(state, 'coolant');
-  else removeOne(state, 'battery');
+  if (!hasItem(state, 'energy')) return false;
+  removeOne(state, 'energy');
   state.patternDesync = 0;
   purgeEmStress(state, 8);
   pushLog(state, 'LOG-PB-SYNC');
@@ -46,7 +45,7 @@ export const patternBufferMechanic: Mechanic = {
 
     const tile = state.tiles[state.player.y]![state.player.x]!;
     let spike = 0;
-    // Only meaningful spikes — avoid burning all coolant mid-run
+    // Only meaningful spikes — avoid burning all cells mid-run
     if (tile.kind === 'hazard' && state.emStress >= 25) spike += 1;
     if (tile.kind === 'vent' && state.emStress >= 40) spike += 1;
     if (state.emStress >= 70) spike += 1;
@@ -61,7 +60,7 @@ export const patternBufferMechanic: Mechanic = {
         pushLog(state, 'LOG-PB-DESYNC');
       }
     } else if (state.patternDesync > 0) {
-      // Passive bleed-off so shuttle isn't permanently softlocked without coolant
+      // Passive bleed-off so shuttle isn't permanently softlocked without cells
       if (state.player.stabilizeTurns > 0 || state.turn % 6 === 0) {
         state.patternDesync = Math.max(0, state.patternDesync - 1);
         if (state.patternDesync === 0) pushLog(state, 'LOG-PB-SYNC');
@@ -71,7 +70,7 @@ export const patternBufferMechanic: Mechanic = {
 
   onSectorEnter(state: GameState): void {
     if (state.sectorId === 'approach' && hasItem(state, 'nav_core') && state.patternDesync === 0) {
-      // Soft warning only — do not force desync (coolant economy)
+      // Soft warning only — do not force desync (cell economy)
       pushLog(state, 'LOG-PB-STRESS');
     }
   },
@@ -80,21 +79,16 @@ export const patternBufferMechanic: Mechanic = {
     if (state.patternDesync <= 0) return null;
     const tile = state.tiles[state.player.y]![state.player.x]!;
     if (tile.kind === 'shuttle') return 'UI-HINT-DESYNC';
-    // Thin pillar coaching when buffer is climbing and coolant is available
-    if (
-      state.patternDesync >= 2 &&
-      (hasItem(state, 'coolant') || hasItem(state, 'battery'))
-    ) {
-      return 'UI-HINT-DESYNC';
-    }
+    // Thin pillar coaching when the buffer is climbing and sealant is available
+    if (state.patternDesync >= 2 && hasItem(state, 'energy')) return 'UI-HINT-DESYNC';
     return null;
   },
 
   autopilotHint(state: GameState): Action | null {
     if (state.patternDesync <= 0) return null;
-    const cIdx = state.inventory.findIndex((s) => s.kind === 'coolant' || s.kind === 'battery');
+    const cIdx = state.inventory.findIndex((s) => s.kind === 'energy');
     if (cIdx < 0) return null;
-    // Only clear when extracting or desync is climbing — preserve coolant for bus
+    // Only clear when extracting or desync is climbing — preserve cells for the bus
     if (state.sectorId === 'ridge' || state.sectorId === 'approach' || state.patternDesync >= 2) {
       state.ui.selectedSlot = cIdx;
       return { type: 'use' };

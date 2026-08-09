@@ -213,7 +213,6 @@ export interface ExtractionUplink {
 export interface EquipSlots {
   tool: ItemKind | null;
   armor: ItemKind | null;
-  utility: ItemKind | null;
 }
 
 export interface GameState {
@@ -247,7 +246,6 @@ export interface GameState {
     stimTurns: number;
     filterTurns: number;
     jammerTurns: number;
-    lensTurns: number;
     mapperTurns: number;
     stabilizeTurns: number;
     /** Brace persists through this enemy phase, then expires next player turn. */

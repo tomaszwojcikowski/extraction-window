@@ -6,7 +6,7 @@ import {
   type EquipSlotId,
   type ItemKind,
 } from '../data/items';
-import { STORM_SURPLUS_SALVAGE, XP_QUEST_ITEM } from '../data/progression';
+import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import type { SectorId } from '../data/encounters';
 import { playerAttack } from './combat';
@@ -24,98 +24,31 @@ import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 import { cancelOverwatch } from './ai';
 
-const PLATE_REPAIR = 10;
+const PLATE_REPAIR = 12;
 
 const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
   blade: 'LOG-USE-BLADE',
   pulse_baton: 'LOG-USE-BATON',
   harness: 'LOG-USE-HARNESS',
   ablative_vest: 'LOG-USE-VEST',
-  sensor_rig: 'LOG-USE-SENSOR',
-  eps_coupler: 'LOG-USE-COUPLER',
-  flare_prism: 'LOG-USE-FLARE-PRISM',
-  ward_weave: 'LOG-USE-WARD-WEAVE',
-  shadow_lens: 'LOG-USE-SHADOW-LENS',
 };
 
-type TimerKey =
-  | 'probeTurns'
-  | 'stimTurns'
-  | 'filterTurns'
-  | 'jammerTurns'
-  | 'lensTurns'
-  | 'mapperTurns';
-
-const TIMER_KEYS: TimerKey[] = [
-  'probeTurns',
-  'stimTurns',
-  'filterTurns',
-  'jammerTurns',
-  'lensTurns',
-  'mapperTurns',
-];
-
-type UnknownKind = 'salvage' | 'sealed_crate' | 'array_shard';
-
-const ID_CATEGORIES: Record<string, { label: string; items: ItemKind[] }> = {
-  power: { label: 'power kit', items: ['energy', 'coolant', 'filter', 'probe'] },
-  combat: { label: 'combat kit', items: ['stim', 'dart', 'plate', 'blade'] },
-  field: { label: 'field kit', items: ['med', 'ration', 'sealant', 'patch', 'flare'] },
-};
-
-function biomeIdTable(sectorId: SectorId, scav: boolean): ItemKind[] {
+/** Unknown salvage resolves into whatever this depth of shelf actually stocks. */
+function biomeIdTable(sectorId: SectorId): ItemKind[] {
   const early: SectorId[] = ['plains', 'flood', 'canopy', 'reef'];
   const mid: SectorId[] = ['spire', 'ruin', 'beacon', 'trench', 'duct'];
   if (early.includes(sectorId)) {
-    return scav
-      ? ['coolant', 'plate', 'med', 'filter', 'lens', 'dart', 'stim', 'flare']
-      : ['energy', 'med', 'ration', 'dart', 'sealant', 'patch', 'flare', 'plate'];
+    return ['med', 'energy', 'dart', 'sealant', 'flare', 'plate'];
   }
   if (mid.includes(sectorId)) {
-    return scav
-      ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig', 'jammer']
-      : ['energy', 'med', 'filter', 'dart', 'sealant', 'plate', 'coolant', 'stim'];
+    return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe'];
   }
-  // deep / ashward
-  return scav
-    ? ['coolant', 'plate', 'med', 'filter', 'lens', 'mapper', 'dart', 'stim', 'sensor_rig', 'eps_coupler']
-    : ['coolant', 'med', 'filter', 'plate', 'sealant', 'jammer', 'lens', 'stim'];
+  return ['med', 'energy', 'filter', 'plate', 'sealant', 'jammer', 'stim', 'mapper'];
 }
 
-function failChanceFor(kind: UnknownKind, scav: boolean): number {
-  if (kind === 'salvage') return scav ? 0.08 : 0.18;
-  if (kind === 'sealed_crate') return scav ? 0.16 : 0.28;
-  return scav ? 0.24 : 0.38;
-}
-
-function backlashEm(kind: UnknownKind): number {
-  if (kind === 'salvage') return 15;
-  if (kind === 'sealed_crate') return 20;
-  return 28;
-}
-
-/** Soft cap: at most 3 concurrent kit timers (keep the one being applied). */
-function capActiveSystems(state: GameState, keep: TimerKey): void {
-  const labels: Record<TimerKey, string> = {
-    probeTurns: 'probe',
-    stimTurns: 'stim',
-    filterTurns: 'filter',
-    jammerTurns: 'jammer',
-    lensTurns: 'lens',
-    mapperTurns: 'mapper',
-  };
-  const active = TIMER_KEYS.filter((k) => state.player[k] > 0 && k !== keep);
-  while (active.length >= 3) {
-    let shortest = active[0]!;
-    for (const k of active) {
-      if (state.player[k] < state.player[shortest]) shortest = k;
-    }
-    state.player[shortest] = 0;
-    pushLog(state, 'LOG-SYS-DROP', labels[shortest]);
-    const i = active.indexOf(shortest);
-    if (i >= 0) active.splice(i, 1);
-  }
-}
+const SALVAGE_FAIL = 0.18;
+const SALVAGE_FAIL_SCAV = 0.08;
+const SALVAGE_BACKLASH_EM = 15;
 
 export function findSlot(state: GameState, kind: ItemKind): number {
   return state.inventory.findIndex((s) => s.kind === kind);
@@ -125,13 +58,11 @@ export function hasItem(state: GameState, kind: ItemKind): boolean {
   return findSlot(state, kind) >= 0;
 }
 
-function isUnknownKind(kind: ItemKind): kind is UnknownKind {
-  return kind === 'salvage' || kind === 'sealed_crate' || kind === 'array_shard';
+function isUnknownKind(kind: ItemKind): boolean {
+  return kind === 'salvage';
 }
 
 export function addItem(state: GameState, kind: ItemKind): boolean {
-  // Battery merged into coolant tier — keep kind for legacy drops, stack as coolant
-  if (kind === 'battery') kind = 'coolant';
   const def = ITEMS[kind];
   if (def.stackable) {
     const idx = findSlot(state, kind);
@@ -141,12 +72,6 @@ export function addItem(state: GameState, kind: ItemKind): boolean {
     }
   }
   if (state.inventory.length >= INVENTORY_SLOTS) {
-    if (isUnknownKind(kind)) {
-      const storm = randInt(state.rng, STORM_SURPLUS_SALVAGE[0], STORM_SURPLUS_SALVAGE[1]);
-      state.stormTurns += storm;
-      pushLog(state, 'LOG-SURPLUS-STORM', `+${storm}`);
-      return true;
-    }
     if (def.quest) {
       const dropIdx = state.inventory.findIndex((s) => !ITEMS[s.kind].quest);
       if (dropIdx >= 0) {
@@ -220,14 +145,13 @@ export function tryEquipItem(state: GameState, kind: ItemKind): void {
   unequipSlot(state, slot);
   state.player.equip[slot] = kind;
   if (slot === 'armor') applyArmorBonus(state, kind);
-  if (kind === 'eps_coupler') addEmStress(state, 3, 'eps coupler');
   const logId = EQUIP_LOG[kind];
   if (logId) pushLog(state, logId);
 }
 
-function applyIdentifyBacklash(state: GameState, kind: UnknownKind): void {
-  addEmStress(state, backlashEm(kind), `unstable ${kind}`);
-  addStatus(state.player, 'ion_burn', kind === 'array_shard' ? 3 : 2);
+function applyIdentifyBacklash(state: GameState): void {
+  addEmStress(state, SALVAGE_BACKLASH_EM, 'unstable salvage');
+  addStatus(state.player, 'ion_burn', 2);
   state.lootTakenThisSector = true;
   for (const en of state.enemies) {
     if (!en.alive) continue;
@@ -238,34 +162,23 @@ function applyIdentifyBacklash(state: GameState, kind: UnknownKind): void {
   pushLog(state, 'LOG-SALVAGE-BAD');
 }
 
-/** ADOM unidentified loot — scan unknown into a known kit item (or backlash). */
-function identifyUnknown(state: GameState, kind: UnknownKind): void {
-  if (!removeOne(state, kind)) {
+/**
+ * One gamble, one rule: scan the unknown and it either becomes kit or bites.
+ * Scavenger is the only thing that shifts the odds.
+ */
+function identifyUnknown(state: GameState): void {
+  if (!removeOne(state, 'salvage')) {
     pushLog(state, 'LOG-USE-FAIL');
     return;
   }
-  const scav = hasSkill(state, 'scavenger');
-  const failChance = failChanceFor(kind, scav);
-  if (state.rng() < failChance) {
+  const fail = hasSkill(state, 'scavenger') ? SALVAGE_FAIL_SCAV : SALVAGE_FAIL;
+  if (state.rng() < fail) {
     state.salvageBacklash++;
-    applyIdentifyBacklash(state, kind);
+    applyIdentifyBacklash(state);
     return;
   }
   state.salvageIdentified++;
-
-  // Partial ID: ~20% on array_shard with scavenger — log category then roll within it
-  if (kind === 'array_shard' && scav && state.rng() < 0.2) {
-    const catKey = pick(state.rng, Object.keys(ID_CATEGORIES));
-    const cat = ID_CATEGORIES[catKey]!;
-    pushLog(state, 'LOG-ID-PARTIAL', cat.label);
-    const idKind = pick(state.rng, cat.items);
-    addItem(state, idKind);
-    pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[idKind].loreName));
-    return;
-  }
-
-  const table = biomeIdTable(state.sectorId, scav);
-  const idKind = pick(state.rng, table);
+  const idKind = pick(state.rng, biomeIdTable(state.sectorId));
   addItem(state, idKind);
   pushLog(state, 'LOG-SALVAGE-ID', lore(ITEMS[idKind].loreName));
 }
@@ -287,35 +200,38 @@ export function useSelected(state: GameState): boolean {
   }
 
   switch (kind) {
+    // Med is the whole answer to damage: it heals and it stops the bleeding.
     case 'med':
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + 18);
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + 22);
+      delete state.player.statuses.bleed;
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-MED');
       break;
+    // Energy is the whole answer to the bus.
     case 'energy':
-      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 20);
+      if (tryUseUplinkAid(state, 'energy')) {
+        removeOne(state, kind);
+        break;
+      }
+      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
+        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);
+        break;
+      }
+      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-ENERGY');
-      break;
-    case 'ration':
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + 8);
-      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 8);
-      removeOne(state, kind);
-      pushLog(state, 'LOG-USE-RATION');
       break;
     case 'probe':
       if (hasStatus(state.player, 'jam')) {
         pushLog(state, 'LOG-JAM-BLOCK');
         return false;
       }
-      capActiveSystems(state, 'probeTurns');
-      state.player.probeTurns = Math.max(state.player.probeTurns, 20);
+      state.player.probeTurns = Math.max(state.player.probeTurns, 25);
       removeOne(state, kind);
       addEmStress(state, 4, 'array pulse');
       pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
-      capActiveSystems(state, 'stimTurns');
       state.player.stimTurns = Math.max(state.player.stimTurns, 15);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-STIM');
@@ -330,53 +246,13 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
-      capActiveSystems(state, 'filterTurns');
       const filterDur = 50 + state.paddMods.filterBonus;
       state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-FILTER');
       break;
     }
-    case 'coolant':
-      if (tryUseUplinkAid(state, 'coolant')) {
-        removeOne(state, kind);
-        break;
-      }
-      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
-        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
-        break;
-      }
-      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
-      removeOne(state, kind);
-      purgeEmStress(state, 12);
-      pushLog(state, 'LOG-USE-COOLANT');
-      break;
-    case 'battery':
-      // Alias of coolant (legacy stacks)
-      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
-        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
-        break;
-      }
-      state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 35);
-      removeOne(state, kind);
-      purgeEmStress(state, 12);
-      pushLog(state, 'LOG-USE-COOLANT');
-      break;
-    case 'patch':
-      delete state.player.statuses.bleed;
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + 8);
-      removeOne(state, kind);
-      pushLog(state, 'LOG-USE-PATCH');
-      break;
-    case 'lens':
-      capActiveSystems(state, 'lensTurns');
-      state.player.lensTurns = Math.max(state.player.lensTurns, 25);
-      removeOne(state, kind);
-      addEmStress(state, 3, 'lens');
-      pushLog(state, 'LOG-USE-LENS');
-      break;
     case 'mapper':
-      capActiveSystems(state, 'mapperTurns');
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-MAPPER');
@@ -405,7 +281,7 @@ export function useSelected(state: GameState): boolean {
         y: state.player.y,
         radius: 5.5,
         intensity: 1.35,
-        life: state.player.equip.utility === 'flare_prism' ? 6 : 4,
+        life: 5,
         color: 0xccffff,
       });
       if (state.ionFrontTurns > 0) {
@@ -426,7 +302,6 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-JAM-BLOCK');
         return false;
       }
-      capActiveSystems(state, 'jammerTurns');
       state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
       removeOne(state, kind);
       addEmStress(state, 5, 'scrambler');
@@ -434,48 +309,8 @@ export function useSelected(state: GameState): boolean {
       if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
       break;
     case 'salvage':
-    case 'sealed_crate': {
-      identifyUnknown(state, kind);
+      identifyUnknown(state);
       break;
-    }
-    case 'array_shard': {
-      if (hasItem(state, 'coolant')) {
-        removeOne(state, 'array_shard');
-        removeOne(state, 'coolant');
-        addItem(state, 'pattern_balm');
-        pushLog(state, 'LOG-CRAFT-BALM');
-        break;
-      }
-      identifyUnknown(state, kind);
-      break;
-    }
-    case 'field_sample': {
-      if (hasItem(state, 'sealant')) {
-        removeOne(state, 'field_sample');
-        removeOne(state, 'sealant');
-        addItem(state, 'filter');
-        pushLog(state, 'LOG-CRAFT-FILTER');
-      } else if (hasItem(state, 'energy')) {
-        removeOne(state, 'field_sample');
-        removeOne(state, 'energy');
-        addItem(state, 'ration');
-        pushLog(state, 'LOG-CRAFT-RATION');
-      } else {
-        pushLog(state, 'LOG-CRAFT-NEED');
-        return false;
-      }
-      break;
-    }
-    case 'pattern_balm': {
-      removeOne(state, kind);
-      if (state.patternDesync > 0) {
-        state.patternDesync = 0;
-        pushLog(state, 'LOG-PB-SYNC');
-      }
-      purgeEmStress(state, 10);
-      pushLog(state, 'LOG-USE-BALM');
-      break;
-    }
     case 'sealant': {
       if (tryStabilizeQuest(state, 'sealant')) {
         removeOne(state, kind);
@@ -539,7 +374,7 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
     if (!state.visible[y]![x]) break;
     const en = state.enemies.find((e) => e.alive && e.x === x && e.y === y);
     if (en) {
-      if (!isLit(state, x, y) && state.player.equip.utility !== 'shadow_lens') {
+      if (!isLit(state, x, y)) {
         darkBlock = true;
         break;
       }

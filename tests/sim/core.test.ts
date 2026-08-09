@@ -197,8 +197,8 @@ describe('expansion phase 2 mechanics', () => {
     st.patternDesync = 2;
     applyAction(st, { type: 'exit' });
     expect(st.status).toBe('playing');
-    // Clear with coolant
-    const cIdx = st.inventory.findIndex((s) => s.kind === 'coolant');
+    // Energy owns the bus, so it is what resyncs a desynced pattern buffer
+    const cIdx = st.inventory.findIndex((s) => s.kind === 'energy');
     expect(cIdx).toBeGreaterThanOrEqual(0);
     st.ui.selectedSlot = cIdx;
     applyAction(st, { type: 'use' });
@@ -305,19 +305,6 @@ describe('equipment loadout', () => {
     expect(armorDefBonus(st)).toBe(1);
   });
 
-  it('sensor rig and eps coupler occupy utility', () => {
-    const st = createGame(42);
-    st.inventory = [
-      { kind: 'sensor_rig', count: 1 },
-      { kind: 'eps_coupler', count: 1 },
-    ];
-    st.ui.selectedSlot = 0;
-    applyAction(st, { type: 'use' });
-    expect(st.player.equip.utility).toBe('sensor_rig');
-    st.ui.selectedSlot = 1;
-    applyAction(st, { type: 'use' });
-    expect(st.player.equip.utility).toBe('eps_coupler');
-  });
 });
 
 describe('survey and surplus salvage', () => {
@@ -340,10 +327,10 @@ describe('survey and surplus salvage', () => {
     expect(st.stormTurns).toBeLessThan(storm1);
   });
 
-  it('converts surplus salvage to storm when kit is full', () => {
+  it('leaves salvage on the ground when the kit is full', () => {
     const st = createGame(42);
     while (st.inventory.length < 16) {
-      st.inventory.push({ kind: 'ration', count: 1 });
+      st.inventory.push({ kind: 'med', count: 1 });
     }
     const storm0 = st.stormTurns;
     st.items.push({
@@ -353,11 +340,11 @@ describe('survey and surplus salvage', () => {
       y: st.player.y,
     });
     applyAction(st, { type: 'get' });
-    expect(st.stormTurns).toBeGreaterThan(storm0);
+    // A full kit is a full kit — no hidden conversion into Window time.
+    expect(st.stormTurns).toBeLessThanOrEqual(storm0);
     expect(st.items.some((i) => i.kind === 'salvage' && i.x === st.player.x && i.y === st.player.y)).toBe(
-      false,
+      true,
     );
-    expect(st.log.some((e) => e.loreId === 'LOG-SURPLUS-STORM')).toBe(true);
   });
 });
 

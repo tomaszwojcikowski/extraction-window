@@ -183,7 +183,7 @@ export function buildMultiRoomQuest(
 }
 
 function addLoot(state: GameState, kind: ItemKind): void {
-  if (kind === 'battery') kind = 'coolant';
+  if (kind === 'energy') kind = 'energy';
   const def = ITEMS[kind];
   if (def.stackable) {
     const idx = state.inventory.findIndex((s) => s.kind === kind);
@@ -269,7 +269,7 @@ function grantQuestPayoff(state: GameState, tier: 'basic' | 'good'): void {
   }
 
   const unique: ItemKind[] =
-    tier === 'good' ? ['mapper', 'lens', 'coolant', 'plate'] : ['patch', 'coolant', 'dart', 'filter'];
+    tier === 'good' ? ['mapper', 'probe', 'energy', 'plate'] : ['med', 'energy', 'dart', 'filter'];
   addLoot(state, pick(state.rng, unique));
 }
 
@@ -327,15 +327,15 @@ function purgeCleared(state: GameState): boolean {
 
 function finishQuestLoot(state: GameState, better: boolean): void {
   const loot: ItemKind[] = better
-    ? ['plate', 'coolant', 'med', 'filter', 'mapper']
-    : ['energy', 'med', 'dart', 'sealant', 'patch'];
+    ? ['plate', 'energy', 'med', 'filter', 'mapper']
+    : ['energy', 'med', 'dart', 'sealant', 'med'];
   const a = pick(state.rng, loot);
   const b = pick(state.rng, loot);
   addLoot(state, a);
   addLoot(state, b);
   const names = [lore(ITEMS[a].loreName), lore(ITEMS[b].loreName)];
   if (better) {
-    const c = pick(state.rng, ['coolant', 'plate', 'lens'] as ItemKind[]);
+    const c = pick(state.rng, ['energy', 'plate', 'probe'] as ItemKind[]);
     addLoot(state, c);
     names.push(lore(ITEMS[c].loreName));
   }

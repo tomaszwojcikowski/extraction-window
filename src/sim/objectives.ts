@@ -27,11 +27,11 @@ export function currentObjectivePos(state: GameState): Pos | null {
 
   // Useful loot if low resources
   if (state.player.hp < state.player.maxHp * 0.5) {
-    const med = state.items.find((i) => i.kind === 'med' || i.kind === 'ration');
+    const med = state.items.find((i) => i.kind === 'med');
     if (med) return { x: med.x, y: med.y };
   }
   if (state.player.energy < state.player.maxEnergy * 0.4) {
-    const en = state.items.find((i) => i.kind === 'energy' || i.kind === 'ration');
+    const en = state.items.find((i) => i.kind === 'energy');
     if (en) return { x: en.x, y: en.y };
   }
 

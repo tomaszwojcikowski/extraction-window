@@ -163,8 +163,7 @@ export class HudView {
     const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
     const jam = st.player.jammerTurns > 0 ? `Quiet ${st.player.jammerTurns}` : '';
     const quiet = isQuietStance(st) && st.player.jammerTurns <= 0 ? 'Quiet' : '';
-    const lens = st.player.lensTurns > 0 ? `Lens ${st.player.lensTurns}` : '';
-    const map = st.player.mapperTurns > 0 ? `Nav ${st.player.mapperTurns}` : '';
+    const mapper = st.player.mapperTurns > 0 ? `Map ${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
       ? lore('UI-ALLY-DRONE')
@@ -176,7 +175,7 @@ export class HudView {
           )
         ? lore('UI-ALLY-ESCORT')
         : '';
-    const sysBits = [probe, stim, filter, jam, quiet, lens, map, desync, allyRole].filter(
+    const sysBits = [probe, stim, filter, jam, quiet, mapper, desync, allyRole].filter(
       Boolean,
     );
     const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';

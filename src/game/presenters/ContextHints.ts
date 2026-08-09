@@ -87,7 +87,7 @@ export function contextHint(st: GameState): LoreId | null {
   ) {
     return 'UI-HINT-FLARE';
   }
-  if ((st.player.statuses.bleed ?? 0) > 0 && hasItem(st, 'patch')) {
+  if ((st.player.statuses.bleed ?? 0) > 0 && hasItem(st, 'med')) {
     return 'UI-HINT-USE-PATCH';
   }
   if (st.player.hp <= st.player.maxHp * 0.4 && hasItem(st, 'med')) {
@@ -95,7 +95,7 @@ export function contextHint(st: GameState): LoreId | null {
   }
   if (
     st.player.energy <= st.player.maxEnergy * 0.35 &&
-    (hasItem(st, 'energy') || hasItem(st, 'coolant') || hasItem(st, 'battery'))
+    (hasItem(st, 'energy') || hasItem(st, 'energy') || hasItem(st, 'energy'))
   ) {
     return 'UI-HINT-USE-ENERGY';
   }

@@ -259,9 +259,7 @@ function emptyGrid(w: number, h: number): number[][] {
 
 function fovRadius(state: GameState): number {
   let base =
-    playerFovRadius(state.player.probeTurns, state.player.lensTurns) +
-    state.paddMods.fovBonus +
-    (state.player.equip.utility === 'sensor_rig' ? 1 : 0);
+    playerFovRadius(state.player.probeTurns) + state.paddMods.fovBonus;
   // Mirror quietStance.modifyFov without importing the registry (avoid cycles).
   if (isQuietStance(state)) base = Math.max(3, base - 1);
   return base;
@@ -271,13 +269,9 @@ function playerLamp(state: GameState): SimLightSource {
   const fov = fovRadius(state);
   let radius = Math.max(2.5, fov * 0.55);
   let intensity = 1.1;
-  if (state.player.probeTurns > 0 || state.player.lensTurns > 0) {
+  if (state.player.probeTurns > 0) {
     radius = Math.max(radius, 6.5);
     intensity = 1.45;
-  }
-  if (state.player.equip.utility === 'sensor_rig') {
-    radius += 0.5;
-    intensity += 0.15;
   }
   if (isQuietStance(state)) {
     intensity *= 0.45;

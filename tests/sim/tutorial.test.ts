@@ -61,7 +61,7 @@ describe('drill bay tutorial', () => {
     const st = drill(7);
     expect(st.items.some((i) => i.kind === 'flare')).toBe(true);
     expect(
-      st.items.some((i) => i.kind === 'salvage' || i.kind === 'field_sample'),
+      st.items.some((i) => i.kind === 'salvage'),
     ).toBe(true);
     expect(st.tiles[6]![11]!.kind).toBe('scrub');
     expect(st.tiles[7]![12]!.kind).toBe('hazard');
@@ -126,7 +126,7 @@ describe('drill bay tutorial', () => {
 
   it('shows get hint when standing on ground loot after turn 0', () => {
     const st = drill(7);
-    const loot = st.items.find((i) => i.kind === 'salvage' || i.kind === 'field_sample')!;
+    const loot = st.items.find((i) => i.kind === 'salvage')!;
     st.turn = 1;
     clearHostiles(st);
     st.player.x = loot.x;
@@ -136,7 +136,7 @@ describe('drill bay tutorial', () => {
 
   it('shows kit hint early after picking identification loot', () => {
     const st = drill(7);
-    const loot = st.items.find((i) => i.kind === 'salvage' || i.kind === 'field_sample')!;
+    const loot = st.items.find((i) => i.kind === 'salvage')!;
     st.turn = 1;
     st.scriptedFired.tut_light = true;
     clearHostiles(st);
@@ -155,13 +155,7 @@ describe('drill bay tutorial', () => {
     stalker.windup = 0;
     st.visible[stalker.y]![stalker.x] = true;
     // Avoid kit / hazard hints dominating
-    st.inventory = st.inventory.filter(
-      (s) =>
-        s.kind !== 'salvage' &&
-        s.kind !== 'field_sample' &&
-        s.kind !== 'sealed_crate' &&
-        s.kind !== 'array_shard',
-    );
+    st.inventory = st.inventory.filter((s) => s.kind !== 'salvage');
     st.player.x = 2;
     st.player.y = 7;
     expect(contextHint(st)).toBe('UI-TUT-WAKE');
@@ -188,13 +182,7 @@ describe('drill bay tutorial', () => {
     stalker.windup = 0;
     st.scriptedFired.tut_wake = true;
     st.scriptedFired.tut_light = true;
-    st.inventory = st.inventory.filter(
-      (s) =>
-        s.kind !== 'salvage' &&
-        s.kind !== 'field_sample' &&
-        s.kind !== 'sealed_crate' &&
-        s.kind !== 'array_shard',
-    );
+    st.inventory = st.inventory.filter((s) => s.kind !== 'salvage');
     if (!st.inventory.some((s) => s.kind === 'flare')) {
       st.inventory.push({ kind: 'flare', count: 1 });
     }

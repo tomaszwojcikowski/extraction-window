@@ -1,6 +1,12 @@
 import { ENEMIES } from '../data/enemies';
 import { lore } from '../data/lore';
-import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS, equipOnHitBleed, equipOnHitStun } from '../data/items';
+import {
+  ARMOR_DEF_BONUS,
+  TOOL_ATK_BONUS,
+  equipIonReduction,
+  equipOnHitBleed,
+  equipOnHitStun,
+} from '../data/items';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
@@ -49,9 +55,7 @@ export function applyPlayerDamage(
   let dmg = Math.max(0, amount);
   const filterOn = state.player.filterTurns > 0;
   const ionSkin = hasSkill(state, 'ion_skin');
-  if (type === 'ion' && state.player.equip.armor === 'ward_weave') {
-    dmg = Math.max(1, dmg - 1);
-  }
+  if (type === 'ion') dmg = Math.max(1, dmg - equipIonReduction(state.player.equip.armor));
   if (filterOn && (type === 'ion' || (ionSkin && type === 'kinetic'))) {
     dmg = Math.max(1, Math.ceil(dmg / 2));
   }

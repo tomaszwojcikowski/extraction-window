@@ -33,9 +33,9 @@ function completeUplink(state: GameState): void {
  * Called by inventory before the item's ordinary effect. Coolant skips a hold;
  * flare makes the deterministic pressure wave harmless.
  */
-export function tryUseUplinkAid(state: GameState, kind: 'coolant' | 'flare'): boolean {
+export function tryUseUplinkAid(state: GameState, kind: 'energy' | 'flare'): boolean {
   if (!state.uplink?.active || !onShuttle(state)) return false;
-  if (kind === 'coolant') {
+  if (kind === 'energy') {
     state.uplink.accelerated = true;
     pushLog(state, 'LOG-UPLINK-COOLANT');
   } else {
