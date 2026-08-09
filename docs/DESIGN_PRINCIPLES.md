@@ -96,7 +96,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Drill bay: move → light → get → hazard → kit → wake → fight → hatch.
+- Drill bay: move → light → hazard → kit → wake → fight → hatch.
 - One-shot coaches (peek teach) that **yield** to tele/vitals/drill priority.
 - Visible ion tax before abstract Bus lectures.
 - Autopilot WR band still validates that teaching didn’t soft-lock the run.
@@ -161,7 +161,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Move, wait, brace, retreat, get, kit/use, interact (`>` / Enter), peek.
+- Move (which is also how you pick things up), wait, brace, kit/use, interact (`>` / Enter), peek.
 - Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail).
 - Help lists verbs first; “why gather” second.
 

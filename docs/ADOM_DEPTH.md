@@ -12,7 +12,9 @@ flowchart TB
   wave1[Wave1 deepen]
   wave2[Wave2 ADOM analogues]
   wave3[Wave3 living shelf]
-  pillars --> wave1 --> wave2 --> wave3
+  wave4[Wave4 craft and coherence]
+  wave5[Wave5 simplify]
+  pillars --> wave1 --> wave2 --> wave3 --> wave4 --> wave5
 ```
 
 ---
@@ -21,16 +23,16 @@ flowchart TB
 
 | ADOM classic | EW today | Richness target |
 |--------------|----------|-----------------|
-| Corruption | EM 0–100 + quiet | **Scan scars** at sustained EM-HIGH |
+| Corruption | EM 0–100 + quiet | EM tax + wider fauna aggro (scars tried and cut — see Wave 5) |
 | Hunger | Bus drip | Keep bus primary; fatigue status as soft pressure |
-| Identification | Single salvage | Tiered unknowns + biome/scavenger tables |
+| Identification | Single salvage | Biome tables on one salvage kind (tiers tried and cut — see Wave 5) |
 | Statuses | 4 | 8 with fauna/terrain/EM sources |
 | Skills | 3×2 forks | Readable forks; later mastery track |
 | Terrain | hazard/vent/scrub | Wave 2: traps, sealed hatches, pools |
 | NPC quests | Hail + ally | Wave 2: agendas |
 | Crafting | None | Wave 2: 2–3 field recipes |
 | Brands | Flat equip | Situational equip tags (Wave 1) |
-| Gods / alignment | Out | Soft doctrine later — not deities |
+| Gods / alignment | Out | Doctrine tried and cut — see Wave 5 |
 | Weather | Deferred | Wave 3 ion fronts |
 
 ---
@@ -40,10 +42,10 @@ flowchart TB
 | Ticket | Status |
 |--------|--------|
 | Status pack: `blind` / `jam` / `fatigue` / `marked` | Done |
-| Tiered salvage ID (`salvage` / `sealed_crate` / `array_shard`) | Done |
-| Sustained EM-HIGH → scan scars | Done |
+| Tiered salvage ID (`salvage` / `sealed_crate` / `array_shard`) | Shipped, **cut in Wave 5** |
+| Sustained EM-HIGH → scan scars | Shipped, **cut in Wave 5** |
 | Situational equip tags | Done |
-| Re-enable `decode` in room-quest pool | Done |
+| Re-enable `decode` in room-quest pool | Shipped, **cut in Wave 5** |
 
 **Exit gate:** unit + cohere + smoke + balance in band; scars/ID readable in log/HUD.
 
@@ -54,9 +56,9 @@ flowchart TB
 | Ticket | Status |
 |--------|--------|
 | Terrain: `sealed` / `tripwire` / `brine_pool` / `scrub_nest` | Done |
-| Field craft (sample→filter/ration, shard→balm) | Done |
+| Field craft (sample→filter/ration, shard→balm) | Shipped, **cut in Wave 5** |
 | NPC agendas (ensign / tech / survey contact) | Done |
-| Quiet vs Probe doctrine tallies | Done |
+| Quiet vs Probe doctrine tallies | Shipped, **cut in Wave 5** |
 | Fauna `lightPrefer` dark/lit aggro | Done |
 
 **Exit gate:** unit + cohere + smoke + balance in band; optional content never required for extract.
@@ -66,12 +68,12 @@ flowchart TB
 | Ticket | Status |
 |--------|--------|
 | Elite/boss readable brands + deterministic branded kit drops | Done |
-| Branded counter-kit: Flare Prism / Ward Weave / Shadow Lens | Done |
+| Branded counter-kit: Flare Prism / Ward Weave / Shadow Lens | Shipped, **cut in Wave 5** (folded onto core kit) |
 | Companion field roles: drone lamp/intercept + escort cover | Done |
 | Ion fronts: mid/late temporary shear, EM/bus pressure, Quiet/filter/flare mitigation | Done |
-| Content fattening: `relay_chain` re-enabled midgame with pattern-buffer fail-safe favor | Done |
-| Deferred room quest: `calibrate` re-enabled late-mid/late with storm-shelter favor | Done |
-| Deferred room quest: `stabilize` re-enabled midgame with hazard-pass favor | Done |
+| Content fattening: `relay_chain` re-enabled midgame with pattern-buffer fail-safe favor | Shipped, **cut in Wave 5** |
+| Deferred room quest: `calibrate` re-enabled late-mid/late with storm-shelter favor | Shipped, **cut in Wave 5** |
+| Deferred room quest: `stabilize` re-enabled midgame with hazard-pass favor | Shipped, **cut in Wave 5** |
 | Phaser Filters polish: optional built-in camera vignette + flare/ion/extract pulses | Done |
 
 **Still out:** towns, shops, overland, deity worship, meta unlocks, engine rewrite.
@@ -82,7 +84,7 @@ Graphics/tint/light presentation. Sim light and FOV remain the gameplay source o
 ### Relevance pass
 
 Sealed hatches now refund a small storm window; brands alter flare, ion, and dark-aggro behavior;
-ion fronts and contamination have clearer, sharper taxes; and Q3/P3 doctrine plus optional quest
+ion fronts and contamination have clearer, sharper taxes; and optional quest
 favor previews make their thresholds and rewards visible. Texture-only scripted pulses were removed;
 the optional quest route remains outside the extraction spine.
 
@@ -99,41 +101,58 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
 | Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
 | `GameScene` shrink — extract remaining orchestration to presenters | Pending |
-| Oracle telemetry: peak EM, IDs used, doctrine tallies, stuck reason codes | Done |
+| Oracle telemetry: peak EM, IDs used, stuck reason codes | Done |
 | Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
 | Room facts → optional text binds to what is actually in the room; `cohere` fails unbound and unreachable pages | Done |
 | Distinct failure modes per path (GEM §2) | **Measured — tuning deferred**, see below |
 
 ### Path-failure measurement (first read)
 
-Full suite on `stable`: **19/30 (63%)**, hp 8 · storm 3 · energy 0 · stuck 0 — one channel owns **73%** of deaths. Persona sweep over smoke seeds:
+Full suite on `stable`: **19/30 (63%)**, hp 8 · storm 3 · energy 0 · stuck 0 — one channel owns **73%** of deaths. The persona sweep (`playtest --personas`) showed the same shape on every path, which is what set up Wave 5.
 
-| Persona | WR | Lose mix | Dominant | emPeak avg/max | Scars |
-|---------|-----|----------|----------|----------------|-------|
-| stable | 50% | hp 3, storm 1 | 75% | 25 / 44 | 0.0 |
-| quiet | 50% | hp 3, storm 1 | 75% | 30 / 50 | 0.0 |
-| probe | 38% | hp 5 | 100% | 25 / 49 | 0.0 |
-| reckless | 50% | hp 1, storm 2, energy 1 | 50% | 22 / 40 | 0.0 |
+Two findings survive the Wave 5 cut and are still open:
 
-Three findings for the tuning pass, in priority order:
+1. **Quiet is not one option among several — it is the tax you must pay.** Dropping the jammer (`probe` persona) costs 12 points of win rate and makes deaths **100%** hp. That is a single curve with a mandatory item, not a real choice.
+2. **The bus clock is nearly dead as a channel.** Only `reckless` ever produced an energy loss. Bus pressure currently converts into hp deaths instead of its own failure.
 
-1. **Scan scars are unreachable content.** Scars need `SCAR_STREAK_TURNS` (12) consecutive end-turns at `EM_HIGH` (65). Observed peak never exceeds **50** on any seed or persona, and EM has no passive decay — it is simply out-accumulated by purges (coolant, `purge`/`stabilize` quests, quiet doctrine). Either EM sources need to bite harder in late sectors or the scar streak needs to start below `EM_HIGH`.
-2. **Quiet is not one option among several — it is the tax you must pay.** Dropping the jammer (`probe` persona) costs 12 points of win rate and makes deaths **100%** hp. That is a single curve with a mandatory item, not a doctrine choice.
-3. **The bus clock is nearly dead as a channel.** Only `reckless` ever produced an energy loss. Bus pressure currently converts into hp deaths instead of its own failure.
+Do **not** retune these from the oracle alone: the personas are reporting instruments. Pair the retune with human play, and re-gate `test:balance` after each step.
 
-Do **not** retune these from the oracle alone: the personas are reporting instruments, and the identify counts (0.6 per run) partly reflect how rarely the policy holds unknown salvage rather than how rare the content is. Pair the retune with human play, and re-gate `test:balance` after each step.
-
-### POI content is unreachable
-
-Found by the new fact-codex reachability check. POIs spawn only `if (!roomQuest && …)` in [`generator.ts`](../src/map/generator.ts), but a room quest always builds when a sector has three or more rooms — so **0 of 600 generated maps** (40 seeds x 15 sectors) contain a POI. The console / nest / cache-scar tile, its three log lines, its light emitter, `UI-HINT-POI`, and the pressure-reveal flicker are all dead.
-
-Naively enabling it (45% roll on every map, POI kept off quest tiles) produced **44%** POI coverage and a healthier death mix (3 channels, dominant 50%, peak EM up to 61 — the nest is a real EM source), but cost **10 points of win rate (63% -> 53%, below band)** and wedged **5/30** seeds. Reverted; the branch is left in place with a comment.
-
-Re-enabling needs its own pass: find why the policy wedges near POIs (likely repeated pathing to the nest), then rebalance for the band. Restore the three withheld POI pages (`CODEX-FACT-POI-NEST` / `-CACHE` / `-CONSOLE`, described in [`codex.ts`](../src/data/codex.ts)) in the same pass — `playtest:cohere` will fail them as unreachable until POIs exist.
-
-**Not in Wave 4** (reviewed and rejected as wrong-project imports): React/Zustand HUD, fullscreen SDF or clustered lighting, cyber-psychosis / mutation fantasy, WFC megastructure generation, hub-every-5-sectors spine, cross-run meta of any kind.
+**Not in Wave 4/5** (reviewed and rejected as wrong-project imports): React/Zustand HUD, fullscreen SDF or clustered lighting, cyber-psychosis / mutation fantasy, WFC megastructure generation, hub-every-5-sectors spine, cross-run meta of any kind.
 
 **Exit gate:** unit + cohere + smoke + balance in band; no new always-on chrome; optional content still never required for extract.
+
+---
+
+## Wave 5 — Simplify (done)
+
+Waves 1–3 added richness faster than the game added *decisions*. Wave 5 cuts anything the player
+could not see, could not choose, or would always answer the same way. The 15-sector spine, the
+clocks, light, EM and the skill forks are untouched.
+
+| Cut | Why |
+|-----|-----|
+| Scan scars | Needed 12 consecutive end-turns at EM 65; observed peak never passed 50, so no run ever saw one |
+| POI system (console / nest / cache scar) | Spawned only when no room quest existed, but a quest always builds at 3+ rooms — **0 of 600** generated maps had one. The tile is now a decorative `landmark` |
+| Doctrine tallies (quiet vs probe) | Counted silently and nudged a handful of numbers; never surfaced, never chosen |
+| Tiered identify + field craft | Three fail rates and two recipes teaching the same lesson three times |
+| Branded counter-kit + 14 other item kinds | 32 kinds → **18**, one clear tool per job; retired kinds fold onto the survivor that did their work |
+| Utility equip slot | Third slot held whatever was left over |
+| Four room quests (`decode`, `relay_chain`, `stabilize`, `calibrate`) | 7 kinds → **3**, one per resource: salvage bills Window, purge bills HP, vent_seal bills kit |
+| `get` and `retreat` verbs | Pickup is now automatic on step; retreat spent 4 Bus to do what a free step already did |
+| Surplus salvage → Window time | Paid the player for hoarding junk, invisibly, and never once fired in a measured run |
+
+**Added, not cut:** plating re-seats in full at each hatch. Armor had been a one-time buffer that only
+`plate` could refill, so it sat at zero for most of a run while hp took three quarters of all deaths.
+It is now a per-sector shield the player can plan around.
+
+**Result:** 63% WR on the 30-seed gate, **66.5%** over 200 fresh seeds (pre-cut baseline measured
+59.5% on the same 200), hp losses down from 71/200 to 46/200. `cohere` reports 15 sectors, 22
+enemies, 18 items.
+
+**Lesson for future waves:** the 30-seed gate is a regression check, not a measurement — it was
+mildly overfit (63% vs 59.5% true). Removing content shifts RNG consumption, so seeds land in
+different worlds and per-seed comparisons across a refactor are meaningless. Measure aggregates on a
+few hundred fresh seeds before concluding a change helped or hurt.
 
 ---
 

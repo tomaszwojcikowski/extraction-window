@@ -37,7 +37,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 | SEC-PLAINS | Relay Scar Flats | Drop flats; residual array afterglow; scar mites |
 | SEC-FLOOD | Shearwash Basin | Standing shear-water; elevated hazard tiles |
 | SEC-CANOPY | Shear Canopy | Dense EM scatter; hunters |
-| SEC-REEF | Crystal Pulse Reef | Crystal scrub; reef skitters; early multiroom calibrate |
+| SEC-REEF | Crystal Pulse Reef | Crystal scrub; reef skitters; early multiroom vent seal |
 | SEC-SPIRE | Array Mast Reach | Abandoned survey arrays; EM intensifies |
 | SEC-RUIN | Crash Wreck Belt | Prior wreckage; Splice Key in caches (guaranteed) |
 | SEC-BEACON | Emergency Beacon | Sustained splice handshake opens inland path |
@@ -56,7 +56,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 
 ### Room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge, decode, stabilize (single-site), plus multiroom relay_chain / calibrate / vent_seal. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
+Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Window time, HP, kit — and each grants a different extraction favor. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
 
 ### Hostiles (early food chain)
 
@@ -74,7 +74,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 - Floor / rubble / scrub — open ground; scrub is sight-block only
 - Vent / hazard — ion stress drains bus (filter halves; sealant can neutralize underfoot)
 - Hatch / beacon / shuttle — mission structures
-- POI (≤1 per sector) — optional anomaly (console / nest / cache scar); never required for win
+- Landmark — decorative room centrepiece; nothing to interact with
 
 ## Ecology behaviors
 
@@ -82,9 +82,24 @@ Each biome signature hostile has a readable behavior (wander, swell burst, skirm
 
 ## Away kit
 
-Capacity 16 slots. Consumables: field hypo, power cell, ration, bus coolant, field array pulse, stim, shield charge, plasma flare, plasma filter, microdart, EM scrambler, sealant, dermal seal, array lens, nav ping. Equipment: combat knife (+1 ATK), EVA harness (+6 max shields). Quest: Splice Key, Nav Lattice.
+Capacity 16 slots, and one clear tool per job — 18 kinds total.
 
-**Personal shields** — hits strike shield pool before vitals. Bleed bypasses shields. Plasma damage halved while filter is active. Kinetic vs plasma (ion) damage types on hostiles.
+| Tool | Job |
+|------|-----|
+| Field Hypo | Heal, and stop bleeding |
+| Power Cell | Restore the bus, and resync a desynced pattern buffer |
+| Sealant Foam | Purge EM contamination, and seal hazard/vent ground |
+| Shield Charge | Repair plating mid-sector |
+| Plasma Filter | Blunt ion damage |
+| Field Array Pulse | See further |
+| Nav Ping | Remember the layout |
+| EM Scrambler | Go unnoticed |
+| Plasma Flare, Plasma Microdart, Combat Stim | Fight |
+| Unknown Salvage | The one gamble: scan it for kit, or take the backlash |
+
+Equipment (two slots — tool and armor): Combat Knife, Pulse Baton; EVA Harness, Ablative Vest. Quest: Splice Key, Nav Lattice.
+
+**Personal shields** — hits strike the shield pool before vitals; bleed bypasses it. Plating is a per-sector shield: it re-seats in full at each hatch, and Shield Charge is the mid-sector repair. Plasma damage halved while filter is active. Kinetic vs plasma (ion) damage types on hostiles.
 
 **Away proficiency (in-run)** — kills, sector clears, room quests, and objective beats grant XP. Levels auto-boost stats and unlock passive field skills. Resets each mission; no cross-run meta.
 
@@ -109,12 +124,12 @@ What classic ADOM did well, and how EW translates it (in-run only):
 | ADOM strength | EW translation |
 |---------------|----------------|
 | Hunger / clocks | Dual clocks: **shear window** + **bus power** |
-| Corruption | **EM contamination** from field-array tools / nests; tax + wider fauna aggro; flush with coolant/sealant/stabilize; quiet suppresses EM-HIGH aggro bump |
+| Corruption | **EM contamination** from field-array tools / nests; tax + wider fauna aggro; flush with sealant; quiet suppresses EM-HIGH aggro bump |
 | Unidentified items | **Unknown Salvage** crates — scan with `u` (risk of backlash) |
 | Distinct dungeons | Biome gen + **scrub blocks sight**; brine hazard tax; vault loot-wake |
 | Talent identity | **Skill forks** at L3/L5/L7 — pick 1 of 2 |
 | Lore that matters | **PADD pages** grant lasting run mods (FOV, filter, quiet vault, DEF, window) |
-| Side content | Room quests / POIs with storm + kit payoffs |
+| Side content | Three room quests with storm + kit payoffs, one per resource |
 | Dense keyboard log | Mission log + sticky causal milestones |
 
 Out of scope (by design): towns/shops, alignment, meta unlocks, overland world map.

@@ -17,7 +17,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 | Dual clocks | Window vs Bus — every turn is paid for twice |
 | Causal extract | Key → handshake → Lattice → pad; no shortcut, no fetch-quest padding |
 | Field light | Lamp / flare / Quiet change notice, aggro, dart clarity — not tint |
-| Kit + pressure | 16 slots, 3 equip, consumables; scarcity forces improvisation |
+| Kit + pressure | 16 slots, tool + armor equip, consumables; scarcity forces improvisation |
 | In-run mastery | Levels 1–8 and forks, learned inside one run |
 | Headless truth | `sim/` owns rules; presentation may not invent them |
 
@@ -25,8 +25,8 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 
 | Candidate | Verdict | Why |
 |-----------|---------|-----|
-| Tiered unknown salvage | Ship | Tech is opaque; identifying costs turns you owe the clocks |
-| Scan scars at sustained EM-HIGH | Ship | Greed on probing has a body cost |
+| Unknown salvage as one gamble | Ship | Tech is opaque; scanning costs turns you owe the clocks. Shipped as tiers, later cut to a single kind — three fail rates taught nothing three times |
+| Scan scars at sustained EM-HIGH | Cut | Shipped, then cut: the body cost never surfaced anywhere the player could read it |
 | Sealed hatch Window refund | Ship | Rewards reading terrain over sprinting |
 | Cross-run unlocks | Cut | Moves mastery out of the run |
 | Towns / shops | Cut | Turns scarcity into a shopping list |
@@ -42,7 +42,7 @@ No single correct build. Each path must fail *differently*; if two paths die the
 | Path | Fantasy | Distinct failure mode |
 |------|---------|-----------------------|
 | Quiet survey | Move dark, unseen, cheap | Cornered in the dark with Quiet tools spent |
-| Probe / flare | Light as a weapon; clarity on demand | EM spiral → scan scars, wake cascade |
+| Probe / flare | Light as a weapon; clarity on demand | EM spiral into a wake cascade |
 | Kinetic kit | Solve rooms with force | Bus bankruptcy and empty consumables late |
 | Companion / contact | Agendas, escort cover, drone lamp | Value soft-locked if ignored while clocks run |
 

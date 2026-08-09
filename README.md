@@ -30,23 +30,22 @@ npm run test:balance # win-rate band + lose-mix gates
 npm run playtest:smoke
 npm run playtest:cohere  # static spine/lore coherency
 npm run playtest     # full seed suite → playtest-report.json
-npx tsx scripts/playtest.ts --personas   # doctrine sweep: which channel kills each path
+npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills each play style
 ```
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| WASD / arrows | Move (or navigate kit) |
+| WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
+| Shift + dir | Peek the wake footprint of the next tile (no turn spent) |
 | `.` | Wait |
 | `b` | Brace: +2 DEF through the enemy phase; cancels pounce bonus |
-| `r` | Retreat from a visible adjacent/winding hostile (costs 4 bus) |
-| `g` | Get item |
 | `i` | Open field kit |
 | `u` | Use selected item |
 | `1`–`9` | Select kit slot |
 | `p` | Mission PADD pages |
-| `>` / `=` / Enter / Space | Hatch / beacon / skiff |
+| `>` / `=` / Enter / Space | Hatch, beacon, pad, quest console, hail |
 | `?` | Field manual |
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
