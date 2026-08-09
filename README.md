@@ -30,6 +30,7 @@ npm run test:balance # win-rate band + lose-mix gates
 npm run playtest:smoke
 npm run playtest:cohere  # static spine/lore coherency
 npm run playtest     # full seed suite → playtest-report.json
+npx tsx scripts/playtest.ts --personas   # doctrine sweep: which channel kills each path
 ```
 
 ## Controls
