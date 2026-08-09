@@ -1,5 +1,46 @@
 import { describe, expect, it } from 'vitest';
 import { pickCameraCue } from '../../src/game/presenters/EventCamera';
+import { CameraKick, KICK_DECAY_MS } from '../../src/game/presenters/CameraKick';
+
+describe('CameraKick', () => {
+  it('rests at zero offset and no zoom', () => {
+    const kick = new CameraKick();
+    expect(kick.offset(0)).toEqual({ x: 0, y: 0 });
+    expect(kick.zoom(0)).toBe(1);
+  });
+
+  it('decays a nudge back to rest inside the cue budget', () => {
+    const kick = new CameraKick();
+    const cue = pickCameraCue(['LOG-HURT'])!;
+    kick.apply(cue, 1000, 3);
+
+    const start = kick.offset(1000);
+    expect(Math.hypot(start.x, start.y)).toBeCloseTo(cue.nudgePx, 5);
+
+    const mid = kick.offset(1000 + KICK_DECAY_MS / 2);
+    expect(Math.hypot(mid.x, mid.y)).toBeLessThan(Math.hypot(start.x, start.y));
+
+    const after = Math.max(cue.shakeMs, KICK_DECAY_MS, cue.vignetteMs * 0.5, cue.zoomMs * 0.6);
+    expect(kick.offset(1001 + after)).toEqual({ x: 0, y: 0 });
+  });
+
+  it('eases zoom from the cue peak back to 1', () => {
+    const kick = new CameraKick();
+    const cue = pickCameraCue(['LOG-HURT'])!;
+    kick.apply(cue, 0, 0);
+    expect(kick.zoom(0)).toBeCloseTo(cue.zoomScale, 5);
+    expect(kick.zoom(cue.zoomMs / 2)).toBeLessThan(cue.zoomScale);
+    expect(kick.zoom(cue.zoomMs)).toBe(1);
+  });
+
+  it('reset drops a live kick so a new run starts at rest', () => {
+    const kick = new CameraKick();
+    kick.apply(pickCameraCue(['LOG-HURT'])!, 0, 0);
+    kick.reset();
+    expect(kick.offset(0)).toEqual({ x: 0, y: 0 });
+    expect(kick.zoom(0)).toBe(1);
+  });
+});
 
 describe('pickCameraCue', () => {
   it('returns null for routine logs and status ticks', () => {

@@ -46,6 +46,7 @@ import {
   noticeImpactIds,
 } from '../game/presenters/NoticeImpact';
 import { pickCameraCue, type CameraCue } from '../game/presenters/EventCamera';
+import { CameraKick } from '../game/presenters/CameraKick';
 import { markPeekTeachDone } from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
@@ -130,14 +131,8 @@ export class GameScene extends Phaser.Scene {
   private noticeImpactIds = new Set<number>();
   /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
   private noticeChaseLatched = new Set<number>();
-  /** Event camera kick — decays in updateCamera; world layers only (HUD stays 1:1). */
-  private camNudgeX = 0;
-  private camNudgeY = 0;
-  private camNudgeUntil = 0;
-  /** Peak world scale (>1 zooms in); eases to 1 over camZoomUntil. */
-  private camZoomPeak = 1;
-  private camZoomUntil = 0;
-  private camZoomMs = 1;
+  /** Event camera kick + punch-in zoom; world layers only (HUD stays 1:1). */
+  private readonly camKick = new CameraKick();
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -172,6 +167,7 @@ export class GameScene extends Phaser.Scene {
     this.noticeImpactUntil = 0;
     this.noticeImpactIds.clear();
     this.noticeChaseLatched.clear();
+    this.camKick.reset();
     this.firstLight = null;
     this.firstLightTween = null;
   }
@@ -1204,32 +1200,13 @@ export class GameScene extends Phaser.Scene {
       this.camX += (targetX - this.camX) * 0.2;
       this.camY += (targetY - this.camY) * 0.2;
     }
-    let nudgeX = 0;
-    let nudgeY = 0;
-    if (this.time.now < this.camNudgeUntil) {
-      const remain = this.camNudgeUntil - this.time.now;
-      const t = Math.min(1, remain / 200);
-      nudgeX = this.camNudgeX * t;
-      nudgeY = this.camNudgeY * t;
-    } else {
-      this.camNudgeX = 0;
-      this.camNudgeY = 0;
-    }
+    const nudge = this.camKick.offset(this.time.now);
     // World-layer zoom toward the player (not Phaser camera — HUD stays unzoomed).
-    let zoom = 1;
-    if (this.time.now < this.camZoomUntil && this.camZoomPeak > 1) {
-      const remain = this.camZoomUntil - this.time.now;
-      const u = Math.min(1, remain / Math.max(1, this.camZoomMs));
-      // Ease-out: hold punch early, settle back to 1.
-      const ease = u * u;
-      zoom = 1 + (this.camZoomPeak - 1) * ease;
-    } else {
-      this.camZoomPeak = 1;
-    }
+    const zoom = this.camKick.zoom(this.time.now);
     const fx = this.playerSprite.x;
     const fy = this.playerSprite.y;
-    const ox = -this.camX + nudgeX + fx * (1 - zoom);
-    const oy = -this.camY + TOP + nudgeY + fy * (1 - zoom);
+    const ox = -this.camX + nudge.x + fx * (1 - zoom);
+    const oy = -this.camY + TOP + nudge.y + fy * (1 - zoom);
     for (const layer of [
       this.mapLayer,
       this.shadowLayer,
@@ -1460,18 +1437,7 @@ export class GameScene extends Phaser.Scene {
     if (cue.vignette > 0) {
       this.cameraAtmosphere?.pulse(cue.vignette, cue.vignetteMs);
     }
-    const kickMs = Math.max(200, cue.shakeMs, cue.vignetteMs * 0.5, cue.zoomMs * 0.6);
-    if (cue.nudgePx > 0) {
-      const ang = (this.state.turn * 2.399) % (Math.PI * 2);
-      this.camNudgeX = Math.cos(ang) * cue.nudgePx;
-      this.camNudgeY = Math.sin(ang) * cue.nudgePx;
-      this.camNudgeUntil = this.time.now + kickMs;
-    }
-    if (cue.zoomScale > 1 && cue.zoomMs > 0) {
-      this.camZoomPeak = cue.zoomScale;
-      this.camZoomMs = cue.zoomMs;
-      this.camZoomUntil = this.time.now + cue.zoomMs;
-    }
+    this.camKick.apply(cue, this.time.now, this.state.turn);
     if (cue.ignite) {
       const color =
         cue.ignite === 'flare'
