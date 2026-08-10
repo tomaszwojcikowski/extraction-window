@@ -127,17 +127,17 @@ function tryExit(state: GameState): void {
 
   if (tile.kind === 'exit') {
     if (state.sectorId === 'beacon' && !state.objectives.beaconOpen) {
-      pushLog(state, 'LOG-NEED-KEY');
+      pushLog(state, hasItem(state, 'relay_key') ? 'LOG-EXIT-NEED-BEACON' : 'LOG-NEED-KEY');
       endPlayerTurn(state);
       return;
     }
     if (state.sectorId === 'ruin' && !hasItem(state, 'relay_key')) {
-      pushLog(state, 'LOG-EXIT-BLOCKED');
+      pushLog(state, 'LOG-EXIT-NEED-KEY');
       endPlayerTurn(state);
       return;
     }
     if (state.sectorId === 'vault' && !hasItem(state, 'nav_core')) {
-      pushLog(state, 'LOG-EXIT-BLOCKED');
+      pushLog(state, 'LOG-EXIT-NEED-CORE');
       endPlayerTurn(state);
       return;
     }

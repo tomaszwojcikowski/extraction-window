@@ -54,7 +54,15 @@ export function contextHint(st: GameState): LoreId | null {
   }
 
   const tile = st.tiles[st.player.y]![st.player.x]!;
-  if (tile.kind === 'exit') return 'UI-HINT-EXIT';
+  if (tile.kind === 'exit') {
+    // Say what the hatch wants — "sealed" alone is a dead end.
+    if (st.sectorId === 'ruin' && !hasItem(st, 'relay_key')) return 'UI-HINT-EXIT-NEED-KEY';
+    if (st.sectorId === 'vault' && !hasItem(st, 'nav_core')) return 'UI-HINT-EXIT-NEED-CORE';
+    if (st.sectorId === 'beacon' && !st.objectives.beaconOpen) {
+      return hasItem(st, 'relay_key') ? 'UI-HINT-EXIT-NEED-BEACON' : 'UI-HINT-EXIT-NEED-KEY';
+    }
+    return 'UI-HINT-EXIT';
+  }
   if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
   if (tile.kind === 'quest') return 'UI-HINT-QUEST';

@@ -74,6 +74,17 @@ export function actionFloatLabels(
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };
         break;
+      case 'LOG-EXIT-NEED-KEY':
+      case 'LOG-NEED-KEY':
+        next = { label: 'NEED SPLICE KEY', color: ThemeCss.tape };
+        break;
+      case 'LOG-EXIT-NEED-CORE':
+      case 'LOG-NEED-CORE':
+        next = { label: 'NEED NAV LATTICE', color: ThemeCss.flag };
+        break;
+      case 'LOG-EXIT-NEED-BEACON':
+        next = { label: 'AUTHORIZE BEACON', color: ThemeCss.arc };
+        break;
     }
     if (next) labels.push(next);
   }
@@ -323,7 +334,15 @@ export function playActionSfx(
     sfx.play('pickup');
     return;
   }
-  if (has('LOG-MOVE-BLOCKED') || has('LOG-EXIT-BLOCKED') || has('LOG-NEED-KEY') || has('LOG-NEED-CORE')) {
+  if (
+    has('LOG-MOVE-BLOCKED') ||
+    has('LOG-EXIT-BLOCKED') ||
+    has('LOG-EXIT-NEED-KEY') ||
+    has('LOG-EXIT-NEED-CORE') ||
+    has('LOG-EXIT-NEED-BEACON') ||
+    has('LOG-NEED-KEY') ||
+    has('LOG-NEED-CORE')
+  ) {
     sfx.play('blocked');
     return;
   }

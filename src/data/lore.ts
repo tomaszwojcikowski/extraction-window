@@ -81,6 +81,9 @@ export const LORE = {
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — Enter to advance',
+  'UI-HINT-EXIT-NEED-KEY': 'Hatch sealed — find the Splice Key in this wreck first',
+  'UI-HINT-EXIT-NEED-CORE': 'Hatch sealed — recover the Nav Lattice first',
+  'UI-HINT-EXIT-NEED-BEACON': 'Hatch sealed — authorize the beacon (>) first',
   'UI-HINT-BEACON': 'Beacon — press > to start handshake',
   'UI-HINT-HANDSHAKE': 'Handshake syncing — hold on the beacon',
   'UI-HINT-SHUTTLE': 'Drop skiff — press > with Nav Lattice',
@@ -455,6 +458,9 @@ export const LORE = {
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Contingency Cache holds spare Nav Lattice.',
   'LOG-NEED-KEY': 'Beacon sealed. Splice Key required.',
+  'LOG-EXIT-NEED-KEY': 'Hatch sealed — recover the Splice Key in this wreck first.',
+  'LOG-EXIT-NEED-CORE': 'Hatch sealed — recover the Nav Lattice before vault will release you.',
+  'LOG-EXIT-NEED-BEACON': 'Hatch sealed — authorize the beacon console first.',
   'LOG-GOT-CORE': 'Nav Lattice secured from Contingency Cache. Return to Drop Skiff Ridge pad.',
   'LOG-NEED-CORE': 'Drop skiff refuses lock — Nav Lattice missing.',
   'LOG-SECTOR': 'Sector boundary crossed.',
@@ -485,7 +491,7 @@ export const LORE = {
   'LOG-SEC-APPROACH':
     'Skiff Approach. Storm shear over the final choke — Drop Skiff Ridge ahead.',
   'LOG-SEC-RIDGE': 'Drop Skiff Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
-  'LOG-EXIT-BLOCKED': 'Hatch sealed.',
+  'LOG-EXIT-BLOCKED': 'Hatch will not open yet.',
   'LOG-HAZARD': 'Ion hazard — bus drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-FAVOR-GRANT': 'Extract favor secured.',
