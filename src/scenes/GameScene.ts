@@ -1536,7 +1536,7 @@ export class GameScene extends Phaser.Scene {
     const sources = this.lightView.allSources(st, this.animFrame);
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
     this.drawFieldMotes();
-    this.lightView.drawBloom(sources, st.visible, st.tiles);
+    this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
 

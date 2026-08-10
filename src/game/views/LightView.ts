@@ -1,24 +1,24 @@
 import Phaser from 'phaser';
+import type { SectorId } from '../../data/encounters';
 import type { FieldLightSource, GameState } from '../../sim/types';
 import {
-  accumulateLight,
   collectLightSources,
+  floodAddLight,
   irradiance,
   SHADOW_THRESHOLD,
   tileBrightness,
   toneMap,
 } from '../../sim/light';
+import { EM_HIGH } from '../../sim/emStress';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { castReachTiles } from './castShadows';
+import { marchPoolRays, type PoolRay } from './poolReach';
 
 export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
-/** Rays per light pool — enough to read as a soft wall-cut shape, not a star. */
-const POOL_RAYS = 48;
-const POOL_STEP = 0.28;
 /** Additive shells per pool — fewer shells = less banding; rays carry the silhouette. */
 const POOL_SHELLS = 7;
 
@@ -51,15 +51,21 @@ function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource 
   return { ...s, color: s.color ?? fallback };
 }
 
+/** Presentation bloom gain — duct swallows, plains lifts, ash chokes. */
+function biomeBloomGain(sectorId: SectorId): number {
+  const a = BIOME_AMBIENT[sectorId].ambient;
+  // Map 0.17–0.44 → ~0.72–1.05 without touching gameplay thresholds.
+  return 0.55 + a * 1.15;
+}
+
 /**
  * Field lighting — draws from the sim illumination grid + shared emitters.
  *
  * Three physical claims this view has to sell:
- *  1. light has a *shape* — pools are ray-marched against the tile grid, so a
- *     wall cuts the pool instead of a circle fading over it;
- *  2. light comes *from* somewhere — actors drop a contact shadow + cast
- *     silhouette away from wall-aware key light (`accumulateLight`); casts
- *     clip at opaque tiles the same way bloom pools do;
+ *  1. light has a *shape* — pools are ray-marched against the tile grid; walls
+ *     cut the pool and scrub attenuates it the same way flood light does;
+ *  2. light comes *from* somewhere — tile hue, casts, and actor tints weight
+ *     emitters by flood energy (wrap + scrub), not bare circles;
  *  3. light *arrives* — sector entry sweeps in behind a front (`applySweep`)
  *     and a flare has an ignition beat (`ignite`) instead of a state change.
  *
@@ -73,6 +79,9 @@ export class LightView {
   /** Cached per-tile presentation so sweeps/gates avoid a full relight. */
   private alphaGrid: number[][] = [];
   private tintGrid: number[][] = [];
+  /** Per-source flood energy grids — colour/casts match gameplay wrap + scrub. */
+  private sourceEnergy: number[][][] = [];
+  private sourceEnergyKey = '';
 
   constructor(
     scene: Phaser.Scene,
@@ -102,6 +111,8 @@ export class LightView {
     this.fx = [];
     this.alphaGrid = [];
     this.tintGrid = [];
+    this.sourceEnergy = [];
+    this.sourceEnergyKey = '';
   }
 
   addFxLight(src: LightSource): void {
@@ -131,47 +142,36 @@ export class LightView {
   }
 
   /**
-   * Ray-march how far the source actually reaches in each direction before a
-   * wall eats it. One pass per source; every shell reuses these distances.
+   * Rebuild flood contribution per emitter when the source set changes.
+   * Cached across anim frames within a turn so colour stays flood-honest
+   * without re-walking Dijkstra every tick.
    */
-  private poolReach(
-    tiles: GameState['tiles'],
-    sx: number,
-    sy: number,
-    radius: number,
-  ): number[] {
-    const cx = sx + 0.5;
-    const cy = sy + 0.5;
-    const reach: number[] = [];
-    for (let i = 0; i < POOL_RAYS; i++) {
-      const a = (i / POOL_RAYS) * Math.PI * 2;
-      const dx = Math.cos(a);
-      const dy = Math.sin(a);
-      let hit = radius;
-      for (let t = POOL_STEP; t <= radius; t += POOL_STEP) {
-        const tile = tiles[Math.floor(cy + dy * t)]?.[Math.floor(cx + dx * t)];
-        if (!tile) {
-          hit = t;
-          break;
-        }
-        if (!tile.transparent) {
-          // Stop just inside the blocker so the pool laps the wall face.
-          hit = Math.max(POOL_STEP, t - POOL_STEP * 0.5);
-          break;
-        }
-      }
-      reach.push(hit);
-    }
-    return reach;
+  private ensureSourceEnergy(st: GameState, sources: LightSource[]): void {
+    const key = `${st.turn}:${st.width}x${st.height}:${sources
+      .map((s) => `${s.x},${s.y},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`)
+      .join('|')}`;
+    if (key === this.sourceEnergyKey && this.sourceEnergy.length === sources.length) return;
+    this.sourceEnergyKey = key;
+    this.sourceEnergy = sources.map((s) => {
+      const grid = Array.from({ length: st.height }, () =>
+        Array.from({ length: st.width }, () => 0),
+      );
+      floodAddLight(st.tiles, s.x, s.y, s.radius, s.intensity, grid);
+      return grid;
+    });
   }
 
-  private shellPoints(reach: number[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
+  private energyAt(sourceIndex: number, x: number, y: number): number {
+    return this.sourceEnergy[sourceIndex]?.[y]?.[x] ?? 0;
+  }
+
+  private shellPoints(rays: PoolRay[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
     const cx = sx + 0.5;
     const cy = sy + 0.5;
     const pts: Phaser.Math.Vector2[] = [];
-    for (let i = 0; i < reach.length; i++) {
-      const a = (i / reach.length) * Math.PI * 2;
-      const d = reach[i]! * scale;
+    for (let i = 0; i < rays.length; i++) {
+      const a = (i / rays.length) * Math.PI * 2;
+      const d = rays[i]!.hit * scale;
       pts.push(
         new Phaser.Math.Vector2(
           (cx + Math.cos(a) * d) * TILE_DRAW,
@@ -183,15 +183,17 @@ export class LightView {
   }
 
   /**
-   * Wall-aware bloom. Ray-marched pools stop at geometry and spill down corridors.
-   * Personal lamp (hooded work light) stays soft; flares/beacons keep a hotter core.
+   * Wall- and scrub-aware bloom. Ray-marched pools stop at geometry, die in
+   * thicket, and spill down corridors. Personal lamp stays soft; flares keep a hotter core.
    */
   drawBloom(
     sources: LightSource[],
     visible: boolean[][],
     tiles?: GameState['tiles'],
+    sectorId: SectorId = 'plains',
   ): void {
     this.lightsGfx.clear();
+    const biomeGain = biomeBloomGain(sectorId);
     for (const s of sources) {
       const row = visible[s.y];
       if (!row?.[s.x]) continue;
@@ -199,28 +201,27 @@ export class LightView {
       const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
       const personal =
         s.color === LightTemp.lamp || s.color === LightTemp.lampQuiet;
-      const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity)));
-      // Personal lamp: readable pool without a white-hot blob on the sprite.
+      const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
       const aCore = personal
-        ? Math.min(0.34, 0.07 + s.intensity * 0.16)
-        : Math.min(0.62, 0.12 + s.intensity * 0.3);
+        ? Math.min(0.34, 0.07 + s.intensity * 0.16) * biomeGain
+        : Math.min(0.62, 0.12 + s.intensity * 0.3) * biomeGain;
 
       if (tiles) {
-        // Stacked shells cut to the room's shape. Each shell's alpha is the
-        // *increment* of `irradiance()` between two radii, so the additive
-        // stack reproduces the sim's windowed inverse-square falloff.
-        const reach = this.poolReach(tiles, s.x, s.y, s.radius);
+        const rays = marchPoolRays(tiles, s.x, s.y, s.radius);
         const peak = irradiance(s.radius / POOL_SHELLS, s.radius, 1) || 1;
         let prev = 0;
         for (let k = POOL_SHELLS; k >= 1; k--) {
           const scale = k / POOL_SHELLS;
-          // Milder gamma — mid-field stays visible without banding into rings.
           const f = Math.pow(Math.min(1, irradiance(scale * s.radius, s.radius, 1) / peak), 0.62);
           const inc = f - prev;
           prev = f;
           if (inc <= 0.001) continue;
-          this.lightsGfx.fillStyle(s.color, aCore * inc);
-          this.lightsGfx.fillPoints(this.shellPoints(reach, s.x, s.y, scale), true);
+          // Mean ray atten so scrub-choked directions don't glow full-strength.
+          let attenSum = 0;
+          for (const ray of rays) attenSum += ray.atten;
+          const atten = rays.length ? attenSum / rays.length : 1;
+          this.lightsGfx.fillStyle(s.color, aCore * inc * (0.3 + 0.7 * atten));
+          this.lightsGfx.fillPoints(this.shellPoints(rays, s.x, s.y, scale), true);
         }
       } else {
         this.lightsGfx.fillStyle(s.color, aCore * 0.14);
@@ -229,7 +230,6 @@ export class LightView {
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
       }
 
-      // Emitter filament — soft for the hooded lamp, hot for flares / tech.
       if (personal) {
         const core = Math.max(3, TILE_DRAW * 0.14 * gain);
         this.lightsGfx.fillStyle(s.color, aCore * 0.45);
@@ -246,12 +246,8 @@ export class LightView {
 
   /**
    * Contact + cast shadows under actors.
-   *
-   * Key light is weighted by `accumulateLight` (wall-aware LOS), so a flare behind
-   * a bulkhead cannot throw a silhouette through stone. The cast tip is clipped
-   * to the first opaque tile along its throw — the same honesty rule as bloom
-   * pools. Deep SHADOW tiles keep only a faint contact patch; the AI's dark band
-   * should not look floodlit by a fake cast.
+   * Key light is flood energy — same wrap/scrub model as tile brightness — so
+   * a flare around a corner can cast, but one behind scrub/stone cannot fake it.
    */
   drawContactShadows(
     st: GameState,
@@ -261,6 +257,7 @@ export class LightView {
     const g = this.shadowGfx;
     if (!g) return;
     g.clear();
+    this.ensureSourceEnergy(st, sources);
     for (const actor of actors) {
       const { gx, gy } = actor;
       if (!st.visible[gy]?.[gx]) continue;
@@ -270,12 +267,11 @@ export class LightView {
       let vx = 0;
       let vy = 0;
       let key = 0;
-      for (const s of sources) {
+      for (let i = 0; i < sources.length; i++) {
+        const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
-        // A lamp on your own tile lights you from every side: no cast, just contact.
         if (dist < 0.75) continue;
-        // Wall-aware energy — same LOS the colour sampler uses.
-        const E = accumulateLight(st.tiles, s.x, s.y, gx, gy, s.radius, s.intensity);
+        const E = this.energyAt(i, gx, gy);
         if (E <= 0.004) continue;
         vx += ((gx - s.x) / dist) * E;
         vy += ((gy - s.y) / dist) * E;
@@ -290,8 +286,6 @@ export class LightView {
       );
 
       const len = Math.hypot(vx, vy);
-      // Casts need enough key light *and* enough tile brightness — otherwise the
-      // silhouette is a lie about a room the ambush AI already treats as dark.
       if (key > 0.05 && len > 0.0001 && !inShadowBand) {
         const dirX = vx / len;
         const dirY = vy / len;
@@ -316,12 +310,10 @@ export class LightView {
             ],
             true,
           );
-          // Soft tip so the cast dies into the floor instead of a hard edge.
           g.fillStyle(Theme.groundDeep, alpha * 0.35);
           g.fillEllipse(fx, fy, TILE_DRAW * 0.22, TILE_DRAW * 0.1);
         }
       }
-      // Contact patch — darkest right under the feet.
       g.fillStyle(Theme.groundDeep, alpha);
       g.fillEllipse(wx, wy, TILE_DRAW * 0.48, TILE_DRAW * 0.2);
     }
@@ -360,12 +352,10 @@ export class LightView {
         const t = state.t;
         const r = maxR * t;
         g.clear();
-        // Hard front — the moment the room changes.
         g.lineStyle(Math.max(1, 4 * (1 - t)), blendTowardWhite(color, 0.6), 1 - t);
         g.strokeCircle(wx, wy, r);
         g.lineStyle(1, color, (1 - t) * 0.7);
         g.strokeCircle(wx, wy, r * 0.72);
-        // Chemical core burning down.
         g.fillStyle(blendTowardWhite(color, 0.75), Math.max(0, 0.9 - t * 1.1));
         g.fillCircle(wx, wy, TILE_DRAW * 0.5 * (1 - t * 0.4));
       },
@@ -432,8 +422,9 @@ export class LightView {
   ): { colorAcc: number; colorPull: number } {
     let colorPull = 0;
     let colorAcc = BIOME_AMBIENT[st.sectorId].tint;
-    for (const s of sources) {
-      const E = accumulateLight(st.tiles, s.x, s.y, x, y, s.radius, s.intensity);
+    for (let i = 0; i < sources.length; i++) {
+      const s = sources[i]!;
+      const E = this.energyAt(i, x, y);
       if (E <= 0.001) continue;
       colorPull += E;
       colorAcc = multiplyTint(colorAcc, s.color, Math.min(1, E * 0.9));
@@ -460,6 +451,11 @@ export class LightView {
     const biome = BIOME_AMBIENT[st.sectorId];
     const floorTint = BIOME_FLOOR_TINT[st.sectorId];
     const ambientTint = biome.tint;
+    const reflect =
+      st.sectorId === 'brine' || st.sectorId === 'flood' || st.sectorId === 'reef' ? 1.14 : 1;
+    const choke =
+      st.sectorId === 'ash' || st.sectorId === 'approach' || st.sectorId === 'duct' ? 0.88 : 1;
+    this.ensureSourceEnergy(st, sources);
     if (this.alphaGrid.length !== st.height) {
       this.alphaGrid = Array.from({ length: st.height }, () => new Array<number>(st.width).fill(0));
       this.tintGrid = Array.from({ length: st.height }, () => new Array<number>(st.width).fill(0));
@@ -480,7 +476,6 @@ export class LightView {
 
         img.setTexture(tileKey(kind, x, y));
         if (!st.visible[y]![x]) {
-          // Survey memory is cold, flat and clearly *remembered*, not lit.
           img.setTint(Theme.memory);
           img.setAlpha(0.26);
           this.alphaGrid[y]![x] = 0.26;
@@ -488,7 +483,6 @@ export class LightView {
           continue;
         }
 
-        // Prefer sim illumination grid so quiet/flare/EM match gameplay
         const brightness =
           st.illumination?.[y]?.[x] !== undefined
             ? tileBrightness(st, x, y)
@@ -507,14 +501,17 @@ export class LightView {
           tint = multiplyTint(tint, colorAcc, Math.min(0.78, colorPull * 0.62));
         }
         if (brightness < SHADOW_THRESHOLD) {
-          // The shadow band the ambush AI actually reads: cold and drained.
-          tint = multiplyTint(tint, Theme.shadowWash, 0.62 * (1 - brightness / SHADOW_THRESHOLD));
+          const wash = st.sectorId === 'ash' || st.sectorId === 'approach' ? 0.72 : 0.62;
+          tint = multiplyTint(tint, Theme.shadowWash, wash * (1 - brightness / SHADOW_THRESHOLD));
         }
-        tint = blendTowardWhite(tint, Math.pow(brightness, 1.3) * 0.55);
+        tint = blendTowardWhite(tint, Math.pow(brightness, 1.3) * 0.55 * reflect);
+        if (st.emStress >= EM_HIGH) {
+          // Sickly scan wash — intensity already in sim ambient; hue is present-only.
+          tint = multiplyTint(tint, LightTemp.scan, 0.16);
+        }
 
         const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.05;
-        // Steeper than linear: unlit floor recedes, lit floor reads as surface.
-        const alpha = Math.min(1, (0.13 + 0.87 * Math.pow(brightness, 0.7)) * occlusion);
+        const alpha = Math.min(1, (0.13 + 0.87 * Math.pow(brightness, 0.7)) * occlusion * choke);
         img.setTint(tint);
         img.setAlpha(alpha);
         this.alphaGrid[y]![x] = alpha;
@@ -552,7 +549,6 @@ export class LightView {
           continue;
         }
         img.setAlpha(base * Math.min(1, behind / 2.6));
-        // Hot leading edge — you can see the light land on each surface.
         img.setTint(behind < 1.4 ? blendTowardWhite(tint, 0.55) : tint);
       }
     }
@@ -562,23 +558,43 @@ export class LightView {
     st: GameState,
     playerSprite: Phaser.GameObjects.Image,
     enemyViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
-    _sources: LightSource[],
+    sources: LightSource[],
   ): void {
+    this.ensureSourceEnergy(st, sources);
+
     const litAlpha = (x: number, y: number): number => {
       if (!st.visible[y]?.[x]) return 0;
       return 0.5 + 0.5 * tileBrightness(st, x, y);
+    };
+
+    const keyTint = (x: number, y: number): number | null => {
+      let pull = 0;
+      let acc = 0xffffff;
+      for (let i = 0; i < sources.length; i++) {
+        const E = this.energyAt(i, x, y);
+        if (E <= 0.008) continue;
+        pull += E;
+        acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.85));
+      }
+      if (pull < 0.06) return null;
+      return multiplyTint(0xffffff, acc, Math.min(0.5, pull * 0.42));
     };
 
     playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));
     if (st.patternDesync > 0) {
       playerSprite.setTint(LightTemp.pattern);
     } else {
-      playerSprite.clearTint();
+      const tint = keyTint(st.player.x, st.player.y);
+      if (tint !== null) playerSprite.setTint(tint);
+      else playerSprite.clearTint();
     }
 
     for (const view of enemyViews) {
       if (!view.img.visible) continue;
       view.img.setAlpha(litAlpha(view.gx, view.gy));
+      const tint = keyTint(view.gx, view.gy);
+      if (tint !== null) view.img.setTint(tint);
+      else view.img.clearTint();
     }
   }
 }
@@ -586,3 +602,4 @@ export class LightView {
 // Re-export for bloom tuning / tests
 export { irradiance } from '../../sim/light';
 export { castReachTiles } from './castShadows';
+export { marchPoolRays } from './poolReach';
