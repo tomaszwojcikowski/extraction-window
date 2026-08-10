@@ -56,10 +56,25 @@ function sconceColor(sectorId: SectorId): number {
   }
 }
 
+/** Prefer south-facing floor (reads under the lamp), else any open side. */
+function facingFloor(
+  tiles: Tile[][],
+  wx: number,
+  wy: number,
+): Pos | null {
+  for (const [dx, dy] of CARD) {
+    const nx = wx + dx;
+    const ny = wy + dy;
+    if (tiles[ny]?.[nx]?.walkable) return { x: nx, y: ny };
+  }
+  return null;
+}
+
 /**
- * Mount weak permanent lamps on wall cells that face open floor.
- * Emitters sit on the wall so flood lights the facing corridor without
- * stealing walkable tiles — and ambush rooms stay dark by role.
+ * Mount permanent lamps on wall faces that look onto open floor.
+ * The fixture is bolted to the wall (`mountX/Y`); emission sits on the facing
+ * floor so flood + bloom actually light the corridor (a wall-cell origin
+ * wasted almost all energy one step away).
  */
 export function placeWallLights(
   tiles: Tile[][],
@@ -74,7 +89,7 @@ export function placeWallLights(
   const color = sconceColor(sectorId);
   const avoidSet = new Set(avoid.map((p) => `${p.x},${p.y}`));
 
-  type Cand = { x: number; y: number; score: number };
+  type Cand = { wx: number; wy: number; fx: number; fy: number; score: number };
   const cands: Cand[] = [];
 
   for (let y = 1; y < h - 1; y++) {
@@ -85,12 +100,14 @@ export function placeWallLights(
       let floorNeigh = 0;
       let darkFacing = false;
       let corridorFacing = false;
+      let face: Pos | null = null;
       for (const [dx, dy] of CARD) {
         const nx = x + dx;
         const ny = y + dy;
         const t = tiles[ny]?.[nx];
         if (!t?.walkable) continue;
         floorNeigh++;
+        if (!face) face = { x: nx, y: ny };
         const role = roleAt(rooms, nx, ny);
         if (role && DARK_ROLES.has(role)) darkFacing = true;
         if (role === null || role === 'entry' || role === 'exit' || role === 'post') {
@@ -98,12 +115,15 @@ export function placeWallLights(
         }
       }
       // Mount on a wall face (1–2 open sides), not a freestanding pillar or buried cell.
-      if (floorNeigh < 1 || floorNeigh > 2) continue;
+      if (floorNeigh < 1 || floorNeigh > 2 || !face) continue;
       if (darkFacing) continue;
+      if (avoidSet.has(`${face.x},${face.y}`)) continue;
 
       cands.push({
-        x,
-        y,
+        wx: x,
+        wy: y,
+        fx: face.x,
+        fy: face.y,
         score: (corridorFacing ? 3 : 1) + (floorNeigh === 1 ? 1 : 0) + rng() * 0.5,
       });
     }
@@ -113,19 +133,26 @@ export function placeWallLights(
   const ordered = shuffle(rng, cands.slice(0, Math.min(cands.length, want * 4)));
   const placed: FieldLightSource[] = [];
   const minDist = 4;
+  const usedFloors = new Set<string>();
+  const usedMounts = new Set<string>();
 
   for (const c of ordered) {
     if (placed.length >= want) break;
-    if (
-      placed.some((p) => Math.hypot(p.x - c.x, p.y - c.y) < minDist)
-    ) {
-      continue;
-    }
+    const floorKey = `${c.fx},${c.fy}`;
+    const mountKey = `${c.wx},${c.wy}`;
+    if (usedFloors.has(floorKey) || usedMounts.has(mountKey)) continue;
+    if (placed.some((p) => Math.hypot(p.x - c.fx, p.y - c.fy) < minDist)) continue;
+
+    usedFloors.add(floorKey);
+    usedMounts.add(mountKey);
     placed.push({
-      x: c.x,
-      y: c.y,
-      radius: 2.1,
-      intensity: 0.4,
+      x: c.fx,
+      y: c.fy,
+      mountX: c.wx,
+      mountY: c.wy,
+      // Weaker than an exit hatch, strong enough to read as a real pool.
+      radius: 2.5,
+      intensity: 0.55,
       color,
       fixture: 'sconce',
     });
@@ -144,3 +171,5 @@ export function placeWallLightsSeeded(
 ): FieldLightSource[] {
   return placeWallLights(tiles, rooms, sectorId, mulberry32(seed >>> 0), avoid);
 }
+
+export { facingFloor };

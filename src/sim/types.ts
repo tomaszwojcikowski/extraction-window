@@ -42,8 +42,14 @@ export interface FieldLightSource {
   life?: number;
   /** Presentation tint (optional). */
   color?: number;
-  /** Permanent wall fixture — presentation draws a sconce overlay here. */
+  /** Permanent wall fixture — presentation draws a sconce on the mount cell. */
   fixture?: 'sconce';
+  /**
+   * Wall cell the fixture is bolted to. Emission (`x`,`y`) is the facing floor
+   * so flood/bloom actually light the corridor; the sprite sits on the mount.
+   */
+  mountX?: number;
+  mountY?: number;
 }
 
 /**

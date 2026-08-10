@@ -98,11 +98,42 @@ export function generateTutorialMap(seed: number): GeneratedMap {
 
   // A few corridor sconces so the bay teaches that walls carry work lights.
   const candidates: FieldLightSource[] = [
-    { x: 8, y: 5, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
-    { x: 12, y: 5, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
-    { x: 15, y: 10, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
+    {
+      x: 8,
+      y: 6,
+      mountX: 8,
+      mountY: 5,
+      radius: 2.5,
+      intensity: 0.55,
+      color: LIGHT_TEMP.sconce,
+      fixture: 'sconce',
+    },
+    {
+      x: 12,
+      y: 6,
+      mountX: 12,
+      mountY: 5,
+      radius: 2.5,
+      intensity: 0.55,
+      color: LIGHT_TEMP.sconce,
+      fixture: 'sconce',
+    },
+    {
+      x: 15,
+      y: 9,
+      mountX: 15,
+      mountY: 10,
+      radius: 2.5,
+      intensity: 0.55,
+      color: LIGHT_TEMP.sconce,
+      fixture: 'sconce',
+    },
   ];
-  const wallLights = candidates.filter((s) => tiles[s.y]?.[s.x]?.kind === 'wall');
+  const wallLights = candidates.filter(
+    (s) =>
+      tiles[s.mountY!]?.[s.mountX!]?.kind === 'wall' &&
+      tiles[s.y]?.[s.x]?.walkable,
+  );
 
   return {
     tiles,
