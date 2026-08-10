@@ -6,6 +6,7 @@ import {
   allyTextureKey,
   playerTextureKey,
   wallTextureKey,
+  sconceTextureKey,
 } from './textures';
 import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
@@ -699,8 +700,41 @@ export class GameScene extends Phaser.Scene {
         this.tileSprites[y]![x] = img;
       }
     }
+    this.placeSconceOverlays();
     this.snapImg(this.playerSprite, this.state.player.x, this.state.player.y);
     this.rebuildAtmosphere();
+  }
+
+  /** Wall fixtures — overlay nudged toward the facing floor so they read mounted. */
+  private placeSconceOverlays(): void {
+    const st = this.state;
+    const key = sconceTextureKey(st.sectorId);
+    for (const src of st.lightSources) {
+      if (src.fixture !== 'sconce') continue;
+      if (st.tiles[src.y]?.[src.x]?.kind !== 'wall') continue;
+      let dx = 0;
+      let dy = 1;
+      for (const [ox, oy] of [
+        [0, 1],
+        [0, -1],
+        [-1, 0],
+        [1, 0],
+      ] as const) {
+        if (st.tiles[src.y + oy]?.[src.x + ox]?.walkable) {
+          dx = ox;
+          dy = oy;
+          break;
+        }
+      }
+      const img = this.add.image(
+        src.x * TILE_DRAW + TILE_DRAW / 2 + dx * 5,
+        src.y * TILE_DRAW + TILE_DRAW / 2 + dy * 5,
+        key,
+      );
+      img.setDisplaySize(TILE_DRAW, TILE_DRAW);
+      img.setDepth(2);
+      this.mapLayer.add(img);
+    }
   }
 
   private tileKey(kind: string, x = 0, y = 0): string {

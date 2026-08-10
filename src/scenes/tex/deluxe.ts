@@ -390,6 +390,57 @@ export function drawDeluxeWall(
   WALL_ACCENT[sector]({ g, q, T, variant: v, accent, tint, style });
 }
 
+/** Wall-mounted work light — drawn as a transparent overlay on the wall tile. */
+export function drawDeluxeSconce(g: G, T: number, style: WallStyle): void {
+  transparent(g, T);
+  const q = unit(T);
+  const cx = T / 2;
+  const cy = T / 2;
+  const glow = style === 'conduit' ? Theme.biolum : Theme.tape;
+  const housing = style === 'cliff' ? Material.rock : style === 'bulkhead' ? Theme.panel : Material.conduit;
+
+  // Soft spill on the wall face.
+  g.fillStyle(glow, 0.22);
+  g.fillEllipse(cx, cy + q(2), q(22), q(16));
+
+  if (style === 'conduit') {
+    g.fillStyle(Theme.panelEdge, 1);
+    g.fillRect(q(10), q(18), T - q(20), q(8));
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(12), q(20), T - q(24), q(4));
+    g.fillStyle(glow, 0.95);
+    g.fillRect(q(14), q(21), T - q(28), q(2));
+    g.fillStyle(Theme.inkBright, 0.55);
+    g.fillRect(q(16), q(21), q(4), q(1));
+  } else if (style === 'bulkhead') {
+    g.fillStyle(housing, 1);
+    g.fillRect(q(16), q(14), q(16), q(18));
+    g.lineStyle(q(2), Theme.panelEdge, 0.95);
+    g.strokeRect(q(17), q(15), q(14), q(16));
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(19), q(18), q(10), q(8));
+    g.fillStyle(glow, 0.95);
+    g.fillEllipse(cx, q(22), q(8), q(6));
+    g.fillStyle(Theme.inkBright, 0.5);
+    g.fillEllipse(cx, q(21), q(3), q(2));
+    // Mount bolts.
+    g.fillStyle(Theme.panelEdge, 0.9);
+    g.fillRect(q(18), q(16), q(2), q(2));
+    g.fillRect(T - q(20), q(16), q(2), q(2));
+  } else {
+    // Cliff: bracket + warm bulb.
+    g.fillStyle(Material.debris, 1);
+    g.fillRect(q(22), q(12), q(4), q(10));
+    g.fillRect(q(18), q(20), q(12), q(3));
+    g.fillStyle(housing, 1);
+    g.fillEllipse(cx, q(28), q(12), q(10));
+    g.fillStyle(glow, 0.9);
+    g.fillEllipse(cx, q(28), q(8), q(6));
+    g.fillStyle(Theme.inkBright, 0.45);
+    g.fillEllipse(cx - q(1), q(26), q(3), q(2));
+  }
+}
+
 type WallPaint = {
   g: G;
   q: Q;

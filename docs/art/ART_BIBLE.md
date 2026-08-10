@@ -69,7 +69,9 @@ a role gives the drawing code two ways to say one thing, and the test rejects it
 
 Wall faces are per-sector (`t_wall_<sector>_<0..3>`): cliff / bulkhead / conduit
 families with grit, fasteners, and a sparse biome accent — not three stamped
-blocks tinted by lighting.
+blocks tinted by lighting. Corridors also get weak wall sconces (permanent
+`lightSources` with `fixture: 'sconce'`) so work lights exist beyond POIs;
+ambush rooms stay dark by role.
 
 ---
 

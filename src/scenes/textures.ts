@@ -9,6 +9,7 @@ import {
   drawDeluxeItem,
   drawDeluxePlayer,
   drawDeluxeProp,
+  drawDeluxeSconce,
   drawDeluxeWall,
 } from './tex/deluxe';
 
@@ -56,6 +57,10 @@ export function wallStyleForSector(sectorId: SectorId): WallStyle {
 
 export function wallTextureKey(sectorId: SectorId, variant: number): string {
   return `t_wall_${sectorId}_${variant % 4}`;
+}
+
+export function sconceTextureKey(sectorId: SectorId): string {
+  return `t_sconce_${wallStyleForSector(sectorId)}`;
 }
 
 type G = Phaser.GameObjects.Graphics;
@@ -137,6 +142,11 @@ export function registerTextures(scene: Phaser.Scene): void {
   bake(g, 't_wall', T);
   drawDeluxeWall(g, T, 'cliff', 1, 'plains');
   bake(g, 't_wall_1', T);
+
+  for (const style of styles) {
+    drawDeluxeSconce(g, T, style);
+    bake(g, `t_sconce_${style}`, T);
+  }
 
   const sectors: SectorId[] = [
     'plains',

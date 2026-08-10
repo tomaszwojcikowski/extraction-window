@@ -113,7 +113,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     illumination: Array.from({ length: map.height }, () =>
       Array.from({ length: map.width }, () => 0),
     ),
-    lightSources: [],
+    lightSources: map.wallLights.map((s) => ({ ...s })),
     contamination: [],
     codexPages: 0,
     codexLog: [],
@@ -210,7 +210,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.roomQuest = map.roomQuest;
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.surveyedRoomIds = [];
-  state.lightSources = [];
+  state.lightSources = map.wallLights.map((s) => ({ ...s }));
   state.contamination = [];
   state.illumination = Array.from({ length: map.height }, () =>
     Array.from({ length: map.width }, () => 0),

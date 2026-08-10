@@ -195,6 +195,9 @@ class SheetScene extends Phaser.Scene {
   }
 
   private buildStructureGrid(): void {
+    for (const style of ['cliff', 'bulkhead', 'conduit'] as const) {
+      this.cell('props', [`t_sconce_${style}`], `sconce / ${style}`, 'structure');
+    }
     for (const sector of SECTORS) {
       this.cell(
         'props',

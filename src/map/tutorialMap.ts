@@ -1,7 +1,8 @@
 import { ENEMIES } from '../data/enemies';
 import { canReach } from '../sim/fov';
+import { LIGHT_TEMP } from '../sim/light';
 import { mulberry32 } from '../sim/rng';
-import type { Enemy, GroundItem, Pos, Tile } from '../sim/types';
+import type { Enemy, FieldLightSource, GroundItem, Pos, Tile } from '../sim/types';
 import type { GeneratedMap } from './generator';
 
 function wall(): Tile {
@@ -95,6 +96,14 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     tiles[exit.y]![exit.x] = exitTile();
   }
 
+  // A few corridor sconces so the bay teaches that walls carry work lights.
+  const candidates: FieldLightSource[] = [
+    { x: 8, y: 5, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
+    { x: 12, y: 5, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
+    { x: 15, y: 10, radius: 2.1, intensity: 0.4, color: LIGHT_TEMP.sconce, fixture: 'sconce' },
+  ];
+  const wallLights = candidates.filter((s) => tiles[s.y]?.[s.x]?.kind === 'wall');
+
   return {
     tiles,
     width,
@@ -112,5 +121,6 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     shuttlePos: null,
     roomQuest: null,
     nextEntityId: 4,
+    wallLights,
   };
 }

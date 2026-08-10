@@ -228,6 +228,10 @@ export const LIGHT_TEMP = {
   scan: 0xbfd45e,
   /** Hatch / exit standby lamp. */
   standby: 0x6fa87a,
+  /** Wall fixture — warm bulkhead / cliff sconce. */
+  sconce: 0xffc48a,
+  /** Wall fixture — cool conduit strip. */
+  sconceCool: 0x8ec9c2,
 } as const;
 
 /**

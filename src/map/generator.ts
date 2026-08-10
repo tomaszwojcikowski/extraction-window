@@ -9,6 +9,7 @@ import type {
   Enemy,
   EnemyTier,
   FieldNpc,
+  FieldLightSource,
   GroundItem,
   Pos,
   RoomQuest,
@@ -34,6 +35,7 @@ import {
   planLoot,
   type Room,
 } from './rooms';
+import { placeWallLights } from './wallLights';
 
 export type { Room } from './rooms';
 
@@ -51,6 +53,8 @@ export interface GeneratedMap {
   shuttlePos: Pos | null;
   roomQuest: RoomQuest | null;
   nextEntityId: number;
+  /** Permanent wall fixtures seeded into `state.lightSources`. */
+  wallLights: FieldLightSource[];
 }
 
 function wall(): Tile {
@@ -813,6 +817,12 @@ export function generateSectorMap(
     }
   }
 
+  const wallLights = placeWallLights(tiles, rooms, sector.id, rng, [
+    start,
+    exit,
+    ...specials,
+  ]);
+
   return {
     tiles,
     width,
@@ -827,5 +837,6 @@ export function generateSectorMap(
     shuttlePos,
     roomQuest,
     nextEntityId,
+    wallLights,
   };
 }

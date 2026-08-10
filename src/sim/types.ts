@@ -42,6 +42,8 @@ export interface FieldLightSource {
   life?: number;
   /** Presentation tint (optional). */
   color?: number;
+  /** Permanent wall fixture — presentation draws a sconce overlay here. */
+  fixture?: 'sconce';
 }
 
 /**
