@@ -31,6 +31,7 @@ import {
   type MovePreviewQueue,
 } from '../game/input/MovePreviewQueue';
 import { resolveHintLine } from '../game/presenters/ContextHints';
+import { tileCastsPropShadow, propShadowTall } from '../game/views/propShadows';
 import {
   bumpAttack,
   bumpMeleeAttackers,
@@ -1686,7 +1687,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Everything solid enough to throw a shadow this frame. */
-  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean }> {
+  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean; prop?: boolean }> {
     const st = this.state;
     yield { gx: st.player.x, gy: st.player.y };
     for (const en of st.enemies) {
@@ -1698,6 +1699,19 @@ export class GameScene extends Phaser.Scene {
       yield { gx: a.x, gy: a.y };
     }
     for (const n of st.npcs) yield { gx: n.x, gy: n.y };
+
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        if (!st.visible[y]?.[x]) continue;
+        const kind = st.tiles[y]![x]!.kind;
+        if (!tileCastsPropShadow(kind)) continue;
+        yield { gx: x, gy: y, tall: propShadowTall(kind), prop: true };
+      }
+    }
+    for (const it of st.items) {
+      if (!st.visible[it.y]?.[it.x]) continue;
+      yield { gx: it.x, gy: it.y, prop: true };
+    }
   }
 
   /**

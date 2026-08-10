@@ -275,13 +275,15 @@ export class LightView {
   }
 
   /**
-   * Contact + cast shadows under actors.
+   * Contact + cast shadows under actors and field props.
    * Key light is flood energy — same wrap/scrub model as tile brightness — so
    * a flare around a corner can cast, but one behind scrub/stone cannot fake it.
+   * Props that are themselves lamps still get a contact patch (own light is too
+   * close for a cast); other emitters can still throw a short silhouette.
    */
   drawContactShadows(
     st: GameState,
-    actors: Iterable<{ gx: number; gy: number; tall?: boolean }>,
+    actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
     sources: LightSource[],
   ): void {
     const g = this.shadowGfx;
@@ -300,6 +302,7 @@ export class LightView {
       for (let i = 0; i < sources.length; i++) {
         const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
+        // Own-tile lamp (or a prop sitting on its emitter): contact only.
         if (dist < 0.75) continue;
         const E = this.energyAt(i, gx, gy);
         if (E <= 0.004) continue;
@@ -308,25 +311,29 @@ export class LightView {
         key = Math.max(key, E);
       }
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
-      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * 0.28;
+      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * (actor.prop ? 0.22 : 0.28);
       const inShadowBand = brightness < SHADOW_THRESHOLD;
       const alpha = Math.min(
         0.55,
         (inShadowBand ? 0.08 : 0.14) + brightness * (inShadowBand ? 0.22 : 0.42),
       );
+      const contactW = TILE_DRAW * (actor.prop ? 0.4 : 0.48);
+      const contactH = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
 
       const len = Math.hypot(vx, vy);
       if (key > 0.05 && len > 0.0001 && !inShadowBand) {
         const dirX = vx / len;
         const dirY = vy / len;
+        const tallScale = actor.tall ? 1.35 : 1;
+        const propScale = actor.prop ? 0.72 : 1;
         const wantTiles =
-          (0.35 + Math.min(0.85, key * 0.65)) * (actor.tall ? 1.35 : 1);
+          (0.35 + Math.min(0.85, key * 0.65)) * tallScale * propScale;
         const reach = castReachTiles(st.tiles, gx, gy, dirX, dirY, wantTiles);
         if (reach > 0.12) {
           const throwLen = reach * TILE_DRAW;
           const px = -dirY;
           const py = dirX;
-          const halfNear = TILE_DRAW * 0.2;
+          const halfNear = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
           const halfFar = TILE_DRAW * Math.max(0.05, 0.1 * (reach / wantTiles));
           const fx = wx + dirX * throwLen;
           const fy = wy + dirY * throwLen * 0.65;
@@ -345,7 +352,7 @@ export class LightView {
         }
       }
       g.fillStyle(Theme.groundDeep, alpha);
-      g.fillEllipse(wx, wy, TILE_DRAW * 0.48, TILE_DRAW * 0.2);
+      g.fillEllipse(wx, wy, contactW, contactH);
     }
   }
 
