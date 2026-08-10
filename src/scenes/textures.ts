@@ -16,7 +16,7 @@ import {
 export const TILE = 48;
 export const TILE_DRAW = 46;
 
-export { FONT_DATA as FONT, FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
+export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
 
 export function enemyTextureKey(kind: EnemyKind, frame = 0): string {
   return frame === 0 ? `t_enemy_${kind}` : `t_enemy_${kind}_${frame % 3}`;
@@ -213,90 +213,4 @@ export function registerTextures(scene: Phaser.Scene): void {
   bake(g, allyTextureKey('away_escort'), T);
 
   g.destroy();
-}
-
-function drawNpcHolo(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0x66ccee, 0.85);
-  g.fillRect(12, 4, 8, 20);
-  ink(g, Theme.phosphorBright, 0.6);
-  g.fillRect(14, 8, 4, 12);
-  ink(g, 0x44aadd);
-  g.fillRect(10, 24, 12, 2);
-}
-
-function drawNpcEnsign(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0xd4a574);
-  g.fillRect(11, 6, 10, 8);
-  g.fillRect(10, 14, 12, 10);
-  ink(g, Theme.phosphor);
-  g.fillRect(13, 8, 2, 2);
-  g.fillRect(17, 8, 2, 2);
-  ink(g, 0x886644);
-  g.fillRect(12, 24, 3, 4);
-  g.fillRect(17, 24, 3, 4);
-}
-
-function drawNpcTech(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0x88aa77);
-  g.fillRect(10, 8, 12, 14);
-  ink(g, Theme.storm);
-  g.fillRect(12, 10, 8, 4);
-  ink(g, Theme.phosphorDim);
-  g.fillRect(14, 16, 4, 4);
-  ink(g, 0x556644);
-  g.fillRect(11, 22, 4, 4);
-  g.fillRect(17, 22, 4, 4);
-}
-
-function drawNpcSurvey(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0xaacc88);
-  g.fillRect(11, 6, 10, 8);
-  g.fillRect(10, 14, 12, 10);
-  ink(g, Theme.phosphorBright);
-  g.fillRect(13, 8, 2, 2);
-  g.fillRect(17, 8, 2, 2);
-  ink(g, Theme.ok);
-  g.fillRect(14, 16, 4, 3);
-  ink(g, 0x668855);
-  g.fillRect(12, 24, 3, 4);
-  g.fillRect(17, 24, 3, 4);
-}
-
-function drawAllyDrone(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0x99bbff);
-  g.fillRect(8, 10, 16, 12);
-  ink(g, Theme.phosphorBright);
-  g.fillRect(12, 13, 8, 4);
-  ink(g, Theme.storm);
-  g.fillRect(10, 8, 3, 2);
-  g.fillRect(19, 8, 3, 2);
-}
-
-function drawAllyEscort(g: G, T: number): void {
-  g.clear();
-  g.fillStyle(0x000000, 0);
-  g.fillRect(0, 0, T, T);
-  ink(g, 0xe8c090);
-  g.fillRect(11, 5, 10, 8);
-  g.fillRect(9, 13, 14, 11);
-  ink(g, Theme.phosphor);
-  g.fillRect(13, 7, 2, 2);
-  g.fillRect(17, 7, 2, 2);
-  ink(g, Theme.ok);
-  g.fillRect(14, 16, 4, 3);
 }

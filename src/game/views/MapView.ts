@@ -12,10 +12,10 @@ export function drawFovVignette(
   g.clear();
   const top = topInset;
   const bot = height - bottomInset;
-  g.lineStyle(1, Theme.phosphorMute, 0.35);
+  g.lineStyle(1, Theme.inkMute, 0.35);
   g.strokeRect(8.5, top + 8.5, width - 17, bot - top - 17);
   const arm = 18;
-  g.lineStyle(1, Theme.phosphorDim, 0.55);
+  g.lineStyle(1, Theme.inkDim, 0.55);
   // TL
   g.lineBetween(8, top + 8, 8 + arm, top + 8);
   g.lineBetween(8, top + 8, 8, top + 8 + arm);

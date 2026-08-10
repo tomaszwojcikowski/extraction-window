@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import type { SectorId } from '../../data/encounters';
 import { ENEMIES, type EnemyKind } from '../../data/enemies';
-import { BIOME_FLOOR_TINT, Theme } from '../theme';
+import { BIOME_FLOOR_TINT, Material, Theme } from '../theme';
 import type { WallStyle } from '../textures';
+import { mix, shade } from './color';
 
 type G = Phaser.GameObjects.Graphics;
 
@@ -21,23 +22,6 @@ export type DeluxePropKind =
   | 'brine_pool'
   | 'scrub_nest';
 
-const clamp = (value: number): number => Math.max(0, Math.min(255, Math.round(value)));
-
-function shade(color: number, amount: number): number {
-  const r = clamp(((color >> 16) & 0xff) * amount);
-  const g = clamp(((color >> 8) & 0xff) * amount);
-  const b = clamp((color & 0xff) * amount);
-  return (r << 16) | (g << 8) | b;
-}
-
-function mix(a: number, b: number, amount: number): number {
-  const t = Math.max(0, Math.min(1, amount));
-  const r = clamp(((a >> 16) & 0xff) * (1 - t) + ((b >> 16) & 0xff) * t);
-  const g = clamp(((a >> 8) & 0xff) * (1 - t) + ((b >> 8) & 0xff) * t);
-  const bl = clamp((a & 0xff) * (1 - t) + (b & 0xff) * t);
-  return (r << 16) | (g << 8) | bl;
-}
-
 function unit(T: number): (value: number) => number {
   const u = T / 48;
   return (value: number) => Math.round(value * u);
@@ -53,14 +37,14 @@ function floorAccent(sector: SectorId): number {
   switch (sector) {
     case 'flood':
     case 'brine':
-      return Theme.ionHazard;
+      return Theme.biolum;
     case 'reef':
     case 'canopy':
-      return Theme.ok;
+      return Theme.safe;
     case 'fissure':
     case 'approach':
     case 'ash':
-      return Theme.storm;
+      return Theme.arc;
     case 'spire':
     case 'vault':
       return Theme.arcWhite;
@@ -101,78 +85,237 @@ export function drawDeluxeFloor(g: G, T: number, sector: SectorId, variant: numb
   g.fillRect(q(2), T - q(4), T - q(4), q(2));
   g.fillRect(T - q(4), q(4), q(2), T - q(8));
 
-  // Sparse biome decal layer.
-  g.fillStyle(accent, 0.42);
-  switch (sector) {
-    case 'ruin':
-    case 'trench': {
-      const ox = q(7 + variant * 3);
-      g.fillRect(ox, q(12), q(12), q(3));
-      g.fillRect(ox + q(4), q(15), q(7), q(4));
-      g.fillStyle(Theme.groundDeep, 0.8);
-      g.fillRect(ox + q(2), q(13), q(4), q(1));
-      break;
-    }
-    case 'flood':
-    case 'brine':
-      for (let i = 0; i < 3; i++) {
-        const y = q(11 + i * 9 + variant);
-        g.fillRect(q(7 + ((i + variant) % 2) * 5), y, q(25 - i * 4), q(1));
-        g.fillRect(q(13 + i * 2), y + q(2), q(12), q(1));
-      }
-      break;
-    case 'ash':
-      for (let i = 0; i < 8; i++) {
-        const x = q(5 + ((i * 9 + variant * 5) % 37));
-        const y = q(8 + ((i * 7 + variant * 13) % 32));
-        g.fillRect(x, y, q(i % 3 === 0 ? 3 : 1), q(i % 3 === 0 ? 2 : 1));
-      }
-      break;
-    case 'duct':
-      g.fillStyle(Theme.panelEdge, 0.58);
-      for (let x = q(8 + variant * 2); x < T - q(6); x += q(8)) {
-        g.fillRect(x, q(6), q(2), T - q(13));
-      }
-      g.fillStyle(accent, 0.48);
-      g.fillRect(q(6), q(17 + variant * 4), T - q(12), q(2));
-      g.fillRect(q(6), q(30 + variant), T - q(12), q(1));
-      break;
-    case 'reef':
-      for (let i = 0; i < 4; i++) {
-        const x = q(7 + ((i * 11 + variant * 3) % 31));
-        const y = q(9 + ((i * 7 + variant * 5) % 25));
-        g.fillTriangle(x, y + q(7), x + q(3), y, x + q(7), y + q(7));
-      }
-      break;
-    case 'canopy':
-    case 'plains':
-      for (let i = 0; i < 5; i++) {
-        const x = q(7 + ((i * 9 + variant * 4) % 31));
-        const y = q(8 + ((i * 13 + variant * 2) % 31));
-        g.fillRect(x, y, q(5), q(1));
-        g.fillRect(x + q(2), y - q(2), q(1), q(5));
-      }
-      break;
-    case 'beacon':
-    case 'vault':
-    case 'spire': {
-      const c = T / 2;
-      g.lineStyle(q(1), accent, 0.42);
-      g.strokeCircle(c, c, q(8 + variant * 3));
-      g.lineBetween(c - q(15), c, c + q(15), c);
-      g.lineBetween(c, c - q(15), c, c + q(15));
-      break;
-    }
-    case 'fissure':
-    case 'approach':
-    case 'ridge':
-      g.lineStyle(q(1), accent, 0.48);
-      g.lineBetween(q(5), q(34 - variant * 3), q(18), q(16 + variant * 2));
-      g.lineBetween(q(18), q(16 + variant * 2), q(29), q(29 - variant));
-      g.lineBetween(q(29), q(29 - variant), q(43), q(10 + variant * 4));
-      break;
-  }
+  FLOOR_DECAL[sector]({ g, q, T, variant, accent, tint });
 }
+
+/** What the surveyor's boots are actually on, sector by sector. */
+type FloorPaint = {
+  g: G;
+  q: Q;
+  T: number;
+  variant: number;
+  accent: number;
+  tint: number;
+};
+
+/**
+ * The decal layer is where a biome earns its identity.
+ *
+ * Tint is a lift, not a costume — two sectors that share a motif and differ
+ * only by colour read as the same place once the lighting changes, which it
+ * constantly does. So every sector gets its own ground story here, and none of
+ * them is allowed to be another one's palette swap.
+ */
+const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
+  /**
+   * Open shelf: loose grit the wind has been working on, and not much else.
+   * Read as scatter, so it cannot be confused with ridge's banding.
+   */
+  plains: ({ g, q, variant, accent, tint }) => {
+    g.fillStyle(shade(tint, 0.55), 0.62);
+    for (let i = 0; i < 9; i++) {
+      const x = q(6 + ((i * 13 + variant * 7) % 34));
+      const y = q(7 + ((i * 17 + variant * 11) % 32));
+      const big = i % 4 === 0;
+      g.fillRect(x, y, q(big ? 3 : 2), q(big ? 3 : 2));
+      g.fillStyle(Theme.groundDeep, 0.5);
+      g.fillRect(x, y + q(big ? 3 : 2), q(big ? 3 : 2), q(1));
+      g.fillStyle(shade(tint, 0.55), 0.62);
+    }
+    g.fillStyle(accent, 0.2);
+    g.fillRect(q(8), q(13 + variant * 2), q(18), q(1));
+    g.fillRect(q(21), q(31 - variant), q(16), q(1));
+  },
+
+  /**
+   * High stone worn back to its bedding planes — thick ledges, each stepped
+   * back from the one under it and casting into it.
+   */
+  ridge: ({ g, q, T, variant, accent }) => {
+    for (let i = 0; i < 3; i++) {
+      const y = q(9 + i * 12);
+      const step = q(i * 4 + variant * 2);
+      g.fillStyle(accent, 0.34);
+      g.fillRect(q(4) + step, y, T - q(8) - step, q(4));
+      g.fillStyle(Theme.groundDeep, 0.7);
+      g.fillRect(q(4) + step, y + q(4), T - q(8) - step, q(2));
+    }
+  },
+
+  /** Leaf litter and a root run under it. */
+  canopy: ({ g, q, variant, accent }) => {
+    g.fillStyle(accent, 0.4);
+    for (let i = 0; i < 6; i++) {
+      const x = q(7 + ((i * 11 + variant * 4) % 30));
+      const y = q(8 + ((i * 13 + variant * 7) % 29));
+      g.fillRect(x, y, q(4), q(1));
+      g.fillRect(x + q(3), y + q(1), q(3), q(1));
+    }
+    g.lineStyle(q(2), shade(accent, 0.7), 0.36);
+    g.lineBetween(q(4), q(31 + variant), q(20), q(26));
+    g.lineBetween(q(20), q(26), q(43), q(30 - variant * 2));
+  },
+
+  /** A film of standing water still ringing from something that moved. */
+  flood: ({ g, q, T, variant, accent }) => {
+    const cx = T / 2 + q(variant * 3 - 3);
+    const cy = T / 2 - q(2);
+    for (let r = 0; r < 3; r++) {
+      g.lineStyle(q(1), accent, 0.4 - r * 0.09);
+      g.strokeCircle(cx, cy, q(5 + r * 6));
+    }
+    g.fillStyle(accent, 0.22);
+    g.fillRect(q(5), q(38), T - q(10), q(2));
+  },
+
+  /** Evaporated salt, cracked into crust cells. */
+  brine: ({ g, q, T, variant, accent }) => {
+    g.lineStyle(q(1), accent, 0.42);
+    const step = q(13);
+    for (let i = 0; i <= 2; i++) {
+      const off = q(((i + variant) % 2) * 3);
+      g.lineBetween(q(4), q(9) + i * step + off, T - q(4), q(11) + i * step);
+      g.lineBetween(q(9) + i * step, q(4), q(7) + i * step + off, T - q(4));
+    }
+  },
+
+  /** Calcified growth pushing up through the floor. */
+  reef: ({ g, q, variant, accent }) => {
+    g.fillStyle(accent, 0.42);
+    for (let i = 0; i < 4; i++) {
+      const x = q(7 + ((i * 11 + variant * 3) % 31));
+      const y = q(9 + ((i * 7 + variant * 5) % 25));
+      g.fillTriangle(x, y + q(7), x + q(3), y, x + q(7), y + q(7));
+    }
+  },
+
+  /** Fallout, drifted into dunes against whatever stopped it. */
+  ash: ({ g, q, T, variant, accent, tint }) => {
+    for (let i = 0; i < 3; i++) {
+      const y = q(13 + i * 11 + variant);
+      const crest = q(13 + i * 9);
+      g.fillStyle(shade(tint, 0.5), 0.5);
+      g.fillTriangle(q(3), y + q(6), crest, y - q(1), T - q(3), y + q(6));
+      g.fillStyle(Theme.groundDeep, 0.6);
+      g.fillTriangle(crest, y - q(1), T - q(3), y + q(6), crest + q(2), y + q(6));
+    }
+    g.fillStyle(accent, 0.4);
+    for (let i = 0; i < 12; i++) {
+      const x = q(5 + ((i * 9 + variant * 5) % 37));
+      const y = q(6 + ((i * 7 + variant * 13) % 12));
+      g.fillRect(x, y, q(i % 3 === 0 ? 2 : 1), q(1));
+    }
+  },
+
+  /** Ground that has already split, and is still deciding where next. */
+  fissure: ({ g, q, T, variant, accent }) => {
+    g.lineStyle(q(2), Theme.groundDeep, 0.85);
+    g.lineBetween(q(6), q(4), q(22 + variant * 2), q(24));
+    g.lineBetween(q(22 + variant * 2), q(24), q(18), T - q(4));
+    g.lineStyle(q(1), accent, 0.45);
+    g.lineBetween(q(22 + variant * 2), q(24), q(38), q(15 + variant * 3));
+    g.lineBetween(q(22 + variant * 2), q(24), q(36), q(36));
+  },
+
+  /**
+   * Churned by everything that walked in before the surveyor did. Kept dull —
+   * this is ordinary ground, and bright paint here would read as a rule.
+   */
+  approach: ({ g, q, T, variant, accent, tint }) => {
+    g.fillStyle(Theme.groundDeep, 0.45);
+    for (const lane of [q(14 + variant), q(29 + variant)]) {
+      g.fillRect(lane, q(4), q(6), T - q(8));
+    }
+    g.fillStyle(shade(tint, 0.4), 0.5);
+    for (let i = 0; i < 6; i++) {
+      const y = q(6 + i * 7);
+      g.fillRect(q(14 + variant), y, q(6), q(1));
+      g.fillRect(q(29 + variant), y + q(3), q(6), q(1));
+    }
+    g.fillStyle(accent, 0.16);
+    g.fillRect(q(14 + variant), q(4), q(1), T - q(8));
+  },
+
+  /** A cut channel, held open by revetment boards. */
+  trench: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(Theme.groundDeep, 0.5);
+    g.fillRect(q(4), q(6), q(7), T - q(12));
+    g.fillStyle(accent, 0.4);
+    for (let i = 0; i < 5; i++) {
+      g.fillRect(q(4), q(7 + i * 7), q(7), q(1));
+    }
+    g.fillStyle(accent, 0.26);
+    for (let i = 0; i < 3; i++) {
+      g.fillRect(q(15), q(12 + i * 10 + variant), T - q(21), q(2));
+    }
+  },
+
+  /** A slab that came down, with its reinforcement still in it. */
+  ruin: ({ g, q, variant, accent }) => {
+    const ox = q(7 + variant * 3);
+    g.fillStyle(accent, 0.4);
+    g.fillRect(ox, q(12), q(15), q(9));
+    g.fillRect(ox + q(6), q(21), q(11), q(6));
+    g.fillStyle(Theme.groundDeep, 0.75);
+    g.fillRect(ox + q(2), q(14), q(9), q(1));
+    g.fillStyle(Theme.rust, 0.5);
+    for (let i = 0; i < 3; i++) {
+      g.fillRect(ox + q(3 + i * 5), q(9), q(1), q(4));
+    }
+  },
+
+  /**
+   * Service run: grating slats over the crawl space. Kept as bare parallel
+   * bars — the moment a cross member is added it reads as brine's crust cells.
+   */
+  duct: ({ g, q, T, variant, accent }) => {
+    for (let x = q(7 + variant * 2); x < T - q(6); x += q(7)) {
+      g.fillStyle(Theme.groundDeep, 0.7);
+      g.fillRect(x, q(5), q(4), T - q(10));
+      g.fillStyle(Theme.panelEdge, 0.62);
+      g.fillRect(x, q(5), q(2), T - q(10));
+    }
+    g.fillStyle(accent, 0.5);
+    g.fillRect(q(4), q(22 + variant * 3), T - q(8), q(2));
+  },
+
+  /** Machined deck, bolted down on a grid. */
+  spire: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(Theme.panelEdge, 0.4);
+    g.fillRect(q(4), T / 2 - q(1), T - q(8), q(1));
+    g.fillRect(T / 2 - q(1), q(4), q(1), T - q(8));
+    g.fillStyle(accent, 0.5);
+    for (let ry = 0; ry < 2; ry++) {
+      for (let rx = 0; rx < 2; rx++) {
+        g.fillRect(q(12 + rx * 22 + variant), q(12 + ry * 22 + variant), q(3), q(3));
+      }
+    }
+  },
+
+  /** Sealed floor, chevroned where you are not supposed to stand. */
+  vault: ({ g, q, T, variant, accent }) => {
+    const c = T / 2;
+    g.lineStyle(q(2), accent, 0.36);
+    g.strokeRect(q(9), q(9), T - q(18), T - q(18));
+    g.lineStyle(q(1), accent, 0.5);
+    for (let i = 0; i < 3; i++) {
+      const off = q(i * 4 + variant);
+      g.lineBetween(q(12) + off, c - q(4), q(16) + off, c);
+      g.lineBetween(q(16) + off, c, q(12) + off, c + q(4));
+    }
+  },
+
+  /** Pad markings, repainted often enough to still read. */
+  beacon: ({ g, q, T, variant, accent }) => {
+    const c = T / 2;
+    g.lineStyle(q(2), accent, 0.44);
+    g.strokeCircle(c, c, q(11 + variant));
+    g.fillStyle(accent, 0.5);
+    g.fillRect(c - q(2), q(5), q(4), q(6));
+    g.fillRect(q(5), c - q(2), q(6), q(4));
+    g.fillRect(T - q(11), c - q(2), q(6), q(4));
+  },
+};
 
 /** High-contrast, beveled cliff / bulkhead / conduit families. */
 export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: number): void {
@@ -181,7 +324,7 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, T, T);
   // Meridian geology, not starship grey: basalt shelf, painted bulkhead, wet duct steel.
-  g.fillStyle(style === 'cliff' ? 0x2c3a37 : style === 'bulkhead' ? 0x28343a : 0x1e2f36, 1);
+  g.fillStyle(style === 'cliff' ? Material.rock : style === 'bulkhead' ? Material.deck : Material.conduit, 1);
   g.fillRect(q(1), q(1), T - q(2), T - q(2));
 
   // Bright top/left bevel, deep bottom/right bevel.
@@ -193,14 +336,14 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
   g.fillRect(T - q(7), q(6), q(5), T - q(13));
 
   if (style === 'cliff') {
-    g.fillStyle(0x0d1517, 0.95);
+    g.fillStyle(Material.recess, 0.95);
     for (let i = 0; i < 5; i++) {
       const y = q(9 + i * 7 + (variant ? i % 2 : 0));
       const x = q(7 + ((i * 9 + variant * 4) % 14));
       g.fillRect(x, y, q(21 - (i % 3) * 4), q(3));
       g.fillStyle(Theme.inkMute, 0.55);
       g.fillRect(x, y, q(8), q(1));
-      g.fillStyle(0x0d1517, 0.95);
+      g.fillStyle(Material.recess, 0.95);
     }
   } else if (style === 'bulkhead') {
     g.fillStyle(Theme.panel, 1);
@@ -218,9 +361,9 @@ export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: numbe
     g.fillRect(q(8), q(8), T - q(16), T - q(18));
     for (let i = 0; i < 3; i++) {
       const y = q(11 + i * 9 + variant);
-      g.fillStyle(i === 1 ? Theme.ionHazardDeep : Theme.panelEdge, 0.95);
+      g.fillStyle(i === 1 ? Theme.biolumDeep : Theme.panelEdge, 0.95);
       g.fillRect(q(7), y, T - q(14), q(5));
-      g.fillStyle(Theme.phosphorBright, 0.45);
+      g.fillStyle(Theme.inkBright, 0.45);
       g.fillRect(q(11 + i * 7), y + q(1), q(3), q(2));
     }
   }
@@ -240,29 +383,29 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
     case 'scrub_nest':
       g.fillStyle(Theme.groundDeep, 0.75);
       g.fillEllipse(q(7), q(34), q(34), q(7));
-      g.fillStyle(0x285b49, 1);
+      g.fillStyle(Material.foliage, 1);
       for (let i = 0; i < 5; i++) {
         const x = q(9 + i * 7);
         const h = q(12 + ((i * 5) % 12));
         g.fillRect(x, q(36) - h, q(3), h);
-        g.fillStyle(Theme.ok, 0.85);
+        g.fillStyle(Theme.safe, 0.85);
         g.fillTriangle(x - q(3), q(19 + (i % 3) * 4), x + q(2), q(14 + (i % 2) * 5), x + q(5), q(20 + (i % 3) * 4));
-        g.fillStyle(0x285b49, 1);
+        g.fillStyle(Material.foliage, 1);
       }
       if (kind === 'scrub_nest') {
-        g.fillStyle(Theme.ionHazardDeep, 0.95);
+        g.fillStyle(Theme.biolumDeep, 0.95);
         g.fillEllipse(q(14), q(27), q(21), q(11));
-        g.fillStyle(Theme.ionHazard, 0.7);
+        g.fillStyle(Theme.biolum, 0.7);
         g.fillRect(q(21), q(29), q(7), q(2));
       }
       break;
     case 'rubble':
       g.fillStyle(Theme.groundDeep, 0.8);
       g.fillEllipse(q(5), q(35), q(39), q(7));
-      g.fillStyle(0x4e4658, 1);
+      g.fillStyle(Material.debris, 1);
       g.fillTriangle(q(5), q(35), q(15), q(21), q(23), q(35));
       g.fillTriangle(q(17), q(35), q(30), q(14), q(42), q(35));
-      g.fillStyle(Theme.phosphorMute, 0.85);
+      g.fillStyle(Theme.inkMute, 0.85);
       g.fillTriangle(q(9), q(31), q(15), q(23), q(19), q(32));
       g.fillTriangle(q(24), q(31), q(30), q(17), q(35), q(31));
       break;
@@ -272,47 +415,47 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       g.fillStyle(Theme.groundDeep, 1);
       g.fillRect(q(8), q(9), q(32), q(30));
       for (let y = 11 + pulse; y < 38; y += 7) {
-        g.fillStyle(Theme.ionHazardDeep, 0.75);
+        g.fillStyle(Theme.biolumDeep, 0.75);
         g.fillRect(q(10), q(y), q(28), q(3));
-        g.fillStyle(Theme.ionHazard, 0.55);
+        g.fillStyle(Theme.biolum, 0.55);
         g.fillRect(q(12 + pulse), q(y), q(12), q(1));
       }
       break;
     case 'hazard':
-      g.fillStyle(0x351522, 1);
+      g.fillStyle(Material.nest, 1);
       g.fillRect(q(2), q(2), q(44), q(44));
-      g.lineStyle(q(2), Theme.danger, 0.95);
+      g.lineStyle(q(2), Theme.rust, 0.95);
       g.strokeRect(q(4), q(4), q(40), q(40));
-      g.fillStyle(Theme.storm, 0.9);
+      g.fillStyle(Theme.arc, 0.9);
       g.fillTriangle(q(24), q(7 + pulse), q(7), q(38), q(41), q(38));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillTriangle(q(24), q(13 + pulse), q(14), q(34), q(34), q(34));
-      g.fillStyle(Theme.phosphorBright, 1);
+      g.fillStyle(Theme.inkBright, 1);
       g.fillRect(q(22), q(19 + pulse), q(4), q(9));
       g.fillRect(q(22), q(31 + pulse / 2), q(4), q(4));
       break;
     case 'brine_pool':
-      g.fillStyle(0x123349, 0.95);
+      g.fillStyle(Material.brine, 0.95);
       g.fillEllipse(q(3), q(11), q(42), q(29));
-      g.fillStyle(Theme.ionHazardDeep, 0.85);
+      g.fillStyle(Theme.biolumDeep, 0.85);
       g.fillEllipse(q(7 + pulse), q(15), q(34 - pulse), q(20));
-      g.fillStyle(Theme.ionHazard, 0.7);
+      g.fillStyle(Theme.biolum, 0.7);
       g.fillRect(q(10 + pulse * 3), q(21), q(9), q(2));
       g.fillRect(q(25 - pulse * 2), q(29), q(11), q(2));
       break;
     case 'sealed':
     case 'exit': {
       const open = kind === 'exit';
-      g.fillStyle(open ? Theme.ok : Theme.storm, 1);
+      g.fillStyle(open ? Theme.safe : Theme.arc, 1);
       g.fillRect(q(4), q(3), q(40), q(42));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillRect(q(8), q(7), q(32), q(38));
       g.fillStyle(Theme.panel, 1);
       g.fillRect(q(12), q(9), q(24), q(36));
-      g.fillStyle(open ? Theme.ok : Theme.danger, 0.95);
+      g.fillStyle(open ? Theme.safe : Theme.rust, 0.95);
       g.fillRect(q(22), q(10), q(4), q(34));
       g.fillRect(q(13), q(24), q(22), q(3));
-      g.fillStyle(Theme.phosphorBright, 1);
+      g.fillStyle(Theme.inkBright, 1);
       if (open) {
         g.fillTriangle(q(17), q(18), q(29), q(24), q(17), q(30));
       } else {
@@ -322,11 +465,11 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       break;
     }
     case 'tripwire':
-      g.fillStyle(Theme.danger, 0.22);
+      g.fillStyle(Theme.rust, 0.22);
       g.fillRect(q(2), q(2), q(44), q(44));
-      g.lineStyle(q(2), Theme.storm, 0.95);
+      g.lineStyle(q(2), Theme.arc, 0.95);
       g.lineBetween(q(4), q(32), q(44), q(18));
-      g.fillStyle(Theme.phosphorBright, 1);
+      g.fillStyle(Theme.inkBright, 1);
       g.fillRect(q(4), q(27), q(4), q(10));
       g.fillRect(q(40), q(13), q(4), q(10));
       break;
@@ -336,31 +479,31 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       g.fillStyle(Theme.panelEdge, 1);
       g.fillRect(q(19), q(15), q(10), q(25));
       g.fillRect(q(12), q(37), q(24), q(5));
-      g.fillStyle(Theme.phosphor, 1);
+      g.fillStyle(Theme.ink, 1);
       g.fillRect(q(22), q(17), q(4), q(18));
-      g.fillStyle(Theme.phosphorBright, 0.65 + pulse * 0.1);
+      g.fillStyle(Theme.inkBright, 0.65 + pulse * 0.1);
       g.fillCircle(q(24), q(10), q(5 + pulse));
       break;
     case 'shuttle':
-      g.fillStyle(Theme.ok, 0.9);
+      g.fillStyle(Theme.safe, 0.9);
       g.fillRect(q(3), q(3), q(42), q(42));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillRect(q(7), q(7), q(34), q(34));
-      g.fillStyle(Theme.phosphorBright, 1);
+      g.fillStyle(Theme.inkBright, 1);
       g.fillRect(q(21), q(10), q(6), q(28));
       g.fillRect(q(10), q(21), q(28), q(6));
-      g.fillStyle(Theme.energy, 1);
+      g.fillStyle(Theme.tape, 1);
       g.fillRect(q(8), q(8), q(8), q(2));
       g.fillRect(q(32), q(38), q(8), q(2));
       break;
     case 'landmark':
     case 'quest': {
-      const color = kind === 'quest' ? Theme.quest : Theme.phosphor;
+      const color = kind === 'quest' ? Theme.flag : Theme.ink;
       g.fillStyle(color, 0.9);
       g.fillCircle(q(24), q(24), q(18));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillCircle(q(24), q(24), q(13));
-      g.lineStyle(q(3), Theme.phosphorBright, 1);
+      g.lineStyle(q(3), Theme.inkBright, 1);
       g.strokeCircle(q(24), q(24), q(7 + pulse));
       g.fillStyle(color, 1);
       g.fillTriangle(q(24), q(10 + pulse), q(19), q(21), q(29), q(21));
@@ -381,24 +524,24 @@ function actorBase(g: G, T: number): (value: number) => number {
 export function drawDeluxePlayer(g: G, T: number, frame: number): void {
   const q = actorBase(g, T);
   const bob = frame === 1 ? -1 : 0;
-  g.fillStyle(0x09111e, 1);
+  g.fillStyle(Material.suitDeep, 1);
   g.fillRect(q(12), q(12 + bob), q(24), q(28));
   g.fillRect(q(9), q(20 + bob), q(7), q(15));
   g.fillRect(q(32), q(20 + bob), q(7), q(15));
-  g.fillStyle(0x3175a8, 1);
+  g.fillStyle(Material.suitLit, 1);
   g.fillRect(q(15), q(15 + bob), q(18), q(22));
-  g.fillStyle(0x18344e, 1);
+  g.fillStyle(Material.suitMid, 1);
   g.fillRect(q(15), q(7 + bob), q(18), q(13));
-  g.fillStyle(Theme.phosphorBright, 1);
+  g.fillStyle(Theme.inkBright, 1);
   g.fillRect(q(18), q(10 + bob), q(13), q(6));
-  g.fillStyle(Theme.ionHazard, 0.8);
+  g.fillStyle(Theme.biolum, 0.8);
   g.fillRect(q(20 + frame), q(12 + bob), q(7), q(2));
-  g.fillStyle(Theme.phosphor, 1);
+  g.fillStyle(Theme.ink, 1);
   g.fillRect(q(18), q(22 + bob), q(6), q(4));
-  g.fillStyle(0x07101c, 1);
+  g.fillStyle(Material.visor, 1);
   g.fillRect(q(15 + (frame === 2 ? 1 : 0)), q(36), q(7), q(5));
   g.fillRect(q(27 - (frame === 2 ? 1 : 0)), q(36), q(7), q(5));
-  g.fillStyle(Theme.ok, 0.9);
+  g.fillStyle(Theme.safe, 0.9);
   g.fillRect(q(34), q(24 + bob), q(3), q(6));
 }
 
@@ -453,7 +596,7 @@ function hostileEyes(g: G, q: Q, cx: number, y: number, spread: number, size: nu
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(q(cx - spread - size), q(y), q(size), q(size));
   g.fillRect(q(cx + spread), q(y), q(size), q(size));
-  g.fillStyle(Theme.danger, 1);
+  g.fillStyle(Theme.rust, 1);
   g.fillRect(q(cx - spread - size + 1), q(y + 1), q(size - 2), q(size - 2));
   g.fillRect(q(cx + spread + 1), q(y + 1), q(size - 2), q(size - 2));
 }
@@ -501,7 +644,7 @@ function drawSilhouette(
       g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
       g.fillCircle(q(24), q(26 + bob), q(3 + frame));
       // Stress fissures widen as it charges.
-      g.fillStyle(Theme.danger, 0.35 + frame * 0.25);
+      g.fillStyle(Theme.rust, 0.35 + frame * 0.25);
       g.fillRect(q(23), q(26 - r + bob), q(2), q(r * 2));
       g.fillRect(q(24 - r), q(25 + bob), q(r * 2), q(2));
       break;
@@ -516,7 +659,7 @@ function drawSilhouette(
       g.fillEllipse(q(24), q(25 + bob), q(14), q(30));
       g.fillStyle(color, 1);
       g.fillEllipse(q(24), q(25 + bob), q(9), q(24));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillTriangle(q(22), q(36 + bob), q(26), q(36 + bob), q(24), q(43 + bob));
       hostileEyes(g, q, 24, 16 + bob, 2, 4);
       break;
@@ -535,7 +678,7 @@ function drawSilhouette(
       const crouch = frame === 2 ? 1 : 0;
       g.fillRect(q(20), q(35 + bob), q(4), q(6 - crouch));
       g.fillRect(q(34), q(35 + bob), q(4), q(6 - crouch));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillRect(q(6), q(29 + bob), q(5), q(3));
       hostileEyes(g, q, 17, 27 + bob, 2, 3);
       break;
@@ -554,7 +697,7 @@ function drawSilhouette(
       }
       g.fillStyle(rim, 1);
       g.fillCircle(q(24), q(9 + bob), q(10));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillCircle(q(24), q(9 + bob), q(6 - (frame === 1 ? 1 : 0)));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillCircle(q(24), q(9 + bob), q(3));
@@ -596,7 +739,7 @@ function drawSilhouette(
       g.fillRect(q(33 + swivel), q(20 + bob), q(13), q(5));
       g.fillStyle(Theme.tape, 1);
       g.fillRect(q(43 + swivel), q(20 + bob), q(3), q(5));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillRect(q(17 + swivel), q(21 + bob), q(5), q(5));
       break;
     }
@@ -635,7 +778,7 @@ function drawSilhouette(
       // Recessed visor band.
       g.fillStyle(Theme.groundDeep, 1);
       g.fillRect(q(13), q(21 + bob), q(22), q(8));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillRect(q(15 + frame * 7), q(23 + bob), q(6), q(4));
       // Bolted feet.
       g.fillStyle(Theme.panelEdge, 1);
@@ -657,7 +800,7 @@ function drawSilhouette(
       // Raised head and fangs.
       g.fillStyle(rim, 1);
       g.fillTriangle(q(16 + lean), q(13 + bob), q(32 + lean), q(13 + bob), q(24 + lean), q(3 + bob));
-      g.fillStyle(Theme.danger, 1);
+      g.fillStyle(Theme.rust, 1);
       g.fillRect(q(21 + lean), q(13 + bob), q(2), q(4));
       g.fillRect(q(25 + lean), q(13 + bob), q(2), q(4));
       hostileEyes(g, q, 24 + lean, 8 + bob, 2, 3);
@@ -745,7 +888,7 @@ export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'):
     g.fillStyle(Theme.flag, 1);
     g.fillTriangle(q(24), q(4), q(11), q(22), q(37), q(22));
     g.fillTriangle(q(24), q(44), q(11), q(22), q(37), q(22));
-    g.fillStyle(Theme.phosphorBright, 1);
+    g.fillStyle(Theme.inkBright, 1);
     g.fillRect(q(22), q(10), q(4), q(25));
     g.fillRect(q(16), q(19), q(16), q(4));
   } else {
@@ -754,7 +897,7 @@ export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'):
     g.fillTriangle(q(24), q(3), q(43), q(24), q(24), q(45));
     g.fillStyle(Theme.groundDeep, 1);
     g.fillCircle(q(24), q(24), q(9));
-    g.fillStyle(Theme.phosphorBright, 1);
+    g.fillStyle(Theme.inkBright, 1);
     g.fillCircle(q(24), q(24), q(5));
   }
 }
@@ -767,8 +910,8 @@ export function drawDeluxeContact(
 ): void {
   const q = actorBase(g, T);
   const ally = role === 'ally';
-  const body = ally ? 0x78caa0 : kind === 'archive_holo' ? 0x66ccee : 0xd6b080;
-  const rim = ally ? 0x143b31 : 0x243d4d;
+  const body = ally ? Material.allyShell : kind === 'archive_holo' ? Material.contactHolo : Material.contactSuit;
+  const rim = ally ? Material.allyRim : Material.contactRim;
   if (kind.includes('drone')) {
     g.fillStyle(rim, 1);
     g.fillRect(q(8), q(14), q(32), q(22));
@@ -782,13 +925,13 @@ export function drawDeluxeContact(
     g.fillRect(q(10), q(18), q(8), q(16));
     g.fillRect(q(30), q(18), q(8), q(16));
   }
-  g.fillStyle(Theme.phosphorBright, 1);
+  g.fillStyle(Theme.inkBright, 1);
   g.fillRect(q(18), q(15), q(5), q(3));
   g.fillRect(q(27), q(15), q(4), q(3));
-  g.fillStyle(ally ? Theme.ok : Theme.ionHazard, 1);
+  g.fillStyle(ally ? Theme.safe : Theme.biolum, 1);
   g.fillRect(q(21), q(25), q(8), q(5));
   if (kind === 'archive_holo') {
-    g.fillStyle(Theme.ionHazard, 0.5);
+    g.fillStyle(Theme.biolum, 0.5);
     g.fillRect(q(10), q(12), q(28), q(1));
     g.fillRect(q(12), q(28), q(24), q(1));
   }

@@ -1,19 +1,60 @@
 import Phaser from 'phaser';
+import type { SectorId } from './data/encounters';
 import { ENEMIES, type EnemyKind } from './data/enemies';
-import { enemyTextureKey, registerTextures, TILE_DRAW } from './scenes/textures';
+import {
+  enemyTextureKey,
+  registerTextures,
+  TILE_DRAW,
+  wallStyleForSector,
+} from './scenes/textures';
+import { floorTextureKey } from './scenes/theme';
 import { drawThreatZones } from './game/views/ThreatView';
 import { createGame } from './sim/state';
 import { moveEnemies } from './sim/ai';
 import type { GameState } from './sim/types';
 
 /**
- * Throwaway review harness. Bakes the real textures so every enemy can be
- * compared side by side, and renders the real threat overlay against synthetic
- * armed encounters so the telegraph geometry can be eyeballed.
+ * Review harness for the art gates. It bakes the real textures — never a
+ * hand-drawn approximation — so a silhouette collision, a biome that only
+ * differs by tint, or an unpainted telegraph shows up here instead of in a run.
  */
 
 const BLOCK = 9;
 const TELEGRAPH_KINDS: EnemyKind[] = ['serpent', 'wraith', 'rift', 'sentinel', 'drone'];
+
+const SECTORS: SectorId[] = [
+  'plains',
+  'ridge',
+  'canopy',
+  'flood',
+  'brine',
+  'reef',
+  'ash',
+  'fissure',
+  'approach',
+  'trench',
+  'ruin',
+  'duct',
+  'spire',
+  'vault',
+  'beacon',
+];
+
+/** Terrain that changes the rules, plus the three wall families. */
+const STRUCTURE: Array<[label: string, key: string]> = [
+  ['hazard', 't_hazard'],
+  ['vent', 't_vent'],
+  ['brine_pool', 't_brine_pool'],
+  ['scrub', 't_scrub'],
+  ['scrub_nest', 't_scrub_nest'],
+  ['rubble', 't_rubble'],
+  ['sealed', 't_sealed'],
+  ['tripwire', 't_tripwire'],
+  ['exit', 't_exit'],
+  ['shuttle', 't_shuttle'],
+  ['beacon prop', 't_beacon'],
+  ['landmark', 't_landmark'],
+];
 
 function openRoom(seed: number): GameState {
   const st = createGame(seed) as GameState;
@@ -31,37 +72,71 @@ class SheetScene extends Phaser.Scene {
   create(): void {
     registerTextures(this);
     this.buildSpriteGrid();
+    this.buildTerrainGrid('terrain');
+    this.buildTerrainGrid('terrainFlat');
+    this.buildStructureGrid();
     this.buildTelegraphBoards();
   }
 
-  private buildSpriteGrid(): void {
-    const sheet = document.getElementById('sheet')!;
+  /** One baked texture, blown up to the size it is actually played at. */
+  private tile(key: string): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = 46;
+    canvas.height = 46;
+    const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = false;
+    const src = this.textures.get(key).getSourceImage();
+    ctx.drawImage(src as CanvasImageSource, 0, 0, 46, 46);
+    return canvas;
+  }
 
+  private cell(parent: string, tiles: string[], name: string, meta: string, tone?: number): void {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    for (const key of tiles) cell.appendChild(this.tile(key));
+
+    const label = document.createElement('div');
+    label.className = 'name';
+    label.textContent = name;
+    const sub = document.createElement('div');
+    sub.className = 'meta';
+    sub.textContent = meta;
+    if (tone !== undefined) sub.style.color = `#${tone.toString(16).padStart(6, '0')}`;
+    cell.append(label, sub);
+    document.getElementById(parent)!.appendChild(cell);
+  }
+
+  private buildSpriteGrid(): void {
     for (const kind of Object.keys(ENEMIES) as EnemyKind[]) {
       const def = ENEMIES[kind];
-      const cell = document.createElement('div');
-      cell.className = 'cell';
+      this.cell(
+        'sheet',
+        [0, 1, 2].map((frame) => enemyTextureKey(kind, frame)),
+        kind,
+        `${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
+        def.color,
+      );
+    }
+  }
 
-      for (let frame = 0; frame < 3; frame++) {
-        const src = this.textures.get(enemyTextureKey(kind, frame)).getSourceImage();
-        const canvas = document.createElement('canvas');
-        canvas.width = 46;
-        canvas.height = 46;
-        const ctx = canvas.getContext('2d')!;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(src as CanvasImageSource, 0, 0, 46, 46);
-        cell.appendChild(canvas);
-      }
+  private buildTerrainGrid(parent: string): void {
+    for (const sector of SECTORS) {
+      this.cell(
+        parent,
+        [0, 1, 2].map((variant) => floorTextureKey(sector, variant)),
+        sector,
+        wallStyleForSector(sector),
+      );
+    }
+  }
 
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = kind;
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.textContent = `${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`;
-      meta.style.color = `#${def.color.toString(16).padStart(6, '0')}`;
-      cell.append(name, meta);
-      sheet.appendChild(cell);
+  private buildStructureGrid(): void {
+    for (const style of ['cliff', 'bulkhead', 'conduit'] as const) {
+      this.cell('props', [`t_wall_${style}_0`, `t_wall_${style}_1`], `wall / ${style}`, 'structure');
+    }
+    for (const [label, key] of STRUCTURE) {
+      const frames = this.textures.exists(`${key}_1`) ? [key, `${key}_1`, `${key}_2`] : [key];
+      this.cell('props', frames, label, 'rule-changing');
     }
   }
 

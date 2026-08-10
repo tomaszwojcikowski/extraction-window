@@ -8,12 +8,18 @@ The locked look: **Halcyon field kit on the Meridian Shelf.** Material story, no
 
 | Token set | Owner |
 |-----------|-------|
-| Palette (world + CSS chrome) | [`src/scenes/theme.ts`](../../src/scenes/theme.ts) — `Theme`, `ThemeCss` |
+| Role palette — what a colour *means* (world + CSS chrome) | [`src/scenes/theme.ts`](../../src/scenes/theme.ts) — `Theme`, `ThemeCss` |
+| Material palette — what a surface *is* | `theme.ts` — `Material` |
 | Emitter colour temperatures | [`src/sim/light.ts`](../../src/sim/light.ts) — `LIGHT_TEMP` (re-exported as `LightTemp`) |
 | Biome floor tint + ambient | `theme.ts` — `BIOME_FLOOR_TINT`, `BIOME_AMBIENT` |
 | Sim ambient exitance | `light.ts` — `SECTOR_AMBIENT` |
 
-Add a colour only by adding a **named material or emitter** in those tables. No ad-hoc hex in views or presenters.
+Add a colour only by adding a **named material, role, or emitter** in those tables.
+No ad-hoc hex anywhere in the painting layer — `src/scenes`, `src/game/views`,
+`src/game/presenters`. A surface shown under different light is that material
+times `shade`/`mix` from [`tex/color.ts`](../../src/scenes/tex/color.ts), never a
+second hex. [`palette.test.ts`](../../tests/game/palette.test.ts) fails the build
+on an inline colour, so this is a rule the reviewer no longer has to police.
 
 ---
 
@@ -40,13 +46,26 @@ Nothing here is a starship bridge console. Nothing is a default sci-fi glow: eve
 | Safe / standby | `safe` | Hatch standby, all-clear |
 | Survey memory | `fog`, `memory` | Unseen vs remembered ground |
 
-Deprecated aliases (`phosphor*`, `ionHazard*`, `danger`, `quest`, `energy`, `storm`) exist for old call sites. **New code uses the current names**; do not reintroduce the phosphor-terminal framing they came from.
+The `phosphor*` / `ionHazard*` / `danger` / `quest` / `energy` / `storm` aliases are
+**gone**, along with the phosphor-terminal framing they carried. `palette.test.ts`
+fails if any of them come back under those names.
 
 ### Emitter temperatures
 
 Each emitter is a *thing*: hooded halogen (`lamp`), red night filter (`lampQuiet`), magnesium stick (`flare`), animal (`fauna`), sodium relay (`beacon`), pad floods (`shuttle`), pattern tech (`pattern`), flagging (`marker`), scan wash (`scan`), hatch standby (`standby`).
 
 Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D.
+
+---
+
+### Materials
+
+Roles say what a colour *means*; materials say what a surface *is*. Wet basalt
+(`rock`), painted deck (`deck`), damp conduit lining (`conduit`), seam depth
+(`recess`), shelf scrub (`foliage`), fallen plate (`debris`), nest lining
+(`nest`), standing brine (`brine`), the surveyor's suit, and the field contacts
+each have a name. The two vocabularies stay disjoint — a material that duplicates
+a role gives the drawing code two ways to say one thing, and the test rejects it.
 
 ---
 
@@ -65,8 +84,19 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 
 - 24×24 procedural pixel art, `pixelArt: true`, `roundPixels: true`.
 - **Pattern carries identity; tint is secondary** — a biome must read from floor pattern with tint removed. `BIOME_FLOOR_TINT` is a lift, not a costume.
+- **Every sector owns its motif.** `FLOOR_DECAL` in [`tex/deluxe.ts`](../../src/scenes/tex/deluxe.ts)
+  keys one ground story per `SectorId`, and no two may be palette swaps of each
+  other: grit scatter (plains), stepped ledges (ridge), leaf litter over a root
+  run (canopy), ripple rings (flood), crust cells (brine), calcified spurs
+  (reef), fallout dunes (ash), a branching crack (fissure), churned lanes
+  (approach), revetment boards (trench), a dropped slab with rebar (ruin),
+  grating slats (duct), a bolt grid (spire), chevroned seals (vault), pad
+  markings (beacon). Cross-checks worth keeping: plains must not drift into
+  ridge's banding, and duct must stay bare parallel bars or it becomes brine.
 - Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash chokes (dark warm-grey), duct swallows it.
 - Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `brine_pool`, `scrub_nest`.
+- Ordinary ground stays dull. Saturated paint on a walkable tile reads as a rule
+  the tile does not have.
 
 ---
 
@@ -135,7 +165,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 
 | Item | State |
 |------|-------|
-| LCARS / silhouette audit | Hostiles done (§4a); chrome and terrain silhouettes still to sweep against §4 and §7 |
+| LCARS / silhouette audit | Hostiles (§4a) and terrain (§4) done; HUD/menu chrome still to sweep against §5 and §7 |
 | `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
 | Breaching climax juice | Deferred — one-bet discipline |
 | Per-sector crack-path art | Deferred |
@@ -144,8 +174,13 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 
 An art or chrome change ships when:
 
-1. Biomes still read with tint removed.
-2. No new hex outside `theme.ts` / `light.ts`.
+1. Biomes still read with tint removed — checked on the sheet's desaturated row, not asserted from memory.
+2. No new hex outside `theme.ts` / `light.ts`; `npm run test:unit` enforces it.
 3. Chrome budget respected — no new always-on element without removing one.
-4. Hostile changes are eyeballed on the contact sheet — `npm run dev`, open `/sheet.html`. It bakes every kind in `ENEMIES` and every telegraph, so a silhouette collision or an unpainted threat shows up there before it reaches a run.
+4. Art changes are eyeballed on the contact sheet — `npm run dev`, open `/sheet.html`.
+   It bakes the real textures for every hostile, every sector floor (in colour and
+   desaturated), every rule-changing tile, every wall family, and every telegraph,
+   so a silhouette collision, a palette-swap biome, or an unpainted threat shows up
+   there before it reaches a run. If the browser cannot reach the dev server, start
+   it as `npx vite --host 127.0.0.1` — the default binding is IPv6-only.
 5. `npm run build` and `npm run playtest:smoke` pass; presentation-only changes must not move sim legality.

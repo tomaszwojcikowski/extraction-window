@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Enemy silhouette sheet</title>
+    <title>Contact sheet — hostiles, terrain, telegraphs</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
@@ -11,7 +11,17 @@
         font-family: "IBM Plex Mono", monospace;
         padding: 16px;
       }
-      #sheet { display: flex; flex-wrap: wrap; gap: 10px; }
+      h2 {
+        font-size: 13px;
+        font-weight: normal;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #93a196;
+        margin: 22px 0 4px;
+      }
+      h2:first-child { margin-top: 0; }
+      p.gate { font-size: 11px; color: #55635f; margin-bottom: 10px; max-width: 70ch; }
+      .row { display: flex; flex-wrap: wrap; gap: 10px; }
       .cell {
         width: 150px;
         background: #121a1c;
@@ -22,13 +32,36 @@
       .cell canvas { image-rendering: pixelated; background: #182124; }
       .name { font-size: 11px; margin-top: 4px; }
       .meta { font-size: 9px; color: #93a196; }
+      /* Gate 1: a biome must read from pattern with the tint taken away. */
+      .flat canvas { filter: grayscale(1) contrast(1.25); }
       #game { margin-top: 20px; }
       #game canvas { image-rendering: pixelated; }
     </style>
   </head>
   <body>
-    <div id="sheet"></div>
+    <h2>Hostiles</h2>
+    <p class="gate">Silhouette is the behaviour. Two kinds sharing a body plan must be far apart in colour.</p>
+    <div id="sheet" class="row"></div>
+
+    <h2>Terrain — in colour</h2>
+    <p class="gate">Three variants per sector, as they bake.</p>
+    <div id="terrain" class="row"></div>
+
+    <h2>Terrain — tint removed</h2>
+    <p class="gate">
+      The same tiles desaturated. If two sectors are indistinguishable here they are a palette
+      swap, not two places, and the pattern owes work.
+    </p>
+    <div id="terrainFlat" class="row flat"></div>
+
+    <h2>Rule-changing terrain and structure</h2>
+    <p class="gate">Anything that changes what a tile does must be silhouette-distinct before it is colour-distinct.</p>
+    <div id="props" class="row"></div>
+
+    <h2>Telegraphs</h2>
+    <p class="gate">Real overlay geometry against armed encounters. Colour encodes the answer, not the attacker.</p>
     <div id="game"></div>
+
     <script type="module" src="/src/sheet.ts"></script>
   </body>
 </html>

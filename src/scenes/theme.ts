@@ -14,9 +14,6 @@ import type { SectorId } from '../data/encounters';
 export const FONT_DATA = '"IBM Plex Mono", "Courier New", monospace';
 export const FONT_DISPLAY = '"Share Tech Mono", "IBM Plex Mono", monospace';
 
-/** @deprecated use FONT_DATA — kept for gradual imports */
-export const FONT = FONT_DATA;
-
 export const Theme = {
   // Structure — wet basalt, damp deck plate, painted alloy, machined bevel.
   ground: 0x121a1c,
@@ -51,30 +48,51 @@ export const Theme = {
   // Fog / survey memory.
   fog: 0x030506,
   memory: 0x243033,
+  /** Wash over a contact the surveyor remembers but cannot currently see. */
+  memoryWash: 0x6688aa,
+  /** The cold, drained band below the shadow threshold — the dark ambushers use. */
+  shadowWash: 0x5a7080,
+} as const;
 
-  // --- Legacy aliases (same values, older call sites) ----------------------
-  /** @deprecated use `ink` */
-  phosphor: 0xdfe4d5,
-  /** @deprecated use `inkDim` */
-  phosphorDim: 0x93a196,
-  /** @deprecated use `inkBright` */
-  phosphorBright: 0xf6f4e6,
-  /** @deprecated use `inkMute` */
-  phosphorMute: 0x55635f,
-  /** @deprecated use `biolum` */
-  ionHazard: 0x54cbb2,
-  /** @deprecated use `biolumDeep` */
-  ionHazardDeep: 0x1d6a63,
-  /** @deprecated use `rust` */
-  danger: 0xc0512f,
-  /** @deprecated use `flag` */
-  quest: 0xe0578f,
-  /** @deprecated use `safe` */
-  ok: 0x6fa87a,
-  /** @deprecated use `tape` */
-  energy: 0xe8b93c,
-  /** @deprecated use `arc` */
-  storm: 0xe4622f,
+/**
+ * Named world materials — the substances the tile art is actually made of.
+ *
+ * `Theme` above is the *role* palette: what a colour means to the player. This
+ * is the *stuff* palette: what a surface is. Both exist so no drawing code ever
+ * reaches for a raw hex; a new surface earns a name here first, which is what
+ * keeps the world from drifting into unmotivated colour.
+ */
+export const Material = {
+  /** Wet basalt cliff face. */
+  rock: 0x2c3a37,
+  /** Painted deck plate in built sectors. */
+  deck: 0x28343a,
+  /** Damp conduit lining. */
+  conduit: 0x1e2f36,
+  /** Depth inside a wall recess or seam. */
+  recess: 0x0d1517,
+
+  /** Shelf scrub. */
+  foliage: 0x285b49,
+  /** Fallen masonry and broken plate. */
+  debris: 0x4e4658,
+  /** Scrub nest lining — old kill, dried. */
+  nest: 0x351522,
+  /** Standing brine. */
+  brine: 0x123349,
+
+  /** Surveyor's suit: shadowed body, lit panels, mid webbing, sealed visor. */
+  suitDeep: 0x09111e,
+  suitLit: 0x3175a8,
+  suitMid: 0x18344e,
+  visor: 0x07101c,
+
+  /** Field contacts: another surveyor's kit, a projection, a drone shell. */
+  contactSuit: 0xd6b080,
+  contactHolo: 0x66ccee,
+  allyShell: 0x78caa0,
+  contactRim: 0x243d4d,
+  allyRim: 0x143b31,
 } as const;
 
 export const ThemeCss = {
@@ -96,17 +114,6 @@ export const ThemeCss = {
   /** Quiet stance's red night filter. */
   lampQuiet: '#d8734a',
   hintBg: '#0d1416ee',
-
-  // Legacy aliases
-  phosphor: '#dfe4d5',
-  phosphorDim: '#93a196',
-  phosphorBright: '#f6f4e6',
-  phosphorMute: '#55635f',
-  danger: '#c0512f',
-  quest: '#e0578f',
-  text: '#dfe4d5',
-  textDim: '#93a196',
-  textMute: '#55635f',
 } as const;
 
 /**

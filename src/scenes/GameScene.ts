@@ -231,7 +231,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.windowPulse = this.add
-      .rectangle(0, 0, 100, 10, Theme.storm, 0.35)
+      .rectangle(0, 0, 100, 10, Theme.arc, 0.35)
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(91.5)
@@ -261,7 +261,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 78, '', {
         fontFamily: FONT_DISPLAY,
         fontSize: '13px',
-        color: ThemeCss.phosphorBright,
+        color: ThemeCss.inkBright,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -271,7 +271,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 94, '', {
         fontFamily: FONT_DATA,
         fontSize: '12px',
-        color: ThemeCss.quest,
+        color: ThemeCss.flag,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -282,7 +282,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 110, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.danger,
+        color: ThemeCss.rust,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -292,7 +292,7 @@ export class GameScene extends Phaser.Scene {
       .text(14, 110, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.quest,
+        color: ThemeCss.flag,
         wordWrap: { width: this.scale.width - 250 },
       })
       .setScrollFactor(0)
@@ -313,7 +313,7 @@ export class GameScene extends Phaser.Scene {
       .text(this.scale.width / 2, 6, '', {
         fontFamily: FONT_DISPLAY,
         fontSize: '12px',
-        color: ThemeCss.phosphorBright,
+        color: ThemeCss.inkBright,
       })
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
@@ -345,7 +345,7 @@ export class GameScene extends Phaser.Scene {
       .text(this.scale.width - 12, 48, '', {
         fontFamily: FONT_DATA,
         fontSize: '11px',
-        color: ThemeCss.phosphorDim,
+        color: ThemeCss.inkDim,
         align: 'right',
       })
       .setOrigin(1, 0)
@@ -387,7 +387,7 @@ export class GameScene extends Phaser.Scene {
       .text(0, 0, '', {
         fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: ThemeCss.phosphor,
+        color: ThemeCss.ink,
         lineSpacing: 4,
       })
       .setScrollFactor(0)
@@ -406,7 +406,7 @@ export class GameScene extends Phaser.Scene {
       .text(0, 0, '', {
         fontFamily: FONT_DATA,
         fontSize: '13px',
-        color: ThemeCss.phosphor,
+        color: ThemeCss.ink,
         lineSpacing: 5,
         wordWrap: { width: 400 },
       })
@@ -434,7 +434,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.flash = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0xe05050, 0)
+      .rectangle(0, 0, this.scale.width, this.scale.height, Theme.rust, 0)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(120);
@@ -1019,7 +1019,7 @@ export class GameScene extends Phaser.Scene {
       );
       spr.setDisplaySize(TILE_DRAW - 4, TILE_DRAW - 4);
       spr.setAlpha(vis ? 1 : 0.3);
-      if (!vis) spr.setTint(0x6688aa);
+      if (!vis) spr.setTint(Theme.memoryWash);
       this.itemLayer.add(spr);
       if (quest && vis) {
         this.tweens.add({

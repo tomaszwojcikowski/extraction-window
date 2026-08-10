@@ -483,7 +483,7 @@ export class LightView {
         }
         if (brightness < SHADOW_THRESHOLD) {
           // The shadow band the ambush AI actually reads: cold and drained.
-          tint = multiplyTint(tint, 0x5a7080, 0.62 * (1 - brightness / SHADOW_THRESHOLD));
+          tint = multiplyTint(tint, Theme.shadowWash, 0.62 * (1 - brightness / SHADOW_THRESHOLD));
         }
         tint = blendTowardWhite(tint, Math.pow(brightness, 1.3) * 0.55);
 

@@ -62,9 +62,9 @@ export type HudRedrawOpts = {
 /** The light badge must mirror the shadow predicate used by ambush AI. */
 export function stanceBadgeSpec(st: GameState): { label: string; fill: number } | null {
   const label = stanceBadgeLabel(st);
-  if (label === 'QUIET') return { label, fill: Theme.phosphorMute };
-  if (label === 'SHADOW') return { label, fill: Theme.quest };
-  if (label === 'LIT') return { label, fill: Theme.energy };
+  if (label === 'QUIET') return { label, fill: Theme.inkMute };
+  if (label === 'SHADOW') return { label, fill: Theme.flag };
+  if (label === 'LIT') return { label, fill: Theme.tape };
   return null;
 }
 
@@ -81,8 +81,8 @@ export class HudView {
     const barY = 22;
     const barH = 10;
     const shearPrimary = (opts.shear?.value ?? 0) > 0.12;
-    const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.phosphorDim;
-    const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.phosphor;
+    const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.inkDim;
+    const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.ink;
     this.placeBarSlot(
       0,
       14,
@@ -90,8 +90,8 @@ export class HudView {
       130,
       barH,
       st.player.hp / st.player.maxHp,
-      Theme.ok,
-      Theme.danger,
+      Theme.safe,
+      Theme.rust,
       lore('UI-BAR-HP'),
       `${st.player.hp}/${st.player.maxHp}`,
     );
@@ -102,8 +102,8 @@ export class HudView {
       110,
       barH,
       st.player.armor / Math.max(1, st.player.maxArmor),
-      Theme.phosphor,
-      Theme.danger,
+      Theme.ink,
+      Theme.rust,
       lore('UI-BAR-SHD'),
       `${st.player.armor}/${st.player.maxArmor}`,
     );
@@ -114,8 +114,8 @@ export class HudView {
       110,
       barH,
       st.player.energy / st.player.maxEnergy,
-      Theme.energy,
-      Theme.storm,
+      Theme.tape,
+      Theme.arc,
       shearPrimary ? '' : lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
       secondaryCss,
@@ -128,8 +128,8 @@ export class HudView {
       100,
       barH,
       st.stormTurns / STORM_TURNS,
-      Theme.storm,
-      Theme.danger,
+      Theme.arc,
+      Theme.rust,
       shearPrimary ? '' : lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
       secondaryCss,
@@ -143,8 +143,8 @@ export class HudView {
       80,
       barH,
       xpFrac,
-      Theme.quest,
-      Theme.phosphorMute,
+      Theme.flag,
+      Theme.inkMute,
       lore('UI-BAR-XP'),
       st.xpToNext ? `${st.xp}/${st.xpToNext}` : `${st.xp}`,
     );
@@ -216,43 +216,43 @@ export class HudView {
     if (st.ionFrontTurns > 0) {
       badgeSpecs.push({
         label: lore(st.ionFrontTurns <= 1 ? 'UI-FRONT-CLEARING' : 'UI-ION-FRONT'),
-        fill: st.ionFrontTurns <= 1 ? Theme.phosphorMute : Theme.danger,
+        fill: st.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
       });
     }
-    if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.energy });
+    if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.tape });
     if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
-      badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.ok });
+      badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
     }
-    if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.quest });
+    if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
     if (st.extractFavor) {
       const label = {
         storm_shelter: 'SHELTER',
         hazard_pass: 'SAFE STEP',
         pattern_fail_safe: 'BUFFER',
       }[st.extractFavor.kind];
-      badgeSpecs.push({ label, fill: Theme.ok });
+      badgeSpecs.push({ label, fill: Theme.safe });
     }
     if (st.handshake?.active) {
       badgeSpecs.push({
         label: `HS ${st.handshake.progress}/2`,
-        fill: Theme.ok,
+        fill: Theme.safe,
       });
     }
     if (st.uplink?.active) {
-      badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.storm });
+      badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.arc });
       if (st.uplink.progress === 1 && !st.uplink.repelled) {
-        badgeSpecs.push({ label: 'WAVE NEXT', fill: Theme.danger });
+        badgeSpecs.push({ label: 'WAVE NEXT', fill: Theme.rust });
       }
     }
     if (st.codexPages > 0) {
-      badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.phosphorMute });
+      badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.inkMute });
     }
     if (st.rooms.length >= 3) {
       const surveyed = st.surveyedRoomIds.length;
       if (surveyed > 0) {
         badgeSpecs.push({
           label: `${lore('UI-SURVEY')} ${surveyed}/${SURVEY_ROOM_CAP}`,
-          fill: Theme.phosphorMute,
+          fill: Theme.inkMute,
         });
       }
       const exploreRatio = exploredFloorRatio(st);
@@ -262,7 +262,7 @@ export class HudView {
         const exploreReady = exploreRatio >= EXPLORE_BONUS_THRESHOLD;
         badgeSpecs.push({
           label: `${lore('UI-EXPLORE')} ${expPct}%`,
-          fill: exploreReady ? Theme.storm : Theme.phosphorMute,
+          fill: exploreReady ? Theme.arc : Theme.inkMute,
         });
       }
     }
@@ -278,7 +278,7 @@ export class HudView {
       r.questText.setText(
         `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} → ${questLine.favor}  ${questLine.index}/${questLine.total}`,
       );
-      r.questText.setColor(st.ui.questFlash > 0 ? ThemeCss.phosphorBright : ThemeCss.quest);
+      r.questText.setColor(st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag);
     } else {
       r.questText.setVisible(false);
       r.questText.setText('');
@@ -299,7 +299,7 @@ export class HudView {
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
-    r.urgencyText.setColor(stormHot && !shearPrimary ? '#cc4444' : ThemeCss.phosphorDim);
+    r.urgencyText.setColor(stormHot && !shearPrimary ? '#cc4444' : ThemeCss.inkDim);
 
     const sticky = stickyMilestone(st.loreEvents);
     if (hasUrgency) {
@@ -346,7 +346,7 @@ export class HudView {
     g.fillRect(x, y, w, h);
     g.fillStyle(r <= 0.3 ? low : fill, 1);
     g.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
-    g.lineStyle(1, Theme.phosphorMute, 1);
+    g.lineStyle(1, Theme.inkMute, 1);
     g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
   }
 
@@ -361,8 +361,8 @@ export class HudView {
     low: number,
     caption: string,
     value: string,
-    captionCss: string = ThemeCss.phosphorDim,
-    valueCss: string = ThemeCss.phosphor,
+    captionCss: string = ThemeCss.inkDim,
+    valueCss: string = ThemeCss.ink,
   ): void {
     this.drawBar(x, y, w, h, ratio, fill, low);
     const cap = this.refs.barCaptions[index]!;

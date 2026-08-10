@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Theme } from './theme';
+import { shade } from './tex/color';
 
 /**
  * Optional WebGL-only camera atmosphere. Gameplay lighting and FOV remain
@@ -160,8 +161,14 @@ export function drawMenuChrome(
   accent: number = Theme.tape,
 ): void {
   g.clear();
-  // Wet basalt behind the kit.
-  g.fillGradientStyle(0x05080a, 0x080d0f, 0x0b1113, 0x040708, 1);
+  // Wet basalt behind the kit, catching a little more light down the middle.
+  g.fillGradientStyle(
+    shade(Theme.groundDeep, 0.85),
+    shade(Theme.groundDeep, 1.4),
+    shade(Theme.groundDeep, 1.85),
+    shade(Theme.groundDeep, 0.7),
+    1,
+  );
   g.fillRect(0, 0, width, height);
   // Ash/spray flecks catching the low light.
   for (let i = 0; i < 90; i++) {
@@ -249,7 +256,7 @@ function drawShearLegGlyphs(
   const busHot = leg === 'bus' || leg === 'both';
 
   // Window / storm tick marks
-  g.lineStyle(1, Theme.storm, (stormHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  g.lineStyle(1, Theme.arc, (stormHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
   for (let i = 0; i < 3; i++) {
     const tx = stormX + i * 4;
     g.beginPath();
@@ -259,10 +266,10 @@ function drawShearLegGlyphs(
   }
 
   // Bus reserve capsule
-  g.lineStyle(1, Theme.energy, (busHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  g.lineStyle(1, Theme.tape, (busHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
   g.strokeRect(busX, y, 10, 5);
   if (busHot) {
-    g.fillStyle(Theme.energy, 0.35 * pulse);
+    g.fillStyle(Theme.tape, 0.35 * pulse);
     g.fillRect(busX + 1, y + 1, 8, 3);
   }
 }
