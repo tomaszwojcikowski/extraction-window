@@ -23,6 +23,11 @@ import type { ShearPressureSpec } from '../presenters/ShearPressure';
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 6;
 
+/** Instrument needle travel — short enough to stay inside the juice budget. */
+const METER_MS = 140;
+/** Readout stamp flash when a printed value changes. */
+const TICK_MS = 90;
+
 export type HudViewRefs = {
   barsGfx: Phaser.GameObjects.Graphics;
   badgeGfx: Phaser.GameObjects.Graphics;
@@ -50,7 +55,7 @@ export type HudRedrawOpts = {
   screenH: number;
   helpOpen: boolean;
   pagesOpen: boolean;
-  /** Scene tweens for the storm-window pulse. */
+  /** Scene tweens for meter needles + readout ticks. */
   tweens: Phaser.Tweens.TweenManager;
   /** Mutable holder so the scene can stop/replace the pulse tween. */
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
@@ -58,6 +63,16 @@ export type HudRedrawOpts = {
   shear?: ShearPressureSpec;
   /** Shift-peek active — show wake-peek tip without opening help. */
   movePreviewActive?: boolean;
+};
+
+type BarLayout = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  fill: number;
+  low: number;
+  target: number;
 };
 
 /** The light badge must mirror the shadow predicate used by ambush AI. */
@@ -72,8 +87,29 @@ export function stanceBadgeSpec(st: GameState): { label: string; fill: number } 
 /**
  * Field HUD redraw helpers — bars, badges, meta, objectives, log, kit panel.
  * Owns no Phaser objects; operates on refs created by GameScene.
+ *
+ * Stat changes drive instrument motion: meters ease to the new fill, printed
+ * readouts take a hard stamp tick — not soft SaaS pulses.
  */
 export class HudView {
+  private primed = false;
+  private displayRatio: number[] = Array.from({ length: HUD_BAR_SLOTS }, () => 0);
+  private lastBarValue: string[] = Array.from({ length: HUD_BAR_SLOTS }, () => '');
+  private barLayout: (BarLayout | null)[] = Array.from({ length: HUD_BAR_SLOTS }, () => null);
+  private barTweens: (Phaser.Tweens.Tween | null)[] = Array.from(
+    { length: HUD_BAR_SLOTS },
+    () => null,
+  );
+  private lastMeta = '';
+  private lastBadges = '';
+  private lastObjLocal = '';
+  private lastObjCampaign = '';
+  private lastQuest = '';
+  private lastUrgency = '';
+  private lastMilestone = '';
+  private lastSector = '';
+  private lastLog = '';
+
   constructor(private readonly refs: HudViewRefs) {}
 
   redraw(st: GameState, opts: HudRedrawOpts): void {
@@ -95,6 +131,7 @@ export class HudView {
       Theme.rust,
       lore('UI-BAR-HP'),
       `${st.player.hp}/${st.player.maxHp}`,
+      opts,
     );
     this.placeBarSlot(
       1,
@@ -107,6 +144,7 @@ export class HudView {
       Theme.rust,
       lore('UI-BAR-SHD'),
       `${st.player.armor}/${st.player.maxArmor}`,
+      opts,
     );
     this.placeBarSlot(
       2,
@@ -119,6 +157,7 @@ export class HudView {
       Theme.arc,
       shearPrimary ? '' : lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
+      opts,
       secondaryCss,
       secondaryValCss,
     );
@@ -133,6 +172,7 @@ export class HudView {
       Theme.rust,
       shearPrimary ? '' : lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
+      opts,
       secondaryCss,
       secondaryValCss,
     );
@@ -148,6 +188,7 @@ export class HudView {
       Theme.inkMute,
       lore('UI-BAR-XP'),
       st.xpToNext ? `${st.xp}/${st.xpToNext}` : `${st.xp}`,
+      opts,
     );
     this.syncWindowPulse(
       400,
@@ -192,23 +233,20 @@ export class HudView {
     const flanked = flankPenalty(st);
     const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
     const emPart = shearPrimary ? '' : ` / ${lore('UI-EM')} ${st.emStress}`;
-    r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`,
-    );
+    const meta = `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
+    this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
     const sector = getSector(st.sectorIndex);
+    let sectorLine: string;
     if (st.tutorialActive) {
-      r.sectorText.setText(
-        `${lore('UI-SECTOR')} ${lore('UI-TUT-SECTOR')}\n${lore('OBJ-TUT-BRIEF')}   ${lore('UI-SEED')} ${st.seed}`,
-      );
+      sectorLine = `${lore('UI-SECTOR')} ${lore('UI-TUT-SECTOR')}\n${lore('OBJ-TUT-BRIEF')}   ${lore('UI-SEED')} ${st.seed}`;
     } else {
       const ticks = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
         i <= st.sectorIndex ? '#' : '-',
       ).join(' ');
-      r.sectorText.setText(
-        `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${ticks}   ${lore('UI-SEED')} ${st.seed}`,
-      );
+      sectorLine = `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${ticks}   ${lore('UI-SEED')} ${st.seed}`;
     }
+    this.setReadout(r.sectorText, sectorLine, opts, ThemeCss.inkDim, 'sector');
 
     const badgeSpecs: { label: string; fill: number }[] = [];
     // Shear state lives on the center readout only (Charged+) — no badge duplicate.
@@ -267,22 +305,33 @@ export class HudView {
         });
       }
     }
-    this.drawQuestBadges(badgeSpecs, opts.screenW);
+    this.drawQuestBadges(badgeSpecs, opts.screenW, opts);
 
     const desc = describeObjective(st);
-    r.objLocalText.setText(lore(desc.local));
-    r.objCampaignText.setText(`${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`);
+    this.setReadout(r.objLocalText, lore(desc.local), opts, ThemeCss.inkDim, 'objLocal');
+    this.setReadout(
+      r.objCampaignText,
+      `${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`,
+      opts,
+      ThemeCss.inkBright,
+      'objCampaign',
+    );
 
     const questLine = roomQuestHudLine(st);
     if (questLine) {
       r.questText.setVisible(true);
-      r.questText.setText(
+      const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag;
+      this.setReadout(
+        r.questText,
         `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} → ${questLine.favor}  ${questLine.index}/${questLine.total}`,
+        opts,
+        questColor,
+        'quest',
       );
-      r.questText.setColor(st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag);
     } else {
       r.questText.setVisible(false);
       r.questText.setText('');
+      this.lastQuest = '';
     }
 
     const stormHot = st.stormTurns <= 80;
@@ -299,21 +348,35 @@ export class HudView {
     if (!shearPrimary && st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
 
     const hasUrgency = urgencyParts.length > 0;
-    r.urgencyText.setText(hasUrgency ? urgencyParts.join('  /  ') : '');
-    r.urgencyText.setColor(stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim);
+    const urgencyColor = stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim;
+    this.setReadout(
+      r.urgencyText,
+      hasUrgency ? urgencyParts.join('  /  ') : '',
+      opts,
+      urgencyColor,
+      'urgency',
+    );
 
     const sticky = stickyMilestone(st.loreEvents);
-    if (hasUrgency) {
-      r.milestoneText.setText('');
-    } else {
-      r.milestoneText.setText(sticky ? lore(sticky) : '');
-    }
+    this.setReadout(
+      r.milestoneText,
+      hasUrgency ? '' : sticky ? lore(sticky) : '',
+      opts,
+      ThemeCss.flag,
+      'milestone',
+    );
 
     const logs = st.log.slice(-5).map((l) => {
       const base = lore(l.loreId);
       return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
     });
-    r.logText.setText(`${lore('UI-LOG')}  /  ? help\n${logs.join('\n')}`);
+    this.setReadout(
+      r.logText,
+      `${lore('UI-LOG')}  /  ? help\n${logs.join('\n')}`,
+      opts,
+      ThemeCss.ink,
+      'log',
+    );
 
     const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
@@ -336,6 +399,88 @@ export class HudView {
     if (invOpen) {
       drawKitOverlay(r.invPanel, r.invText, opts.screenW, opts.screenH, st);
     }
+
+    this.primed = true;
+  }
+
+  private placeBarSlot(
+    index: number,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    ratio: number,
+    fill: number,
+    low: number,
+    caption: string,
+    value: string,
+    opts: HudRedrawOpts,
+    captionCss: string = ThemeCss.inkDim,
+    valueCss: string = ThemeCss.ink,
+  ): void {
+    const target = Math.max(0, Math.min(1, ratio));
+    this.barLayout[index] = { x, y, w, h, fill, low, target };
+
+    const cap = this.refs.barCaptions[index]!;
+    const val = this.refs.barValues[index]!;
+    cap.setPosition(x, y - 11);
+    cap.setText(caption);
+    cap.setColor(captionCss);
+    val.setPosition(x, y + h + 2);
+    val.setText(value);
+
+    const critical = target <= 0.3;
+    const printColor = critical ? ThemeCss.rust : valueCss;
+    const valueChanged = this.primed && value !== this.lastBarValue[index];
+    const prevDisplay = this.displayRatio[index]!;
+    const moved = this.primed && Math.abs(target - prevDisplay) > 0.004;
+
+    if (!this.primed) {
+      this.displayRatio[index] = target;
+    } else if (moved) {
+      this.barTweens[index]?.stop();
+      const proxy = { r: prevDisplay };
+      this.barTweens[index] = opts.tweens.add({
+        targets: proxy,
+        r: target,
+        duration: METER_MS,
+        ease: 'Sine.easeOut',
+        onUpdate: () => {
+          this.displayRatio[index] = proxy.r;
+          this.paintMeters();
+        },
+        onComplete: () => {
+          this.displayRatio[index] = target;
+          this.barTweens[index] = null;
+          this.paintMeters();
+        },
+      });
+    } else {
+      this.displayRatio[index] = target;
+    }
+
+    this.lastBarValue[index] = value;
+    val.setColor(printColor);
+    if (valueChanged) this.stampReadout(val, opts, printColor);
+
+    this.drawBar(x, y, w, h, this.displayRatio[index]!, fill, low);
+  }
+
+  private paintMeters(): void {
+    this.refs.barsGfx.clear();
+    for (let i = 0; i < HUD_BAR_SLOTS; i++) {
+      const layout = this.barLayout[i];
+      if (!layout) continue;
+      this.drawBar(
+        layout.x,
+        layout.y,
+        layout.w,
+        layout.h,
+        this.displayRatio[i]!,
+        layout.fill,
+        layout.low,
+      );
+    }
   }
 
   private drawBar(
@@ -350,30 +495,77 @@ export class HudView {
     drawMeter(this.refs.barsGfx, x, y, w, h, ratio, fill, low);
   }
 
-  private placeBarSlot(
-    index: number,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    ratio: number,
-    fill: number,
-    low: number,
-    caption: string,
-    value: string,
-    captionCss: string = ThemeCss.inkDim,
-    valueCss: string = ThemeCss.ink,
+  private setReadout(
+    text: Phaser.GameObjects.Text,
+    next: string,
+    opts: HudRedrawOpts,
+    color: string,
+    key:
+      | 'meta'
+      | 'sector'
+      | 'objLocal'
+      | 'objCampaign'
+      | 'quest'
+      | 'urgency'
+      | 'milestone'
+      | 'log',
   ): void {
-    this.drawBar(x, y, w, h, ratio, fill, low);
-    const cap = this.refs.barCaptions[index]!;
-    const val = this.refs.barValues[index]!;
-    cap.setPosition(x, y - 11);
-    cap.setText(caption);
-    cap.setColor(captionCss);
-    val.setPosition(x, y + h + 2);
-    val.setText(value);
-    const critical = ratio <= 0.3;
-    val.setColor(critical ? ThemeCss.rust : valueCss);
+    const prev =
+      key === 'meta'
+        ? this.lastMeta
+        : key === 'sector'
+          ? this.lastSector
+          : key === 'objLocal'
+            ? this.lastObjLocal
+            : key === 'objCampaign'
+              ? this.lastObjCampaign
+              : key === 'quest'
+                ? this.lastQuest
+                : key === 'urgency'
+                  ? this.lastUrgency
+                  : key === 'milestone'
+                    ? this.lastMilestone
+                    : this.lastLog;
+    text.setText(next);
+    text.setColor(color);
+    // Log is a feed, not a gauge — skip stamp so every turn doesn't chatter.
+    if (key !== 'log' && this.primed && next !== prev && next !== '') {
+      this.stampReadout(text, opts, color);
+    }
+    if (key === 'meta') this.lastMeta = next;
+    else if (key === 'sector') this.lastSector = next;
+    else if (key === 'objLocal') this.lastObjLocal = next;
+    else if (key === 'objCampaign') this.lastObjCampaign = next;
+    else if (key === 'quest') this.lastQuest = next;
+    else if (key === 'urgency') this.lastUrgency = next;
+    else if (key === 'milestone') this.lastMilestone = next;
+    else this.lastLog = next;
+  }
+
+  /** Hard stamp — bright flash + 1px lift, not a soft fade. */
+  private stampReadout(
+    text: Phaser.GameObjects.Text,
+    opts: HudRedrawOpts,
+    restoreColor: string,
+  ): void {
+    if (!text.visible) return;
+    opts.tweens.killTweensOf(text);
+    const baseY = text.y;
+    text.setColor(ThemeCss.inkBright);
+    text.setY(baseY);
+    opts.tweens.add({
+      targets: text,
+      y: baseY - 1,
+      duration: TICK_MS,
+      yoyo: true,
+      ease: 'Stepped',
+      easeParams: [2],
+      onComplete: () => {
+        if (!text.active) return;
+        text.setY(baseY);
+        text.setColor(restoreColor);
+      },
+    });
   }
 
   private syncWindowPulse(
@@ -401,12 +593,16 @@ export class HudView {
   private drawQuestBadges(
     badges: { label: string; fill: number }[],
     screenW: number,
+    opts: HudRedrawOpts,
   ): void {
     this.refs.badgeGfx.clear();
     const y = 10;
     const h = 16;
     const padX = 8;
     const gap = 6;
+    const key = badges.map((b) => `${b.label}:${b.fill}`).join('|');
+    const changed = this.primed && key !== this.lastBadges;
+    this.lastBadges = key;
     const widths: number[] = [];
     for (let i = 0; i < HUD_BADGE_SLOTS; i++) {
       const t = this.refs.badgeTexts[i]!;
@@ -429,6 +625,7 @@ export class HudView {
       drawStencilBadge(this.refs.badgeGfx, x, y, tw, h, b.fill);
       t.setColor(ThemeCss.ink);
       t.setPosition(x + padX, y + 3);
+      if (changed) this.stampReadout(t, opts, ThemeCss.ink);
       x += tw + gap;
     }
   }

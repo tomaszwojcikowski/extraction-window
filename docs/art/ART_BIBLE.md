@@ -139,6 +139,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed; Quiet is badge plus log, not badge plus float plus camera.
 - Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.
+- HUD stat changes ease meters (~140ms) and stamp readouts (~90ms hard flash + 1px lift) — instrument motion, not soft UI pulses. Log feed does not stamp every turn.
 - Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → one-shot coaches (peek teach).
 - CSS hex strings (`'#rrggbb'`) are the same rule as `0x` paints — both must come from `Theme` / `ThemeCss`. Enforced by [`palette.test.ts`](../../tests/game/palette.test.ts).
 
