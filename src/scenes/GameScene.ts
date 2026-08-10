@@ -1590,7 +1590,10 @@ export class GameScene extends Phaser.Scene {
         if (patch && st.visible[y]?.[x]) {
           tile.setTint(Theme.biolum);
         } else {
-          tile.clearTint();
+          // Keep the wash from applyTileLighting — clearing wiped SHADOW band tint.
+          const tint = this.lightView.tileTintAt(x, y);
+          if (tint !== undefined) tile.setTint(tint);
+          else tile.clearTint();
         }
       }
     }

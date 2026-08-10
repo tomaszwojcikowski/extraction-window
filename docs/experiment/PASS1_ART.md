@@ -32,7 +32,7 @@ Design brief: [`PASS1_DESIGN.md`](./PASS1_DESIGN.md)
 |---|---|
 | Move-preview wake ring (queued step before commit) | Timebox — current tells track live lamp/stance; preview-on-hover needs input hook not touched this pass |
 | Per-sector shear palette bleed into floor tints | Bet 2 chrome only; biome light identity already in `LightView` |
-| Cast-shadow silhouette QA pass | Bet 3 contact shadows landed earlier; silhouette audit is QA job |
+| Cast-shadow silhouette QA pass | Wall-aware casts + tip clip landed; species silhouette shapes still deferred |
 | Full 15-sector reskin | Explicit non-goal per design brief |
 | Audio stings for shear state transitions | Out of scope unless one-line sting requested |
 

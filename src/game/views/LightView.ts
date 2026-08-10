@@ -10,6 +10,7 @@ import {
 } from '../../sim/light';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
+import { castReachTiles } from './castShadows';
 
 export type LightSource = FieldLightSource & { color: number };
 
@@ -56,8 +57,9 @@ function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource 
  * Three physical claims this view has to sell:
  *  1. light has a *shape* — pools are ray-marched against the tile grid, so a
  *     wall cuts the pool instead of a circle fading over it;
- *  2. light comes *from* somewhere — actors drop a contact shadow away from
- *     whichever emitter is actually brightest on their tile;
+ *  2. light comes *from* somewhere — actors drop a contact shadow + cast
+ *     silhouette away from wall-aware key light (`accumulateLight`); casts
+ *     clip at opaque tiles the same way bloom pools do;
  *  3. light *arrives* — sector entry sweeps in behind a front (`applySweep`)
  *     and a flare has an ignition beat (`ignite`) instead of a state change.
  *
@@ -243,8 +245,13 @@ export class LightView {
   }
 
   /**
-   * Contact shadows. Each actor is shaded away from the brightest emitter on
-   * its tile — silhouette first, so a threat's shadow arrives before its sprite.
+   * Contact + cast shadows under actors.
+   *
+   * Key light is weighted by `accumulateLight` (wall-aware LOS), so a flare behind
+   * a bulkhead cannot throw a silhouette through stone. The cast tip is clipped
+   * to the first opaque tile along its throw — the same honesty rule as bloom
+   * pools. Deep SHADOW tiles keep only a faint contact patch; the AI's dark band
+   * should not look floodlit by a fake cast.
    */
   drawContactShadows(
     st: GameState,
@@ -267,7 +274,8 @@ export class LightView {
         const dist = Math.hypot(gx - s.x, gy - s.y);
         // A lamp on your own tile lights you from every side: no cast, just contact.
         if (dist < 0.75) continue;
-        const E = irradiance(dist, s.radius, s.intensity);
+        // Wall-aware energy — same LOS the colour sampler uses.
+        const E = accumulateLight(st.tiles, s.x, s.y, gx, gy, s.radius, s.intensity);
         if (E <= 0.004) continue;
         vx += ((gx - s.x) / dist) * E;
         vy += ((gy - s.y) / dist) * E;
@@ -275,36 +283,53 @@ export class LightView {
       }
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
       const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * 0.28;
-      const alpha = Math.min(0.5, 0.12 + brightness * 0.4);
+      const inShadowBand = brightness < SHADOW_THRESHOLD;
+      const alpha = Math.min(
+        0.55,
+        (inShadowBand ? 0.08 : 0.14) + brightness * (inShadowBand ? 0.22 : 0.42),
+      );
 
       const len = Math.hypot(vx, vy);
-      if (key > 0.05 && len > 0.0001) {
-        // Cast body: a tapering silhouette thrown away from the key light.
+      // Casts need enough key light *and* enough tile brightness — otherwise the
+      // silhouette is a lie about a room the ambush AI already treats as dark.
+      if (key > 0.05 && len > 0.0001 && !inShadowBand) {
         const dirX = vx / len;
         const dirY = vy / len;
-        const throwLen =
-          TILE_DRAW * (0.25 + Math.min(0.6, key * 0.5)) * (actor.tall ? 1.3 : 1);
-        const px = -dirY;
-        const py = dirX;
-        const halfNear = TILE_DRAW * 0.19;
-        const halfFar = TILE_DRAW * 0.09;
-        const fx = wx + dirX * throwLen;
-        const fy = wy + dirY * throwLen * 0.6;
-        g.fillStyle(Theme.groundDeep, alpha * 0.75);
-        g.fillPoints(
-          [
-            new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
-            new Phaser.Math.Vector2(wx - px * halfNear, wy - py * halfNear),
-            new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
-            new Phaser.Math.Vector2(fx + px * halfFar, fy + py * halfFar),
-          ],
-          true,
-        );
+        const wantTiles =
+          (0.35 + Math.min(0.85, key * 0.65)) * (actor.tall ? 1.35 : 1);
+        const reach = castReachTiles(st.tiles, gx, gy, dirX, dirY, wantTiles);
+        if (reach > 0.12) {
+          const throwLen = reach * TILE_DRAW;
+          const px = -dirY;
+          const py = dirX;
+          const halfNear = TILE_DRAW * 0.2;
+          const halfFar = TILE_DRAW * Math.max(0.05, 0.1 * (reach / wantTiles));
+          const fx = wx + dirX * throwLen;
+          const fy = wy + dirY * throwLen * 0.65;
+          g.fillStyle(Theme.groundDeep, alpha * 0.82);
+          g.fillPoints(
+            [
+              new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
+              new Phaser.Math.Vector2(wx - px * halfNear, wy - py * halfNear),
+              new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
+              new Phaser.Math.Vector2(fx + px * halfFar, fy + py * halfFar),
+            ],
+            true,
+          );
+          // Soft tip so the cast dies into the floor instead of a hard edge.
+          g.fillStyle(Theme.groundDeep, alpha * 0.35);
+          g.fillEllipse(fx, fy, TILE_DRAW * 0.22, TILE_DRAW * 0.1);
+        }
       }
       // Contact patch — darkest right under the feet.
       g.fillStyle(Theme.groundDeep, alpha);
-      g.fillEllipse(wx, wy, TILE_DRAW * 0.44, TILE_DRAW * 0.18);
+      g.fillEllipse(wx, wy, TILE_DRAW * 0.48, TILE_DRAW * 0.2);
     }
+  }
+
+  /** Cached lighting tint from the last `applyTileLighting` pass. */
+  tileTintAt(x: number, y: number): number | undefined {
+    return this.tintGrid[y]?.[x];
   }
 
   /**
@@ -560,3 +585,4 @@ export class LightView {
 
 // Re-export for bloom tuning / tests
 export { irradiance } from '../../sim/light';
+export { castReachTiles } from './castShadows';
