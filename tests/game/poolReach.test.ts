@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { marchPoolRays } from '../../src/game/views/poolReach';
+import { marchPoolRays, marchPoolRaysAt } from '../../src/game/views/poolReach';
 import type { Tile } from '../../src/sim/types';
 
 function grid(w: number, h: number, fill: Tile): Tile[][] {
@@ -44,5 +44,18 @@ describe('marchPoolRays', () => {
     const eastScrub = scrubbed[0]!;
     expect(eastScrub.atten).toBeLessThan(eastOpen.atten);
     expect(eastScrub.atten).toBeLessThan(1);
+  });
+
+  it('can originate from a wall-face offset into the room', () => {
+    const tiles = grid(11, 11, { kind: 'floor', walkable: true, transparent: true });
+    for (let x = 0; x < 11; x++) {
+      tiles[2]![x] = { kind: 'wall', walkable: false, transparent: false };
+    }
+    // Origin just south of the wall — north rays clip, south rays open.
+    const rays = marchPoolRaysAt(tiles, 5.5, 2.5 + 0.42, 3, 8, 0.28);
+    const south = rays[2]!; // π/2
+    const northRay = rays[6]!; // 3π/2
+    expect(northRay.hit).toBeLessThan(south.hit);
+    expect(south.hit).toBeGreaterThan(1.5);
   });
 });

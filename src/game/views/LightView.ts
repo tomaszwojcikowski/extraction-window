@@ -13,7 +13,7 @@ import { EM_HIGH } from '../../sim/emStress';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { castReachTiles } from './castShadows';
-import { marchPoolRays, type PoolRay } from './poolReach';
+import { marchPoolRays, marchPoolRaysAt, type PoolRay } from './poolReach';
 
 export type LightSource = FieldLightSource & { color: number };
 
@@ -165,9 +165,12 @@ export class LightView {
     return this.sourceEnergy[sourceIndex]?.[y]?.[x] ?? 0;
   }
 
-  private shellPoints(rays: PoolRay[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
-    const cx = sx + 0.5;
-    const cy = sy + 0.5;
+  private shellPointsAt(
+    rays: PoolRay[],
+    cx: number,
+    cy: number,
+    scale: number,
+  ): Phaser.Math.Vector2[] {
     const pts: Phaser.Math.Vector2[] = [];
     for (let i = 0; i < rays.length; i++) {
       const a = (i / rays.length) * Math.PI * 2;
@@ -182,9 +185,14 @@ export class LightView {
     return pts;
   }
 
+  private shellPoints(rays: PoolRay[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
+    return this.shellPointsAt(rays, sx + 0.5, sy + 0.5, scale);
+  }
+
   /**
    * Wall- and scrub-aware bloom. Ray-marched pools stop at geometry, die in
    * thicket, and spill down corridors. Personal lamp stays soft; flares keep a hotter core.
+   * Wall sconces bloom from the fixture face (not the floor emission cell).
    */
   drawBloom(
     sources: LightSource[],
@@ -195,19 +203,37 @@ export class LightView {
     this.lightsGfx.clear();
     const biomeGain = biomeBloomGain(sectorId);
     for (const s of sources) {
-      const row = visible[s.y];
-      if (!row?.[s.x]) continue;
-      const wx = s.x * TILE_DRAW + TILE_DRAW / 2;
-      const wy = s.y * TILE_DRAW + TILE_DRAW / 2;
+      const isSconce = s.fixture === 'sconce';
+      const mountX = s.mountX ?? s.x;
+      const mountY = s.mountY ?? s.y;
+      // Flood may sit on the facing floor; bloom must still read when that floor is seen.
+      if (!visible[s.y]?.[s.x] && !(isSconce && visible[mountY]?.[mountX])) continue;
+
+      // Sconce: origin sits on the wall face, slightly into the room — not a hot
+      // blob in the middle of the corridor tile under the lamp.
+      let cx = s.x + 0.5;
+      let cy = s.y + 0.5;
+      if (isSconce) {
+        const into = 0.42;
+        cx = mountX + 0.5 + (s.x - mountX) * into;
+        cy = mountY + 0.5 + (s.y - mountY) * into;
+      }
+      const wx = cx * TILE_DRAW;
+      const wy = cy * TILE_DRAW;
+
       const personal =
-        s.color === LightTemp.lamp || s.color === LightTemp.lampQuiet;
+        s.color === LightTemp.lamp ||
+        s.color === LightTemp.lampQuiet ||
+        isSconce;
       const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
       const aCore = personal
-        ? Math.min(0.34, 0.07 + s.intensity * 0.16) * biomeGain
+        ? Math.min(isSconce ? 0.28 : 0.34, 0.07 + s.intensity * 0.16) * biomeGain
         : Math.min(0.62, 0.12 + s.intensity * 0.3) * biomeGain;
 
       if (tiles) {
-        const rays = marchPoolRays(tiles, s.x, s.y, s.radius);
+        const rays = isSconce
+          ? marchPoolRaysAt(tiles, cx, cy, s.radius)
+          : marchPoolRays(tiles, s.x, s.y, s.radius);
         const peak = irradiance(s.radius / POOL_SHELLS, s.radius, 1) || 1;
         let prev = 0;
         for (let k = POOL_SHELLS; k >= 1; k--) {
@@ -216,12 +242,11 @@ export class LightView {
           const inc = f - prev;
           prev = f;
           if (inc <= 0.001) continue;
-          // Mean ray atten so scrub-choked directions don't glow full-strength.
           let attenSum = 0;
           for (const ray of rays) attenSum += ray.atten;
           const atten = rays.length ? attenSum / rays.length : 1;
           this.lightsGfx.fillStyle(s.color, aCore * inc * (0.3 + 0.7 * atten));
-          this.lightsGfx.fillPoints(this.shellPoints(rays, s.x, s.y, scale), true);
+          this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale), true);
         }
       } else {
         this.lightsGfx.fillStyle(s.color, aCore * 0.14);
@@ -230,7 +255,12 @@ export class LightView {
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
       }
 
-      if (personal) {
+      if (isSconce) {
+        // Soft filament on the fixture — no magnesium-white core on the floor.
+        const core = Math.max(2, TILE_DRAW * 0.12 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.55);
+        this.lightsGfx.fillCircle(wx, wy, core);
+      } else if (personal) {
         const core = Math.max(3, TILE_DRAW * 0.14 * gain);
         this.lightsGfx.fillStyle(s.color, aCore * 0.45);
         this.lightsGfx.fillCircle(wx, wy, core);
@@ -602,4 +632,4 @@ export class LightView {
 // Re-export for bloom tuning / tests
 export { irradiance } from '../../sim/light';
 export { castReachTiles } from './castShadows';
-export { marchPoolRays } from './poolReach';
+export { marchPoolRays, marchPoolRaysAt } from './poolReach';

@@ -12,20 +12,17 @@ export type PoolRay = {
 };
 
 /**
- * Ray-march a light pool against the tile grid.
- * Walls stop the ray (pool laps the face); scrub attenuates like sim flood /
- * `lightTransmittance` so bloom cannot roar through thicket while gameplay dims.
+ * Ray-march a light pool against the tile grid from a continuous origin
+ * (tile units). Walls stop the ray; scrub attenuates like sim flood.
  */
-export function marchPoolRays(
+export function marchPoolRaysAt(
   tiles: Tile[][],
-  sx: number,
-  sy: number,
+  cx: number,
+  cy: number,
   radius: number,
   rays = POOL_RAYS,
   step = POOL_STEP,
 ): PoolRay[] {
-  const cx = sx + 0.5;
-  const cy = sy + 0.5;
   const out: PoolRay[] = [];
   for (let i = 0; i < rays; i++) {
     const a = (i / rays) * Math.PI * 2;
@@ -63,4 +60,20 @@ export function marchPoolRays(
     out.push({ hit, atten });
   }
   return out;
+}
+
+/**
+ * Ray-march a light pool from a tile center.
+ * Walls stop the ray (pool laps the face); scrub attenuates like sim flood /
+ * `lightTransmittance` so bloom cannot roar through thicket while gameplay dims.
+ */
+export function marchPoolRays(
+  tiles: Tile[][],
+  sx: number,
+  sy: number,
+  radius: number,
+  rays = POOL_RAYS,
+  step = POOL_STEP,
+): PoolRay[] {
+  return marchPoolRaysAt(tiles, sx + 0.5, sy + 0.5, radius, rays, step);
 }
