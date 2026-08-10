@@ -6,6 +6,7 @@ import {
   registerTextures,
   TILE_DRAW,
   wallStyleForSector,
+  wallTextureKey,
 } from './scenes/textures';
 import { drawMeter, drawStencilBadge } from './scenes/atmosphere';
 import { Theme, ThemeCss, floorTextureKey } from './scenes/theme';
@@ -194,8 +195,13 @@ class SheetScene extends Phaser.Scene {
   }
 
   private buildStructureGrid(): void {
-    for (const style of ['cliff', 'bulkhead', 'conduit'] as const) {
-      this.cell('props', [`t_wall_${style}_0`, `t_wall_${style}_1`], `wall / ${style}`, 'structure');
+    for (const sector of SECTORS) {
+      this.cell(
+        'props',
+        [0, 1, 2, 3].map((variant) => wallTextureKey(sector, variant)),
+        `wall / ${sector}`,
+        wallStyleForSector(sector),
+      );
     }
     for (const [label, key] of STRUCTURE) {
       const frames = this.textures.exists(`${key}_1`) ? [key, `${key}_1`, `${key}_2`] : [key];

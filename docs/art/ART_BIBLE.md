@@ -67,6 +67,10 @@ Roles say what a colour *means*; materials say what a surface *is*. Wet basalt
 each have a name. The two vocabularies stay disjoint — a material that duplicates
 a role gives the drawing code two ways to say one thing, and the test rejects it.
 
+Wall faces are per-sector (`t_wall_<sector>_<0..3>`): cliff / bulkhead / conduit
+families with grit, fasteners, and a sparse biome accent — not three stamped
+blocks tinted by lighting.
+
 ---
 
 ## 3. Type

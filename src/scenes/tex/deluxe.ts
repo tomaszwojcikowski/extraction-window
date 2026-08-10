@@ -6,6 +6,7 @@ import type { WallStyle } from '../textures';
 import { mix, shade } from './color';
 
 type G = Phaser.GameObjects.Graphics;
+type Q = (value: number) => number;
 
 export type DeluxePropKind =
   | 'scrub'
@@ -317,57 +318,257 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
   },
 };
 
-/** High-contrast, beveled cliff / bulkhead / conduit families. */
-export function drawDeluxeWall(g: G, T: number, style: WallStyle, variant: number): void {
+/** High-contrast, beveled cliff / bulkhead / conduit families — layered like floors. */
+export function drawDeluxeWall(
+  g: G,
+  T: number,
+  style: WallStyle,
+  variant: number,
+  sector: SectorId = 'plains',
+): void {
   const q = unit(T);
+  const tint = BIOME_FLOOR_TINT[sector];
+  const accent = floorAccent(sector);
+  const v = ((variant % 4) + 4) % 4;
+  const face =
+    style === 'cliff'
+      ? mix(Material.rock, tint, 0.18)
+      : style === 'bulkhead'
+        ? mix(Material.deck, tint, 0.14)
+        : mix(Material.conduit, tint, 0.16);
+
   g.clear();
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, T, T);
-  // Meridian geology, not starship grey: basalt shelf, painted bulkhead, wet duct steel.
-  g.fillStyle(style === 'cliff' ? Material.rock : style === 'bulkhead' ? Material.deck : Material.conduit, 1);
+  g.fillStyle(face, 1);
   g.fillRect(q(1), q(1), T - q(2), T - q(2));
 
-  // Bright top/left bevel, deep bottom/right bevel.
-  g.fillStyle(style === 'conduit' ? Theme.biolumDeep : Theme.inkMute, 0.9);
-  g.fillRect(q(2), q(2), T - q(4), q(4));
-  g.fillRect(q(2), q(6), q(4), T - q(10));
-  g.fillStyle(Theme.groundDeep, 0.95);
-  g.fillRect(q(5), T - q(7), T - q(10), q(5));
-  g.fillRect(T - q(7), q(6), q(5), T - q(13));
+  // Inner slab — slightly cooler so bevels read.
+  g.fillStyle(mix(face, Material.recess, 0.12), 1);
+  g.fillRect(q(3), q(3), T - q(6), T - q(7));
+
+  // Deterministic grit so adjacent variants don't stamp identical.
+  for (let i = 0; i < 16; i++) {
+    const x = q(4 + ((i * 11 + v * 9) % 38));
+    const y = q(5 + ((i * 17 + v * 5) % 36));
+    g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.22 : 0.12);
+    g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
+  }
+
+  // Bright top/left bevel, deep bottom/right — machined lip.
+  g.fillStyle(style === 'conduit' ? mix(Theme.biolumDeep, accent, 0.25) : Theme.inkMute, 0.88);
+  g.fillRect(q(2), q(2), T - q(4), q(3));
+  g.fillRect(q(2), q(5), q(3), T - q(9));
+  g.fillStyle(Theme.groundDeep, 0.92);
+  g.fillRect(q(4), T - q(6), T - q(8), q(4));
+  g.fillRect(T - q(6), q(5), q(4), T - q(11));
 
   if (style === 'cliff') {
-    g.fillStyle(Material.recess, 0.95);
-    for (let i = 0; i < 5; i++) {
-      const y = q(9 + i * 7 + (variant ? i % 2 : 0));
-      const x = q(7 + ((i * 9 + variant * 4) % 14));
-      g.fillRect(x, y, q(21 - (i % 3) * 4), q(3));
-      g.fillStyle(Theme.inkMute, 0.55);
-      g.fillRect(x, y, q(8), q(1));
-      g.fillStyle(Material.recess, 0.95);
-    }
+    paintCliffFace(g, q, T, v, accent);
   } else if (style === 'bulkhead') {
-    g.fillStyle(Theme.panel, 1);
-    g.fillRect(q(8), q(8), T - q(16), T - q(18));
-    g.lineStyle(q(2), Theme.panelEdge, 0.95);
-    g.strokeRect(q(9), q(9), T - q(18), T - q(20));
-    g.fillStyle(Theme.groundDeep, 1);
-    g.fillRect(q(22), q(10), q(4), T - q(24));
-    g.fillRect(q(10), q(22), T - q(20), q(3));
-    g.fillStyle(variant ? Theme.tape : Theme.inkDim, 0.85);
-    g.fillRect(q(11), q(11), q(7), q(2));
-    g.fillRect(T - q(18), T - q(15), q(7), q(2));
+    paintBulkheadFace(g, q, T, v, accent);
   } else {
-    g.fillStyle(Theme.panel, 1);
-    g.fillRect(q(8), q(8), T - q(16), T - q(18));
-    for (let i = 0; i < 3; i++) {
-      const y = q(11 + i * 9 + variant);
-      g.fillStyle(i === 1 ? Theme.biolumDeep : Theme.panelEdge, 0.95);
-      g.fillRect(q(7), y, T - q(14), q(5));
-      g.fillStyle(Theme.inkBright, 0.45);
-      g.fillRect(q(11 + i * 7), y + q(1), q(3), q(2));
+    paintConduitFace(g, q, T, v, accent);
+  }
+
+  // Corner fasteners — same on every family so walls read as built mass.
+  g.fillStyle(Theme.panelEdge, 0.9);
+  for (const [bx, by] of [
+    [6, 6],
+    [T - 10, 6],
+    [6, T - 12],
+    [T - 10, T - 12],
+  ] as const) {
+    const ox = q(bx + (v % 2));
+    const oy = q(by + ((v >> 1) % 2));
+    g.fillRect(ox, oy, q(2), q(2));
+    g.fillStyle(Theme.inkBright, 0.35);
+    g.fillRect(ox, oy, q(1), q(1));
+    g.fillStyle(Theme.panelEdge, 0.9);
+  }
+
+  WALL_ACCENT[sector]({ g, q, T, variant: v, accent, tint, style });
+}
+
+type WallPaint = {
+  g: G;
+  q: Q;
+  T: number;
+  variant: number;
+  accent: number;
+  tint: number;
+  style: WallStyle;
+};
+
+function paintCliffFace(g: G, q: Q, T: number, v: number, accent: number): void {
+  // Stratified shelves — offset so variants tile differently along a run.
+  for (let i = 0; i < 5; i++) {
+    const y = q(8 + i * 7 + ((v + i) % 2));
+    const x = q(6 + ((i * 9 + v * 5) % 16));
+    const w = q(22 - (i % 3) * 4 - (v % 2));
+    g.fillStyle(Material.recess, 0.95);
+    g.fillRect(x, y, w, q(3));
+    g.fillStyle(Theme.inkMute, 0.5);
+    g.fillRect(x, y, q(7 + (v % 3)), q(1));
+    if (i % 2 === v % 2) {
+      g.fillStyle(mix(Material.rock, accent, 0.35), 0.4);
+      g.fillRect(x + q(2), y + q(1), q(4), q(1));
     }
   }
+  // Vertical joint crack.
+  g.fillStyle(Material.recess, 0.7);
+  const jx = q(14 + v * 5);
+  g.fillRect(jx, q(8), q(1), T - q(16));
 }
+
+function paintBulkheadFace(g: G, q: Q, T: number, v: number, accent: number): void {
+  const inset = q(7 + (v % 2));
+  g.fillStyle(Theme.panel, 1);
+  g.fillRect(inset, inset, T - inset * 2, T - inset * 2 - q(2));
+  g.lineStyle(q(2), Theme.panelEdge, 0.95);
+  g.strokeRect(inset + q(1), inset + q(1), T - inset * 2 - q(2), T - inset * 2 - q(4));
+
+  // Panel seams — cross or grid by variant.
+  g.fillStyle(Theme.groundDeep, 1);
+  if (v === 0 || v === 2) {
+    g.fillRect(q(22 + (v === 2 ? 3 : 0)), inset + q(2), q(3), T - inset * 2 - q(6));
+  }
+  if (v === 1 || v === 2 || v === 3) {
+    g.fillRect(inset + q(2), q(20 + (v === 3 ? 4 : 0)), T - inset * 2 - q(4), q(3));
+  }
+  if (v === 3) {
+    g.fillRect(q(18), inset + q(2), q(2), T - inset * 2 - q(6));
+  }
+
+  // Stencil / caution tape / stress mark.
+  g.fillStyle(v === 1 ? Theme.tape : v === 3 ? accent : Theme.inkDim, 0.85);
+  g.fillRect(inset + q(3), inset + q(3), q(8), q(2));
+  g.fillRect(T - inset - q(11), T - inset - q(8), q(8), q(2));
+
+  // Rivet row along the top seam.
+  g.fillStyle(Theme.panelEdge, 0.75);
+  for (let i = 0; i < 4; i++) {
+    g.fillRect(inset + q(5 + i * 8 + (v % 2)), inset + q(5), q(2), q(2));
+  }
+}
+
+function paintConduitFace(g: G, q: Q, T: number, v: number, accent: number): void {
+  g.fillStyle(Theme.panel, 1);
+  g.fillRect(q(7), q(7), T - q(14), T - q(16));
+
+  // Pipe runs — shift spacing with variant; middle run always wetter.
+  for (let i = 0; i < 3; i++) {
+    const y = q(10 + i * 9 + (v % 3) - (v === 3 ? 1 : 0));
+    const wet = i === 1 || (v === 2 && i === 0);
+    g.fillStyle(wet ? mix(Theme.biolumDeep, accent, 0.3) : Theme.panelEdge, 0.95);
+    g.fillRect(q(6), y, T - q(12), q(5));
+    g.fillStyle(Theme.groundDeep, 0.55);
+    g.fillRect(q(6), y + q(4), T - q(12), q(1));
+    g.fillStyle(Theme.inkBright, wet ? 0.55 : 0.35);
+    g.fillRect(q(10 + i * 7 + v * 2), y + q(1), q(3), q(2));
+    // Clamp collar.
+    g.fillStyle(Theme.panelEdge, 0.9);
+    g.fillRect(q(8 + ((i + v) % 3) * 10), y - q(1), q(4), q(7));
+  }
+
+  // Vertical riser on odd variants.
+  if (v % 2 === 1) {
+    g.fillStyle(mix(Theme.biolumDeep, Material.conduit, 0.4), 0.85);
+    g.fillRect(q(28 + (v === 3 ? -4 : 0)), q(9), q(4), T - q(20));
+  }
+}
+
+/** Sparse sector tell on the wall face — reads family first, biome second. */
+const WALL_ACCENT: Record<SectorId, (p: WallPaint) => void> = {
+  plains: ({ g, q, T, variant }) => {
+    g.fillStyle(Material.recess, 0.45);
+    g.fillRect(q(12 + variant * 3), q(30), q(14), q(1));
+  },
+  ridge: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Material.rock, accent, 0.4), 0.55);
+    g.fillRect(q(8), q(14 + variant * 2), q(3), q(18));
+    g.fillRect(T - q(12), q(10), q(2), q(22));
+  },
+  canopy: ({ g, q, variant, accent }) => {
+    g.fillStyle(mix(Material.foliage, accent, 0.35), 0.5);
+    for (let i = 0; i < 3; i++) {
+      g.fillRect(q(10 + i * 9 + variant), q(28 + (i % 2)), q(5), q(2));
+    }
+  },
+  flood: ({ g, q, T, accent }) => {
+    g.fillStyle(mix(Theme.biolumDeep, accent, 0.4), 0.4);
+    g.fillRect(q(6), T - q(14), T - q(12), q(3));
+    g.fillRect(q(8), T - q(11), q(10), q(1));
+  },
+  brine: ({ g, q, T, accent }) => {
+    g.fillStyle(accent, 0.45);
+    g.fillRect(q(7), q(18), T - q(14), q(1));
+    g.fillRect(q(9), q(26), T - q(18), q(1));
+  },
+  reef: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Theme.safe, accent, 0.3), 0.55);
+    for (let i = 0; i < 5; i++) {
+      g.fillRect(q(9 + ((i * 7 + variant * 3) % 28)), q(12 + ((i * 9) % 22)), q(2), q(2));
+    }
+  },
+  ash: ({ g, q, T, variant }) => {
+    g.fillStyle(Theme.groundDeep, 0.55);
+    for (let i = 0; i < 6; i++) {
+      g.fillRect(q(8 + ((i * 5 + variant) % 30)), q(8 + i * 5), q(4 + (i % 2)), q(1));
+    }
+  },
+  fissure: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Material.recess, accent, 0.25), 0.85);
+    g.fillRect(q(10 + variant * 2), q(7), q(2), T - q(14));
+    g.fillRect(q(18), q(16 + variant), q(12), q(1));
+  },
+  approach: ({ g, q, T, variant }) => {
+    g.fillStyle(Theme.arc, 0.28);
+    g.fillRect(q(6), q(8 + variant * 3), T - q(12), q(1));
+    g.fillStyle(Theme.groundDeep, 0.5);
+    g.fillRect(q(20), q(10), q(1), T - q(18));
+  },
+  trench: ({ g, q, T, variant }) => {
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(8), q(12 + variant), T - q(16), q(4));
+    g.fillRect(q(8), q(28), T - q(16), q(3));
+  },
+  ruin: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Material.debris, accent, 0.2), 0.7);
+    g.fillRect(q(10 + variant), q(10), q(14), q(8));
+    g.fillStyle(Theme.groundDeep, 0.8);
+    g.fillRect(q(12), q(12), q(8), q(4));
+    g.fillRect(T - q(18), T - q(16), q(6), q(5));
+  },
+  duct: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Theme.biolum, accent, 0.25), 0.4);
+    g.fillRect(q(14 + variant), q(8), q(2), T - q(16));
+    g.fillStyle(Theme.panelEdge, 0.7);
+    g.fillRect(q(12), q(20), q(6), q(3));
+  },
+  spire: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(mix(Theme.arcWhite, accent, 0.2), 0.35);
+    g.fillRect(q(9), q(9 + variant), T - q(18), q(1));
+    g.fillRect(q(11), q(11), q(1), T - q(22));
+    g.fillRect(T - q(14), q(11), q(1), T - q(22));
+  },
+  vault: ({ g, q, T, variant }) => {
+    g.fillStyle(Theme.panelEdge, 0.8);
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        g.fillRect(q(12 + col * 8 + (variant % 2)), q(12 + row * 8), q(2), q(2));
+      }
+    }
+  },
+  beacon: ({ g, q, T, variant }) => {
+    g.fillStyle(Theme.tape, 0.75);
+    const y = q(16 + (variant % 2) * 6);
+    g.fillRect(q(8), y, T - q(16), q(3));
+    g.fillStyle(Theme.groundDeep, 0.55);
+    g.fillRect(q(8), y + q(1), T - q(16), q(1));
+  },
+};
+
 
 function groundTile(g: G, T: number): (value: number) => number {
   drawDeluxeFloor(g, T, 'plains', 0);
@@ -600,8 +801,6 @@ function hostileEyes(g: G, q: Q, cx: number, y: number, spread: number, size: nu
   g.fillRect(q(cx - spread - size + 1), q(y + 1), q(size - 2), q(size - 2));
   g.fillRect(q(cx + spread + 1), q(y + 1), q(size - 2), q(size - 2));
 }
-
-type Q = (value: number) => number;
 
 function drawSilhouette(
   g: G,

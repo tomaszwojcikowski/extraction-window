@@ -55,7 +55,7 @@ export function wallStyleForSector(sectorId: SectorId): WallStyle {
 }
 
 export function wallTextureKey(sectorId: SectorId, variant: number): string {
-  return `t_wall_${wallStyleForSector(sectorId)}_${variant % 2}`;
+  return `t_wall_${sectorId}_${variant % 4}`;
 }
 
 type G = Phaser.GameObjects.Graphics;
@@ -98,16 +98,44 @@ export function registerTextures(scene: Phaser.Scene): void {
   const T = TILE;
 
   const styles: WallStyle[] = ['cliff', 'bulkhead', 'conduit'];
+  const styleSample: Record<WallStyle, SectorId> = {
+    cliff: 'plains',
+    bulkhead: 'vault',
+    conduit: 'duct',
+  };
+  for (const id of [
+    'plains',
+    'flood',
+    'canopy',
+    'reef',
+    'spire',
+    'ruin',
+    'beacon',
+    'trench',
+    'duct',
+    'ash',
+    'brine',
+    'vault',
+    'fissure',
+    'approach',
+    'ridge',
+  ] as SectorId[]) {
+    const style = wallStyleForSector(id);
+    for (let v = 0; v < 4; v++) {
+      drawDeluxeWall(g, T, style, v, id);
+      bake(g, wallTextureKey(id, v), T);
+    }
+  }
+  // Style-family aliases for the contact sheet / legacy keys.
   for (const style of styles) {
-    for (let v = 0; v < 2; v++) {
-      drawDeluxeWall(g, T, style, v);
+    for (let v = 0; v < 4; v++) {
+      drawDeluxeWall(g, T, style, v, styleSample[style]);
       bake(g, `t_wall_${style}_${v}`, T);
     }
   }
-  // Legacy wall aliases
-  drawDeluxeWall(g, T, 'cliff', 0);
+  drawDeluxeWall(g, T, 'cliff', 0, 'plains');
   bake(g, 't_wall', T);
-  drawDeluxeWall(g, T, 'cliff', 1);
+  drawDeluxeWall(g, T, 'cliff', 1, 'plains');
   bake(g, 't_wall_1', T);
 
   const sectors: SectorId[] = [

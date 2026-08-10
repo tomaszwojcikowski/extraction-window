@@ -708,7 +708,7 @@ export class GameScene extends Phaser.Scene {
     const animated = (base: string): string => (f === 0 ? base : `${base}_${f}`);
     switch (kind) {
       case 'wall': {
-        const v = (x * 3 + y * 7 + this.state.seed) % 2;
+        const v = (x * 3 + y * 7 + this.state.seed) % 4;
         return wallTextureKey(this.state.sectorId, v);
       }
       case 'hazard':
