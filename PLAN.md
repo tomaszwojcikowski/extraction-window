@@ -40,7 +40,17 @@ Fixed order: Relay Scar Flats → Shearwash Basin → Shear Canopy → **Crystal
 - Lose: HP≤0, bus≤0, or window expires
 - Storm budget starts at **700** turns (late sectors tax extra from duct/vault); autopilot win-rate target **55–85%**
 
-Partly procedural per seed: layouts, room templates, multiroom quests, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy/reef scrub, rubble mazes, vent corridors, vault choke rooms.
+Partly procedural per seed: layouts, room roles, multiroom quests, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy/reef scrub, rubble mazes, vent corridors, vault choke rooms.
+
+**Every room has a job.** A room is assigned a role at generation and the role owns
+its contents, so the sector's hostile and loot budgets are concentrated rather than
+smeared evenly across the floor: `nest` (a pack behind cover that hides its size),
+`cache` (piled kit with something in the way), `hazard` (caustic ground with one dry
+lane), `post` (one hostile holding a sightline), `thicket` (growth too dense to see
+through), `collapse` (cover everywhere — a shoving room), `quiet` (empty, which is
+what makes the rest read as loud). Which roles a sector can draw is derived from what
+it actually contains, so the shelf sectors have no `hazard` or `post` rooms at all
+and the duct has all seven — the absence is the identity.
 
 ## Mechanics
 

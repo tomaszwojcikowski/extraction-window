@@ -44,6 +44,34 @@ export interface FieldLightSource {
   color?: number;
 }
 
+/**
+ * What a room is *for*.
+ *
+ * A room that is only a rectangle is a room the player has no opinion about.
+ * The role is decided at generation time and then owns what goes in the room —
+ * hostiles, loot, and ground — so that walking into one is a different event
+ * from walking into the next.
+ */
+export type RoomRole =
+  /** Where the surveyor put down. Never holds a threat. */
+  | 'entry'
+  /** A pack lives here, behind cover that hides how many. */
+  | 'nest'
+  /** The payout, with something in the way of it. */
+  | 'cache'
+  /** The ground is the threat; the fauna is incidental. */
+  | 'hazard'
+  /** One hostile holding a sightline across open floor. */
+  | 'post'
+  /** Growth too dense to see through — the threat is not knowing. */
+  | 'thicket'
+  /** Half-fallen: cover everywhere, and walls to put a shoulder into. */
+  | 'collapse'
+  /** Genuinely empty — what makes the rest of the sector read as loud. */
+  | 'quiet'
+  /** The way out. */
+  | 'exit';
+
 /** Room bounds from the sector map generator (survey / quest pulse). */
 export interface MapRoom {
   x: number;
@@ -52,6 +80,7 @@ export interface MapRoom {
   h: number;
   cx: number;
   cy: number;
+  role: RoomRole;
 }
 
 export interface Tile {

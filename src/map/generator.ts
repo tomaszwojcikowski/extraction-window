@@ -5,7 +5,16 @@ import {
   scaleEnemyCombat,
 } from '../data/difficulty';
 import type { ItemKind } from '../data/items';
-import type { Enemy, EnemyTier, FieldNpc, GroundItem, Pos, RoomQuest, Tile } from '../sim/types';
+import type {
+  Enemy,
+  EnemyTier,
+  FieldNpc,
+  GroundItem,
+  Pos,
+  RoomQuest,
+  RoomRole,
+  Tile,
+} from '../sim/types';
 import { npcKindForSector } from '../data/npcs';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
@@ -15,17 +24,17 @@ import {
   isMultiSiteKind,
   pickRoomQuestKind,
 } from '../sim/roomQuest';
+import {
+  assignRoomRoles,
+  dressRoomRoles,
+  fillOrder,
+  holderKind,
+  planHostiles,
+  planLoot,
+  type Room,
+} from './rooms';
 
-type RoomTemplate = 'chamber' | 'gallery' | 'machine' | 'cross' | 'cache';
-
-export interface Room {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  cx: number;
-  cy: number;
-}
+export type { Room } from './rooms';
 
 export interface GeneratedMap {
   tiles: Tile[][];
@@ -353,94 +362,47 @@ function dressSealedHatches(
   }
 }
 
-function pickRoomTemplate(id: SectorDef['id'], rng: Rng): RoomTemplate {
-  const roll = rng();
-  switch (id) {
-    case 'reef':
-      return roll < 0.55 ? 'gallery' : roll < 0.8 ? 'chamber' : 'cross';
-    case 'duct':
-      return roll < 0.5 ? 'machine' : roll < 0.75 ? 'cross' : 'cache';
-    case 'vault':
-      return roll < 0.45 ? 'cache' : roll < 0.75 ? 'chamber' : 'machine';
-    case 'approach':
-      return roll < 0.55 ? 'cross' : roll < 0.8 ? 'chamber' : 'machine';
-    case 'canopy':
-    case 'spire':
-      return roll < 0.4 ? 'gallery' : roll < 0.7 ? 'chamber' : 'cross';
-    default:
-      if (roll < 0.25) return 'chamber';
-      if (roll < 0.45) return 'gallery';
-      if (roll < 0.65) return 'machine';
-      if (roll < 0.85) return 'cross';
-      return 'cache';
-  }
+/**
+ * Where a crowned hostile should be found, best first.
+ *
+ * Order is the honesty rule: put the sector's hardest fight in a room the
+ * player already had a reason to read, and never in one that promised nothing.
+ */
+const TIER_ROOM_ORDER: RoomRole[] = ['nest', 'post', 'collapse', 'thicket', 'hazard', 'cache'];
+
+/**
+ * Free a slot in a room about to receive a crowned hostile, so the room's
+ * hostile count stays close to what the sector budgeted.
+ *
+ * Only a full pack is thinned. A crown on top of three bodies measured as a
+ * difficulty spike; taking one off every crowned room measured as a sector-wide
+ * discount. Two bodies and a leader is the fight this is trying to build.
+ */
+function promoteWithinPack(enemies: Enemy[], room: Room): void {
+  const inside = enemies.filter(
+    (e) =>
+      e.tier === 'normal' &&
+      e.x >= room.x &&
+      e.x < room.x + room.w &&
+      e.y >= room.y &&
+      e.y < room.y + room.h,
+  );
+  if (inside.length < 3) return;
+  const drop = enemies.indexOf(inside[inside.length - 1]!);
+  if (drop >= 0) enemies.splice(drop, 1);
 }
 
-/** Landmark + internal props per room — keep walkability. */
-function dressRoomTemplate(
-  tiles: Tile[][],
-  room: Room,
-  template: RoomTemplate,
-  rng: Rng,
-  start: Pos,
-  exit: Pos,
-): void {
-  const placeIfFloor = (x: number, y: number, tile: Tile) => {
-    if (x === start.x && y === start.y) return;
-    if (x === exit.x && y === exit.y) return;
-    if (tiles[y]?.[x]?.kind === 'floor') tiles[y]![x] = tile;
+function byRolePreference(pool: Room[]): Room[] {
+  const rank = (room: Room): number => {
+    const at = TIER_ROOM_ORDER.indexOf(room.role);
+    return at === -1 ? TIER_ROOM_ORDER.length : at;
   };
-
-  if (template === 'chamber') {
-    placeIfFloor(room.cx, room.cy, landmarkTile());
-    return;
-  }
-  if (template === 'gallery') {
-    for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
-      const x = room.x + 1 + ((y - room.y) % Math.max(2, room.w - 2));
-      if (x > room.x && x < room.x + room.w - 1) placeIfFloor(x, y, scrub(true));
-    }
-    placeIfFloor(room.cx, room.cy, landmarkTile());
-    return;
-  }
-  if (template === 'machine') {
-    const wallY = room.y + 1;
-    for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
-      if (rng() < 0.55) placeIfFloor(x, wallY, vent());
-    }
-    placeIfFloor(room.cx, room.cy, landmarkTile());
-    return;
-  }
-  if (template === 'cross') {
-    // Stub arms — short corridors already exist; add rubble choke near center
-    placeIfFloor(room.cx + 1, room.cy, rubble());
-    placeIfFloor(room.cx - 1, room.cy, rubble());
-    placeIfFloor(room.cx, room.cy, landmarkTile());
-    return;
-  }
-  // cache — guaranteed loot pile later; rubble choke near door-ish edge
-  placeIfFloor(room.x + 1, room.cy, rubble());
-  placeIfFloor(room.cx, room.cy, landmarkTile());
+  return [...pool].sort((a, b) => rank(a) - rank(b));
 }
 
-function dressAllRoomTemplates(
-  tiles: Tile[][],
-  rooms: Room[],
-  sector: SectorDef,
-  rng: Rng,
-  start: Pos,
-  exit: Pos,
-): void {
-  for (let i = 0; i < rooms.length; i++) {
-    const room = rooms[i]!;
-    if (room.w < 4 || room.h < 3) continue;
-    // Skip tiny alcoves
-    if (i === 0 || i === rooms.length - 1) {
-      if (rng() > 0.35) continue;
-    }
-    const tpl = pickRoomTemplate(sector.id, rng);
-    dressRoomTemplate(tiles, room, tpl, rng, start, exit);
-  }
+/** Rooms are born roleless; `assignRoomRoles` decides once they are all placed. */
+function makeRoom(x: number, y: number, w: number, h: number): Room {
+  return { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2), role: 'quiet' };
 }
 
 function roomOverlaps(a: Room, b: Room, pad = 1): boolean {
@@ -489,7 +451,7 @@ export function generateSectorMap(
     const { w, h } = roomSizeForBiome(sector.id, rng);
     const x = randInt(rng, 1, width - w - 2);
     const y = randInt(rng, 1, height - h - 2);
-    const room: Room = { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2) };
+    const room = makeRoom(x, y, w, h);
     if (rooms.some((r) => roomOverlaps(r, room, 2))) continue;
     rooms.push(room);
     carveRoom(tiles, room);
@@ -505,14 +467,7 @@ export function generateSectorMap(
       [width - 10, height - 8],
     ] as const) {
       if (rooms.length >= 4) break;
-      const room: Room = {
-        x: rx,
-        y: ry,
-        w: 6,
-        h: 5,
-        cx: rx + 3,
-        cy: ry + 2,
-      };
+      const room = makeRoom(rx, ry, 6, 5);
       if (room.x + room.w >= width - 1 || room.y + room.h >= height - 1) continue;
       if (rooms.some((r) => roomOverlaps(r, room))) continue;
       rooms.push(room);
@@ -538,14 +493,7 @@ export function generateSectorMap(
     const x = parent.cx + ox * (parent.w + 1);
     const y = parent.cy + oy * (parent.h + 1);
     if (x < 1 || y < 1 || x + w >= width - 1 || y + h >= height - 1) continue;
-    const alcove: Room = {
-      x,
-      y,
-      w,
-      h,
-      cx: x + Math.floor(w / 2),
-      cy: y + Math.floor(h / 2),
-    };
+    const alcove = makeRoom(x, y, w, h);
     if (rooms.some((r) => roomOverlaps(r, alcove, 0))) continue;
     rooms.push(alcove);
     carveRoom(tiles, alcove);
@@ -562,7 +510,8 @@ export function generateSectorMap(
     exit = { x: rooms[1]!.cx, y: rooms[1]!.cy };
   }
 
-  dressAllRoomTemplates(tiles, rooms, sector, rng, start, exit);
+  assignRoomRoles(rooms, sector, rng);
+  dressRoomRoles(tiles, rooms, sector, rng, [start, exit]);
 
   let beaconPos: Pos | null = null;
   let shuttlePos: Pos | null = null;
@@ -707,35 +656,41 @@ export function generateSectorMap(
       }
     }
   }
-  // Loot — fewer piles, more variety (already in tables)
-  const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
-  let placed = 0;
   const occ = () => occupiedSet(enemies, items, start, specials, npcs);
-  for (const p of floors) {
-    if (placed >= lootN) break;
-    const key = `${p.x},${p.y}`;
-    if (occ().has(key)) continue;
-    if (!canReach(tiles, start, p)) continue;
-    if (rng() > 0.22) continue;
-    const kind = pick(rng, sector.lootTable);
-    items.push({ id: nextEntityId++, kind, x: p.x, y: p.y });
-    placed++;
+  /** A tile is spendable if it is free, reachable, and not the quest furniture. */
+  const openIn = (room: Room, minStartDist = 0): Pos[] =>
+    fillOrder(room, tiles, rng).filter((p) => {
+      if (occ().has(`${p.x},${p.y}`)) return false;
+      if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < minStartDist) return false;
+      if (roomQuest?.steps.some((s) => s.pos.x === p.x && s.pos.y === p.y)) return false;
+      return canReach(tiles, start, p);
+    });
+
+  // Loot lives where the room says it lives — caches hold piles, hazard rooms
+  // hold bait, and a quiet room is quiet in both directions.
+  const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
+  for (const fill of planLoot(rooms, lootN, rng)) {
+    const spots = openIn(fill.room);
+    for (let i = 0; i < fill.count && i < spots.length; i++) {
+      const kind = pick(rng, sector.lootTable);
+      items.push({ id: nextEntityId++, kind, x: spots[i]!.x, y: spots[i]!.y });
+    }
   }
 
-  // Enemies — keep packs sparse; level adds light density
+  // Hostiles the same way. A pack in one room and nothing in the next reads as
+  // a decision; the same count smeared evenly reads as weather.
   const enemyN =
     randInt(rng, sector.enemyCount[0], sector.enemyCount[1]) +
     enemyCountBonus(playerLevel);
-  let ePlaced = 0;
-  for (const p of floors) {
-    if (ePlaced >= enemyN) break;
-    const key = `${p.x},${p.y}`;
-    if (occ().has(key)) continue;
-    if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < 5) continue;
-    if (rng() > 0.28) continue;
-    const kind = pick(rng, sector.enemyTable);
-    enemies.push(makeEnemy(nextEntityId++, kind, p, sector.index, 'normal', playerLevel));
-    ePlaced++;
+  for (const fill of planHostiles(rooms, enemyN, rng)) {
+    const spots = openIn(fill.room, 5);
+    for (let i = 0; i < fill.count && i < spots.length; i++) {
+      const kind =
+        fill.room.role === 'post' ? holderKind(sector.enemyTable, rng) : pick(rng, sector.enemyTable);
+      enemies.push(
+        makeEnemy(nextEntityId++, kind, spots[i]!, sector.index, 'normal', playerLevel),
+      );
+    }
   }
 
   // Exactly one elite per sector from index ≥2 when a mid-room exists
@@ -748,7 +703,10 @@ export function generateSectorMap(
         return d >= 6;
       }),
     );
-    const pool = eliteRooms.length ? eliteRooms : midRooms;
+    // A crowned hostile belongs with the pack it is crowning, so the room the
+    // player was already wary of becomes the set piece — and a quiet room stays
+    // honestly quiet instead of hiding the sector's hardest fight.
+    const pool = byRolePreference(eliteRooms.length ? eliteRooms : midRooms);
     for (const room of pool) {
       const candidates = [
         { x: room.cx, y: room.cy },
@@ -767,6 +725,10 @@ export function generateSectorMap(
       });
       if (!candidates.length) continue;
       const p = candidates[0]!;
+      // The crown leads the pack rather than arriving on top of it. Without
+      // this the crowned nest is the room's whole budget plus an elite, which
+      // measured as a difficulty spike rather than a set piece.
+      promoteWithinPack(enemies, room);
       enemies.push(
         makeEnemy(nextEntityId++, eliteKindForSector(sector.index), p, sector.index, 'elite', playerLevel),
       );
@@ -779,7 +741,7 @@ export function generateSectorMap(
     const tries: Pos[] = [];
     if (midFallback) {
       const mid = rooms.filter((r) => r !== startRoom && r !== endRoom);
-      for (const r of shuffle(rng, mid)) {
+      for (const r of byRolePreference(shuffle(rng, mid))) {
         tries.push({ x: r.cx, y: r.cy });
         tries.push({ x: r.cx + 1, y: r.cy });
         tries.push({ x: r.cx, y: r.cy + 1 });
@@ -897,7 +859,7 @@ export function generateSectorMap(
   }
   for (const it of items) {
     if ((it.kind === 'relay_key' || it.kind === 'nav_core') && !canReach(tiles, start, it)) {
-      connect(tiles, startRoom, { x: it.x, y: it.y, w: 1, h: 1, cx: it.x, cy: it.y }, rng);
+      connect(tiles, startRoom, makeRoom(it.x, it.y, 1, 1), rng);
     }
   }
 

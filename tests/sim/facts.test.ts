@@ -4,7 +4,21 @@ import { LORE } from '../../src/data/lore';
 import { createGame } from '../../src/sim';
 import { collectSectorFacts, factsSatisfy, pickFactCodex } from '../../src/sim/facts';
 import { EM_WARN } from '../../src/sim/emStress';
+import type { GameState } from '../../src/sim/types';
 import { makeEnemy } from './fixtures';
+
+/** Strip every fact-bearing tile so a test can add back only what it means. */
+function onlyVentTerrain(st: GameState): void {
+  for (const row of st.tiles) {
+    for (const tile of row) {
+      if (tile.kind !== 'wall' && tile.kind !== 'floor' && tile.kind !== 'exit') {
+        tile.kind = 'floor';
+        tile.walkable = true;
+        tile.transparent = true;
+      }
+    }
+  }
+}
 
 describe('room facts', () => {
   it('only reports terrain that is actually on the map', () => {
@@ -55,6 +69,10 @@ describe('fact-bound codex', () => {
 
   it('prefers the most specific page the ground can prove', () => {
     const st = createGame(42);
+    // Isolate the vent pages: any other two-fact page that also binds would tie
+    // on specificity, and this is a test about specificity, not table order.
+    onlyVentTerrain(st);
+    st.enemies = [];
     st.emStress = EM_WARN;
     st.tiles[st.player.y]![st.player.x + 1]!.kind = 'vent';
     // vent alone would bind CODEX-FACT-VENT; vent + contamination is more specific.

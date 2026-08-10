@@ -200,7 +200,8 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - Pass briefs state a **single bold bet** and QA criteria (see `docs/experiment/PASS*_DESIGN.md`).
 - Separate the rule from the policy before reading a result. A player option cannot lower the win rate on its own; when the number drops after adding one, the oracle's new habit is the suspect. Ablate it before touching the rule.
 - **A turn spent on defence is a turn the Window still bills.** Answering telegraphs by bracing, retreating to better footing, and shoving to thin a crowd each cost the oracle 6–20 points, because the enemy simply re-establishes and the clock keeps running. Defensive options have to convert into damage or position that survives the enemy phase, or they are traps dressed as choices.
-- 30 seeds cannot see a 5-point move. Confirm anything near a band edge on 200+.
+- 30 seeds cannot see a 5-point move, and 8 cannot see a 20-point one — an 8-seed smoke run read 38% for a change that measured 60% on 300. Confirm anything near a band edge with `scripts/probe-wr.ts`, and always against a stashed baseline measured the same way, not against a number remembered from last pass.
+- **Concentration is free; addition is not.** Moving the same hostile budget from an even scatter into packs left the win rate flat while changing every room. Putting an elite *on top of* a pack cost 5 points; removing one body from every crowned room refunded 12. When a change should be about texture, check that the totals really did stay put.
 
 **Anti-pattern:** Shipping three overlapping feel bets without a kill criterion.
 

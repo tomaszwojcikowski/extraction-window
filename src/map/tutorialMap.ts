@@ -100,8 +100,8 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     width,
     height,
     rooms: [
-      { x: 1, y: 4, w: 7, h: 8, cx: 4, cy: 7 },
-      { x: 16, y: 5, w: 7, h: 6, cx: 19, cy: 7 },
+      { x: 1, y: 4, w: 7, h: 8, cx: 4, cy: 7, role: 'entry' },
+      { x: 16, y: 5, w: 7, h: 6, cx: 19, cy: 7, role: 'exit' },
     ],
     start,
     exit,
