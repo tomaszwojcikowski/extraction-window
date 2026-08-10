@@ -7,7 +7,8 @@ import {
   TILE_DRAW,
   wallStyleForSector,
 } from './scenes/textures';
-import { floorTextureKey } from './scenes/theme';
+import { drawMeter, drawStencilBadge } from './scenes/atmosphere';
+import { Theme, ThemeCss, floorTextureKey } from './scenes/theme';
 import { drawThreatZones } from './game/views/ThreatView';
 import { createGame } from './sim/state';
 import { moveEnemies } from './sim/ai';
@@ -75,7 +76,69 @@ class SheetScene extends Phaser.Scene {
     this.buildTerrainGrid('terrain');
     this.buildTerrainGrid('terrainFlat');
     this.buildStructureGrid();
+    this.buildChromeGrid();
     this.buildTelegraphBoards();
+  }
+
+  private buildChromeGrid(): void {
+    const host = document.getElementById('chrome');
+    if (!host) return;
+
+    const samples: Array<{ label: string; draw: (g: Phaser.GameObjects.Graphics) => void }> = [
+      {
+        label: 'HP full',
+        draw: (g) => drawMeter(g, 10, 28, 120, 12, 1, Theme.safe, Theme.rust),
+      },
+      {
+        label: 'HP critical',
+        draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.22, Theme.safe, Theme.rust),
+      },
+      {
+        label: 'Bus mid',
+        draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.55, Theme.tape, Theme.arc),
+      },
+      {
+        label: 'Window low',
+        draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.28, Theme.arc, Theme.rust),
+      },
+      {
+        label: 'badge QUIET',
+        draw: (g) => drawStencilBadge(g, 18, 22, 92, 18, Theme.inkMute),
+      },
+      {
+        label: 'badge LIT',
+        draw: (g) => drawStencilBadge(g, 18, 22, 92, 18, Theme.tape),
+      },
+    ];
+
+    samples.forEach((sample, i) => {
+      const key = `chrome_${i}`;
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      g.fillStyle(Theme.panel, 1);
+      g.fillRect(0, 0, 140, 64);
+      sample.draw(g);
+      g.generateTexture(key, 140, 64);
+      g.destroy();
+
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = '156px';
+      const canvas = document.createElement('canvas');
+      canvas.width = 140;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.textures.get(key).getSourceImage() as CanvasImageSource, 0, 0);
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = sample.label;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = 'field kit';
+      meta.style.color = ThemeCss.inkDim;
+      cell.append(canvas, name, meta);
+      host.appendChild(cell);
+    });
   }
 
   /** One baked texture, blown up to the size it is actually played at. */

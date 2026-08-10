@@ -55,7 +55,7 @@ export class EndScene extends Phaser.Scene {
 
     if (!won) {
       accent = Theme.rust;
-      titleColor = '#e0846a';
+      titleColor = ThemeCss.rust;
       switch (this.loseReason) {
         case 'hp':
           titleId = 'UI-LOSE-HP';

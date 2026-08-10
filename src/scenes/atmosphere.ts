@@ -396,6 +396,63 @@ export function drawStencilBadge(
 }
 
 /**
+ * Vital meter — a recessed instrument trough, not a flat UI bar.
+ *
+ * The fill sits inside a machined lip so empty reads as empty metal rather than
+ * a grey rectangle waiting to be painted. Critical state bites the fill with
+ * rust flecks; stencil ticks keep the length readable without a number.
+ */
+export function drawMeter(
+  g: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  ratio: number,
+  fill: number,
+  low: number,
+): void {
+  const r = Math.max(0, Math.min(1, ratio));
+  const critical = r <= 0.3;
+  const colour = critical ? low : fill;
+
+  // Recessed trough.
+  g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(x, y, w, h);
+  g.fillStyle(Theme.panelEdge, 0.55);
+  g.fillRect(x, y, w, 1);
+  g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(x, y + h - 1, w, 1);
+  g.fillStyle(Theme.panelEdge, 0.25);
+  g.fillRect(x, y + 1, 1, h - 2);
+
+  // Fill inset one pixel so the lip stays visible at every level.
+  const innerW = Math.max(0, Math.floor((w - 2) * r));
+  if (innerW > 0) {
+    g.fillStyle(colour, 1);
+    g.fillRect(x + 1, y + 1, innerW, h - 2);
+    // Top catch-light on the column — the meter is a physical surface.
+    g.fillStyle(Theme.inkBright, critical ? 0.08 : 0.14);
+    g.fillRect(x + 1, y + 1, innerW, 1);
+    if (critical) {
+      // Corrosion flecks: the instrument is failing, not just empty.
+      for (let i = 0; i < Math.min(8, Math.floor(innerW / 4)); i++) {
+        const fx = x + 2 + Math.floor(grain(i, Math.floor(x + y)) * (innerW - 2));
+        g.fillStyle(Theme.rust, 0.55);
+        g.fillRect(fx, y + 2 + (i % 2), 1, 1);
+      }
+    }
+  }
+
+  // Stencil ticks every 25% — readable length without a number.
+  for (let t = 1; t < 4; t++) {
+    const tx = x + Math.floor((w * t) / 4);
+    g.fillStyle(Theme.inkMute, 0.45);
+    g.fillRect(tx, y + 1, 1, h - 2);
+  }
+}
+
+/**
  * Shear arc shimmer across the field — invisible when Calm, faster and hotter
  * as pressure rises. Diegetic (the air is ionising), not a CRT retrace.
  */

@@ -11,7 +11,7 @@ import {
   SURVEY_ROOM_CAP,
 } from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
-import { drawStencilBadge } from '../../scenes/atmosphere';
+import { drawMeter, drawStencilBadge } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
@@ -299,7 +299,7 @@ export class HudView {
 
     const hasUrgency = urgencyParts.length > 0;
     r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
-    r.urgencyText.setColor(stormHot && !shearPrimary ? '#cc4444' : ThemeCss.inkDim);
+    r.urgencyText.setColor(stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim);
 
     const sticky = stickyMilestone(st.loreEvents);
     if (hasUrgency) {
@@ -340,14 +340,7 @@ export class HudView {
     fill: number,
     low: number,
   ): void {
-    const r = Phaser.Math.Clamp(ratio, 0, 1);
-    const g = this.refs.barsGfx;
-    g.fillStyle(Theme.panel, 1);
-    g.fillRect(x, y, w, h);
-    g.fillStyle(r <= 0.3 ? low : fill, 1);
-    g.fillRect(x, y, Math.max(0, Math.floor(w * r)), h);
-    g.lineStyle(1, Theme.inkMute, 1);
-    g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    drawMeter(this.refs.barsGfx, x, y, w, h, ratio, fill, low);
   }
 
   private placeBarSlot(
@@ -373,7 +366,7 @@ export class HudView {
     val.setPosition(x, y + h + 2);
     val.setText(value);
     const critical = ratio <= 0.3;
-    val.setColor(critical ? '#cc4444' : valueCss);
+    val.setColor(critical ? ThemeCss.rust : valueCss);
   }
 
   private syncWindowPulse(

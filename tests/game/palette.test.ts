@@ -33,8 +33,15 @@ function inlineColours(path: string): string[] {
   readFileSync(path, 'utf8')
     .split('\n')
     .forEach((line, i) => {
+      // Skip obvious non-colour uses (e.g. import paths) — only quoted CSS
+      // and bare 0x paints count.
       for (const hex of line.match(/0x[0-9a-fA-F]{6}/g) ?? []) {
         if (!NOT_A_COLOUR.has(hex.toLowerCase())) found.push(`${path}:${i + 1} ${hex}`);
+      }
+      for (const hex of line.match(/['"`]#[0-9a-fA-F]{3,8}['"`]/g) ?? []) {
+        const bare = hex.slice(1, -1).toLowerCase();
+        if (bare === '#000' || bare === '#000000' || bare === '#fff' || bare === '#ffffff') continue;
+        found.push(`${path}:${i + 1} ${bare}`);
       }
     });
   return found;

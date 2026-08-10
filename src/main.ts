@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { ThemeCss } from './scenes/theme';
 import { BootScene } from './scenes/BootScene';
 import { TitleScene } from './scenes/TitleScene';
 import { GameScene } from './scenes/GameScene';
@@ -9,7 +10,7 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game',
   width: 960,
   height: 640,
-  backgroundColor: '#06060c',
+  backgroundColor: ThemeCss.groundDeep,
   pixelArt: true,
   scene: [BootScene, TitleScene, GameScene, EndScene],
   scale: {

@@ -128,10 +128,12 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 
 - Bars: HP · Shield · Bus · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
+- **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed; Quiet is badge plus log, not badge plus float plus camera.
 - Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.
 - Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → one-shot coaches (peek teach).
+- CSS hex strings (`'#rrggbb'`) are the same rule as `0x` paints — both must come from `Theme` / `ThemeCss`. Enforced by [`palette.test.ts`](../../tests/game/palette.test.ts).
 
 ---
 
@@ -165,7 +167,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 
 | Item | State |
 |------|-------|
-| LCARS / silhouette audit | Hostiles (§4a) and terrain (§4) done; HUD/menu chrome still to sweep against §5 and §7 |
+| LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
 | `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
 | Breaching climax juice | Deferred — one-bet discipline |
 | Per-sector crack-path art | Deferred |
@@ -179,8 +181,9 @@ An art or chrome change ships when:
 3. Chrome budget respected — no new always-on element without removing one.
 4. Art changes are eyeballed on the contact sheet — `npm run dev`, open `/sheet.html`.
    It bakes the real textures for every hostile, every sector floor (in colour and
-   desaturated), every rule-changing tile, every wall family, and every telegraph,
-   so a silhouette collision, a palette-swap biome, or an unpainted threat shows up
-   there before it reaches a run. If the browser cannot reach the dev server, start
-   it as `npx vite --host 127.0.0.1` — the default binding is IPv6-only.
+   desaturated), every rule-changing tile, every wall family, every telegraph, and
+   the field-kit meters/badges, so a silhouette collision, a palette-swap biome, an
+   unpainted threat, or a flat UI bar shows up there before it reaches a run. If the
+   browser cannot reach the dev server, start it as `npx vite --host 127.0.0.1` —
+   the default binding is IPv6-only.
 5. `npm run build` and `npm run playtest:smoke` pass; presentation-only changes must not move sim legality.

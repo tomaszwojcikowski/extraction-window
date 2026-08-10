@@ -1054,8 +1054,8 @@ export class GameScene extends Phaser.Scene {
         const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
           fontFamily: FONT_DATA,
           fontSize: '11px',
-          color: '#ffffff',
-          stroke: '#000000',
+          color: ThemeCss.inkBright,
+          stroke: ThemeCss.groundDeep,
           strokeThickness: 3,
         });
         label.setOrigin(0.5, 1);
@@ -1098,8 +1098,8 @@ export class GameScene extends Phaser.Scene {
         const label = this.add.text(0, 0, def.glyph, {
           fontFamily: FONT_DATA,
           fontSize: '11px',
-          color: '#a8e0ff',
-          stroke: '#000000',
+          color: ThemeCss.arcWhite,
+          stroke: ThemeCss.groundDeep,
           strokeThickness: 3,
         });
         label.setOrigin(0.5, 1);
@@ -1141,8 +1141,8 @@ export class GameScene extends Phaser.Scene {
         const label = this.add.text(0, 0, def.glyph, {
           fontFamily: FONT_DATA,
           fontSize: '11px',
-          color: '#b8f0c0',
-          stroke: '#000000',
+          color: ThemeCss.biolum,
+          stroke: ThemeCss.groundDeep,
           strokeThickness: 3,
         });
         label.setOrigin(0.5, 1);
@@ -1183,7 +1183,7 @@ export class GameScene extends Phaser.Scene {
   ): void {
     if (enemy.windup <= 0) {
       view.label.setText(ENEMIES[enemy.kind].glyph);
-      view.label.setColor('#ffffff');
+      view.label.setColor(ThemeCss.inkBright);
       view.label.setFontSize(11);
       return;
     }
