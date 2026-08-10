@@ -999,12 +999,22 @@ export class GameScene extends Phaser.Scene {
       this.hideCommitGhost(true);
     }
 
-    // Light/FOV at the new tile immediately so the lamp isn't left behind the tween.
-    // Full HUD (bars, log, hints) still waits for afterPresent.
+    // Light travels with the hop — capture the old wash, compute destination, then
+    // blend while the sprite steps so the lamp isn't left ahead of the surveyor.
+    if (fb.playerMoved) {
+      this.lightView.captureMoveFrom(fromPlayer, {
+        x: this.state.player.x,
+        y: this.state.player.y,
+      });
+    }
     this.applyFieldLighting();
+    if (fb.playerMoved) {
+      this.lightView.lockMoveBlend(this.tileSprites);
+    }
     this.syncItems();
 
     const afterPresent = () => {
+      this.lightView.endMoveLight();
       this.redrawTilesAndHud();
       this.syncActors(true);
       this.maybeEnd();
@@ -1064,7 +1074,24 @@ export class GameScene extends Phaser.Scene {
       state: this.state,
       syncActors: (snap: boolean) => this.syncActors(snap),
       snapImg: (img: Phaser.GameObjects.Image, gx: number, gy: number) => this.snapImg(img, gx, gy),
+      onPlayerMoveLight: (t: number) => this.tickMoveLight(t),
     };
+  }
+
+  /** Lamp bloom + tile wash follow the surveyor hop. */
+  private tickMoveLight(t: number): void {
+    if (!this.lightView.hasMoveBlend()) return;
+    this.lightView.setMoveLightProgress(t, this.tileSprites);
+    this.refreshMoveLightFx();
+  }
+
+  private refreshMoveLightFx(): void {
+    const st = this.state;
+    const sources = this.lightView.allSources(st, this.animFrame);
+    this.drawFieldMotes();
+    this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
+    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
+    this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
   }
 
   private maybeEnd(): void {
@@ -1601,6 +1628,13 @@ export class GameScene extends Phaser.Scene {
     const shear = computeShearPressure(st);
     this.lightView.syncTurn(st.turn);
     const sources = this.lightView.allSources(st, this.animFrame);
+
+    // Mid-hop: keep blending the captured wash — don't snap tiles to the destination.
+    if (this.lightView.hasMoveBlend()) {
+      this.refreshMoveLightFx();
+      return;
+    }
+
     this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
@@ -1731,7 +1765,11 @@ export class GameScene extends Phaser.Scene {
   /** Everything solid enough to throw a shadow this frame. */
   private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean; prop?: boolean }> {
     const st = this.state;
-    yield { gx: st.player.x, gy: st.player.y };
+    const carry = this.lightView.lampCarryAt();
+    yield {
+      gx: carry?.x ?? st.player.x,
+      gy: carry?.y ?? st.player.y,
+    };
     for (const en of st.enemies) {
       if (!en.alive) continue;
       yield { gx: en.x, gy: en.y, tall: en.tier !== 'normal' };

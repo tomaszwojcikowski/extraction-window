@@ -63,6 +63,25 @@ function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource 
   return { ...s, color: s.color ?? fallback };
 }
 
+function cloneGrid(src: number[][]): number[][] {
+  return src.map((row) => row.slice());
+}
+
+function lerpTint(a: number, b: number, t: number): number {
+  const u = Math.min(1, Math.max(0, t));
+  const ar = (a >> 16) & 0xff;
+  const ag = (a >> 8) & 0xff;
+  const ab = a & 0xff;
+  const br = (b >> 16) & 0xff;
+  const bg = (b >> 8) & 0xff;
+  const bb = b & 0xff;
+  return (
+    (Math.round(ar + (br - ar) * u) << 16) |
+    (Math.round(ag + (bg - ag) * u) << 8) |
+    Math.round(ab + (bb - ab) * u)
+  );
+}
+
 /** Presentation bloom gain — duct swallows, plains lifts, ash chokes. */
 function biomeBloomGain(sectorId: SectorId): number {
   const a = BIOME_AMBIENT[sectorId].ambient;
@@ -80,6 +99,8 @@ function biomeBloomGain(sectorId: SectorId): number {
  *     emitters by flood energy (wrap + scrub), not bare circles;
  *  3. light *arrives* — sector entry sweeps in behind a front (`applySweep`)
  *     and a flare has an ignition beat (`ignite`) instead of a state change.
+ *     Tile steps carry the personal lamp with the hop (`captureMoveFrom` /
+ *     `setMoveLightProgress`) so bloom and wash do not snap ahead of the sprite.
  *
  * FOV still gates fog; brightness still matches gameplay `isLit` / quiet dim.
  */
@@ -94,6 +115,21 @@ export class LightView {
   /** Per-source flood energy grids — colour/casts match gameplay wrap + scrub. */
   private sourceEnergy: number[][][] = [];
   private sourceEnergyKey = '';
+  /**
+   * Lamp carry during a tile step — bloom follows the surveyor instead of
+   * snapping to the destination while the sprite is still mid-hop.
+   */
+  private lampCarry: { x: number; y: number } | null = null;
+  private moveBlend: {
+    fromAlpha: number[][];
+    fromTint: number[][];
+    toAlpha: number[][];
+    toTint: number[][];
+    lampFrom: { x: number; y: number };
+    lampTo: { x: number; y: number };
+    t: number;
+    locked: boolean;
+  } | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -125,6 +161,89 @@ export class LightView {
     this.tintGrid = [];
     this.sourceEnergy = [];
     this.sourceEnergyKey = '';
+    this.endMoveLight();
+  }
+
+  /** True while a locked step blend is driving presentation. */
+  hasMoveBlend(): boolean {
+    return this.moveBlend?.locked === true;
+  }
+
+  /**
+   * Snapshot the current tile wash as the blend start. Call before destination
+   * `applyTileLighting` so the lamp can travel with the hop.
+   */
+  captureMoveFrom(from: { x: number; y: number }, to: { x: number; y: number }): void {
+    if (!this.alphaGrid.length) {
+      this.moveBlend = null;
+      this.lampCarry = null;
+      return;
+    }
+    this.moveBlend = {
+      fromAlpha: cloneGrid(this.alphaGrid),
+      fromTint: cloneGrid(this.tintGrid),
+      toAlpha: [],
+      toTint: [],
+      lampFrom: { x: from.x, y: from.y },
+      lampTo: { x: to.x, y: to.y },
+      t: 0,
+      locked: false,
+    };
+    // Carry stays null until lock — destination lighting must use sim lamp coords.
+    this.lampCarry = null;
+  }
+
+  /**
+   * After destination lighting filled the caches, lock the blend end and show
+   * the start frame so the wash doesn't pop ahead of the sprite.
+   */
+  lockMoveBlend(tileSprites: Phaser.GameObjects.Image[][]): void {
+    const blend = this.moveBlend;
+    if (!blend || blend.locked) return;
+    blend.toAlpha = cloneGrid(this.alphaGrid);
+    blend.toTint = cloneGrid(this.tintGrid);
+    blend.locked = true;
+    this.setMoveLightProgress(0, tileSprites);
+  }
+
+  /** Drive lamp carry + tile wash with the move tween (0 → 1). */
+  setMoveLightProgress(t: number, tileSprites: Phaser.GameObjects.Image[][]): void {
+    const blend = this.moveBlend;
+    if (!blend?.locked) return;
+    const u = Math.min(1, Math.max(0, t));
+    blend.t = u;
+    this.lampCarry = {
+      x: blend.lampFrom.x + (blend.lampTo.x - blend.lampFrom.x) * u,
+      y: blend.lampFrom.y + (blend.lampTo.y - blend.lampFrom.y) * u,
+    };
+    const h = Math.min(tileSprites.length, blend.fromAlpha.length, blend.toAlpha.length);
+    for (let y = 0; y < h; y++) {
+      const row = tileSprites[y];
+      const fa = blend.fromAlpha[y];
+      const ta = blend.toAlpha[y];
+      const ft = blend.fromTint[y];
+      const tt = blend.toTint[y];
+      if (!row || !fa || !ta || !ft || !tt) continue;
+      const w = Math.min(row.length, fa.length, ta.length);
+      for (let x = 0; x < w; x++) {
+        const img = row[x];
+        if (!img) continue;
+        const a0 = fa[x] ?? 1;
+        const a1 = ta[x] ?? 1;
+        img.setAlpha(a0 + (a1 - a0) * u);
+        img.setTint(lerpTint(ft[x] ?? 0xffffff, tt[x] ?? 0xffffff, u));
+      }
+    }
+  }
+
+  endMoveLight(): void {
+    this.moveBlend = null;
+    this.lampCarry = null;
+  }
+
+  /** Fractional lamp position while stepping, else null. */
+  lampCarryAt(): { x: number; y: number } | null {
+    return this.lampCarry;
   }
 
   addFxLight(src: LightSource): void {
@@ -159,12 +278,22 @@ export class LightView {
    * without re-walking Dijkstra every tick.
    */
   private ensureSourceEnergy(st: GameState, sources: LightSource[]): void {
-    const key = `${st.turn}:${st.width}x${st.height}:${sources
+    // During a hop the bloom lamp floats, but flood energy stays on the destination
+    // tile so we do not re-Dijkstra every tween frame.
+    const forFlood =
+      this.moveBlend?.locked
+        ? sources.map((s, i) =>
+            i === 0
+              ? { ...s, x: this.moveBlend!.lampTo.x, y: this.moveBlend!.lampTo.y }
+              : s,
+          )
+        : sources;
+    const key = `${st.turn}:${st.width}x${st.height}:${forFlood
       .map((s) => `${s.x},${s.y},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`)
       .join('|')}`;
-    if (key === this.sourceEnergyKey && this.sourceEnergy.length === sources.length) return;
+    if (key === this.sourceEnergyKey && this.sourceEnergy.length === forFlood.length) return;
     this.sourceEnergyKey = key;
-    this.sourceEnergy = sources.map((s) => {
+    this.sourceEnergy = forFlood.map((s) => {
       const grid = Array.from({ length: st.height }, () =>
         Array.from({ length: st.width }, () => 0),
       );
@@ -423,16 +552,22 @@ export class LightView {
    */
   allSources(st: GameState, animFrame: number): LightSource[] {
     const pulse = 0.85 + (animFrame % 3) * 0.08;
-    const sim = collectLightSources(st).map((s) => {
+    const carry = this.lampCarry;
+    const sim = collectLightSources(st).map((s, i) => {
       const colored = withColor(s);
+      // Personal lamp is always first from collectLightSources — carry it with the hop.
+      const placed =
+        i === 0 && carry
+          ? { ...colored, x: carry.x, y: carry.y }
+          : colored;
       // Living / unstable emitters breathe; engineered ones hold steady.
       if (
         s.life === undefined &&
         (s.color === LightTemp.fauna || s.color === LightTemp.marker || s.color === LightTemp.beacon)
       ) {
-        return { ...colored, intensity: colored.intensity * pulse };
+        return { ...placed, intensity: placed.intensity * pulse };
       }
-      return colored;
+      return placed;
     });
 
     for (const en of st.enemies) {
@@ -448,8 +583,8 @@ export class LightView {
 
     if (st.patternDesync > 0) {
       sim.push({
-        x: st.player.x,
-        y: st.player.y,
+        x: carry?.x ?? st.player.x,
+        y: carry?.y ?? st.player.y,
         radius: 2.5,
         color: LightTemp.pattern,
         intensity: 0.55 + (st.patternDesync % 2) * 0.25,
@@ -639,7 +774,9 @@ export class LightView {
     if (st.patternDesync > 0) {
       playerSprite.setTint(LightTemp.pattern);
     } else {
-      const tint = keyTint(st.player.x, st.player.y);
+      const sampleX = this.lampCarry?.x ?? st.player.x;
+      const sampleY = this.lampCarry?.y ?? st.player.y;
+      const tint = keyTint(Math.round(sampleX), Math.round(sampleY));
       if (tint !== null) playerSprite.setTint(tint);
       else playerSprite.clearTint();
     }

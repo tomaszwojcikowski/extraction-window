@@ -588,6 +588,8 @@ export type MoveAnimHost = {
   state: GameState;
   syncActors(snapPositions: boolean): void;
   snapImg(img: Phaser.GameObjects.Image, gx: number, gy: number): void;
+  /** Drive lamp / wash with the surveyor hop (0 → 1). */
+  onPlayerMoveLight?: (t: number) => void;
 };
 
 const HOP_PX = 5;
@@ -607,6 +609,7 @@ function tweenTileStep(
   to: { x: number; y: number },
   hop: boolean,
   done: () => void,
+  onProgress?: (t: number) => void,
 ): void {
   const a = host.worldXY(from.x, from.y);
   const b = host.worldXY(to.x, to.y);
@@ -627,6 +630,7 @@ function tweenTileStep(
       if (label?.active) {
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
+      onProgress?.(t);
     },
     onComplete: () => {
       if (img.active) {
@@ -634,6 +638,7 @@ function tweenTileStep(
         img.setDisplaySize(img.displayWidth, img.displayHeight);
       }
       if (label?.active) label.setPosition(b.x, b.y - TILE_DRAW / 2 + 5);
+      onProgress?.(1);
       done();
     },
   });
@@ -736,6 +741,7 @@ export function playMoveAnims(
       { x: px, y: py },
       true,
       runOtherPhase,
+      host.onPlayerMoveLight,
     );
     host.time.delayedCall(MOVE_MS * 2 + 180, () => {
       if (!finished) complete();
