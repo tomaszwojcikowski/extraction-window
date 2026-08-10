@@ -10,7 +10,7 @@ import {
 } from './textures';
 import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
-import { NPCS, ALLIES } from '../data/npcs';
+import { ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { tileBrightness } from '../sim/light';
@@ -1210,17 +1210,16 @@ export class GameScene extends Phaser.Scene {
       npcIds.add(n.id);
       const visible = st.visible[n.y]?.[n.x] ?? false;
       let view = this.npcViews.get(n.id);
-      const def = NPCS[n.kind];
       if (!view) {
         const img = this.add.image(0, 0, npcTextureKey(n.kind));
         img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
-        const label = this.add.text(0, 0, def.glyph, {
+        // Silhouette only — no letter glyphs over field contacts.
+        const label = this.add.text(0, 0, '', {
           fontFamily: FONT_DATA,
           fontSize: '11px',
           color: ThemeCss.arcWhite,
-          stroke: ThemeCss.groundDeep,
-          strokeThickness: 3,
         });
+        label.setVisible(false);
         label.setOrigin(0.5, 1);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
@@ -1230,7 +1229,7 @@ export class GameScene extends Phaser.Scene {
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
       view.img.setVisible(visible);
-      view.label.setVisible(visible && !n.talked);
+      view.label.setVisible(false);
       view.img.setAlpha(n.talked ? 0.45 : 1);
       if (snapPositions) {
         this.snapImg(view.img, n.x, n.y);
