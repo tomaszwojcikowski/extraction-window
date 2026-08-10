@@ -57,7 +57,11 @@ export const LORE = {
     'brace, or leave the painted tiles. Winding up next to you —\n' +
     'f shoves it and breaks the set.\n' +
     'A shove deals nothing on open floor, so pick your ground: cover\n' +
-    'behind it turns the push into a slam, caustic footing does worse.\n' +
+    'behind it turns the push into a slam, caustic footing does worse,\n' +
+    'and a second hostile stacked behind takes both of them down.\n' +
+    'Anything off its footing eats the next strike clean.\n' +
+    'Every hostile in contact past the first pries a point off DEF —\n' +
+    'fight in a doorway, or brace to cover your sides.\n' +
     '\n' +
     'PRIORITIES\n' +
     'Kit keeps you alive (med / Bus / Shield).\n' +
@@ -429,6 +433,8 @@ export const LORE = {
   'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
   'LOG-SHOVE': 'Shoulder in — driven back a tile.',
   'LOG-SHOVE-SLAM': 'Backed against cover — it eats the impact.',
+  'LOG-SHOVE-COLLIDE': 'Driven into the one behind it — both go down hard.',
+  'LOG-PUNISH': 'It has lost its footing — the strike goes in clean.',
   'LOG-SHOVE-GROUND': 'Thrown into live ground.',
   'LOG-SHOVE-EMPTY': 'Nothing in reach to shove.',
   'LOG-SHOVE-WHICH': 'Shove which way?',

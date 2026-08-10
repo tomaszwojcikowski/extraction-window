@@ -132,6 +132,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - Illumination / LIT / SHADOW / QUIET drive combat hooks; bloom is decoration around that grid.
 - Wake Impact only for fauna the player could already read via live/peek tells.
 - Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use.
+- A rule that quietly changes a number has to show that number moving. Encirclement rides the DEF readout as `DEF 4+1−2` rather than earning a badge, so the penalty is legible where its effect is.
 - Autopilot + playtests are the balance oracle (55–85% WR) — feel changes that break legality are bugs.
 
 **Anti-pattern:** PointLight (or any FX) that reads as light through walls while help says “pool stops at walls.”
@@ -197,6 +198,9 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 - After major sim/UI-to-action changes: `build` → `playtest:smoke` (+ full `playtest` when win/sector/inventory/autopilot touched).
 - Pass briefs state a **single bold bet** and QA criteria (see `docs/experiment/PASS*_DESIGN.md`).
+- Separate the rule from the policy before reading a result. A player option cannot lower the win rate on its own; when the number drops after adding one, the oracle's new habit is the suspect. Ablate it before touching the rule.
+- **A turn spent on defence is a turn the Window still bills.** Answering telegraphs by bracing, retreating to better footing, and shoving to thin a crowd each cost the oracle 6–20 points, because the enemy simply re-establishes and the clock keeps running. Defensive options have to convert into damage or position that survives the enemy phase, or they are traps dressed as choices.
+- 30 seeds cannot see a 5-point move. Confirm anything near a band edge on 200+.
 
 **Anti-pattern:** Shipping three overlapping feel bets without a kill criterion.
 

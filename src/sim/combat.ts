@@ -33,6 +33,28 @@ export function armorDefBonus(state: GameState): number {
   return ARMOR_DEF_BONUS[armor] ?? 0;
 }
 
+/**
+ * You cannot cover every side at once. Each hostile in contact past the first
+ * peels a point of defence off, which is what makes the shape of a room worth
+ * anything: a doorway lets one of them reach you, open floor lets four.
+ *
+ * Bracing plants you and covers the sides, which is the active answer: against
+ * a crowd it is worth more than the two points it prints, and it is the one
+ * reply that does not hand the turn straight back. Capped so a swarm is a
+ * reason to change ground rather than an instant death.
+ */
+const MAX_FLANK_PENALTY = 2;
+
+export function flankPenalty(state: GameState): number {
+  if (state.player.braceTurns > 0) return 0;
+  const inContact = state.enemies.filter(
+    (enemy) =>
+      enemy.alive &&
+      Math.abs(enemy.x - state.player.x) + Math.abs(enemy.y - state.player.y) === 1,
+  ).length;
+  return Math.min(MAX_FLANK_PENALTY, Math.max(0, inContact - 1));
+}
+
 function hasEscortCover(state: GameState): boolean {
   return state.allies.some(
     (ally) =>
@@ -91,18 +113,29 @@ export function applyPlayerDamage(
   return { armorLost, hpLost, fullyAbsorbed: hpLost === 0 && armorLost > 0 };
 }
 
+/**
+ * Striking something that has lost its footing. This is the payoff for every
+ * way the game knocks a hostile off balance — a slam into cover, a two-tile
+ * charge that lands winded, a baton — so the setup turn buys a real turn back
+ * instead of only denying one.
+ */
+const PUNISH_ATK = 3;
+
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
   const overcharge =
     hasSkill(state, 'overcharge') && state.player.hp <= state.player.maxHp * 0.5 ? 1 : 0;
+  const offBalance = hasStatus(enemy, 'stun');
   const atk =
     state.player.atk +
     toolAtkBonus(state) +
     (state.player.probeTurns > 0 ? 2 : 0) +
     (state.player.stimTurns > 0 ? 3 : 0) +
     (hasStatus(enemy, 'expose') ? 4 : 0) +
+    (offBalance ? PUNISH_ATK : 0) +
     overcharge;
   const def = enemy.def - (hasStatus(enemy, 'expose') ? 2 : 0);
   const dmg = meleeDamage(atk, Math.max(0, def), variance);
+  if (offBalance) pushLog(state, 'LOG-PUNISH');
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
   const name = lore(ENEMIES[enemy.kind].loreName);
@@ -135,6 +168,7 @@ export function enemyAttack(
     (state.player.braceTurns > 0 ? 2 : 0) +
     (hasEscortCover(state) ? 1 : 0) +
     lastWindow -
+    flankPenalty(state) -
     (hasStatus(state.player, 'expose') ? 2 : 0);
   const atk = enemy.atk + (opts?.bonusAtk ?? 0);
   const rawDamage = meleeDamage(atk, Math.max(0, def), variance);

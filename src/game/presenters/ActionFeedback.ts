@@ -64,6 +64,12 @@ export function actionFloatLabels(
       case 'LOG-SHOVE-GROUND':
         next = { label: 'INTO LIVE GROUND', color: ThemeCss.arc };
         break;
+      case 'LOG-SHOVE-COLLIDE':
+        next = { label: 'COLLISION · BOTH DOWN', color: ThemeCss.rust };
+        break;
+      case 'LOG-PUNISH':
+        next = { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag };
+        break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };

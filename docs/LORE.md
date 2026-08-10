@@ -95,8 +95,16 @@ is the answer: a shove drives it back a tile and breaks whatever it was setting
 up. On open floor that is all it does — no damage, one turn spent — so the verb
 is really a question about where you chose to fight. Cover behind the target
 turns the push into a slam that staggers it; caustic ground turns it into the
-sector doing the killing, and the burn keeps running after you walk away.
+sector doing the killing, and the burn keeps running after you walk away; a
+second hostile stacked behind it takes the collision too, and both go down.
 Crowned hostiles absorb the impact without losing their footing.
+
+**Footing.** Anything knocked off balance — slammed, collided, winded by its own
+two-tile charge, or clipped by a baton — eats the next strike clean, so the
+setup turn buys a turn back instead of only denying one. The same currency runs
+the other way: every hostile in contact past the first pries a point of defence
+off the surveyor, to a limit of two. That is what a doorway is worth, and what
+bracing buys beyond its own two points, since planting covers the sides.
 
 ### Death drops
 

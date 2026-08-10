@@ -40,8 +40,8 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
 | Shift + dir | Peek the wake footprint of the next tile (no turn spent) |
 | `.` | Wait |
-| `b` | Brace: +2 DEF through the enemy phase; cancels a charge's bonus (not the rift's pulse) |
-| `f` | Shove an adjacent hostile a tile back — breaks its windup; a direction follows if two are in reach |
+| `b` | Brace: +2 DEF through the enemy phase; covers your flanks; cancels a charge's bonus (not the rift's pulse) |
+| `f` | Shove an adjacent hostile a tile back — breaks its windup, and spends the ground behind it; a direction follows if two are in reach |
 | `i` | Open field kit |
 | `u` | Use selected item |
 | `1`–`9` | Select kit slot |

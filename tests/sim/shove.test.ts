@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction } from '../../src/sim';
 import { hasBeamLine } from '../../src/sim/ai';
+import { playerAttack } from '../../src/sim/combat';
 import { tryShove } from '../../src/sim/shove';
 import { manhattan } from '../../src/sim/spatial';
 import { hasStatus } from '../../src/sim/status';
@@ -92,16 +93,62 @@ describe('shove', () => {
     expect(hasStatus(boss, 'stun')).toBe(false);
   });
 
-  it('will not displace a hostile onto an ally or another hostile', () => {
+  it('drives a hostile into the one queued behind it, downing both', () => {
     const st = lane();
-    const front = makeEnemy({ id: 1, kind: 'mite', x: 6, y: 5 });
-    const behind = makeEnemy({ id: 2, kind: 'mite', x: 7, y: 5 });
+    const front = makeEnemy({ id: 1, kind: 'stalker', x: 6, y: 5, hp: 20, maxHp: 20 });
+    const behind = makeEnemy({
+      id: 2,
+      kind: 'stalker',
+      x: 7,
+      y: 5,
+      hp: 20,
+      maxHp: 20,
+      intent: 'pounce',
+      windup: 1,
+    });
     st.enemies = [front, behind];
 
     tryShove(st, 1, 0);
 
     expect(front.x).toBe(6);
-    expect(front.hp).toBeLessThan(front.maxHp);
+    expect(front.hp).toBeLessThan(20);
+    expect(behind.hp).toBeLessThan(20);
+    expect(hasStatus(front, 'stun')).toBe(true);
+    expect(hasStatus(behind, 'stun')).toBe(true);
+    expect(behind.intent).toBeUndefined();
+    expect(lastLog(st, 'LOG-SHOVE-COLLIDE')).toBeTruthy();
+  });
+});
+
+describe('knocking a hostile off balance opens a punish window', () => {
+  it('strikes harder against a hostile that has lost its footing', () => {
+    const setup = (stunned: boolean) => {
+      const st = lane();
+      st.rng = () => 0.5;
+      const enemy = makeEnemy({
+        kind: 'stalker',
+        x: 6,
+        y: 5,
+        hp: 60,
+        maxHp: 60,
+        statuses: stunned ? { stun: 2 } : {},
+      });
+      st.enemies = [enemy];
+      playerAttack(st, enemy, 0);
+      return 60 - enemy.hp;
+    };
+
+    expect(setup(true)).toBeGreaterThan(setup(false));
+  });
+
+  it('reports the opening so the setup turn reads as deliberate', () => {
+    const st = lane();
+    const enemy = makeEnemy({ kind: 'stalker', x: 6, y: 5, hp: 60, maxHp: 60, statuses: { stun: 2 } });
+    st.enemies = [enemy];
+
+    playerAttack(st, enemy, 0);
+
+    expect(lastLog(st, 'LOG-PUNISH')).toBeTruthy();
   });
 });
 

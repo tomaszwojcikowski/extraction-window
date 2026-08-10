@@ -4,7 +4,7 @@ import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import { describeObjective, stickyMilestone, type GameState } from '../../sim';
 import { statusHud } from '../../sim/status';
-import { armorDefBonus, toolAtkBonus } from '../../sim/combat';
+import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import {
   EXPLORE_BONUS_THRESHOLD,
@@ -186,9 +186,13 @@ export class HudView {
       (st.player.probeTurns > 0 ? 2 : 0) +
       (st.player.stimTurns > 0 ? 3 : 0);
     const defBonus = armorDefBonus(st);
+    // Surrounded is a rule the player has to be able to see paying out, so it
+    // rides the existing DEF readout rather than earning a badge of its own.
+    const flanked = flankPenalty(st);
+    const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
     const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${st.player.def}${defBonus ? `+${defBonus}` : ''}${emPart}${systems}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);

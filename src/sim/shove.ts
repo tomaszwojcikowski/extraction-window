@@ -85,6 +85,20 @@ function displacementBlocked(state: GameState, enemy: Enemy, x: number, y: numbe
 }
 
 /**
+ * A packed doorway is cover made of bodies. The one behind is not braced for
+ * it, so the collision knocks both off their set — which is the whole reason
+ * to fight a crowd from the narrow end.
+ */
+function collide(state: GameState, target: Enemy, behind: Enemy): void {
+  pushLog(state, 'LOG-SHOVE-COLLIDE', lore(ENEMIES[behind.kind].loreName));
+  for (const hit of [target, behind]) {
+    hurtEnemy(state, hit, SLAM_DAMAGE, 'collision');
+    stagger(hit);
+    breakSet(hit);
+  }
+}
+
+/**
  * Put a shoulder into an adjacent hostile.
  *
  * A clean shove deals nothing — it breaks the target's set and buys a tile,
@@ -105,12 +119,19 @@ export function tryShove(state: GameState, dx: number, dy: number): boolean {
   const nx = tx + dx;
   const ny = ty + dy;
 
-  breakSet(target);
+  // Damage lands before the set is cleared, so a shove that kills a hostile
+  // mid-windup still reads as the interrupt it was.
+  const behind = enemyAt(state, nx, ny, target.id);
+  if (behind?.alive) {
+    collide(state, target, behind);
+    return true;
+  }
 
   if (displacementBlocked(state, target, nx, ny)) {
     pushLog(state, 'LOG-SHOVE-SLAM', name);
     hurtEnemy(state, target, SLAM_DAMAGE, 'slam');
     stagger(target);
+    breakSet(target);
     return true;
   }
 
@@ -125,5 +146,6 @@ export function tryShove(state: GameState, dx: number, dy: number): boolean {
     hurtEnemy(state, target, groundDamage, 'ground');
     if (target.alive) addStatus(target, 'ion_burn', GROUND_BURN_TURNS);
   }
+  breakSet(target);
   return true;
 }

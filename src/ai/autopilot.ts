@@ -40,8 +40,9 @@ const SURVIVAL_FORKS = ['triage', 'ion_skin', 'deep_reserve'] as const;
 
 /**
  * When a shoulder beats a swing. Breaking a set costs the swing outright, so
- * only spend it on a windup that is about to land or when the ground behind
- * the target pays the damage back.
+ * only spend it on a windup that is about to land, when the ground behind the
+ * target pays the damage back, or when it thins out a crowd that is already
+ * peeling defence off.
  */
 function shoveOpportunity(state: GameState): { dx: number; dy: number } | null {
   let fallback: { dx: number; dy: number } | null = null;
@@ -54,10 +55,14 @@ function shoveOpportunity(state: GameState): { dx: number; dy: number } | null {
     const tile = state.tiles[enemy.y + dy]?.[enemy.x + dx];
     const backedIntoCover = !tile?.walkable;
     const causticBehind = tile ? hostileGround(tile.kind) : false;
+    const behindOccupied = state.enemies.some(
+      (other) => other.alive && other.id !== enemy.id && other.x === enemy.x + dx && other.y === enemy.y + dy,
+    );
 
-    // Live ground out-damages a swing; a wall only pays when the stagger
-    // cancels an attack that was actually coming.
+    // Live ground out-damages a swing; a collision downs two at once; a wall
+    // only pays when the stagger cancels an attack that was actually coming.
     if (causticBehind) return { dx, dy };
+    if (behindOccupied) return { dx, dy };
     if (backedIntoCover && enemy.windup > 0 && !fallback) fallback = { dx, dy };
   }
   return fallback;
@@ -299,6 +304,7 @@ export function chooseAction(
 
   const shove = shoveOpportunity(state);
   if (shove) return { type: 'shove', dx: shove.dx, dy: shove.dy };
+
 
   // Dart when mid HP and a FOV threat on a valid ray
   if (
