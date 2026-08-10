@@ -9,6 +9,7 @@
  */
 import { getSector } from '../src/data/encounters';
 import { generateSectorMap } from '../src/map/generator';
+import { layoutForSector } from '../src/map/layout';
 import type { Tile } from '../src/sim/types';
 
 const GLYPH: Partial<Record<Tile['kind'], string>> = {
@@ -61,7 +62,7 @@ for (const index of sectors) {
     return acc;
   }, {});
   console.log(
-    `\n=== ${sector.id} (index ${index}, seed ${seed}) — ${map.rooms.length} rooms: ` +
+    `\n=== ${sector.id} [${layoutForSector(sector.id)}] (index ${index}, seed ${seed}) — ${map.rooms.length} rooms: ` +
       Object.entries(counts)
         .map(([k, v]) => `${v}×${k}`)
         .join(', ') +

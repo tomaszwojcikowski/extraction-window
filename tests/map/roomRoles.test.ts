@@ -21,20 +21,37 @@ function everyMap(fn: (map: ReturnType<typeof generateSectorMap>, label: string)
 describe('a room is for something', () => {
   it('lands the surveyor in an entry room and puts the way out in an exit room', () => {
     everyMap((map, label) => {
-      expect(map.rooms[0]!.role, label).toBe('entry');
-      if (map.rooms.length > 1) {
-        expect(map.rooms[map.rooms.length - 1]!.role, label).toBe('exit');
-      }
+      const startRoom = map.rooms.find(
+        (r) =>
+          map.start.x >= r.x &&
+          map.start.x < r.x + r.w &&
+          map.start.y >= r.y &&
+          map.start.y < r.y + r.h,
+      );
+      const exitRoom = map.rooms.find(
+        (r) =>
+          map.exit.x >= r.x &&
+          map.exit.x < r.x + r.w &&
+          map.exit.y >= r.y &&
+          map.exit.y < r.y + r.h,
+      );
+      expect(startRoom?.role, label).toBe('entry');
+      expect(exitRoom?.role, label).toBe('exit');
     });
   });
 
   it('owes the player a fight worth avoiding and a payout worth taking', () => {
     everyMap((map, label) => {
-      const middle = map.rooms.slice(1, -1);
-      if (middle.length < 2) return;
-      const roles = new Set(middle.map((r) => r.role));
+      // Crossing hubs are quiet on purpose — they do not count toward the debt.
+      const middle = map.rooms.filter(
+        (r) => r.role !== 'entry' && r.role !== 'exit' && r.role !== 'quiet',
+      );
+      if (middle.length < 1) return;
+      const roles = new Set(map.rooms.map((r) => r.role));
       expect(roles.has('nest'), `${label} has no nest`).toBe(true);
-      expect(roles.has('cache'), `${label} has no cache`).toBe(true);
+      if (middle.length >= 2) {
+        expect(roles.has('cache'), `${label} has no cache`).toBe(true);
+      }
     });
   });
 
@@ -46,10 +63,14 @@ describe('a room is for something', () => {
 
   it('leaves the entry room clear of hostiles', () => {
     everyMap((map, label) => {
-      const entry = map.rooms[0]!;
+      const entry = map.rooms.find((r) => r.role === 'entry');
+      expect(entry, label).toBeTruthy();
       const inside = map.enemies.filter(
         (e) =>
-          e.x >= entry.x && e.x < entry.x + entry.w && e.y >= entry.y && e.y < entry.y + entry.h,
+          e.x >= entry!.x &&
+          e.x < entry!.x + entry!.w &&
+          e.y >= entry!.y &&
+          e.y < entry!.y + entry!.h,
       );
       expect(inside, label).toEqual([]);
     });

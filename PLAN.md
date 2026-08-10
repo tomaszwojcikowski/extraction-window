@@ -42,6 +42,15 @@ Fixed order: Relay Scar Flats → Shearwash Basin → Shear Canopy → **Crystal
 
 Partly procedural per seed: layouts, room roles, multiroom quests, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy/reef scrub, rubble mazes, vent corridors, vault choke rooms.
 
+**Every sector has a shape.** Six layout grammars own placement and wiring so
+sectors stop sharing one topology: `scatter` (plains/flood/approach — open chain),
+`spine` (ridge — west→east run with optional pockets off the path), `hub`
+(beacon/vault — central crossing kept quiet, land and leave on opposite arms),
+`lattice` (duct/trench — coarse grid, orthogonal runs), `branch`
+(canopy/reef/spire — tree with dead ends), `warren` (ruin/ash/fissure/brine —
+tight packing, one ring of loops). Walking into the duct and walking into the
+plains are different shapes, not the same shape with different paint.
+
 **Every room has a job.** A room is assigned a role at generation and the role owns
 its contents, so the sector's hostile and loot budgets are concentrated rather than
 smeared evenly across the floor: `nest` (a pack behind cover that hides its size),

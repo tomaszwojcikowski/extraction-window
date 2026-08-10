@@ -75,17 +75,32 @@ function weightedRole(weights: Array<[RoomRole, number]>, rng: Rng): RoomRole {
 }
 
 /**
- * Label every room. The first and last are spoken for — the surveyor lands in
- * one and leaves by the other — and the rest are drawn from the sector's mix,
- * except that a sector always owes the player one fight worth avoiding and one
- * payout worth taking.
+ * Label every room. The start and exit rooms are spoken for — the surveyor
+ * lands in one and leaves by the other — and the rest are drawn from the
+ * sector's mix, except that a sector always owes the player one fight worth
+ * avoiding and one payout worth taking.
+ *
+ * A `crossing` (the hub of a hub layout) is forced quiet: the player has to
+ * walk through it, so putting a pack there is a tax, not a choice.
  */
-export function assignRoomRoles(rooms: Room[], sector: SectorDef, rng: Rng): void {
+export function assignRoomRoles(
+  rooms: Room[],
+  sector: SectorDef,
+  rng: Rng,
+  startRoom?: Room,
+  endRoom?: Room,
+  crossing?: Room,
+): void {
   if (!rooms.length) return;
-  rooms[0]!.role = 'entry';
-  if (rooms.length > 1) rooms[rooms.length - 1]!.role = 'exit';
+  const entry = startRoom ?? rooms[0]!;
+  const exit = endRoom ?? rooms[rooms.length - 1]!;
+  for (const room of rooms) {
+    if (room === entry) room.role = 'entry';
+    else if (room === exit) room.role = 'exit';
+    else if (crossing && room === crossing) room.role = 'quiet';
+  }
 
-  const middle = rooms.slice(1, -1);
+  const middle = rooms.filter((r) => r !== entry && r !== exit && r !== crossing);
   const weights = roleWeights(sector);
   for (const room of middle) room.role = weightedRole(weights, rng);
 
@@ -95,10 +110,8 @@ export function assignRoomRoles(rooms: Room[], sector: SectorDef, rng: Rng): voi
     const target = spare.length ? pick(rng, spare) : middle[0];
     if (target) target.role = role;
   };
-  if (middle.length >= 2) {
-    guarantee('nest');
-    guarantee('cache');
-  }
+  if (middle.length >= 1) guarantee('nest');
+  if (middle.length >= 2) guarantee('cache');
 }
 
 // --- Ground -----------------------------------------------------------------

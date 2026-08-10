@@ -24,6 +24,7 @@ import {
   isMultiSiteKind,
   pickRoomQuestKind,
 } from '../sim/roomQuest';
+import { layoutForSector, placeLayout } from './layout';
 import {
   assignRoomRoles,
   dressRoomRoles,
@@ -337,7 +338,9 @@ function dressSealedHatches(
   exit: Pos,
   rng: Rng,
 ): void {
-  const mid = rooms.filter((_, i) => i > 0 && i < rooms.length - 1);
+  const contains = (room: Room, p: Pos): boolean =>
+    p.x >= room.x && p.x < room.x + room.w && p.y >= room.y && p.y < room.y + room.h;
+  const mid = rooms.filter((r) => !contains(r, start) && !contains(r, exit));
   if (mid.length === 0) return;
   for (const room of mid) {
     if (rng() > 0.22) continue;
@@ -405,15 +408,6 @@ function makeRoom(x: number, y: number, w: number, h: number): Room {
   return { x, y, w, h, cx: x + Math.floor(w / 2), cy: y + Math.floor(h / 2), role: 'quiet' };
 }
 
-function roomOverlaps(a: Room, b: Room, pad = 1): boolean {
-  return !(
-    a.x + a.w + pad <= b.x ||
-    b.x + b.w + pad <= a.x ||
-    a.y + a.h + pad <= b.y ||
-    b.y + b.h + pad <= a.y
-  );
-}
-
 function floorTiles(tiles: Tile[][]): Pos[] {
   const out: Pos[] = [];
   for (let y = 0; y < tiles.length; y++) {
@@ -442,75 +436,31 @@ export function generateSectorMap(
     Array.from({ length: width }, () => wall()),
   );
 
-  const rooms: Room[] = [];
   const wideChance = corridorWideChance(sector.id);
   const targetRooms = randInt(rng, sector.roomCount[0], sector.roomCount[1]);
-  let attempts = 0;
-  while (rooms.length < targetRooms && attempts < 200) {
-    attempts++;
-    const { w, h } = roomSizeForBiome(sector.id, rng);
-    const x = randInt(rng, 1, width - w - 2);
-    const y = randInt(rng, 1, height - h - 2);
-    const room = makeRoom(x, y, w, h);
-    if (rooms.some((r) => roomOverlaps(r, room, 2))) continue;
-    rooms.push(room);
-    carveRoom(tiles, room);
-    if (rooms.length > 1) connect(tiles, rooms[rooms.length - 2]!, room, rng, wideChance);
-  }
-
-  // Ensure minimum rooms
-  if (rooms.length < 3) {
-    for (const [rx, ry] of [
-      [2, 2],
-      [width - 10, 2],
-      [2, height - 8],
-      [width - 10, height - 8],
-    ] as const) {
-      if (rooms.length >= 4) break;
-      const room = makeRoom(rx, ry, 6, 5);
-      if (room.x + room.w >= width - 1 || room.y + room.h >= height - 1) continue;
-      if (rooms.some((r) => roomOverlaps(r, room))) continue;
-      rooms.push(room);
-      carveRoom(tiles, room);
-      if (rooms.length > 1) connect(tiles, rooms[0]!, room, rng, wideChance);
-    }
-  }
-
-  // Extra connections for loops (ridge stays more linear)
-  if (rooms.length >= 3 && sector.id !== 'ridge') {
-    connect(tiles, rooms[0]!, rooms[rooms.length - 1]!, rng, wideChance);
-  }
-
-  // Sparse alcoves off random rooms (open feel, not crowded)
-  const alcoveN = randInt(rng, 1, 2);
-  for (let i = 0; i < alcoveN && rooms.length > 0; i++) {
-    const parent = pick(rng, rooms);
-    const ox = randInt(rng, -1, 1);
-    const oy = randInt(rng, -1, 1);
-    if (ox === 0 && oy === 0) continue;
-    const w = randInt(rng, 3, 5);
-    const h = randInt(rng, 3, 4);
-    const x = parent.cx + ox * (parent.w + 1);
-    const y = parent.cy + oy * (parent.h + 1);
-    if (x < 1 || y < 1 || x + w >= width - 1 || y + h >= height - 1) continue;
-    const alcove = makeRoom(x, y, w, h);
-    if (rooms.some((r) => roomOverlaps(r, alcove, 0))) continue;
-    rooms.push(alcove);
-    carveRoom(tiles, alcove);
-    connect(tiles, parent, alcove, rng, wideChance);
-  }
+  const layout = placeLayout(layoutForSector(sector.id), tiles, width, height, targetRooms, rng, {
+    makeRoom,
+    carveRoom,
+    connect,
+    roomSize: (r) => roomSizeForBiome(sector.id, r),
+    wideChance,
+  });
+  const rooms = layout.rooms;
 
   dressBiomeTerrain(tiles, rooms, sector, rng);
 
-  const startRoom = rooms[0]!;
-  const endRoom = rooms[rooms.length - 1]!;
+  const startRoom = rooms[layout.startIndex] ?? rooms[0]!;
+  const endRoom = rooms[layout.endIndex] ?? rooms[rooms.length - 1]!;
   const start: Pos = { x: startRoom.cx, y: startRoom.cy };
   let exit: Pos = { x: endRoom.cx, y: endRoom.cy };
   if (exit.x === start.x && exit.y === start.y && rooms.length > 1) {
-    exit = { x: rooms[1]!.cx, y: rooms[1]!.cy };
+    const other = rooms.find((r) => r !== startRoom) ?? rooms[1]!;
+    exit = { x: other.cx, y: other.cy };
   }
 
-  assignRoomRoles(rooms, sector, rng);
+  const kind = layoutForSector(sector.id);
+  const crossing = kind === 'hub' ? rooms[0] : undefined;
+  assignRoomRoles(rooms, sector, rng, startRoom, endRoom, crossing);
   dressRoomRoles(tiles, rooms, sector, rng, [start, exit]);
 
   let beaconPos: Pos | null = null;
@@ -587,8 +537,8 @@ export function generateSectorMap(
 
   // Always spawn one room quest when the sector has enough rooms
   if (rooms.length >= 3) {
-    const midRooms = rooms.filter((r, i) => i > 0 && i < rooms.length - 1 && r !== startRoom && r !== endRoom);
-    const candidates = midRooms.length >= 1 ? midRooms : rooms.slice(1, -1);
+    const midRooms = rooms.filter((r) => r !== startRoom && r !== endRoom);
+    const candidates = midRooms.length >= 1 ? midRooms : rooms.filter((r) => r !== startRoom);
     const kind = pickRoomQuestKind(rng);
 
     if (isMultiSiteKind(kind) && candidates.length >= 2) {
