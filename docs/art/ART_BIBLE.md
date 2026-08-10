@@ -135,7 +135,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 
 - Bars: HP · Shield · Bus · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
-- **Chrome is stamped kit.** Context hints sit on `drawHintPlate` (bolted strip), modals on `drawFieldPanel` (case with hard cast + feet), Window urgency is a tape strip under the meter — never toast bubbles, soft drop shadows, or translucent pulse rects over bars. Sector progress uses stencil ticks (`#` / `-`), not Unicode dots.
+- **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed; Quiet is badge plus log, not badge plus float plus camera.
 - Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.

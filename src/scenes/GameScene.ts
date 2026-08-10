@@ -369,12 +369,12 @@ export class GameScene extends Phaser.Scene {
 
     this.hintGfx = this.add.graphics().setScrollFactor(0).setDepth(92.5).setVisible(false);
     this.hintText = this.add
-      .text(this.scale.width / 2, this.scale.height - BOTTOM - 16, '', {
+      .text(14, this.scale.height - BOTTOM - 16, '', {
         fontFamily: FONT_DATA,
-        fontSize: '14px',
+        fontSize: '13px',
         color: ThemeCss.inkBright,
       })
-      .setOrigin(0.5)
+      .setOrigin(0, 0.5)
       .setScrollFactor(0)
       .setDepth(93)
       .setVisible(false);
@@ -626,7 +626,7 @@ export class GameScene extends Phaser.Scene {
       this.shearPlate.setVisible(false);
     } else {
       this.shearReadout.setVisible(true);
-      this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
+      this.shearReadout.setText(`SHEAR  ${shear.state.toUpperCase()}`);
       this.shearReadout.setColor(
         shear.state === 'Breaching'
           ? ThemeCss.arcWhite
@@ -645,14 +645,14 @@ export class GameScene extends Phaser.Scene {
             ? Theme.arc
             : Theme.tape;
       this.shearPlate.setVisible(true);
-      drawHintPlate(this.shearPlate, this.scale.width / 2, 7 + th / 2, tw, th);
+      drawHintPlate(this.shearPlate, this.scale.width / 2, 7 + th / 2, tw, th, { originX: 0.5 });
       // Retint the tab to shear accent (drawHintPlate uses tape by default).
-      const pw = Math.max(48, tw + 20);
-      const ph = Math.max(18, th + 10);
+      const pw = Math.max(48, tw + 16);
+      const ph = Math.max(16, th + 8);
       const px = Math.round(this.scale.width / 2 - pw / 2);
       const py = Math.round(7 + th / 2 - ph / 2);
       this.shearPlate.fillStyle(accent, 0.9);
-      this.shearPlate.fillRect(px + 1, py + 2, 3, ph - 4);
+      this.shearPlate.fillRect(px + 1, py + 1, 3, ph - 3);
     }
     this.arcSweep?.setPressure(shear.value, shear.accent);
   }
@@ -812,6 +812,7 @@ export class GameScene extends Phaser.Scene {
       this.hintText.y,
       this.hintText.width,
       this.hintText.height,
+      { originX: 0 },
     );
   }
 

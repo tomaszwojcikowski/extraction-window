@@ -161,15 +161,15 @@ export function drawMenuChrome(
   accent: number = Theme.tape,
 ): void {
   g.clear();
-  // Wet basalt behind the kit, catching a little more light down the middle.
-  g.fillGradientStyle(
-    shade(Theme.groundDeep, 0.85),
-    shade(Theme.groundDeep, 1.4),
-    shade(Theme.groundDeep, 1.85),
-    shade(Theme.groundDeep, 0.7),
-    1,
-  );
+  // Wet basalt behind the kit — flat and scuffed, not a soft UI gradient.
+  g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, width, height);
+  g.fillStyle(shade(Theme.groundDeep, 0.72), 1);
+  g.fillRect(0, 0, width, 22);
+  g.fillRect(0, height - 26, width, 26);
+  g.fillStyle(shade(Theme.groundDeep, 0.78), 1);
+  g.fillRect(0, 0, 26, height);
+  g.fillRect(width - 26, 0, 26, height);
   // Ash/spray flecks catching the low light.
   for (let i = 0; i < 90; i++) {
     const fx = grain(i, 3) * width;
@@ -246,17 +246,17 @@ function drawShearLegGlyphs(
   y: number,
   leg: ShearLegGlyph,
   accent: number,
-  animFrame: number,
+  _animFrame: number,
   corrosion: number,
 ): void {
-  const pulse = 0.45 + (animFrame % 4) * 0.14;
   const stormX = x;
   const busX = x + 52;
   const stormHot = leg === 'storm' || leg === 'both';
   const busHot = leg === 'bus' || leg === 'both';
+  const bite = 0.55 + corrosion * 0.4;
 
-  // Window / storm tick marks
-  g.lineStyle(1, Theme.arc, (stormHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  // Window / storm tick marks — static stencil, no breathing pulse.
+  g.lineStyle(1, Theme.arc, (stormHot ? 0.9 : 0.28) * bite);
   for (let i = 0; i < 3; i++) {
     const tx = stormX + i * 4;
     g.beginPath();
@@ -266,10 +266,10 @@ function drawShearLegGlyphs(
   }
 
   // Bus reserve capsule
-  g.lineStyle(1, Theme.tape, (busHot ? 0.85 : 0.28) * pulse * (0.5 + corrosion * 0.5));
+  g.lineStyle(1, Theme.tape, (busHot ? 0.9 : 0.28) * bite);
   g.strokeRect(busX, y, 10, 5);
   if (busHot) {
-    g.fillStyle(Theme.tape, 0.35 * pulse);
+    g.fillStyle(Theme.tape, 0.45 * bite);
     g.fillRect(busX + 1, y + 1, 8, 3);
   }
 }
@@ -373,6 +373,14 @@ export function drawFieldPanel(
   g.fillRect(x + w - 52, y + 8, 1, 3);
   g.fillRect(x + w - 17, y + 8, 1, 3);
 
+  // Interior scuffs — used laminate, not a clean modal card.
+  for (let i = 0; i < 18; i++) {
+    const sx = x + 14 + grain(i, 11) * (w - 36);
+    const sy = y + 22 + grain(i + 40, 11) * (h - 48);
+    g.fillStyle(Theme.panelEdge, 0.1 + grain(i + 7, 11) * 0.12);
+    g.fillRect(Math.floor(sx), Math.floor(sy), 1 + Math.floor(grain(i + 19, 11) * 10), 1);
+  }
+
   for (const [bx, by] of [
     [x + 5, y + 5],
     [x + w - 6, y + 5],
@@ -408,32 +416,52 @@ export function drawStencilBadge(
   g.fillStyle(Theme.panelEdge, 0.85);
   g.fillRect(x + w - 5, y + 2, 1, 1);
   g.fillRect(x + w - 5, y + h - 3, 1, 1);
+  // Scuff + missing corner bite so tags don't look print-perfect.
+  g.fillStyle(Theme.groundDeep, 0.35);
+  g.fillRect(x + w - 3, y + h - 3, 2, 2);
+  for (let i = 0; i < 3; i++) {
+    const sx = x + 6 + Math.floor(grain(i, x + y) * (w - 12));
+    g.fillStyle(Theme.panelEdge, 0.25);
+    g.fillRect(sx, y + 2 + (i % 2), 2, 1);
+  }
 }
 
 /**
- * Context hint plate — bone stencil on a bolted strip, never a toast bubble.
+ * Context hint plate — a taped note on the rail, left-anchored, never a toast.
+ * `ox, oy` are the text origin (left, vertical centre of the line).
  */
 export function drawHintPlate(
   g: Phaser.GameObjects.Graphics,
-  cx: number,
-  cy: number,
+  ox: number,
+  oy: number,
   textW: number,
   textH: number,
+  opts: { originX?: number } = {},
 ): void {
-  const padX = 10;
-  const padY = 5;
+  const originX = opts.originX ?? 0;
+  const padX = 8;
+  const padY = 4;
   const w = Math.max(48, Math.ceil(textW) + padX * 2);
-  const h = Math.max(18, Math.ceil(textH) + padY * 2);
-  const x = Math.round(cx - w / 2);
-  const y = Math.round(cy - h / 2);
+  const h = Math.max(16, Math.ceil(textH) + padY * 2);
+  const x = Math.round(ox - w * originX);
+  const y = Math.round(oy - h / 2);
   g.clear();
   drawPlate(g, x, y, w, h, { fill: Theme.panel });
-  g.fillStyle(Theme.tape, 0.85);
-  g.fillRect(x + 1, y + 2, 3, h - 4);
+  // Uneven tape tab — hand-applied, not a design-system accent bar.
+  g.fillStyle(Theme.tape, 0.9);
+  g.fillRect(x + 1, y + 1, 3, h - 3);
+  g.fillStyle(Theme.tape, 0.35);
+  g.fillRect(x + 4, y + h - 2, Math.min(18, w - 8), 1);
   g.fillStyle(Theme.groundDeep, 1);
-  g.fillRect(x + 2, y + h, w - 4, 1);
-  drawBolt(g, x + 6, y + 4);
-  drawBolt(g, x + w - 7, y + 4);
+  g.fillRect(x + 3, y + h, w - 5, 1);
+  // One bolt only — the other corner is peeled.
+  drawBolt(g, x + 7, y + 3);
+  g.fillStyle(Theme.groundDeep, 0.4);
+  g.fillRect(x + w - 4, y + 1, 2, 2);
+  for (let i = 0; i < 4; i++) {
+    g.fillStyle(Theme.panelEdge, 0.2);
+    g.fillRect(x + 10 + i * 7, y + 2 + (i % 2), 3, 1);
+  }
 }
 
 /**

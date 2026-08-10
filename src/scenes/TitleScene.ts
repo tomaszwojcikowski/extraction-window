@@ -64,7 +64,6 @@ export class TitleScene extends Phaser.Scene {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.inkMute,
-        letterSpacing: 5,
       })
       .setOrigin(0.5);
 
@@ -73,7 +72,6 @@ export class TitleScene extends Phaser.Scene {
         fontFamily: FONT_DISPLAY,
         fontSize: '36px',
         color: ThemeCss.inkBright,
-        letterSpacing: 3,
       })
       .setOrigin(0.5);
 
@@ -117,14 +115,13 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.tweens.add({
-      targets: this.pulse,
-      alpha: 0.4,
-      duration: 900,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Stepped',
-      easeParams: [3],
+    // Mechanical lamp blink — hard on/off, not a soft fade CTA.
+    this.time.addEvent({
+      delay: 640,
+      loop: true,
+      callback: () => {
+        if (this.pulse.active) this.pulse.setVisible(!this.pulse.visible);
+      },
     });
 
     this.add
@@ -164,7 +161,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private seedLabel(): string {
-    return `MISSION  ${this.seed}  ·  ${lore('UI-SEED')}`;
+    return `MISSION  ${this.seed}  /  ${lore('UI-SEED')}`;
   }
 
   private ensureBeds(): void {

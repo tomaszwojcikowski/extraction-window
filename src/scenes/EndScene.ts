@@ -107,7 +107,6 @@ export class EndScene extends Phaser.Scene {
         fontFamily: FONT_DATA,
         fontSize: '11px',
         color: ThemeCss.inkMute,
-        letterSpacing: 4,
       })
       .setOrigin(0.5);
 
@@ -139,8 +138,8 @@ export class EndScene extends Phaser.Scene {
       .join(', ');
     const summary = [
       this.objective ? `OBJ  ${this.objective}` : null,
-      `LVL  ${this.level}${skillNames ? `  ·  ${skillNames}` : ''}`,
-      `MISSION ${this.seed}   ·   turn ${this.turn}`,
+      `LVL  ${this.level}${skillNames ? `  /  ${skillNames}` : ''}`,
+      `MISSION ${this.seed}   /   turn ${this.turn}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -163,14 +162,12 @@ export class EndScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.tweens.add({
-      targets: retry,
-      alpha: 0.35,
-      duration: 900,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Stepped',
-      easeParams: [2],
+    this.time.addEvent({
+      delay: 700,
+      loop: true,
+      callback: () => {
+        if (retry.active) retry.setVisible(!retry.visible);
+      },
     });
 
     sfx.unlock();

@@ -27,7 +27,7 @@ export function drawKitOverlay(
     st.inventory.length === 0
       ? [lore('UI-EMPTY-INV')]
       : st.inventory.map((slot, i) => {
-          const mark = i === st.ui.selectedSlot ? '▸' : ' ';
+          const mark = i === st.ui.selectedSlot ? '>' : ' ';
           const num = i < 9 ? `${i + 1}` : ' ';
           const name = lore(ITEMS[slot.kind].loreName);
           const desc = lore(ITEMS[slot.kind].loreDesc);

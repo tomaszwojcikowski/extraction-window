@@ -179,9 +179,9 @@ export class HudView {
     const sysBits = [probe, stim, filter, jam, quiet, mapper, desync, allyRole].filter(
       Boolean,
     );
-    const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
+    const systems = sysBits.length ? ` / ${sysBits.join(' / ')}` : '';
     const statuses = statusHud(st.player.statuses);
-    const statusLine = statuses ? ` · ${statuses}` : '';
+    const statusLine = statuses ? ` / ${statuses}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
@@ -191,9 +191,9 @@ export class HudView {
     // rides the existing DEF readout rather than earning a badge of its own.
     const flanked = flankPenalty(st);
     const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
-    const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
+    const emPart = shearPrimary ? '' : ` / ${lore('UI-EM')} ${st.emStress}`;
     r.hudMeta.setText(
-      `${lore('UI-LEVEL')} ${st.level} · ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''} · ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`,
+      `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`,
     );
 
     const sector = getSector(st.sectorIndex);
@@ -293,13 +293,13 @@ export class HudView {
     }
     if (st.skillPick) {
       urgencyParts.push(
-        `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? ` · 2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
+        `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? `  2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
       );
     }
     if (!shearPrimary && st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
 
     const hasUrgency = urgencyParts.length > 0;
-    r.urgencyText.setText(hasUrgency ? urgencyParts.join('  ·  ') : '');
+    r.urgencyText.setText(hasUrgency ? urgencyParts.join('  /  ') : '');
     r.urgencyText.setColor(stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim);
 
     const sticky = stickyMilestone(st.loreEvents);
@@ -311,16 +311,18 @@ export class HudView {
 
     const logs = st.log.slice(-5).map((l) => {
       const base = lore(l.loreId);
-      return l.detail ? `› ${base} (${l.detail})` : `› ${base}`;
+      return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
     });
-    r.logText.setText(`${lore('UI-LOG')}  ·  ? help\n${logs.join('\n')}`);
+    r.logText.setText(`${lore('UI-LOG')}  /  ? help\n${logs.join('\n')}`);
 
     const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
       r.hintGfx.setVisible(true);
-      drawHintPlate(r.hintGfx, r.hintText.x, r.hintText.y, r.hintText.width, r.hintText.height);
+      drawHintPlate(r.hintGfx, r.hintText.x, r.hintText.y, r.hintText.width, r.hintText.height, {
+        originX: 0,
+      });
     } else {
       r.hintText.setVisible(false);
       r.hintGfx.clear();
@@ -383,26 +385,15 @@ export class HudView {
     opts: HudRedrawOpts,
   ): void {
     const pulse = this.refs.windowPulse;
-    // Tape warning strip under the meter — not a translucent rect over the bar.
+    // Hard tape under the meter — on or off, no soft alpha breathe.
     pulse.setPosition(x, y + h + 1);
     pulse.setSize(w, 2);
+    opts.windowPulseTween.current?.stop();
+    opts.windowPulseTween.current = null;
     if (critical) {
       pulse.setVisible(true);
-      const tw = opts.windowPulseTween.current;
-      if (!tw || !tw.isPlaying()) {
-        tw?.stop();
-        pulse.setAlpha(0.35);
-        opts.windowPulseTween.current = opts.tweens.add({
-          targets: pulse,
-          alpha: { from: 0.28, to: 0.92 },
-          duration: 420,
-          yoyo: true,
-          repeat: -1,
-        });
-      }
+      pulse.setAlpha(0.85);
     } else {
-      opts.windowPulseTween.current?.stop();
-      opts.windowPulseTween.current = null;
       pulse.setVisible(false);
     }
   }
