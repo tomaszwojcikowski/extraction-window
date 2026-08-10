@@ -140,6 +140,8 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 ## 6. Motion
 
 - Turn-based cadence stays legible: no motion that outlives the turn it explains.
+- Tile steps slide (~150ms). The surveyor takes a short hop so a one-tile move
+  reads as a step; hostiles and escorts stay flat so packs stay readable.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward / hush ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.

@@ -860,6 +860,17 @@ export class GameScene extends Phaser.Scene {
       alive: en.alive,
       kind: en.kind,
     }));
+    const prevAllySnap = this.state.allies.map((a) => ({
+      id: a.id,
+      x: a.x,
+      y: a.y,
+      alive: a.alive,
+    }));
+    const prevNpcSnap = this.state.npcs.map((n) => ({
+      id: n.id,
+      x: n.x,
+      y: n.y,
+    }));
     const prevNotice = captureNoticeSnap(this.state);
 
     applyAction(this.state, action);
@@ -876,6 +887,8 @@ export class GameScene extends Phaser.Scene {
       prevAlive,
       fromPlayer,
       prevEnemySnap,
+      prevAllySnap,
+      prevNpcSnap,
       lights: this.lightView,
       flash: (color, alpha) => this.flashFx(color, alpha),
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
@@ -931,7 +944,10 @@ export class GameScene extends Phaser.Scene {
     };
 
     if (fb.playerMoved || fb.enemyMoved) {
-      playMoveAnims(this.moveAnimHost(), fromPlayer, fb.fromEnemies, afterPresent);
+      playMoveAnims(this.moveAnimHost(), fromPlayer, fb.fromEnemies, afterPresent, {
+        fromAllies: fb.fromAllies,
+        fromNpcs: fb.fromNpcs,
+      });
       return;
     }
 
@@ -975,6 +991,8 @@ export class GameScene extends Phaser.Scene {
       time: this.time,
       playerSprite: this.playerSprite,
       enemyViews: this.enemyViews,
+      allyViews: this.allyViews,
+      npcViews: this.npcViews,
       state: this.state,
       syncActors: (snap: boolean) => this.syncActors(snap),
       snapImg: (img: Phaser.GameObjects.Image, gx: number, gy: number) => this.snapImg(img, gx, gy),

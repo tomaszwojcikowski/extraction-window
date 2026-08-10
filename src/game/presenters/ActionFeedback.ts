@@ -403,6 +403,10 @@ export function presentActionFeedback(opts: {
   prevAlive: number;
   fromPlayer: { x: number; y: number };
   prevEnemySnap: EnemySnap[];
+  /** Living allies before the action — escort drones/escorts that step. */
+  prevAllySnap?: Array<{ id: number; x: number; y: number; alive: boolean }>;
+  /** Field contacts before the action — usually planted, but relocate when they do. */
+  prevNpcSnap?: Array<{ id: number; x: number; y: number }>;
   lights: LightView;
   flash: FlashFn;
   /** Brief white tint on visible enemy sprites that took hits. */
@@ -414,6 +418,8 @@ export function presentActionFeedback(opts: {
   playerMoved: boolean;
   enemyMoved: boolean;
   fromEnemies: Map<number, { x: number; y: number }>;
+  fromAllies: Map<number, { x: number; y: number }>;
+  fromNpcs: Map<number, { x: number; y: number }>;
 } {
   const {
     state,
@@ -427,6 +433,8 @@ export function presentActionFeedback(opts: {
     prevAlive,
     fromPlayer,
     prevEnemySnap,
+    prevAllySnap = [],
+    prevNpcSnap = [],
     lights,
     flash,
     tintHitEnemies,
@@ -435,6 +443,10 @@ export function presentActionFeedback(opts: {
   const fromEnemies = new Map(
     prevEnemySnap.filter((en) => en.alive).map((en) => [en.id, { x: en.x, y: en.y }]),
   );
+  const fromAllies = new Map(
+    prevAllySnap.filter((a) => a.alive).map((a) => [a.id, { x: a.x, y: a.y }]),
+  );
+  const fromNpcs = new Map(prevNpcSnap.map((n) => [n.id, { x: n.x, y: n.y }]));
 
   playActionSfx(
     state,
@@ -480,8 +492,28 @@ export function presentActionFeedback(opts: {
     const prev = fromEnemies.get(en.id);
     return !prev || prev.x !== en.x || prev.y !== en.y;
   });
+  const allyMoved = state.allies.some((a) => {
+    if (!a.alive) return false;
+    const prev = fromAllies.get(a.id);
+    return !prev || prev.x !== a.x || prev.y !== a.y;
+  });
+  // Field contacts are usually planted, but if a mechanic ever relocates one we
+  // still owe them a slide instead of a snap.
+  const npcMoved = state.npcs.some((n) => {
+    const prev = fromNpcs.get(n.id);
+    return prev !== undefined && (prev.x !== n.x || prev.y !== n.y);
+  });
 
-  return { newLogs, sectorChanged, mapReloaded, playerMoved, enemyMoved, fromEnemies };
+  return {
+    newLogs,
+    sectorChanged,
+    mapReloaded,
+    playerMoved,
+    enemyMoved: enemyMoved || allyMoved || npcMoved,
+    fromEnemies,
+    fromAllies,
+    fromNpcs,
+  };
 }
 
 export function bumpAttack(
@@ -551,19 +583,74 @@ export type MoveAnimHost = {
   time: Phaser.Time.Clock;
   playerSprite: Phaser.GameObjects.Image;
   enemyViews: Map<number, EnemyView>;
+  allyViews: Map<number, EnemyView>;
+  npcViews: Map<number, EnemyView>;
   state: GameState;
   syncActors(snapPositions: boolean): void;
   snapImg(img: Phaser.GameObjects.Image, gx: number, gy: number): void;
 };
 
+const HOP_PX = 5;
+
 /**
- * Stage player move, then enemy moves, then invoke onDone (FOV/HUD redraw + queue flush).
+ * Slide an actor from one tile to the next.
+ *
+ * `hop` lifts the sprite through a short arc so a one-tile step reads as a step
+ * rather than a slide on ice — enemies and escorts stay flat so packs stay
+ * readable as a group.
+ */
+function tweenTileStep(
+  host: MoveAnimHost,
+  img: Phaser.GameObjects.Image,
+  label: Phaser.GameObjects.Text | null,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  hop: boolean,
+  done: () => void,
+): void {
+  const a = host.worldXY(from.x, from.y);
+  const b = host.worldXY(to.x, to.y);
+  img.setPosition(a.x, a.y);
+  if (label) label.setPosition(a.x, a.y - TILE_DRAW / 2 + 5);
+
+  const proxy = { t: 0 };
+  host.tweens.add({
+    targets: proxy,
+    t: 1,
+    duration: MOVE_MS,
+    ease: 'Sine.easeInOut',
+    onUpdate: () => {
+      if (!img.active) return;
+      const t = proxy.t;
+      const lift = hop ? Math.sin(t * Math.PI) * HOP_PX : 0;
+      img.setPosition(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t - lift);
+      if (label?.active) {
+        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
+      }
+    },
+    onComplete: () => {
+      if (img.active) {
+        img.setPosition(b.x, b.y);
+        img.setDisplaySize(img.displayWidth, img.displayHeight);
+      }
+      if (label?.active) label.setPosition(b.x, b.y - TILE_DRAW / 2 + 5);
+      done();
+    },
+  });
+}
+
+/**
+ * Stage player move, then other actors, then invoke onDone (FOV/HUD redraw + queue flush).
  */
 export function playMoveAnims(
   host: MoveAnimHost,
   fromPlayer: { x: number; y: number },
   fromEnemies: Map<number, { x: number; y: number }>,
   onDone: () => void,
+  extras: {
+    fromAllies?: Map<number, { x: number; y: number }>;
+    fromNpcs?: Map<number, { x: number; y: number }>;
+  } = {},
 ): void {
   host.setAnimating(true);
   let finished = false;
@@ -574,45 +661,18 @@ export function playMoveAnims(
     onDone();
   };
 
-  const tweenActor = (
-    img: Phaser.GameObjects.Image,
-    label: Phaser.GameObjects.Text | null,
-    from: { x: number; y: number },
-    to: { x: number; y: number },
-    done: () => void,
-  ) => {
-    const a = host.worldXY(from.x, from.y);
-    const b = host.worldXY(to.x, to.y);
-    img.setPosition(a.x, a.y);
-    if (label) label.setPosition(a.x, a.y - TILE_DRAW / 2 + 5);
-    host.tweens.add({
-      targets: img,
-      x: b.x,
-      y: b.y,
-      duration: MOVE_MS,
-      ease: 'Cubic.easeOut',
-      onUpdate: () => {
-        if (label && label.active) {
-          label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
-        }
-      },
-      onComplete: () => {
-        if (img.active) img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-        done();
-      },
-    });
-  };
-
   host.syncActors(false);
 
   const px = host.state.player.x;
   const py = host.state.player.y;
   const playerMoved = fromPlayer.x !== px || fromPlayer.y !== py;
+  const fromAllies = extras.fromAllies ?? new Map();
+  const fromNpcs = extras.fromNpcs ?? new Map();
 
-  const runEnemyPhase = () => {
+  const runOtherPhase = () => {
     let pending = 0;
     let phaseDone = false;
-    const finishEnemy = () => {
+    const finishOne = () => {
       pending -= 1;
       if (pending > 0 || phaseDone) return;
       phaseDone = true;
@@ -624,12 +684,34 @@ export function playMoveAnims(
       const view = host.enemyViews.get(en.id);
       if (!view) continue;
       const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
-      if (prev.x !== en.x || prev.y !== en.y) {
-        pending += 1;
-        tweenActor(view.img, view.label, prev, { x: en.x, y: en.y }, finishEnemy);
-        view.gx = en.x;
-        view.gy = en.y;
-      }
+      if (prev.x === en.x && prev.y === en.y) continue;
+      pending += 1;
+      tweenTileStep(host, view.img, view.label, prev, { x: en.x, y: en.y }, false, finishOne);
+      view.gx = en.x;
+      view.gy = en.y;
+    }
+
+    for (const ally of host.state.allies) {
+      if (!ally.alive) continue;
+      const view = host.allyViews.get(ally.id);
+      if (!view) continue;
+      const prev = fromAllies.get(ally.id) ?? { x: ally.x, y: ally.y };
+      if (prev.x === ally.x && prev.y === ally.y) continue;
+      pending += 1;
+      tweenTileStep(host, view.img, view.label, prev, { x: ally.x, y: ally.y }, false, finishOne);
+      view.gx = ally.x;
+      view.gy = ally.y;
+    }
+
+    for (const npc of host.state.npcs) {
+      const view = host.npcViews.get(npc.id);
+      if (!view) continue;
+      const prev = fromNpcs.get(npc.id);
+      if (!prev || (prev.x === npc.x && prev.y === npc.y)) continue;
+      pending += 1;
+      tweenTileStep(host, view.img, view.label, prev, { x: npc.x, y: npc.y }, false, finishOne);
+      view.gx = npc.x;
+      view.gy = npc.y;
     }
 
     if (pending === 0) {
@@ -637,7 +719,7 @@ export function playMoveAnims(
       return;
     }
 
-    host.time.delayedCall(MOVE_MS + 120, () => {
+    host.time.delayedCall(MOVE_MS + 140, () => {
       if (!phaseDone) {
         phaseDone = true;
         complete();
@@ -646,14 +728,22 @@ export function playMoveAnims(
   };
 
   if (playerMoved) {
-    tweenActor(host.playerSprite, null, fromPlayer, { x: px, y: py }, runEnemyPhase);
-    host.time.delayedCall(MOVE_MS * 2 + 160, () => {
+    tweenTileStep(
+      host,
+      host.playerSprite,
+      null,
+      fromPlayer,
+      { x: px, y: py },
+      true,
+      runOtherPhase,
+    );
+    host.time.delayedCall(MOVE_MS * 2 + 180, () => {
       if (!finished) complete();
     });
   } else {
     host.snapImg(host.playerSprite, px, py);
-    runEnemyPhase();
-    host.time.delayedCall(MOVE_MS + 120, () => {
+    runOtherPhase();
+    host.time.delayedCall(MOVE_MS + 140, () => {
       if (!finished) complete();
     });
   }
