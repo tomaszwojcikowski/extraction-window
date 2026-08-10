@@ -19,10 +19,10 @@ export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
-/** Additive washes per pool — few enough to read as spill, not onion rings. */
-const POOL_SCALES = [1, 0.55, 0.26] as const;
-/** Relative alpha per wash (outer → body). */
-const POOL_ALPHA = [0.2, 0.34, 0.5] as const;
+/** Additive washes per pool — larger, softer shells so spill feathers out. */
+const POOL_SCALES = [1.12, 0.7, 0.38] as const;
+/** Relative alpha per wash (outer → body) — muted so pools aren't chalky. */
+const POOL_ALPHA = [0.12, 0.22, 0.34] as const;
 
 function poolSeed(x: number, y: number, radius: number): number {
   return ((Math.floor(x * 17) ^ Math.floor(y * 31) ^ Math.floor(radius * 10)) >>> 0) || 1;
@@ -85,8 +85,8 @@ function lerpTint(a: number, b: number, t: number): number {
 /** Presentation bloom gain — duct swallows, plains lifts, ash chokes. */
 function biomeBloomGain(sectorId: SectorId): number {
   const a = BIOME_AMBIENT[sectorId].ambient;
-  // Map 0.17–0.44 → ~0.72–1.05 without touching gameplay thresholds.
-  return 0.55 + a * 1.15;
+  // Map 0.17–0.44 → ~0.62–0.9 — softer than full-gain additive chalk.
+  return 0.48 + a * 0.95;
 }
 
 /**
@@ -371,10 +371,10 @@ export class LightView {
         s.color === LightTemp.flare ||
         s.color === LightTemp.beacon ||
         s.color === LightTemp.shuttle;
-      const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
+      const gain = Math.min(1.35, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
       const aCore = personal
-        ? Math.min(isSconce ? 0.22 : 0.28, 0.06 + s.intensity * 0.14) * biomeGain
-        : Math.min(0.48, 0.1 + s.intensity * 0.24) * biomeGain;
+        ? Math.min(isSconce ? 0.14 : 0.18, 0.04 + s.intensity * 0.09) * biomeGain
+        : Math.min(0.32, 0.07 + s.intensity * 0.16) * biomeGain;
 
       if (tiles) {
         const rays = isSconce
@@ -385,35 +385,35 @@ export class LightView {
         const atten = rays.length ? attenSum / rays.length : 1;
         for (let k = 0; k < POOL_SCALES.length; k++) {
           const scale = POOL_SCALES[k]!;
-          const shellAlpha = aCore * POOL_ALPHA[k]! * (0.4 + 0.6 * atten);
-          this.lightsGfx.fillStyle(s.color, Math.min(0.5, shellAlpha));
+          const shellAlpha = aCore * POOL_ALPHA[k]! * (0.45 + 0.55 * atten);
+          this.lightsGfx.fillStyle(s.color, Math.min(0.32, shellAlpha));
           this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale, seed + k * 19), true);
         }
       } else {
-        this.lightsGfx.fillStyle(s.color, aCore * 0.12);
-        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.44);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.2);
-        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.08);
+        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.5);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.14);
+        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.3);
       }
 
       if (isSconce) {
-        const core = Math.max(2, TILE_DRAW * 0.1 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.5);
+        const core = Math.max(3, TILE_DRAW * 0.14 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.32);
         this.lightsGfx.fillCircle(wx, wy, core);
       } else if (personal) {
-        const core = Math.max(3, TILE_DRAW * 0.12 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.4);
+        const core = Math.max(4, TILE_DRAW * 0.16 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.28);
         this.lightsGfx.fillCircle(wx, wy, core);
       } else if (hotCore) {
-        const core = Math.max(4, TILE_DRAW * 0.22 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.5);
+        const core = Math.max(5, TILE_DRAW * 0.26 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.36);
         this.lightsGfx.fillCircle(wx, wy, core);
-        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.55), Math.min(0.7, aCore * 1.2));
-        this.lightsGfx.fillCircle(wx, wy, core * 0.35);
+        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.35), Math.min(0.42, aCore * 0.85));
+        this.lightsGfx.fillCircle(wx, wy, core * 0.42);
       } else {
         // Landmark / fauna / marker: one murky body, no nested white spark.
-        const core = Math.max(3, TILE_DRAW * 0.16 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.42);
+        const core = Math.max(4, TILE_DRAW * 0.2 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.3);
         this.lightsGfx.fillCircle(wx, wy, core);
       }
     }
@@ -686,22 +686,24 @@ export class LightView {
           kind === 'rubble' ||
           kind === 'tripwire';
         let tint = isTerrain ? floorTint : 0xffffff;
-        tint = multiplyTint(tint, ambientTint, 0.28);
+        tint = multiplyTint(tint, ambientTint, 0.22);
         if (colorPull > 0.04) {
-          tint = multiplyTint(tint, colorAcc, Math.min(0.78, colorPull * 0.62));
+          tint = multiplyTint(tint, colorAcc, Math.min(0.55, colorPull * 0.48));
         }
         if (brightness < SHADOW_THRESHOLD) {
-          const wash = st.sectorId === 'ash' || st.sectorId === 'approach' ? 0.72 : 0.62;
+          const wash = st.sectorId === 'ash' || st.sectorId === 'approach' ? 0.55 : 0.45;
           tint = multiplyTint(tint, Theme.shadowWash, wash * (1 - brightness / SHADOW_THRESHOLD));
         }
-        tint = blendTowardWhite(tint, Math.pow(brightness, 1.3) * 0.55 * reflect);
+        // Gentler lift — lit floor stays warm metal, not chalk-white.
+        tint = blendTowardWhite(tint, Math.pow(brightness, 1.05) * 0.38 * reflect);
         if (st.emStress >= EM_HIGH) {
           // Sickly scan wash — intensity already in sim ambient; hue is present-only.
-          tint = multiplyTint(tint, LightTemp.scan, 0.16);
+          tint = multiplyTint(tint, LightTemp.scan, 0.12);
         }
 
-        const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.05;
-        const alpha = Math.min(1, (0.13 + 0.87 * Math.pow(brightness, 0.7)) * occlusion * choke);
+        const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.04;
+        // Softer response curve: dark stays readable, bright doesn't punch.
+        const alpha = Math.min(1, (0.2 + 0.78 * Math.pow(brightness, 0.85)) * occlusion * choke);
         img.setTint(tint);
         img.setAlpha(alpha);
         this.alphaGrid[y]![x] = alpha;
@@ -754,7 +756,7 @@ export class LightView {
 
     const litAlpha = (x: number, y: number): number => {
       if (!st.visible[y]?.[x]) return 0;
-      return 0.5 + 0.5 * tileBrightness(st, x, y);
+      return 0.58 + 0.42 * tileBrightness(st, x, y);
     };
 
     const keyTint = (x: number, y: number): number | null => {
@@ -764,10 +766,10 @@ export class LightView {
         const E = this.energyAt(i, x, y);
         if (E <= 0.008) continue;
         pull += E;
-        acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.85));
+        acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.7));
       }
       if (pull < 0.06) return null;
-      return multiplyTint(0xffffff, acc, Math.min(0.5, pull * 0.42));
+      return multiplyTint(0xffffff, acc, Math.min(0.36, pull * 0.32));
     };
 
     playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));

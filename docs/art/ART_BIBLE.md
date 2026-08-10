@@ -54,7 +54,7 @@ fails if any of them come back under those names.
 
 Each emitter is a *thing*: hooded halogen (`lamp`), red night filter (`lampQuiet`), magnesium stick (`flare`), animal (`fauna`), sodium relay (`beacon`), pad floods (`shuttle`), pattern tech (`pattern`), flagging (`marker`), scan wash (`scan`), hatch standby (`standby`).
 
-Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is a few uneven washes with ray wobble — not concentric onion rings or nested white sparks on every emitter.
+Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is a few uneven, low-alpha washes with ray wobble — soft spill, not chalky onion rings or nested white sparks on every emitter.
 
 ---
 
