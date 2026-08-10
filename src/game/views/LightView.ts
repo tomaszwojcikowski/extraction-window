@@ -169,6 +169,11 @@ export class LightView {
     return this.moveBlend?.locked === true;
   }
 
+  /** Captured but not yet locked — dest wash should fill caches without painting sprites. */
+  hasPendingMoveBlend(): boolean {
+    return this.moveBlend !== null && !this.moveBlend.locked;
+  }
+
   /**
    * Snapshot the current tile wash as the blend start. Call before destination
    * `applyTileLighting` so the lamp can travel with the hop.
@@ -204,6 +209,29 @@ export class LightView {
     blend.toTint = cloneGrid(this.tintGrid);
     blend.locked = true;
     this.setMoveLightProgress(0, tileSprites);
+  }
+
+  /**
+   * During a hop, restore destination tile art under the lerped wash so FOV
+   * expands with the step instead of snapping only at the end.
+   */
+  paintMoveTextures(
+    st: GameState,
+    tileSprites: Phaser.GameObjects.Image[][],
+    tileKey: (kind: string, x: number, y: number) => string,
+  ): void {
+    if (!this.moveBlend?.locked) return;
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        const img = tileSprites[y]?.[x];
+        if (!img) continue;
+        if (!st.explored[y]![x]) {
+          img.setTexture('t_fog');
+          continue;
+        }
+        img.setTexture(tileKey(st.tiles[y]![x]!.kind, x, y));
+      }
+    }
   }
 
   /** Drive lamp carry + tile wash with the move tween (0 → 1). */
@@ -349,7 +377,12 @@ export class LightView {
       const isSconce = s.fixture === 'sconce';
       const mountX = s.mountX ?? s.x;
       const mountY = s.mountY ?? s.y;
-      if (!visible[s.y]?.[s.x] && !(isSconce && visible[mountY]?.[mountX])) continue;
+      // Carry uses fractional tile coords — index FOV with integers or bloom drops out mid-hop.
+      const vx = Math.round(s.x);
+      const vy = Math.round(s.y);
+      const mvx = Math.round(mountX);
+      const mvy = Math.round(mountY);
+      if (!visible[vy]?.[vx] && !(isSconce && visible[mvy]?.[mvx])) continue;
 
       let cx = s.x + 0.5;
       let cy = s.y + 0.5;
@@ -377,9 +410,8 @@ export class LightView {
         : Math.min(0.32, 0.07 + s.intensity * 0.16) * biomeGain;
 
       if (tiles) {
-        const rays = isSconce
-          ? marchPoolRaysAt(tiles, cx, cy, s.radius)
-          : marchPoolRays(tiles, s.x, s.y, s.radius);
+        // Always march from the continuous centre so a carried lamp doesn't quantize.
+        const rays = marchPoolRaysAt(tiles, cx, cy, s.radius);
         let attenSum = 0;
         for (const ray of rays) attenSum += ray.atten;
         const atten = rays.length ? attenSum / rays.length : 1;
@@ -437,8 +469,10 @@ export class LightView {
     this.ensureSourceEnergy(st, sources);
     for (const actor of actors) {
       const { gx, gy } = actor;
-      if (!st.visible[gy]?.[gx]) continue;
-      const brightness = tileBrightness(st, gx, gy);
+      const tx = Math.round(gx);
+      const ty = Math.round(gy);
+      if (!st.visible[ty]?.[tx]) continue;
+      const brightness = tileBrightness(st, tx, ty);
       if (brightness < 0.06) continue;
 
       let vx = 0;
@@ -449,7 +483,7 @@ export class LightView {
         const dist = Math.hypot(gx - s.x, gy - s.y);
         // Own-tile lamp (or a prop sitting on its emitter): contact only.
         if (dist < 0.75) continue;
-        const E = this.energyAt(i, gx, gy);
+        const E = this.energyAt(i, tx, ty);
         if (E <= 0.004) continue;
         vx += ((gx - s.x) / dist) * E;
         vy += ((gy - s.y) / dist) * E;
@@ -473,7 +507,7 @@ export class LightView {
         const propScale = actor.prop ? 0.72 : 1;
         const wantTiles =
           (0.35 + Math.min(0.85, key * 0.65)) * tallScale * propScale;
-        const reach = castReachTiles(st.tiles, gx, gy, dirX, dirY, wantTiles);
+        const reach = castReachTiles(st.tiles, tx, ty, dirX, dirY, wantTiles);
         if (reach > 0.12) {
           const throwLen = reach * TILE_DRAW;
           const px = -dirY;
@@ -637,7 +671,9 @@ export class LightView {
     tileSprites: Phaser.GameObjects.Image[][],
     tileKey: (kind: string, x: number, y: number) => string,
     sources: LightSource[],
+    opts: { paintSprites?: boolean } = {},
   ): void {
+    const paint = opts.paintSprites !== false;
     const biome = BIOME_AMBIENT[st.sectorId];
     const floorTint = BIOME_FLOOR_TINT[st.sectorId];
     const ambientTint = biome.tint;
@@ -656,18 +692,22 @@ export class LightView {
         const img = tileSprites[y]![x]!;
         const kind = st.tiles[y]![x]!.kind;
         if (!st.explored[y]![x]) {
-          img.setTexture('t_fog');
-          img.clearTint();
-          img.setAlpha(1);
+          if (paint) {
+            img.setTexture('t_fog');
+            img.clearTint();
+            img.setAlpha(1);
+          }
           this.alphaGrid[y]![x] = 1;
           this.tintGrid[y]![x] = 0xffffff;
           continue;
         }
 
-        img.setTexture(tileKey(kind, x, y));
+        if (paint) img.setTexture(tileKey(kind, x, y));
         if (!st.visible[y]![x]) {
-          img.setTint(Theme.memory);
-          img.setAlpha(0.26);
+          if (paint) {
+            img.setTint(Theme.memory);
+            img.setAlpha(0.26);
+          }
           this.alphaGrid[y]![x] = 0.26;
           this.tintGrid[y]![x] = Theme.memory;
           continue;
@@ -704,8 +744,10 @@ export class LightView {
         const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.04;
         // Softer response curve: dark stays readable, bright doesn't punch.
         const alpha = Math.min(1, (0.2 + 0.78 * Math.pow(brightness, 0.85)) * occlusion * choke);
-        img.setTint(tint);
-        img.setAlpha(alpha);
+        if (paint) {
+          img.setTint(tint);
+          img.setAlpha(alpha);
+        }
         this.alphaGrid[y]![x] = alpha;
         this.tintGrid[y]![x] = tint;
       }

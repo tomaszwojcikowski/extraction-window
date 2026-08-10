@@ -999,8 +999,8 @@ export class GameScene extends Phaser.Scene {
       this.hideCommitGhost(true);
     }
 
-    // Light travels with the hop — capture the old wash, compute destination, then
-    // blend while the sprite steps so the lamp isn't left ahead of the surveyor.
+    // Light travels with the hop — capture the old wash, compute destination into
+    // caches only (no sprite paint), then lock at t=0 so nothing flashes ahead.
     if (fb.playerMoved) {
       this.lightView.captureMoveFrom(fromPlayer, {
         x: this.state.player.x,
@@ -1010,6 +1010,11 @@ export class GameScene extends Phaser.Scene {
     this.applyFieldLighting();
     if (fb.playerMoved) {
       this.lightView.lockMoveBlend(this.tileSprites);
+      this.lightView.paintMoveTextures(this.state, this.tileSprites, (kind, x, y) =>
+        this.tileKey(kind, x, y),
+      );
+      this.lightView.setMoveLightProgress(0, this.tileSprites);
+      this.refreshMoveLightFx();
     }
     this.syncItems();
 
@@ -1635,7 +1640,18 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.lightView.applyTileLighting(st, this.tileSprites, (kind, x, y) => this.tileKey(kind, x, y), sources);
+    const pending = this.lightView.hasPendingMoveBlend();
+    this.lightView.applyTileLighting(
+      st,
+      this.tileSprites,
+      (kind, x, y) => this.tileKey(kind, x, y),
+      sources,
+      { paintSprites: !pending },
+    );
+    // Pending hop: destination wash is cached only — sprites stay on the from frame
+    // until lockMoveBlend + refreshMoveLightFx start the carry.
+    if (pending) return;
+
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
