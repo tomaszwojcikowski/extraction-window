@@ -19,8 +19,20 @@ export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
-/** Additive shells per pool — fewer shells = less banding; rays carry the silhouette. */
-const POOL_SHELLS = 7;
+/** Additive washes per pool — few enough to read as spill, not onion rings. */
+const POOL_SCALES = [1, 0.55, 0.26] as const;
+/** Relative alpha per wash (outer → body). */
+const POOL_ALPHA = [0.2, 0.34, 0.5] as const;
+
+function poolSeed(x: number, y: number, radius: number): number {
+  return ((Math.floor(x * 17) ^ Math.floor(y * 31) ^ Math.floor(radius * 10)) >>> 0) || 1;
+}
+
+/** Deterministic ±~10% radius wobble so pools aren't rotationally perfect. */
+function rayWobble(i: number, seed: number): number {
+  const n = ((i * 1103515245 + seed * 12345) >>> 0) % 1000;
+  return 0.9 + (n / 1000) * 0.2;
+}
 
 function multiplyTint(base: number, light: number, amount: number): number {
   const br = (base >> 16) & 0xff;
@@ -170,11 +182,12 @@ export class LightView {
     cx: number,
     cy: number,
     scale: number,
+    seed = 1,
   ): Phaser.Math.Vector2[] {
     const pts: Phaser.Math.Vector2[] = [];
     for (let i = 0; i < rays.length; i++) {
       const a = (i / rays.length) * Math.PI * 2;
-      const d = rays[i]!.hit * scale;
+      const d = rays[i]!.hit * scale * rayWobble(i, seed);
       pts.push(
         new Phaser.Math.Vector2(
           (cx + Math.cos(a) * d) * TILE_DRAW,
@@ -186,12 +199,13 @@ export class LightView {
   }
 
   private shellPoints(rays: PoolRay[], sx: number, sy: number, scale: number): Phaser.Math.Vector2[] {
-    return this.shellPointsAt(rays, sx + 0.5, sy + 0.5, scale);
+    return this.shellPointsAt(rays, sx + 0.5, sy + 0.5, scale, poolSeed(sx, sy, scale));
   }
 
   /**
    * Wall- and scrub-aware bloom. Ray-marched pools stop at geometry, die in
-   * thicket, and spill down corridors. Personal lamp stays soft; flares keep a hotter core.
+   * thicket, and spill down corridors. Drawn as a few uneven washes — not
+   * concentric AI onion rings. Personal lamp stays soft; flares keep a hotter core.
    * Wall sconces bloom from the fixture face (not the floor emission cell).
    */
   drawBloom(
@@ -206,11 +220,8 @@ export class LightView {
       const isSconce = s.fixture === 'sconce';
       const mountX = s.mountX ?? s.x;
       const mountY = s.mountY ?? s.y;
-      // Flood may sit on the facing floor; bloom must still read when that floor is seen.
       if (!visible[s.y]?.[s.x] && !(isSconce && visible[mountY]?.[mountX])) continue;
 
-      // Sconce: origin sits on the wall face, slightly into the room — not a hot
-      // blob in the middle of the corridor tile under the lamp.
       let cx = s.x + 0.5;
       let cy = s.y + 0.5;
       if (isSconce) {
@@ -220,56 +231,61 @@ export class LightView {
       }
       const wx = cx * TILE_DRAW;
       const wy = cy * TILE_DRAW;
+      const seed = poolSeed(cx, cy, s.radius);
 
       const personal =
         s.color === LightTemp.lamp ||
         s.color === LightTemp.lampQuiet ||
         isSconce;
+      // Only chemical / pad floods earn a white-hot tip — pattern/fauna stay murky.
+      const hotCore =
+        s.color === LightTemp.flare ||
+        s.color === LightTemp.beacon ||
+        s.color === LightTemp.shuttle;
       const gain = Math.min(1.5, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
       const aCore = personal
-        ? Math.min(isSconce ? 0.28 : 0.34, 0.07 + s.intensity * 0.16) * biomeGain
-        : Math.min(0.62, 0.12 + s.intensity * 0.3) * biomeGain;
+        ? Math.min(isSconce ? 0.22 : 0.28, 0.06 + s.intensity * 0.14) * biomeGain
+        : Math.min(0.48, 0.1 + s.intensity * 0.24) * biomeGain;
 
       if (tiles) {
         const rays = isSconce
           ? marchPoolRaysAt(tiles, cx, cy, s.radius)
           : marchPoolRays(tiles, s.x, s.y, s.radius);
-        const peak = irradiance(s.radius / POOL_SHELLS, s.radius, 1) || 1;
-        let prev = 0;
-        for (let k = POOL_SHELLS; k >= 1; k--) {
-          const scale = k / POOL_SHELLS;
-          const f = Math.pow(Math.min(1, irradiance(scale * s.radius, s.radius, 1) / peak), 0.62);
-          const inc = f - prev;
-          prev = f;
-          if (inc <= 0.001) continue;
-          let attenSum = 0;
-          for (const ray of rays) attenSum += ray.atten;
-          const atten = rays.length ? attenSum / rays.length : 1;
-          this.lightsGfx.fillStyle(s.color, aCore * inc * (0.3 + 0.7 * atten));
-          this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale), true);
+        let attenSum = 0;
+        for (const ray of rays) attenSum += ray.atten;
+        const atten = rays.length ? attenSum / rays.length : 1;
+        for (let k = 0; k < POOL_SCALES.length; k++) {
+          const scale = POOL_SCALES[k]!;
+          const shellAlpha = aCore * POOL_ALPHA[k]! * (0.4 + 0.6 * atten);
+          this.lightsGfx.fillStyle(s.color, Math.min(0.5, shellAlpha));
+          this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale, seed + k * 19), true);
         }
       } else {
-        this.lightsGfx.fillStyle(s.color, aCore * 0.14);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.12);
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.44);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.24);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.2);
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.27);
       }
 
       if (isSconce) {
-        // Soft filament on the fixture — no magnesium-white core on the floor.
-        const core = Math.max(2, TILE_DRAW * 0.12 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.55);
+        const core = Math.max(2, TILE_DRAW * 0.1 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.5);
         this.lightsGfx.fillCircle(wx, wy, core);
       } else if (personal) {
-        const core = Math.max(3, TILE_DRAW * 0.14 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.45);
+        const core = Math.max(3, TILE_DRAW * 0.12 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.4);
         this.lightsGfx.fillCircle(wx, wy, core);
+      } else if (hotCore) {
+        const core = Math.max(4, TILE_DRAW * 0.22 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.5);
+        this.lightsGfx.fillCircle(wx, wy, core);
+        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.55), Math.min(0.7, aCore * 1.2));
+        this.lightsGfx.fillCircle(wx, wy, core * 0.35);
       } else {
-        const core = Math.max(5, TILE_DRAW * 0.26 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.55);
+        // Landmark / fauna / marker: one murky body, no nested white spark.
+        const core = Math.max(3, TILE_DRAW * 0.16 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.42);
         this.lightsGfx.fillCircle(wx, wy, core);
-        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.7), Math.min(0.9, aCore * 1.6));
-        this.lightsGfx.fillCircle(wx, wy, core * 0.4);
       }
     }
   }
@@ -341,18 +357,20 @@ export class LightView {
           g.fillPoints(
             [
               new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
-              new Phaser.Math.Vector2(wx - px * halfNear, wy - py * halfNear),
+              new Phaser.Math.Vector2(wx - px * halfNear * 0.85, wy - py * halfNear * 0.85),
               new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
-              new Phaser.Math.Vector2(fx + px * halfFar, fy + py * halfFar),
+              new Phaser.Math.Vector2(fx + px * halfFar * 1.15, fy + py * halfFar * 1.15),
             ],
             true,
           );
-          g.fillStyle(Theme.groundDeep, alpha * 0.35);
-          g.fillEllipse(fx, fy, TILE_DRAW * 0.22, TILE_DRAW * 0.1);
         }
       }
       g.fillStyle(Theme.groundDeep, alpha);
-      g.fillEllipse(wx, wy, contactW, contactH);
+      // Two offset patches beat one perfect ellipse (reads less like a drop-shadow filter).
+      const ox = actor.prop ? TILE_DRAW * 0.04 : 0;
+      g.fillEllipse(wx - ox, wy, contactW, contactH);
+      g.fillStyle(Theme.groundDeep, alpha * 0.55);
+      g.fillEllipse(wx + contactW * 0.12, wy + contactH * 0.15, contactW * 0.7, contactH * 0.75);
     }
   }
 

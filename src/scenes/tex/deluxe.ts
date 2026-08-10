@@ -390,54 +390,60 @@ export function drawDeluxeWall(
   WALL_ACCENT[sector]({ g, q, T, variant: v, accent, tint, style });
 }
 
-/** Wall-mounted work light — drawn as a transparent overlay on the wall tile. */
+/** Wall-mounted work light — scratched fixture, not a softglow orb. */
 export function drawDeluxeSconce(g: G, T: number, style: WallStyle): void {
   transparent(g, T);
   const q = unit(T);
-  const cx = T / 2;
-  const cy = T / 2;
   const glow = style === 'conduit' ? Theme.biolum : Theme.tape;
   const housing = style === 'cliff' ? Material.rock : style === 'bulkhead' ? Theme.panel : Material.conduit;
 
-  // Soft spill on the wall face.
-  g.fillStyle(glow, 0.22);
-  g.fillEllipse(cx, cy + q(2), q(22), q(16));
-
   if (style === 'conduit') {
+    // Offset strip — not centered candy.
     g.fillStyle(Theme.panelEdge, 1);
-    g.fillRect(q(10), q(18), T - q(20), q(8));
+    g.fillRect(q(8), q(17), T - q(14), q(9));
     g.fillStyle(Theme.groundDeep, 1);
-    g.fillRect(q(12), q(20), T - q(24), q(4));
-    g.fillStyle(glow, 0.95);
-    g.fillRect(q(14), q(21), T - q(28), q(2));
-    g.fillStyle(Theme.inkBright, 0.55);
-    g.fillRect(q(16), q(21), q(4), q(1));
+    g.fillRect(q(10), q(19), T - q(18), q(5));
+    g.fillStyle(glow, 0.85);
+    g.fillRect(q(12), q(20), T - q(24), q(2));
+    g.fillStyle(Theme.inkDim, 0.55);
+    g.fillRect(q(14), q(20), q(3), q(1));
+    g.fillRect(T - q(22), q(21), q(5), q(1));
+    // Clamp scar.
+    g.fillStyle(Material.debris, 0.7);
+    g.fillRect(q(9), q(16), q(3), q(11));
   } else if (style === 'bulkhead') {
     g.fillStyle(housing, 1);
-    g.fillRect(q(16), q(14), q(16), q(18));
-    g.lineStyle(q(2), Theme.panelEdge, 0.95);
-    g.strokeRect(q(17), q(15), q(14), q(16));
+    g.fillRect(q(15), q(13), q(18), q(20));
+    g.fillStyle(Theme.panelEdge, 0.85);
+    g.fillRect(q(15), q(13), q(18), q(2));
+    g.fillRect(q(15), q(13), q(2), q(20));
     g.fillStyle(Theme.groundDeep, 1);
-    g.fillRect(q(19), q(18), q(10), q(8));
-    g.fillStyle(glow, 0.95);
-    g.fillEllipse(cx, q(22), q(8), q(6));
-    g.fillStyle(Theme.inkBright, 0.5);
-    g.fillEllipse(cx, q(21), q(3), q(2));
-    // Mount bolts.
+    g.fillRect(q(19), q(18), q(10), q(9));
+    g.fillStyle(glow, 0.8);
+    g.fillRect(q(21), q(20), q(6), q(5));
+    g.fillStyle(Theme.inkBright, 0.35);
+    g.fillRect(q(22), q(21), q(2), q(2));
+    // Uneven bolts + paint chip.
     g.fillStyle(Theme.panelEdge, 0.9);
-    g.fillRect(q(18), q(16), q(2), q(2));
-    g.fillRect(T - q(20), q(16), q(2), q(2));
+    g.fillRect(q(17), q(15), q(2), q(2));
+    g.fillRect(T - q(19), q(28), q(2), q(2));
+    g.fillStyle(Material.debris, 0.55);
+    g.fillRect(q(27), q(14), q(4), q(2));
   } else {
-    // Cliff: bracket + warm bulb.
+    // Cliff: crooked bracket, dirty bulb glass.
     g.fillStyle(Material.debris, 1);
-    g.fillRect(q(22), q(12), q(4), q(10));
-    g.fillRect(q(18), q(20), q(12), q(3));
+    g.fillRect(q(21), q(11), q(5), q(12));
+    g.fillRect(q(16), q(19), q(14), q(4));
     g.fillStyle(housing, 1);
-    g.fillEllipse(cx, q(28), q(12), q(10));
-    g.fillStyle(glow, 0.9);
-    g.fillEllipse(cx, q(28), q(8), q(6));
-    g.fillStyle(Theme.inkBright, 0.45);
-    g.fillEllipse(cx - q(1), q(26), q(3), q(2));
+    g.fillRect(q(18), q(24), q(12), q(10));
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(20), q(26), q(8), q(6));
+    g.fillStyle(glow, 0.75);
+    g.fillRect(q(21), q(27), q(6), q(4));
+    g.fillStyle(Theme.inkDim, 0.4);
+    g.fillRect(q(22), q(28), q(2), q(1));
+    g.fillStyle(Material.recess, 0.6);
+    g.fillRect(q(19), q(33), q(3), q(1));
   }
 }
 
