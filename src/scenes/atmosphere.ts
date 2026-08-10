@@ -348,9 +348,11 @@ export function drawFieldPanel(
   accent: number = Theme.tape,
 ): void {
   g.clear();
-  // Drop shadow so the case reads as a physical object over the field.
-  g.fillStyle(Theme.groundDeep, 0.55);
-  g.fillRect(x + 3, y + 4, w, h);
+  // Hard cast + stand-off feet — a case on the deck, not a SaaS drop shadow.
+  g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(x + 2, y + h, w - 4, 2);
+  g.fillRect(x + 4, y + h + 2, 6, 2);
+  g.fillRect(x + w - 10, y + h + 2, 6, 2);
   drawPlate(g, x, y, w, h, { fill: Theme.panel, alpha: 0.99 });
   g.fillStyle(Theme.ground, 0.9);
   g.fillRect(x + 6, y + 16, w - 12, h - 24);
@@ -365,6 +367,11 @@ export function drawFieldPanel(
   g.fillStyle(Theme.inkMute, 0.6);
   g.fillRect(x + 16, y + 12, w - 32, 1);
   drawStencilTicks(g, x + 16, y + h - 10, w - 40, false);
+  // Case serial — machined, not a title caption.
+  g.fillStyle(Theme.inkMute, 0.5);
+  g.fillRect(x + w - 52, y + 8, 36, 1);
+  g.fillRect(x + w - 52, y + 8, 1, 3);
+  g.fillRect(x + w - 17, y + 8, 1, 3);
 
   for (const [bx, by] of [
     [x + 5, y + 5],
@@ -388,11 +395,45 @@ export function drawStencilBadge(
   h: number,
   fill: number,
 ): void {
-  drawPlate(g, x, y, w, h, { fill: Theme.panel });
+  // Corner-cut plate — stamped tag, not a rounded chip.
+  g.fillStyle(Theme.panel, 1);
+  g.fillRect(x + 2, y, w - 4, h);
+  g.fillRect(x, y + 2, w, h - 4);
+  g.fillStyle(Theme.panelEdge, 0.55);
+  g.fillRect(x + 2, y, w - 4, 1);
   g.fillStyle(fill, 0.95);
-  g.fillRect(x + 1, y + 1, 3, h - 2);
-  g.fillStyle(fill, 0.35);
-  g.fillRect(x + 1, y + h - 2, w - 2, 1);
+  g.fillRect(x + 1, y + 2, 3, h - 4);
+  g.fillStyle(fill, 0.28);
+  g.fillRect(x + 5, y + h - 2, w - 7, 1);
+  g.fillStyle(Theme.panelEdge, 0.85);
+  g.fillRect(x + w - 5, y + 2, 1, 1);
+  g.fillRect(x + w - 5, y + h - 3, 1, 1);
+}
+
+/**
+ * Context hint plate — bone stencil on a bolted strip, never a toast bubble.
+ */
+export function drawHintPlate(
+  g: Phaser.GameObjects.Graphics,
+  cx: number,
+  cy: number,
+  textW: number,
+  textH: number,
+): void {
+  const padX = 10;
+  const padY = 5;
+  const w = Math.max(48, Math.ceil(textW) + padX * 2);
+  const h = Math.max(18, Math.ceil(textH) + padY * 2);
+  const x = Math.round(cx - w / 2);
+  const y = Math.round(cy - h / 2);
+  g.clear();
+  drawPlate(g, x, y, w, h, { fill: Theme.panel });
+  g.fillStyle(Theme.tape, 0.85);
+  g.fillRect(x + 1, y + 2, 3, h - 4);
+  g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(x + 2, y + h, w - 4, 1);
+  drawBolt(g, x + 6, y + 4);
+  drawBolt(g, x + w - 7, y + 4);
 }
 
 /**
@@ -416,26 +457,32 @@ export function drawMeter(
   const critical = r <= 0.3;
   const colour = critical ? low : fill;
 
-  // Recessed trough.
+  // Outer bezel + deep trough.
+  g.fillStyle(Theme.panelEdge, 0.9);
+  g.fillRect(x - 1, y - 1, w + 2, h + 2);
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(x, y, w, h);
-  g.fillStyle(Theme.panelEdge, 0.55);
+  // Empty-trough grit — metal, not a waiting progress track.
+  for (let i = 0; i < Math.floor(w / 5); i++) {
+    const gx = x + 2 + Math.floor(grain(i, Math.floor(x + y * 3)) * (w - 4));
+    g.fillStyle(Theme.panel, 0.35);
+    g.fillRect(gx, y + 1 + (i % (h - 2)), 1, 1);
+  }
+  g.fillStyle(Theme.panelEdge, 0.45);
   g.fillRect(x, y, w, 1);
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(x, y + h - 1, w, 1);
-  g.fillStyle(Theme.panelEdge, 0.25);
-  g.fillRect(x, y + 1, 1, h - 2);
 
-  // Fill inset one pixel so the lip stays visible at every level.
   const innerW = Math.max(0, Math.floor((w - 2) * r));
   if (innerW > 0) {
     g.fillStyle(colour, 1);
     g.fillRect(x + 1, y + 1, innerW, h - 2);
-    // Top catch-light on the column — the meter is a physical surface.
-    g.fillStyle(Theme.inkBright, critical ? 0.08 : 0.14);
+    g.fillStyle(Theme.inkBright, critical ? 0.1 : 0.16);
     g.fillRect(x + 1, y + 1, innerW, 1);
+    // Leading notch — the needle edge, not a soft gradient cap.
+    g.fillStyle(Theme.inkBright, 0.55);
+    g.fillRect(x + innerW, y + 1, 1, h - 2);
     if (critical) {
-      // Corrosion flecks: the instrument is failing, not just empty.
       for (let i = 0; i < Math.min(8, Math.floor(innerW / 4)); i++) {
         const fx = x + 2 + Math.floor(grain(i, Math.floor(x + y)) * (innerW - 2));
         g.fillStyle(Theme.rust, 0.55);
@@ -444,10 +491,13 @@ export function drawMeter(
     }
   }
 
-  // Stencil ticks every 25% — readable length without a number.
+  // End rivets + quarter ticks.
+  g.fillStyle(Theme.panelEdge, 0.8);
+  g.fillRect(x + 1, y + 1, 1, 1);
+  g.fillRect(x + w - 2, y + 1, 1, 1);
   for (let t = 1; t < 4; t++) {
     const tx = x + Math.floor((w * t) / 4);
-    g.fillStyle(Theme.inkMute, 0.45);
+    g.fillStyle(Theme.inkMute, 0.5);
     g.fillRect(tx, y + 1, 1, h - 2);
   }
 }

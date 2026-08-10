@@ -17,6 +17,7 @@ import { tileBrightness } from '../sim/light';
 import {
   addCameraAtmosphere,
   createArcSweep,
+  drawHintPlate,
   drawHudStripChrome,
   type ArcSweep,
   type CameraAtmosphere,
@@ -111,6 +112,7 @@ export class GameScene extends Phaser.Scene {
   private urgencyText!: Phaser.GameObjects.Text;
   private logText!: Phaser.GameObjects.Text;
   private hintText!: Phaser.GameObjects.Text;
+  private hintGfx!: Phaser.GameObjects.Graphics;
   private badgeTexts: Phaser.GameObjects.Text[] = [];
   private barCaptions: Phaser.GameObjects.Text[] = [];
   private barValues: Phaser.GameObjects.Text[] = [];
@@ -123,6 +125,7 @@ export class GameScene extends Phaser.Scene {
   private wakeTellGfx!: Phaser.GameObjects.Graphics;
   private threatGfx!: Phaser.GameObjects.Graphics;
   private shearReadout!: Phaser.GameObjects.Text;
+  private shearPlate!: Phaser.GameObjects.Graphics;
   private lastShearState: ShearPressureState | null = null;
   private shearFlashUntil = 0;
   private goalMarker!: Phaser.GameObjects.Image;
@@ -233,7 +236,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.windowPulse = this.add
-      .rectangle(0, 0, 100, 10, Theme.arc, 0.35)
+      .rectangle(0, 0, 100, 2, Theme.tape, 1)
       .setOrigin(0, 0)
       .setScrollFactor(0)
       .setDepth(91.5)
@@ -311,6 +314,7 @@ export class GameScene extends Phaser.Scene {
     this.threatGfx.setDepth(80);
     this.mapLayer.add(this.threatGfx);
 
+    this.shearPlate = this.add.graphics().setScrollFactor(0).setDepth(92.5).setVisible(false);
     this.shearReadout = this.add
       .text(this.scale.width / 2, 6, '', {
         fontFamily: FONT_DISPLAY,
@@ -320,7 +324,7 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(93)
-      .setAlpha(0.72);
+      .setAlpha(0.88);
 
     this.goalMarker = this.add.image(0, 0, 't_quest');
     this.goalMarker.setDisplaySize(TILE_DRAW + 4, TILE_DRAW + 4);
@@ -334,8 +338,7 @@ export class GameScene extends Phaser.Scene {
           .text(0, 0, '', {
             fontFamily: FONT_DATA,
             fontSize: '10px',
-            color: ThemeCss.groundDeep,
-            fontStyle: 'bold',
+            color: ThemeCss.ink,
           })
           .setScrollFactor(0)
           .setDepth(92)
@@ -364,13 +367,12 @@ export class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(92);
 
+    this.hintGfx = this.add.graphics().setScrollFactor(0).setDepth(92.5).setVisible(false);
     this.hintText = this.add
       .text(this.scale.width / 2, this.scale.height - BOTTOM - 16, '', {
         fontFamily: FONT_DATA,
         fontSize: '14px',
         color: ThemeCss.inkBright,
-        backgroundColor: ThemeCss.hintBg,
-        padding: { x: 12, y: 6 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -378,7 +380,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.invBg = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
+      .rectangle(0, 0, this.scale.width, this.scale.height, Theme.groundDeep, 0.42)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(100)
@@ -397,7 +399,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.pagesBg = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
+      .rectangle(0, 0, this.scale.width, this.scale.height, Theme.groundDeep, 0.42)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(105)
@@ -417,7 +419,7 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.helpBg = this.add
-      .rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.55)
+      .rectangle(0, 0, this.scale.width, this.scale.height, Theme.groundDeep, 0.42)
       .setOrigin(0)
       .setScrollFactor(0)
       .setDepth(110)
@@ -458,6 +460,7 @@ export class GameScene extends Phaser.Scene {
       sectorText: this.sectorText,
       logText: this.logText,
       hintText: this.hintText,
+      hintGfx: this.hintGfx,
       windowPulse: this.windowPulse,
       invBg: this.invBg,
       invPanel: this.invPanel,
@@ -619,6 +622,8 @@ export class GameScene extends Phaser.Scene {
     // Single loud channel: center readout for Charged+ only (no Calm, no badge).
     if (shear.state === 'Calm') {
       this.shearReadout.setVisible(false);
+      this.shearPlate.clear();
+      this.shearPlate.setVisible(false);
     } else {
       this.shearReadout.setVisible(true);
       this.shearReadout.setText(`SHEAR · ${shear.state.toUpperCase()}`);
@@ -629,8 +634,25 @@ export class GameScene extends Phaser.Scene {
             ? ThemeCss.arc
             : ThemeCss.tape,
       );
-      this.shearReadout.setAlpha(flash ? 1 : 0.88);
-      this.shearReadout.setPosition(this.scale.width / 2, 6);
+      this.shearReadout.setAlpha(flash ? 1 : 0.9);
+      this.shearReadout.setPosition(this.scale.width / 2, 7);
+      const tw = Math.ceil(this.shearReadout.width);
+      const th = Math.ceil(this.shearReadout.height);
+      const accent =
+        shear.state === 'Breaching'
+          ? Theme.arcWhite
+          : shear.state === 'Arcing'
+            ? Theme.arc
+            : Theme.tape;
+      this.shearPlate.setVisible(true);
+      drawHintPlate(this.shearPlate, this.scale.width / 2, 7 + th / 2, tw, th);
+      // Retint the tab to shear accent (drawHintPlate uses tape by default).
+      const pw = Math.max(48, tw + 20);
+      const ph = Math.max(18, th + 10);
+      const px = Math.round(this.scale.width / 2 - pw / 2);
+      const py = Math.round(7 + th / 2 - ph / 2);
+      this.shearPlate.fillStyle(accent, 0.9);
+      this.shearPlate.fillRect(px + 1, py + 2, 3, ph - 4);
     }
     this.arcSweep?.setPressure(shear.value, shear.accent);
   }
@@ -776,6 +798,23 @@ export class GameScene extends Phaser.Scene {
     return resolveHintLine(this.state, { movePreviewActive: this.movePreviewQueue !== null });
   }
 
+  /** Field-kit plate behind the context hint — never a toast bubble. */
+  private syncHintPlate(): void {
+    if (!this.hintText.visible) {
+      this.hintGfx.clear();
+      this.hintGfx.setVisible(false);
+      return;
+    }
+    this.hintGfx.setVisible(true);
+    drawHintPlate(
+      this.hintGfx,
+      this.hintText.x,
+      this.hintText.y,
+      this.hintText.width,
+      this.hintText.height,
+    );
+  }
+
   private handleKey(e: KeyboardEvent): void {
     handleGameKey(e, {
       getState: () => this.state,
@@ -808,13 +847,16 @@ export class GameScene extends Phaser.Scene {
       showMuteHint: (muted) => {
         this.hintText.setVisible(true);
         this.hintText.setText(muted ? lore('UI-MUTE-ON') : lore('UI-MUTE-OFF'));
+        this.syncHintPlate();
         this.time.delayedCall(900, () => {
           const hint = this.hintLine();
           if (hint && !this.state.ui.inventoryOpen && !this.helpOpen && !this.pagesOpen) {
             this.hintText.setText(lore(hint));
+            this.hintText.setVisible(true);
           } else {
             this.hintText.setVisible(false);
           }
+          this.syncHintPlate();
         });
       },
       startEndScene: () => {
@@ -837,6 +879,7 @@ export class GameScene extends Phaser.Scene {
       showSkillHint: () => {
         this.hintText.setVisible(true);
         this.hintText.setText(lore('UI-HINT-SKILL'));
+        this.syncHintPlate();
       },
       commitTurnAction: (action, opts) => this.commitTurnAction(action, opts),
     });
@@ -1431,7 +1474,6 @@ export class GameScene extends Phaser.Scene {
           fontFamily: FONT_DATA,
           fontSize: '10px',
           color: label.color,
-          fontStyle: 'bold',
           stroke: ThemeCss.groundDeep,
           strokeThickness: 2,
         })
@@ -1776,6 +1818,7 @@ export class GameScene extends Phaser.Scene {
       if (!this.hintText.visible) {
         this.hintText.setVisible(true);
         this.hintText.setText(lore(this.preferenceHint.id));
+        this.syncHintPlate();
       }
     } else {
       this.preferenceHint = null;

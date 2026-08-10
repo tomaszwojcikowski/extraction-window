@@ -11,7 +11,7 @@ import {
   SURVEY_ROOM_CAP,
 } from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
-import { drawMeter, drawStencilBadge } from '../../scenes/atmosphere';
+import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
@@ -38,6 +38,7 @@ export type HudViewRefs = {
   sectorText: Phaser.GameObjects.Text;
   logText: Phaser.GameObjects.Text;
   hintText: Phaser.GameObjects.Text;
+  hintGfx: Phaser.GameObjects.Graphics;
   windowPulse: Phaser.GameObjects.Rectangle;
   invBg: Phaser.GameObjects.Rectangle;
   invPanel: Phaser.GameObjects.Graphics;
@@ -201,11 +202,11 @@ export class HudView {
         `${lore('UI-SECTOR')} ${lore('UI-TUT-SECTOR')}\n${lore('OBJ-TUT-BRIEF')}   ${lore('UI-SEED')} ${st.seed}`,
       );
     } else {
-      const dots = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
-        i <= st.sectorIndex ? '●' : '○',
+      const ticks = Array.from({ length: CAMPAIGN_LENGTH }, (_, i) =>
+        i <= st.sectorIndex ? '#' : '-',
       ).join(' ');
       r.sectorText.setText(
-        `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${dots}   ${lore('UI-SEED')} ${st.seed}`,
+        `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${ticks}   ${lore('UI-SEED')} ${st.seed}`,
       );
     }
 
@@ -318,8 +319,12 @@ export class HudView {
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
+      r.hintGfx.setVisible(true);
+      drawHintPlate(r.hintGfx, r.hintText.x, r.hintText.y, r.hintText.width, r.hintText.height);
     } else {
       r.hintText.setVisible(false);
+      r.hintGfx.clear();
+      r.hintGfx.setVisible(false);
     }
 
     const invOpen = st.ui.inventoryOpen;
@@ -378,17 +383,18 @@ export class HudView {
     opts: HudRedrawOpts,
   ): void {
     const pulse = this.refs.windowPulse;
-    pulse.setPosition(x, y);
-    pulse.setSize(w, h);
+    // Tape warning strip under the meter — not a translucent rect over the bar.
+    pulse.setPosition(x, y + h + 1);
+    pulse.setSize(w, 2);
     if (critical) {
       pulse.setVisible(true);
       const tw = opts.windowPulseTween.current;
       if (!tw || !tw.isPlaying()) {
         tw?.stop();
-        pulse.setAlpha(0.15);
+        pulse.setAlpha(0.35);
         opts.windowPulseTween.current = opts.tweens.add({
           targets: pulse,
-          alpha: { from: 0.12, to: 0.42 },
+          alpha: { from: 0.28, to: 0.92 },
           duration: 420,
           yoyo: true,
           repeat: -1,
