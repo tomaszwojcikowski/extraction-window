@@ -504,14 +504,19 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Manhattan ≤3 to a living hostile — drives combat danger bed. */
+  /** Hostile pressure — close fauna, alerted sight-lines, or latch chase. */
   private threatNearby(): boolean {
     const st = this.state;
     const px = st.player.x;
     const py = st.player.y;
-    return st.enemies.some(
-      (e) => e.alive && Math.abs(e.x - px) + Math.abs(e.y - py) <= 3,
-    );
+    return st.enemies.some((e) => {
+      if (!e.alive) return false;
+      const d = Math.abs(e.x - px) + Math.abs(e.y - py);
+      if (d <= 4) return true;
+      if (this.noticeChaseLatched.has(e.id)) return true;
+      if (e.alerted && (st.visible[e.y]?.[e.x] ?? false) && d <= 8) return true;
+      return false;
+    });
   }
 
   update(_t: number, dt: number): void {
@@ -1536,6 +1541,7 @@ export class GameScene extends Phaser.Scene {
     if (ids.length === 0) return;
     this.noticeImpactIds = new Set(ids);
     this.noticeImpactUntil = this.time.now + 180;
+    sfx.play('notice');
 
     for (const id of ids) {
       const view = this.enemyViews.get(id);

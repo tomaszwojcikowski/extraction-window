@@ -20,7 +20,10 @@ export type SfxId =
   | 'start'
   | 'armor'
   | 'level'
-  | 'extract';
+  | 'extract'
+  | 'notice'
+  | 'enemy'
+  | 'scuttle';
 
 type Tone = {
   freq: number;
@@ -31,7 +34,16 @@ type Tone = {
   delay?: number;
 };
 
-const COMBAT: SfxId[] = ['hit', 'kill', 'hurt', 'warn', 'armor'];
+const COMBAT: SfxId[] = [
+  'hit',
+  'kill',
+  'hurt',
+  'warn',
+  'armor',
+  'notice',
+  'enemy',
+  'scuttle',
+];
 
 class SfxBus {
   isMuted(): boolean {
@@ -148,6 +160,26 @@ class SfxBus {
           { freq: 330, dur: 0.08, type: 'triangle', vol: 0.12 },
           { freq: 440, dur: 0.1, type: 'triangle', vol: 0.12, delay: 0.08 },
           { freq: 660, dur: 0.16, type: 'sine', vol: 0.14, delay: 0.18 },
+        ];
+      case 'notice':
+        // Fauna latch — dry click into a rising scrape.
+        return [
+          { freq: 140, dur: 0.04, type: 'square', vol: 0.14 },
+          { freq: 420, dur: 0.09, type: 'sawtooth', vol: 0.12, delay: 0.03, slide: 160 },
+          { freq: 90, dur: 0.08, type: 'triangle', vol: 0.1, delay: 0.08, slide: -30 },
+        ];
+      case 'enemy':
+        // Hostile strike / pulse — heavier than player hit.
+        return [
+          { freq: 110, dur: 0.06, type: 'sawtooth', vol: 0.18 },
+          { freq: 70, dur: 0.1, type: 'square', vol: 0.14, delay: 0.04, slide: -35 },
+          { freq: 200, dur: 0.05, type: 'triangle', vol: 0.08, delay: 0.09 },
+        ];
+      case 'scuttle':
+        // Closer footfalls while engaged.
+        return [
+          { freq: 95, dur: 0.03, type: 'triangle', vol: 0.09, slide: -25 },
+          { freq: 130, dur: 0.03, type: 'triangle', vol: 0.07, delay: 0.04, slide: -20 },
         ];
     }
   }

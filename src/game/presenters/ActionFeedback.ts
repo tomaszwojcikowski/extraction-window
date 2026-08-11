@@ -287,21 +287,33 @@ export function playActionSfx(
   if (has('LOG-STORM-WARN')) {
     sfx.play('warn');
   }
-  if (has('LOG-TELE-BEAM') || has('LOG-TELE-OVERWATCH')) {
+  if (
+    has('LOG-TELE-BEAM') ||
+    has('LOG-TELE-OVERWATCH') ||
+    has('LOG-TELE-SWELL') ||
+    has('LOG-TELE-POUNCE') ||
+    has('LOG-TELE-REACH') ||
+    has('LOG-TELE-ZONE')
+  ) {
     sfx.play('warn');
   }
-  if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT')) {
+  if (has('LOG-ZONE-PULSE') || has('LOG-SPORE-BURST') || has('LOG-UPLINK-WAVE-HIT')) {
+    sfx.play('enemy');
+  }
+  if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT') && !has('LOG-ALLY-HURT')) {
     sfx.play('armor');
   }
   if (state.player.hp < prev.prevHp || has('LOG-HURT')) {
     sfx.play('hurt');
+  } else if (has('LOG-ALLY-HURT') || has('LOG-ALLY-DOWN')) {
+    sfx.play('enemy');
   }
   const alive = state.enemies.filter((en) => en.alive).length;
-  if (alive < prev.prevAlive || has('LOG-KILL')) {
+  if (alive < prev.prevAlive || has('LOG-KILL') || has('LOG-ALLY-KILL')) {
     sfx.play('kill');
     return;
   }
-  if (has('LOG-HIT')) {
+  if (has('LOG-HIT') || has('LOG-ALLY-HIT')) {
     sfx.play('hit');
     return;
   }
@@ -355,6 +367,38 @@ export function playActionSfx(
   }
   if (prev.action.type === 'wait') {
     sfx.play('ui');
+  }
+}
+
+/** Fauna closing distance while alerted — layered under player move, not instead. */
+export function playEnemyMotionSfx(
+  state: GameState,
+  prevEnemySnap: ReadonlyArray<EnemySnap>,
+  newLogs: ReadonlyArray<LoreId>,
+): void {
+  if (
+    newLogs.includes('LOG-HIT') ||
+    newLogs.includes('LOG-KILL') ||
+    newLogs.includes('LOG-HURT') ||
+    newLogs.includes('LOG-ALLY-HIT') ||
+    newLogs.includes('LOG-ALLY-KILL')
+  ) {
+    return;
+  }
+  const px = state.player.x;
+  const py = state.player.y;
+  const prevById = new Map(prevEnemySnap.map((e) => [e.id, e]));
+  for (const en of state.enemies) {
+    if (!en.alive || !en.alerted) continue;
+    const prev = prevById.get(en.id);
+    if (!prev?.alive) continue;
+    if (prev.x === en.x && prev.y === en.y) continue;
+    const before = Math.abs(prev.x - px) + Math.abs(prev.y - py);
+    const after = Math.abs(en.x - px) + Math.abs(en.y - py);
+    if (after < before && after <= 5) {
+      sfx.play('scuttle');
+      return;
+    }
   }
 }
 
@@ -455,6 +499,7 @@ export function presentActionFeedback(opts: {
   );
 
   const newLogs = state.log.slice(prevLogLen).map((l) => l.loreId);
+  playEnemyMotionSfx(state, prevEnemySnap, newLogs);
   const { hitTiles, sporeTiles } = combatFeedbackTiles(state, prevEnemySnap);
   emitActionLights(lights, {
     newLogs,

@@ -17,7 +17,7 @@ const NOTES: Record<Exclude<MusicMood, 'off' | 'field'>, number[]> = {
   title: [196, 247, 294, 370],
   storm: [185, 220, 247, 311],
   critical: [208, 247, 277, 370],
-  combat: [220, 233, 262, 311, 349], // tense minor / tritone-ish
+  combat: [185, 196, 233, 277, 311, 370], // tense minor climb
   end_win: [262, 330, 392, 523],
   end_lose: [196, 185, 165, 131],
 };
@@ -78,6 +78,7 @@ class MusicEngine {
       const interval = this.intervalMs(mood);
       this.timer = window.setInterval(() => this.tick(), interval);
       this.tick();
+      if (mood === 'combat') audioBus.duckAmbient(420);
     };
 
     if (ctx.state === 'suspended') {
@@ -89,13 +90,13 @@ class MusicEngine {
 
   /**
    * Field sync: combat > storm critical/storm > biome-tinted field.
-   * Combat uses 2-turn hysteresis so beds don’t flicker on step-away.
+   * Combat uses multi-turn hysteresis so beds don’t flicker on step-away.
    */
   syncField(opts: { sectorId: SectorId; stormTurns: number; inCombat: boolean }): void {
     if (this.mood === 'title' || this.mood === 'end_win' || this.mood === 'end_lose') return;
 
     this.currentSector = opts.sectorId;
-    if (opts.inCombat) this.combatHold = 2;
+    if (opts.inCombat) this.combatHold = 5;
     else if (this.combatHold > 0) this.combatHold -= 1;
 
     if (this.combatHold > 0) {
@@ -132,7 +133,7 @@ class MusicEngine {
       case 'critical':
         return 420;
       case 'combat':
-        return 380;
+        return 260;
       case 'end_win':
         return 400;
       case 'end_lose':
@@ -162,10 +163,6 @@ class MusicEngine {
       this.step++;
       return;
     }
-    if (this.mood === 'combat' && Math.random() < 0.08) {
-      this.step++;
-      return;
-    }
 
     const scale = this.scaleForMood();
     const freq = scale[this.step % scale.length]!;
@@ -174,28 +171,25 @@ class MusicEngine {
     const ctx = audioBus.ensure();
     if (ctx.state === 'suspended') return;
     const t0 = ctx.currentTime;
+
+    if (this.mood === 'combat') {
+      this.tickCombat(ctx, t0, freq);
+      return;
+    }
+
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
-    osc.type =
-      this.mood === 'combat'
-        ? Math.random() < 0.5
-          ? 'triangle'
-          : 'sawtooth'
-        : this.mood === 'critical'
-          ? 'triangle'
-          : 'sine';
+    osc.type = this.mood === 'critical' ? 'triangle' : 'sine';
     osc.frequency.value = freq;
     const peak =
-      this.mood === 'combat'
-        ? 0.14
-        : this.mood === 'critical'
-          ? 0.12
-          : this.mood === 'storm'
-            ? 0.1
-            : this.mood === 'end_win' || this.mood === 'end_lose'
-              ? 0.11
-              : 0.09;
-    const dur = this.mood === 'combat' ? 0.22 : this.mood === 'critical' ? 0.24 : 0.36;
+      this.mood === 'critical'
+        ? 0.12
+        : this.mood === 'storm'
+          ? 0.1
+          : this.mood === 'end_win' || this.mood === 'end_lose'
+            ? 0.11
+            : 0.09;
+    const dur = this.mood === 'critical' ? 0.24 : 0.36;
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + 0.025);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
@@ -203,6 +197,50 @@ class MusicEngine {
     g.connect(this.fadeGain);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
+  }
+
+  /** Danger bed — dual scrape + low pulse so combat reads over biome drones. */
+  private tickCombat(ctx: AudioContext, t0: number, freq: number): void {
+    if (!this.fadeGain) return;
+    const lead = ctx.createOscillator();
+    const leadG = ctx.createGain();
+    lead.type = this.step % 2 === 0 ? 'sawtooth' : 'triangle';
+    lead.frequency.value = freq;
+    leadG.gain.setValueAtTime(0.0001, t0);
+    leadG.gain.exponentialRampToValueAtTime(0.16, t0 + 0.02);
+    leadG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+    lead.connect(leadG);
+    leadG.connect(this.fadeGain);
+    lead.start(t0);
+    lead.stop(t0 + 0.2);
+
+    const fifth = ctx.createOscillator();
+    const fifthG = ctx.createGain();
+    fifth.type = 'triangle';
+    fifth.frequency.value = freq * 1.5;
+    fifthG.gain.setValueAtTime(0.0001, t0);
+    fifthG.gain.exponentialRampToValueAtTime(0.07, t0 + 0.03);
+    fifthG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+    fifth.connect(fifthG);
+    fifthG.connect(this.fadeGain);
+    fifth.start(t0);
+    fifth.stop(t0 + 0.18);
+
+    // Heartbeat thud every other step.
+    if (this.step % 2 === 0) {
+      const thud = ctx.createOscillator();
+      const thudG = ctx.createGain();
+      thud.type = 'sine';
+      thud.frequency.setValueAtTime(55, t0);
+      thud.frequency.exponentialRampToValueAtTime(38, t0 + 0.12);
+      thudG.gain.setValueAtTime(0.0001, t0);
+      thudG.gain.exponentialRampToValueAtTime(0.2, t0 + 0.01);
+      thudG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
+      thud.connect(thudG);
+      thudG.connect(this.fadeGain);
+      thud.start(t0);
+      thud.stop(t0 + 0.16);
+    }
   }
 
   private stopInternal(fadeSec: number): void {
