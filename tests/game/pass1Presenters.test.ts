@@ -5,7 +5,7 @@ import {
   wakeTellsAt,
   wouldNoticeEnemy,
 } from '../../src/game/presenters/WakeTells';
-import { pressureRevealTint } from '../../src/game/presenters/PressureReveal';
+import { pressureRevealAt } from '../../src/game/presenters/PressureReveal';
 import { computeShearPressure } from '../../src/game/presenters/ShearPressure';
 import type { Enemy, GameState } from '../../src/sim/types';
 
@@ -249,7 +249,7 @@ describe('collectWakeTells', () => {
   });
 });
 
-describe('pressureRevealTint', () => {
+describe('pressureRevealAt', () => {
   function questTileState(): GameState {
     const st = stubState({});
     st.tiles[3]![7] = { kind: 'quest', walkable: true, transparent: true };
@@ -260,18 +260,21 @@ describe('pressureRevealTint', () => {
     const st = questTileState();
     const calm = computeShearPressure(st);
     expect(calm.state).toBe('Calm');
-    expect(pressureRevealTint(st, calm, 7, 3, 0)).toBeNull();
+    expect(pressureRevealAt(st, calm, 7, 3, 0)).toBeNull();
   });
 
-  it('returns arc tint at Arcing+ for explored visible optional tiles', () => {
+  it('returns visible crack params at Arcing+ for explored visible optional tiles', () => {
     const st = questTileState();
     st.stormTurns = Math.floor(STORM_TURNS * 0.35);
     st.player.energy = 25;
     const arcing = computeShearPressure(st);
     expect(arcing.state).toBe('Arcing');
     // Flicker gate: (animFrame + x + y) % 3 === 0 at Arcing
-    const tint = pressureRevealTint(st, arcing, 7, 3, 2);
-    expect(tint).not.toBeNull();
+    const reveal = pressureRevealAt(st, arcing, 7, 3, 2);
+    expect(reveal).not.toBeNull();
+    expect(reveal!.visible).toBe(true);
+    expect(reveal!.urgent).toBe(false);
+    expect(reveal!.sectorId).toBe(st.sectorId);
   });
 
   it('skips unseen or unexplored tiles — no ESP reveal', () => {
@@ -282,7 +285,7 @@ describe('pressureRevealTint', () => {
     st.stormTurns = 0;
     st.player.energy = 5;
     st.visible[3]![7] = false;
-    expect(pressureRevealTint(st, arcing, 7, 3, 0)).toBeNull();
+    expect(pressureRevealAt(st, arcing, 7, 3, 0)).toBeNull();
   });
 
   it('returns null for exit tiles at all shear states — mandatory path stays stable', () => {
@@ -293,7 +296,19 @@ describe('pressureRevealTint', () => {
     const breaching = computeShearPressure(st);
     expect(breaching.state).toBe('Breaching');
     for (let frame = 0; frame < 6; frame++) {
-      expect(pressureRevealTint(st, breaching, 7, 3, frame)).toBeNull();
+      expect(pressureRevealAt(st, breaching, 7, 3, frame)).toBeNull();
     }
+  });
+
+  it('marks Breaching cracks urgent so the hot motif holds', () => {
+    const st = questTileState();
+    st.stormTurns = 0;
+    st.player.energy = 5;
+    const breaching = computeShearPressure(st);
+    expect(breaching.state).toBe('Breaching');
+    const reveal = pressureRevealAt(st, breaching, 7, 3, 0);
+    expect(reveal).not.toBeNull();
+    expect(reveal!.urgent).toBe(true);
+    expect(reveal!.visible).toBe(true);
   });
 });

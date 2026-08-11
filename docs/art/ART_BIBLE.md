@@ -180,9 +180,9 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | Item | State |
 |------|-------|
 | LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
+| Per-sector crack-path art | Done — `drawPressureCrack` / `pressureRevealAt` overlay motifs at Arcing+ |
 | `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
-| Breaching climax juice | Deferred — one-bet discipline |
-| Per-sector crack-path art | Deferred |
+| Breaching climax juice | Partial — hot crack motif + pinpricks at Breaching; full climax still deferred |
 
 ## 9. Gates
 

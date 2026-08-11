@@ -179,3 +179,9 @@ export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
 export function floorTextureKey(sectorId: SectorId, variant: number): string {
   return `t_floor_${sectorId}_${variant % 3}`;
 }
+
+/** Shear fracture overlay — transparent, layered over optional-path floor tiles. */
+export function crackTextureKey(sectorId: SectorId, variant: number, urgent = false): string {
+  const hot = urgent ? '_hot' : '';
+  return `t_crack_${sectorId}${hot}_${variant % 3}`;
+}

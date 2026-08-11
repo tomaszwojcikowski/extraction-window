@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { SectorId } from '../data/encounters';
 import { ENEMIES, type EnemyKind } from '../data/enemies';
-import { Theme, floorTextureKey } from './theme';
+import { Theme, crackTextureKey, floorTextureKey } from './theme';
 import {
   drawDeluxeContact,
   drawDeluxeEnemy,
@@ -11,6 +11,7 @@ import {
   drawDeluxeProp,
   drawDeluxeSconce,
   drawDeluxeWall,
+  drawPressureCrack,
 } from './tex/deluxe';
 
 /** Base pixel art size — rendered larger on screen for readability. */
@@ -169,6 +170,10 @@ export function registerTextures(scene: Phaser.Scene): void {
     for (let v = 0; v < 3; v++) {
       drawDeluxeFloor(g, T, id, v);
       bake(g, floorTextureKey(id, v), T);
+      drawPressureCrack(g, T, id, v, false);
+      bake(g, crackTextureKey(id, v, false), T);
+      drawPressureCrack(g, T, id, v, true);
+      bake(g, crackTextureKey(id, v, true), T);
     }
   }
   // Legacy floor aliases

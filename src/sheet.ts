@@ -9,7 +9,7 @@ import {
   wallTextureKey,
 } from './scenes/textures';
 import { drawMeter, drawStencilBadge } from './scenes/atmosphere';
-import { Theme, ThemeCss, floorTextureKey } from './scenes/theme';
+import { Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
 import { drawThreatZones } from './game/views/ThreatView';
 import { createGame } from './sim/state';
 import { moveEnemies } from './sim/ai';
@@ -76,6 +76,7 @@ class SheetScene extends Phaser.Scene {
     this.buildSpriteGrid();
     this.buildTerrainGrid('terrain');
     this.buildTerrainGrid('terrainFlat');
+    this.buildCrackGrid();
     this.buildStructureGrid();
     this.buildChromeGrid();
     this.buildTelegraphBoards();
@@ -191,6 +192,39 @@ class SheetScene extends Phaser.Scene {
         sector,
         wallStyleForSector(sector),
       );
+    }
+  }
+
+  /** Floor + Arcing / Breaching crack overlays — motif must survive the fracture. */
+  private buildCrackGrid(): void {
+    const host = document.getElementById('cracks');
+    if (!host) return;
+    for (const sector of SECTORS) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      for (const urgent of [false, true]) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 46;
+        canvas.height = 46;
+        const ctx = canvas.getContext('2d')!;
+        ctx.imageSmoothingEnabled = false;
+        const floor = this.textures.get(floorTextureKey(sector, 0)).getSourceImage();
+        const crack = this.textures
+          .get(crackTextureKey(sector, 0, urgent))
+          .getSourceImage();
+        ctx.drawImage(floor as CanvasImageSource, 0, 0, 46, 46);
+        ctx.drawImage(crack as CanvasImageSource, 0, 0, 46, 46);
+        cell.appendChild(canvas);
+      }
+      const label = document.createElement('div');
+      label.className = 'name';
+      label.textContent = sector;
+      const sub = document.createElement('div');
+      sub.className = 'meta';
+      sub.textContent = 'Arcing / Breaching';
+      sub.style.color = ThemeCss.arc;
+      cell.append(label, sub);
+      host.appendChild(cell);
     }
   }
 

@@ -318,6 +318,178 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
   },
 };
 
+/**
+ * Shear stress-fractures that appear on optional path tiles at Arcing+.
+ * Transparent canvas — layered over the live floor so biome identity survives.
+ * Motif mirrors FLOOR_DECAL so each sector cracks like itself, not a generic glow.
+ */
+export function drawPressureCrack(
+  g: G,
+  T: number,
+  sector: SectorId,
+  variant: number,
+  urgent: boolean,
+): void {
+  transparent(g, T);
+  const q = unit(T);
+  const v = ((variant % 3) + 3) % 3;
+  const ink = urgent ? Theme.arcWhite : Theme.arc;
+  const deep = urgent ? mix(Theme.arcWhite, Theme.groundDeep, 0.35) : mix(Theme.arc, Theme.groundDeep, 0.45);
+  const core = urgent ? 0.95 : 0.72;
+  const halo = urgent ? 0.55 : 0.32;
+
+  const stroke = (x0: number, y0: number, x1: number, y1: number, w = 1): void => {
+    g.lineStyle(q(w + 1), deep, halo);
+    g.lineBetween(x0, y0, x1, y1);
+    g.lineStyle(q(w), ink, core);
+    g.lineBetween(x0, y0, x1, y1);
+  };
+
+  CRACK_PATH[sector]({ g, q, T, variant: v, stroke, urgent, ink });
+
+  // Hot pinpricks at Breaching — magnesium bite, not nested bloom rings.
+  if (urgent) {
+    g.fillStyle(Theme.arcWhite, 0.85);
+    for (let i = 0; i < 4; i++) {
+      const x = q(8 + ((i * 11 + v * 5) % 30));
+      const y = q(9 + ((i * 13 + v * 7) % 28));
+      g.fillRect(x, y, q(1), q(1));
+    }
+  }
+}
+
+type CrackPaint = {
+  g: G;
+  q: Q;
+  T: number;
+  variant: number;
+  stroke: (x0: number, y0: number, x1: number, y1: number, w?: number) => void;
+  urgent: boolean;
+  ink: number;
+};
+
+const CRACK_PATH: Record<SectorId, (p: CrackPaint) => void> = {
+  plains: ({ q, T, variant, stroke, urgent }) => {
+    stroke(q(6), q(10 + variant * 2), q(22), q(18), 1);
+    stroke(q(22), q(18), q(40), q(14 + variant), 1);
+    stroke(q(18), q(18), q(24), q(34), 1);
+    if (urgent) stroke(q(10), q(28), q(30), q(36), 1);
+  },
+  ridge: ({ q, T, variant, stroke, urgent }) => {
+    for (let i = 0; i < 3; i++) {
+      const y = q(12 + i * 11 + variant);
+      const step = q(i * 3);
+      stroke(q(4) + step, y, T - q(6), y, 1);
+      if (urgent || i === 1) stroke(q(16 + variant * 4), y, q(20 + variant * 4), y + q(8), 1);
+    }
+  },
+  canopy: ({ q, variant, stroke, urgent }) => {
+    stroke(q(4), q(30 + variant), q(18), q(22), 2);
+    stroke(q(18), q(22), q(34), q(16), 1);
+    stroke(q(18), q(22), q(22), q(38), 1);
+    stroke(q(28), q(18), q(40), q(28), 1);
+    if (urgent) stroke(q(10), q(14), q(18), q(22), 1);
+  },
+  flood: ({ q, T, variant, stroke, urgent }) => {
+    const cx = T / 2 + q(variant * 2 - 2);
+    const cy = T / 2;
+    stroke(cx - q(14), cy, cx + q(14), cy, 1);
+    stroke(cx, cy - q(12), cx, cy + q(12), 1);
+    stroke(cx - q(10), cy - q(8), cx + q(10), cy + q(8), 1);
+    if (urgent) stroke(cx - q(10), cy + q(8), cx + q(10), cy - q(8), 1);
+  },
+  brine: ({ q, T, variant, stroke, urgent }) => {
+    const step = q(12);
+    for (let i = 0; i <= 2; i++) {
+      const off = q(((i + variant) % 2) * 2);
+      stroke(q(5), q(10) + i * step + off, T - q(5), q(12) + i * step, 1);
+      stroke(q(10) + i * step, q(5), q(8) + i * step + off, T - q(5), 1);
+    }
+    if (urgent) stroke(q(8), q(8), T - q(8), T - q(8), 1);
+  },
+  reef: ({ q, variant, stroke, urgent }) => {
+    const ox = q(8 + variant * 3);
+    stroke(ox + q(10), q(8), ox + q(10), q(38), 1);
+    stroke(ox, q(18), ox + q(22), q(26), 1);
+    stroke(ox + q(4), q(30), ox + q(20), q(14), 1);
+    if (urgent) stroke(ox + q(2), q(12), ox + q(18), q(34), 1);
+  },
+  ash: ({ q, T, variant, stroke, urgent }) => {
+    for (let i = 0; i < 3; i++) {
+      const y = q(14 + i * 10 + variant);
+      stroke(q(4), y + q(4), q(20), y, 1);
+      stroke(q(20), y, T - q(4), y + q(3), 1);
+    }
+    if (urgent) stroke(q(12), q(8), q(28), T - q(6), 1);
+  },
+  fissure: ({ q, T, variant, stroke, urgent }) => {
+    stroke(q(6), q(4), q(22 + variant * 2), q(22), 2);
+    stroke(q(22 + variant * 2), q(22), q(16), T - q(4), 2);
+    stroke(q(22 + variant * 2), q(22), q(40), q(12 + variant * 2), 1);
+    stroke(q(22 + variant * 2), q(22), q(38), q(36), 1);
+    if (urgent) stroke(q(10), q(28), q(30), q(8), 1);
+  },
+  approach: ({ q, T, variant, stroke, urgent }) => {
+    const lane = q(16 + variant);
+    stroke(lane, q(4), lane, T - q(4), 2);
+    stroke(lane + q(12), q(6), lane + q(12), T - q(6), 1);
+    stroke(lane, q(20), lane + q(12), q(24), 1);
+    if (urgent) stroke(lane - q(4), q(12), lane + q(16), q(32), 1);
+  },
+  trench: ({ q, T, variant, stroke, urgent }) => {
+    stroke(q(8), q(6), q(8), T - q(6), 2);
+    for (let i = 0; i < 4; i++) {
+      stroke(q(8), q(10 + i * 8 + variant), q(28), q(12 + i * 8), 1);
+    }
+    if (urgent) stroke(q(20), q(6), q(20), T - q(6), 1);
+  },
+  ruin: ({ q, variant, stroke, urgent }) => {
+    const ox = q(8 + variant * 2);
+    stroke(ox, q(10), ox + q(18), q(10), 1);
+    stroke(ox, q(10), ox, q(28), 2);
+    stroke(ox, q(28), ox + q(14), q(34), 1);
+    stroke(ox + q(6), q(10), ox + q(6), q(22), 1);
+    if (urgent) stroke(ox + q(12), q(14), ox + q(12), q(36), 1);
+  },
+  duct: ({ q, T, variant, stroke, urgent }) => {
+    for (let i = 0; i < 3; i++) {
+      const x = q(10 + i * 10 + variant * 2);
+      stroke(x, q(5), x, T - q(5), 1);
+    }
+    stroke(q(6), q(22 + variant), T - q(6), q(24 + variant), 2);
+    if (urgent) stroke(q(6), q(14), T - q(6), q(16), 1);
+  },
+  spire: ({ q, T, variant, stroke, urgent }) => {
+    const c = T / 2;
+    stroke(c, q(6), c, T - q(6), 1);
+    stroke(q(6), c, T - q(6), c, 1);
+    stroke(q(10 + variant), q(10), T - q(10), T - q(10), 1);
+    if (urgent) stroke(T - q(10), q(10), q(10 + variant), T - q(10), 1);
+  },
+  vault: ({ q, T, variant, stroke, urgent }) => {
+    const c = T / 2;
+    stroke(q(10), q(10), T - q(10), q(10), 1);
+    stroke(q(10), q(10), q(10), T - q(10), 1);
+    stroke(T - q(10), q(10), T - q(10), T - q(10), 1);
+    for (let i = 0; i < 3; i++) {
+      const off = q(i * 4 + variant);
+      stroke(q(14) + off, c - q(6), q(20) + off, c, 1);
+      stroke(q(20) + off, c, q(14) + off, c + q(6), 1);
+    }
+    if (urgent) stroke(q(12), T - q(12), T - q(12), T - q(12), 1);
+  },
+  beacon: ({ q, T, variant, stroke, urgent }) => {
+    const c = T / 2;
+    stroke(c, q(6), c, T - q(6), 1);
+    stroke(q(6), c, T - q(6), c, 1);
+    stroke(q(10), q(10 + variant), T - q(10), T - q(10 + variant), 1);
+    stroke(T - q(10), q(10 + variant), q(10), T - q(10 + variant), 1);
+    if (urgent) {
+      stroke(c - q(10), c - q(10), c + q(10), c + q(10), 1);
+    }
+  },
+};
+
 /** High-contrast, beveled cliff / bulkhead / conduit families — layered like floors. */
 export function drawDeluxeWall(
   g: G,

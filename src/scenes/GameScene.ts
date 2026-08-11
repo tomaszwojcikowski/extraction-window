@@ -8,7 +8,7 @@ import {
   wallTextureKey,
   sconceTextureKey,
 } from './textures';
-import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, floorTextureKey } from './theme';
+import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
@@ -59,7 +59,7 @@ import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
 import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters/WakeTells';
-import { pressureRevealTint } from '../game/presenters/PressureReveal';
+import { pressureRevealAt } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
@@ -75,6 +75,8 @@ export class GameScene extends Phaser.Scene {
   private entityLayer!: Phaser.GameObjects.Container;
   private lightView!: LightView;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
+  /** Shear crack overlays on optional-path tiles — sparse, recycled. */
+  private crackSprites = new Map<string, Phaser.GameObjects.Image>();
   private camX = 0;
   private camY = 0;
 
@@ -713,6 +715,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.tileSprites = [];
+    for (const spr of this.crackSprites.values()) spr.destroy();
+    this.crackSprites.clear();
     const { width, height, tiles } = this.state;
     for (let y = 0; y < height; y++) {
       this.tileSprites[y] = [];
@@ -1704,11 +1708,6 @@ export class GameScene extends Phaser.Scene {
       for (let x = 0; x < st.width; x++) {
         const tile = this.tileSprites[y]?.[x];
         if (!tile) continue;
-        const reveal = pressureRevealTint(st, shear, x, y, this.animFrame);
-        if (reveal !== null) {
-          tile.setTint(reveal);
-          continue;
-        }
         const patch = st.contamination.some((c) => c.x === x && c.y === y);
         if (patch && st.visible[y]?.[x]) {
           tile.setTint(Theme.biolum);
@@ -1720,8 +1719,44 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+    this.syncPressureCracks(st, shear);
     if (this.firstLight !== null) {
       this.lightView.applySweep(st, this.tileSprites, this.firstLight);
+    }
+  }
+
+  /** Sector hairline fractures on optional paths — biome motif, not a full-tile arc wash. */
+  private syncPressureCracks(st: GameState, shear: ReturnType<typeof computeShearPressure>): void {
+    const live = new Set<string>();
+    for (let y = 0; y < st.height; y++) {
+      for (let x = 0; x < st.width; x++) {
+        const reveal = pressureRevealAt(st, shear, x, y, this.animFrame);
+        if (!reveal) continue;
+        const id = `${x},${y}`;
+        live.add(id);
+        let spr = this.crackSprites.get(id);
+        if (!spr) {
+          spr = this.add.image(
+            x * TILE_DRAW + TILE_DRAW / 2,
+            y * TILE_DRAW + TILE_DRAW / 2,
+            crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent),
+          );
+          spr.setDisplaySize(TILE_DRAW, TILE_DRAW);
+          spr.setDepth(1.5);
+          this.mapLayer.add(spr);
+          this.crackSprites.set(id, spr);
+        } else {
+          spr.setTexture(crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent));
+        }
+        spr.setVisible(reveal.visible);
+        spr.setAlpha(reveal.urgent ? 0.95 : 0.78);
+      }
+    }
+    for (const [id, spr] of this.crackSprites) {
+      if (!live.has(id)) {
+        spr.destroy();
+        this.crackSprites.delete(id);
+      }
     }
   }
 
