@@ -304,7 +304,7 @@ export const LORE = {
     'Clears ion/vent/brine underfoot, flushes EM, or opens an adjacent sealed hatch (u).',
   'ITEM-MAPPER': 'Nav Ping',
   'ITEM-MAPPER-DESC': 'Marks the sector hatch for 40 turns (even through fog).',
-  'ITEM-SALVAGE': 'Unknown Salvage',
+  'ITEM-SALVAGE': 'Salvage',
   'ITEM-SALVAGE-DESC':
     'Step onto it to pick up, then u in the kit to scan. May give a useful item — or backlash.',
 
@@ -551,7 +551,7 @@ export const LORE = {
   'LOG-EM-HIGH':
     'EM contamination critical — Bus tax and wider aggro. Sealant Foam flushes residue.',
   'LOG-EM-PURGE': 'EM contamination flushed.',
-  'LOG-SALVAGE-ID': 'Array ID complete — known kit item.',
+  'LOG-SALVAGE-ID': 'Salvage scan complete — kit item recovered.',
   'LOG-SALVAGE-BAD': 'Unstable salvage — EM backlash and local wake.',
   'LOG-PADD-MOD': 'PADD page alters field parameters.',
   'UI-EM': 'EM',
@@ -562,7 +562,7 @@ export const LORE = {
   'SKILL-TRIAGE-NAME': 'Field Medicine',
   'SKILL-TRIAGE-DESC': 'On sector entry: restore +6 HP.',
   'SKILL-SCAVENGER-NAME': 'Scavenger Eye',
-  'SKILL-SCAVENGER-DESC': '+15% salvage drops; safer unknown-crate scans.',
+  'SKILL-SCAVENGER-DESC': '+15% salvage drops; safer salvage scans.',
   'SKILL-OVERCHARGE-NAME': 'Overcharge Strike',
   'SKILL-OVERCHARGE-DESC': '+1 melee damage while vitals ≤ 50%.',
   'SKILL-ION-SKIN-NAME': 'Plasma Skin',
