@@ -151,27 +151,27 @@ export type BiomeAmbient = {
 
 /**
  * How light *behaves* per biome, not just what colour the floor is:
- * scrub scatters it (canopy/plains lift), brine reflects it (brine/flood cool
- * and bright), ash chokes it (ash/approach dark and warm-grey), duct swallows
- * it. Vertical-slice sectors this pass: plains (bright), duct (dark),
- * approach (pressure).
+ * scrub scatters it (canopy/plains/ridge lift), brine reflects it (brine/flood/reef
+ * cool and bright), ash chokes it (ash/approach dark and warm-grey), duct swallows
+ * it. Presentation only — sim exitance lives in `SECTOR_AMBIENT`.
  */
 export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
-  plains: { ambient: 0.44, tint: 0xffeccc },
-  flood: { ambient: 0.34, tint: 0xbcd8e4 },
-  canopy: { ambient: 0.34, tint: 0xc4dcb4 },
-  reef: { ambient: 0.28, tint: 0xa8e8dc },
+  // Presentation floor only — sim exitance stays in SECTOR_AMBIENT.
+  plains: { ambient: 0.48, tint: 0xffeccc },
+  flood: { ambient: 0.37, tint: 0xbcd8e4 },
+  canopy: { ambient: 0.38, tint: 0xc4dcb4 },
+  reef: { ambient: 0.32, tint: 0xa8e8dc },
   spire: { ambient: 0.31, tint: 0xd4dce4 },
   ruin: { ambient: 0.32, tint: 0xe4ccac },
   beacon: { ambient: 0.37, tint: 0xffdcb0 },
   trench: { ambient: 0.26, tint: 0xccbc9c },
-  duct: { ambient: 0.17, tint: 0xa4b0b8 },
-  ash: { ambient: 0.26, tint: 0xdcbc98 },
-  brine: { ambient: 0.32, tint: 0xa4d8e0 },
+  duct: { ambient: 0.12, tint: 0xa4b0b8 },
+  ash: { ambient: 0.2, tint: 0xdcbc98 },
+  brine: { ambient: 0.36, tint: 0xa4d8e0 },
   vault: { ambient: 0.33, tint: 0xc4ccd8 },
   fissure: { ambient: 0.27, tint: 0xe4b49c },
-  approach: { ambient: 0.21, tint: 0xd4b898 },
-  ridge: { ambient: 0.4, tint: 0xe8e0c8 },
+  approach: { ambient: 0.17, tint: 0xd4b898 },
+  ridge: { ambient: 0.43, tint: 0xe8e0c8 },
 };
 
 export function floorTextureKey(sectorId: SectorId, variant: number): string {

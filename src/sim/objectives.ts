@@ -63,19 +63,7 @@ export function describeObjective(state: GameState): ObjectiveDesc {
   const pos = currentObjectivePos(state);
   let local: LoreId = 'OBJ-LOCAL-EXIT';
 
-  const rq = state.roomQuest;
-  const step = rq && !rq.done ? rq.steps[rq.stepIndex] : null;
-  const questDist = step
-    ? Math.abs(state.player.x - step.pos.x) + Math.abs(state.player.y - step.pos.y)
-    : 999;
-  const preferRoom =
-    step &&
-    (state.explored[step.pos.y]?.[step.pos.x] || questDist <= 8);
-
-  if (preferRoom && step) {
-    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: step.pos };
-  }
-
+  // Optional room sites never own the extract marker — they get a separate amber frame.
   if (state.sectorId === 'ruin' && !state.objectives.hasRelayKey) {
     local = 'OBJ-LOCAL-KEY';
   } else if (state.sectorId === 'beacon' && !state.objectives.beaconOpen) {

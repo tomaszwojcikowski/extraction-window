@@ -305,7 +305,7 @@ export function collectActionFloatLabels(
         break;
       case 'LOG-SEALED-CACHE':
         next = {
-          label: log.detail ? `CACHE ${log.detail}` : '+6 WINDOW',
+          label: log.detail ? `CACHE ${log.detail}` : '+6 Window',
           color: ThemeCss.safe,
         };
         break;
@@ -940,7 +940,7 @@ function tweenTileStep(
     targets: proxy,
     t: 1,
     duration: MOVE_MS,
-    ease: 'Sine.easeInOut',
+    ease: 'Cubic.easeOut',
     onUpdate: () => {
       if (!img.active) return;
       const t = proxy.t;
@@ -954,7 +954,6 @@ function tweenTileStep(
     onComplete: () => {
       if (img.active) {
         img.setPosition(b.x, b.y);
-        img.setDisplaySize(img.displayWidth, img.displayHeight);
       }
       if (label?.active) label.setPosition(b.x, b.y - TILE_DRAW / 2 + 5);
       onProgress?.(1);
@@ -964,7 +963,8 @@ function tweenTileStep(
 }
 
 /**
- * Stage player move, then other actors, then invoke onDone (FOV/HUD redraw + queue flush).
+ * Stage player + other actors in parallel, then invoke onDone (FOV/HUD redraw + queue flush).
+ * Parallel keeps corridor cadence near one MOVE_MS instead of stacking phases.
  */
 export function playMoveAnims(
   host: MoveAnimHost,
@@ -993,85 +993,106 @@ export function playMoveAnims(
   const fromAllies = extras.fromAllies ?? new Map();
   const fromNpcs = extras.fromNpcs ?? new Map();
 
-  const runOtherPhase = () => {
-    let pending = 0;
-    let phaseDone = false;
-    const finishOne = () => {
-      pending -= 1;
-      if (pending > 0 || phaseDone) return;
-      phaseDone = true;
-      complete();
-    };
-
-    for (const en of host.state.enemies) {
-      if (!en.alive) continue;
-      const view = host.enemyViews.get(en.id);
-      if (!view) continue;
-      const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
-      if (prev.x === en.x && prev.y === en.y) continue;
-      pending += 1;
-      tweenTileStep(host, view.img, view.label, prev, { x: en.x, y: en.y }, false, finishOne);
-      view.gx = en.x;
-      view.gy = en.y;
-    }
-
-    for (const ally of host.state.allies) {
-      if (!ally.alive) continue;
-      const view = host.allyViews.get(ally.id);
-      if (!view) continue;
-      const prev = fromAllies.get(ally.id) ?? { x: ally.x, y: ally.y };
-      if (prev.x === ally.x && prev.y === ally.y) continue;
-      pending += 1;
-      tweenTileStep(host, view.img, view.label, prev, { x: ally.x, y: ally.y }, false, finishOne);
-      view.gx = ally.x;
-      view.gy = ally.y;
-    }
-
-    for (const npc of host.state.npcs) {
-      const view = host.npcViews.get(npc.id);
-      if (!view) continue;
-      const prev = fromNpcs.get(npc.id);
-      if (!prev || (prev.x === npc.x && prev.y === npc.y)) continue;
-      pending += 1;
-      tweenTileStep(host, view.img, view.label, prev, { x: npc.x, y: npc.y }, false, finishOne);
-      view.gx = npc.x;
-      view.gy = npc.y;
-    }
-
-    if (pending === 0) {
-      complete();
-      return;
-    }
-
-    host.time.delayedCall(MOVE_MS + 140, () => {
-      if (!phaseDone) {
-        phaseDone = true;
-        complete();
-      }
-    });
+  type Step = {
+    img: Phaser.GameObjects.Image;
+    label: Phaser.GameObjects.Text | null;
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    hop: boolean;
+    onProgress?: (t: number) => void;
+    afterStart?: () => void;
   };
+  const steps: Step[] = [];
 
   if (playerMoved) {
-    tweenTileStep(
-      host,
-      host.playerSprite,
-      null,
-      fromPlayer,
-      { x: px, y: py },
-      true,
-      runOtherPhase,
-      host.onPlayerMoveLight,
-    );
-    host.time.delayedCall(MOVE_MS * 2 + 180, () => {
-      if (!finished) complete();
+    steps.push({
+      img: host.playerSprite,
+      label: null,
+      from: fromPlayer,
+      to: { x: px, y: py },
+      hop: true,
+      onProgress: host.onPlayerMoveLight,
     });
   } else {
     host.snapImg(host.playerSprite, px, py);
-    runOtherPhase();
-    host.time.delayedCall(MOVE_MS + 140, () => {
-      if (!finished) complete();
+  }
+
+  for (const en of host.state.enemies) {
+    if (!en.alive) continue;
+    const view = host.enemyViews.get(en.id);
+    if (!view) continue;
+    const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
+    if (prev.x === en.x && prev.y === en.y) continue;
+    steps.push({
+      img: view.img,
+      label: view.label,
+      from: prev,
+      to: { x: en.x, y: en.y },
+      hop: false,
+      afterStart: () => {
+        view.gx = en.x;
+        view.gy = en.y;
+      },
     });
   }
+
+  for (const ally of host.state.allies) {
+    if (!ally.alive) continue;
+    const view = host.allyViews.get(ally.id);
+    if (!view) continue;
+    const prev = fromAllies.get(ally.id) ?? { x: ally.x, y: ally.y };
+    if (prev.x === ally.x && prev.y === ally.y) continue;
+    steps.push({
+      img: view.img,
+      label: view.label,
+      from: prev,
+      to: { x: ally.x, y: ally.y },
+      hop: false,
+      afterStart: () => {
+        view.gx = ally.x;
+        view.gy = ally.y;
+      },
+    });
+  }
+
+  for (const npc of host.state.npcs) {
+    const view = host.npcViews.get(npc.id);
+    if (!view) continue;
+    const prev = fromNpcs.get(npc.id);
+    if (!prev || (prev.x === npc.x && prev.y === npc.y)) continue;
+    steps.push({
+      img: view.img,
+      label: view.label,
+      from: prev,
+      to: { x: npc.x, y: npc.y },
+      hop: false,
+      afterStart: () => {
+        view.gx = npc.x;
+        view.gy = npc.y;
+      },
+    });
+  }
+
+  if (steps.length === 0) {
+    complete();
+    return;
+  }
+
+  let pending = steps.length;
+  const finishOne = () => {
+    pending -= 1;
+    if (pending <= 0) complete();
+  };
+
+  for (const step of steps) {
+    step.afterStart?.();
+    tweenTileStep(host, step.img, step.label, step.from, step.to, step.hop, finishOne, step.onProgress);
+  }
+
+  // Safety net if a tween is killed mid-scene — keep slightly past MOVE_MS.
+  host.time.delayedCall(MOVE_MS + 60, () => {
+    if (!finished) complete();
+  });
 }
 
 /** Brief white tint on visible enemies after a player hit/kill. */

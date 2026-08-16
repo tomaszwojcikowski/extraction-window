@@ -124,8 +124,9 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 - **An armed windup paints the tiles it threatens.**
   [`ThreatView.ts`](../../src/game/views/ThreatView.ts) hatches the ground using
   `enemyThreatTiles` from the sim, so the overlay cannot drift from what actually
-  resolves. Colour encodes the answer, not the attacker: rust = brace it, sallow = leave
-  the ring, hazard tape = held shot, arc-white = beam lane.
+  resolves. Colour encodes the answer, not the attacker: rust = eat the charge
+  or kill mid-windup, sallow = leave the ring, hazard tape = held shot,
+  arc-white = beam lane.
 
 ---
 
@@ -136,11 +137,12 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 - Bars: HP · Shield · Power · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
 - **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
+- **Mission log is opt-in.** Bottom strip height is `0` until `l` opens `HUD_BOTTOM_LOG`. While closed, recent causal floats dock as plated chips (`SignalRail`) — confirm in the text feed, don’t keep a permanent ticker.
+- **Title is an aperture.** `drawTitleWindow` is a recessed survey glass in the case lid (sight brackets, grit, stepped scan tick); mission ID / begin / footer sit on `drawMenuPlate` strips — not a floating text stack.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.
-- Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.
 - HUD stat changes ease meters (~140ms) and stamp readouts (~90ms hard flash + 1px lift) — instrument motion, not soft UI pulses. Log feed does not stamp every turn.
-- Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → one-shot coaches (peek teach).
+- Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → pillar coaches.
 - CSS hex strings (`'#rrggbb'`) are the same rule as `0x` paints — both must come from `Theme` / `ThemeCss`. Enforced by [`palette.test.ts`](../../tests/game/palette.test.ts).
 
 ---
@@ -148,8 +150,10 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 ## 6. Motion
 
 - Turn-based cadence stays legible: no motion that outlives the turn it explains.
-- Tile steps slide (~150ms). The surveyor takes a short hop so a one-tile move
+- Tile steps slide (~130ms). The surveyor takes a short hop so a one-tile move
   reads as a step; hostiles and escorts stay flat so packs stay readable.
+  Player and other movers tween in **parallel** (not stacked phases).
+  Mid-hop lamp wash only tints cells that change; bloom/shadows step ~8×/hop.
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward / hush ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
@@ -181,7 +185,6 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 |------|-------|
 | LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
 | Per-sector crack-path art | Done — `drawPressureCrack` / `pressureRevealAt` overlay motifs at Arcing+ |
-| `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
 | Breaching climax juice | Partial — hot crack motif + pinpricks at Breaching; full climax still deferred |
 
 ## 9. Gates

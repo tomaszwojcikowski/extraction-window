@@ -2,10 +2,11 @@ import type { Action, GameState } from '../types';
 import { tryRoomQuest, tickRoomQuest, questStepPrompt, activeQuestStep } from '../roomQuest';
 import { FAVOR_LABEL, favorForQuest } from '../extractFavor';
 import type { Mechanic } from './types';
-import type { LoreId } from '../../data/lore';
+import { lore, type LoreId } from '../../data/lore';
 
 /**
- * Optional side-room anomalies — interact via `>` on the quest tile.
+ * Optional side-room anomalies — interact via `>` on the quest tile
+ * (vent-seal site A uses Sealant Foam instead).
  * When tryAction returns true, the action dispatcher must end the player turn.
  */
 export const roomQuestMechanic: Mechanic = {
@@ -26,7 +27,8 @@ export const roomQuestMechanic: Mechanic = {
     if (!rq || rq.done) return null;
     const step = activeQuestStep(rq);
     if (step && state.player.x === step.pos.x && state.player.y === step.pos.y) {
-      return 'UI-HINT-QUEST';
+      // Step prompt names the real verb (sealant vs Enter) — not a generic OPT tip.
+      return step.prompt;
     }
     return null;
   },
@@ -50,4 +52,15 @@ export function roomQuestHudLine(
     total: rq.steps.length,
     favor: FAVOR_LABEL[favorForQuest(state)],
   };
+}
+
+/** Compact OPT tracker for the HUD — step verb + extract favor preview. */
+export function formatRoomQuestHudLine(state: GameState): string | null {
+  const line = roomQuestHudLine(state);
+  if (!line) return null;
+  const track =
+    line.total > 1
+      ? `${lore('UI-QUEST-BADGE')} ${line.index}/${line.total}`
+      : lore('UI-QUEST-BADGE');
+  return `${track} — ${lore(line.prompt)} · ${lore('UI-QUEST-PAYS')} ${line.favor}`;
 }

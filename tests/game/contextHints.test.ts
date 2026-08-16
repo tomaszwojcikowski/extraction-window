@@ -141,35 +141,17 @@ describe('contextHint coaching', () => {
 });
 
 describe('hint line resolver', () => {
-  /** Early sector with a visible mite in notice range — peek teach conditions. */
-  function peekTeachState() {
+  it('yields to a pending skill pick', () => {
     const st = createGame(42);
-    st.tutorialActive = false;
-    st.sectorIndex = 0;
-    st.items = [];
-    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    const mite = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
-    st.enemies = [mite];
-    st.visible[mite.y]![mite.x] = true;
-    return st;
-  }
-
-  it('gives the line to the one-shot teach when nothing outranks it', () => {
-    expect(resolveHintLine(peekTeachState())).toBe('UI-HINT-PEEK-TEACH');
-  });
-
-  it('yields the teach to the peek commit tip while Shift is held', () => {
-    expect(resolveHintLine(peekTeachState(), { movePreviewActive: true })).toBe('UI-HINT-COMMIT');
-  });
-
-  it('yields the teach to a pending skill pick', () => {
-    const st = peekTeachState();
     st.skillPick = ['triage', 'deep_reserve'];
     expect(resolveHintLine(st)).toBe('UI-HINT-SKILL');
   });
 
-  it('yields the teach to a visible windup', () => {
-    const st = peekTeachState();
+  it('yields to a visible windup', () => {
+    const st = createGame(42);
+    st.enemies = [];
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
     const sentinel = makeEnemy({
       kind: 'sentinel',
       x: st.player.x + 2,

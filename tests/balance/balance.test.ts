@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   FULL_SEEDS,
+  GATE_SEEDS,
   SMOKE_SEEDS,
   WIN_RATE_MAX,
   WIN_RATE_MIN,
@@ -42,15 +43,10 @@ describe('balance — full suite', () => {
     summary = summarize(results);
   }, 180_000);
 
-  it(`win rate stays in ${WIN_RATE_MIN * 100}–${WIN_RATE_MAX * 100}% band`, () => {
+  it('runs clean: no crashes, reachable objectives, legal wins', () => {
     expect(summary.noCrashes).toBe(true);
     expect(summary.allReachable).toBe(true);
     expect(summary.allLegal).toBe(true);
-    expect(
-      summary.winRate,
-      `winRate=${(summary.winRate * 100).toFixed(1)}% wins=${summary.wins}/${summary.seeds} loses=${JSON.stringify(summary.loseReasons)}`,
-    ).toBeGreaterThanOrEqual(WIN_RATE_MIN);
-    expect(summary.winRate).toBeLessThanOrEqual(WIN_RATE_MAX);
   });
 
   it('shows multiple lose channels (hp and storm at minimum)', () => {
@@ -86,5 +82,46 @@ describe('balance — full suite', () => {
   it('energy losses appear in the mix when present (soft)', () => {
     // Soft: log-only if zero — still assert the counter is defined
     expect(summary.loseReasons.energy).toBeGreaterThanOrEqual(0);
+  });
+});
+
+/**
+ * The band gate proper. Separated from the suite above because those checks are
+ * structural and cheap, while this one is a measurement and only means anything
+ * at a seed count that can actually resolve the band.
+ */
+describe('balance — win-rate band', () => {
+  let summary: ReturnType<typeof summarize>;
+
+  beforeAll(async () => {
+    const results: SeedReport[] = [];
+    for (const seed of GATE_SEEDS) {
+      results.push(runSeed(seed, 10000));
+      // Yield periodically: a sweep this long starves the worker's reporter
+      // channel and vitest fails the run on an RPC timeout instead of the band.
+      if (results.length % 20 === 0) await new Promise((r) => setImmediate(r));
+    }
+    summary = summarize(results);
+  }, 300_000);
+
+  it(`stays in the ${WIN_RATE_MIN * 100}–${WIN_RATE_MAX * 100}% band`, () => {
+    const rate = summary.winRate;
+    // Reported so a failure says how much of the number to trust.
+    const stderr = Math.sqrt((rate * (1 - rate)) / summary.seeds);
+    const detail =
+      `winRate=${(rate * 100).toFixed(1)}% ±${(stderr * 196).toFixed(1)} ` +
+      `wins=${summary.wins}/${summary.seeds} loses=${JSON.stringify(summary.loseReasons)}`;
+    expect(rate, detail).toBeGreaterThanOrEqual(WIN_RATE_MIN);
+    expect(rate, detail).toBeLessThanOrEqual(WIN_RATE_MAX);
+  });
+
+  it('keeps more than one lose channel alive', () => {
+    // GEM §2 also wants no channel above ~70%, which hp currently breaks. That
+    // is tracked as design work rather than asserted here, because the only way
+    // to pass it today is to inflate a second channel artificially.
+    expect(
+      summary.loseChannels,
+      `mix=${JSON.stringify(summary.loseReasons)} dominant=${(summary.dominantLoseShare * 100).toFixed(0)}%`,
+    ).toBeGreaterThan(1);
   });
 });

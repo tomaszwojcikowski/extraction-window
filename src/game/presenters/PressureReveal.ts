@@ -10,6 +10,8 @@ export type PressureReveal = {
   urgent: boolean;
   /** Arcing flickers; Breaching holds so the path stays readable under stress. */
   visible: boolean;
+  /** Overlay opacity — Breaching holds hotter than Arcing flicker. */
+  alpha: number;
 };
 
 /**
@@ -32,11 +34,14 @@ export function pressureRevealAt(
   const urgent = shear.state === 'Breaching';
   const flicker = (animFrame + x + y) % (urgent ? 2 : 3) === 0;
   const visible = urgent || flicker;
+  // Breaching: magnesium hold with a soft frame pulse (not a tint wash).
+  const alpha = urgent ? 0.92 + 0.08 * ((animFrame + x) % 2) : 0.78;
 
   return {
     sectorId: st.sectorId,
     variant: (x + y * 3 + st.seed) % 3,
     urgent,
     visible,
+    alpha,
   };
 }

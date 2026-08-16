@@ -161,6 +161,16 @@ const CUES: Record<string, CameraCue> = {
     zoomScale: 1.04,
     zoomMs: 180,
   }),
+  /** Entering Breaching — short climax; not lore-picked (scene fires on state edge). */
+  shear_breach: cue('shear_breach', 78, 'pressure', {
+    shakeMs: 70,
+    shakeIntensity: 0.0018,
+    vignette: 0.24,
+    vignetteMs: 260,
+    nudgePx: 3,
+    zoomScale: 1.07,
+    zoomMs: 280,
+  }),
   elite: cue('elite', 68, 'reward', {
     shakeMs: 50,
     shakeIntensity: 0.002,
@@ -178,15 +188,6 @@ const CUES: Record<string, CameraCue> = {
     nudgePx: 2,
     zoomScale: 1.04,
     zoomMs: 180,
-  }),
-  notice: cue('notice', 50, 'snap', {
-    shakeMs: 90,
-    shakeIntensity: 0.003,
-    vignette: 0.12,
-    vignetteMs: 120,
-    nudgePx: 4,
-    zoomScale: 1.05,
-    zoomMs: 160,
   }),
   hatch: cue('hatch', 58, 'bloom', {
     shakeMs: 0,
@@ -235,10 +236,7 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
  * Pick at most one camera cue for this turn’s new logs.
  * Returns null when nothing warrants a kick (routine movement / ticks).
  */
-export function pickCameraCue(
-  logs: readonly LoreId[],
-  opts?: { noticeImpact?: boolean },
-): CameraCue | null {
+export function pickCameraCue(logs: readonly LoreId[]): CameraCue | null {
   let best: CameraCue | null = null;
   const seen = new Set(logs);
   for (const [loreId, cueKey] of LOG_TO_CUE) {
@@ -246,9 +244,10 @@ export function pickCameraCue(
     const next = CUES[cueKey]!;
     if (!best || next.priority > best.priority) best = next;
   }
-  if (opts?.noticeImpact) {
-    const notice = CUES.notice!;
-    if (!best || notice.priority > best.priority) best = notice;
-  }
   return best;
+}
+
+/** Breaching state-edge climax — vignette + soft kick; not selected from lore logs. */
+export function shearBreachCue(): CameraCue {
+  return CUES.shear_breach!;
 }

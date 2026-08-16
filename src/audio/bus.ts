@@ -10,11 +10,12 @@ class AudioBus {
   private channels: Partial<Record<BusChannel, GainNode>> = {};
   private muted = false;
   private readonly channelLevels: Record<BusChannel, number> = {
-    sfx: 0.28,
-    ambient: 0.22,
-    music: 0.32,
+    sfx: 1,
+    ambient: 0.1,
+    music: 0.22,
   };
   private duckUntil = 0;
+  private musicDuckUntil = 0;
 
   constructor() {
     try {
@@ -81,6 +82,20 @@ class AudioBus {
     amb.gain.setValueAtTime(amb.gain.value, ctx.currentTime);
     amb.gain.linearRampToValueAtTime(base * 0.35, ctx.currentTime + 0.02);
     amb.gain.linearRampToValueAtTime(base, until);
+  }
+
+  /** Briefly duck music so one-shots read over sampled beds. */
+  duckMusic(ms = 220): void {
+    const ctx = this.ensure();
+    const mus = this.channels.music;
+    if (!mus || this.muted) return;
+    const until = ctx.currentTime + ms / 1000;
+    this.musicDuckUntil = Math.max(this.musicDuckUntil, until);
+    const base = this.channelLevels.music;
+    mus.gain.cancelScheduledValues(ctx.currentTime);
+    mus.gain.setValueAtTime(mus.gain.value, ctx.currentTime);
+    mus.gain.linearRampToValueAtTime(base * 0.25, ctx.currentTime + 0.015);
+    mus.gain.linearRampToValueAtTime(base, until);
   }
 
   private applyMute(): void {

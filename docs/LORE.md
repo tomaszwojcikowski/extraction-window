@@ -84,27 +84,22 @@ different question, and so the answer is readable before it lands:
 Elites and bosses are crowned versions of a family, not new creatures.
 
 **Telegraphs.** An armed windup paints the ground it threatens, colour-coded by
-the answer it wants: rust for a charge you can brace, sallow wash for the rift's
-pulse you have to step out of, hazard tape for a held shot, arc-white for a beam
-lane. A two-tile charge overcommits and lands winded, so reading the tell buys a
-free turn against it.
+the answer it wants: rust for a charge you can eat or interrupt, sallow wash for
+the rift's pulse you have to step out of, hazard tape for a held shot, arc-white
+for a beam lane. A two-tile charge overcommits and lands winded, so reading the
+tell buys a free turn against it.
 
-**Answers.** A windup that is still at range is answered by bracing it, killing
-it, or leaving the painted ground. Once it is standing next to you the shoulder
-is the answer: a shove drives it back a tile and breaks whatever it was setting
-up. On open floor that is all it does — no damage, one turn spent — so the verb
-is really a question about where you chose to fight. Cover behind the target
-turns the push into a slam that staggers it; caustic ground turns it into the
-sector doing the killing, and the burn keeps running after you walk away; a
-second hostile stacked behind it takes the collision too, and both go down.
-Crowned hostiles absorb the impact without losing their footing.
+**Answers.** A windup is answered by leaving the painted ground or killing the
+hostile mid-charge. Walk into a hostile to strike. Equip a Pulse Baton for on-hit
+stun (and to pry adjacent sealed hatches). Flare can interrupt a held shot. There
+is no separate brace or shove hotkey — those verbs stay cut until they earn a
+letter (see [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) §8).
 
-**Footing.** Anything knocked off balance — slammed, collided, winded by its own
-two-tile charge, or clipped by a baton — eats the next strike clean, so the
-setup turn buys a turn back instead of only denying one. The same currency runs
-the other way: every hostile in contact past the first pries a point of defence
-off the surveyor, to a limit of two. That is what a doorway is worth, and what
-bracing buys beyond its own two points, since planting covers the sides.
+**Footing.** Anything knocked off balance — winded by its own two-tile charge, or
+clipped by a baton / flare stun — eats the next strike clean (`LOG-PUNISH`), so
+the setup turn buys a turn back instead of only denying one. The same currency
+runs the other way: every hostile in contact past the first pries a point of
+defence off the surveyor, to a limit of two. That is what a doorway is worth.
 
 ### Death drops
 
@@ -114,6 +109,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 
 - Floor / rubble / scrub — open ground; scrub is sight-block only
 - Vent / hazard — ion stress drains bus (filter halves; sealant can neutralize underfoot)
+- **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; pays **+6 Window**. Never required for extract
 - Hatch / beacon / shuttle — mission structures
 - Landmark — decorative room centrepiece; nothing to interact with
 
@@ -129,7 +125,7 @@ Capacity 16 slots, and one clear tool per job — 18 kinds total.
 |------|-----|
 | Field Hypo | Heal, and stop bleeding |
 | Power Cell | Restore the bus, and resync a desynced pattern buffer |
-| Sealant Foam | Purge EM contamination, and seal hazard/vent ground |
+| Sealant Foam | Purge EM contamination, clear hazard/vent underfoot, or open an adjacent sealed hatch |
 | Shield Charge | Repair plating mid-sector |
 | Plasma Filter | Blunt ion damage |
 | Field Array Pulse | See further |
@@ -145,9 +141,12 @@ Equipment (two slots — tool and armor): Combat Knife, Pulse Baton; EVA Harness
 
 Statuses: stun, bleed, plasma burn, expose — tick on turns; HUD glyphs beside vitals.
 
-## Field audio (synthesized)
+## Field audio
 
-Away gear listens to local EM / ion stress. Ambient drones shift by biome; melodic beds tint to the sector and densify as the shear window closes. Nearby hostiles trigger a combat danger layer. `m` mutes all buses. Procedural Web Audio only.
+Away gear listens to local EM / ion stress. **Sampled ambient music beds**
+(`public/audio/music/`) crossfade by mood (title / field / storm / combat / end).
+Procedural biome drones stay as a quiet underlayer. One-shot SFX are synthesized.
+`m` mutes all buses. See `public/audio/music/CREDITS.md` for track provenance.
 
 ---
 
@@ -170,7 +169,7 @@ What classic ADOM did well, and how EW translates it (in-run only):
 | Talent identity | **Skill forks** at L3/L5/L7 — pick 1 of 2 |
 | Lore that matters | **PADD pages** grant lasting run mods (FOV, filter, quiet vault, DEF, window) |
 | Side content | Three room quests with storm + kit payoffs, one per resource |
-| Dense keyboard log | Mission log + sticky causal milestones |
+| Dense keyboard log | Mission log (`l`, collapsed by default) + causal floats / signal chips + sticky milestones |
 
 Out of scope (by design): towns/shops, alignment, meta unlocks, overland world map.
 

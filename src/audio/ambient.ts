@@ -12,110 +12,127 @@ type Voice = {
 };
 
 type AmbientPreset = {
-  drones: Array<{ freq: number; type: OscillatorType; vol: number; lfoHz?: number; lfoDepth?: number }>;
-  noise?: { vol: number; filterHz: number };
+  drones: Array<{
+    freq: number;
+    type: OscillatorType;
+    vol: number;
+    lfoHz?: number;
+    lfoDepth?: number;
+    /** Soft lowpass so saw/square drones stay field-gear, not harsh. */
+    filterHz?: number;
+  }>;
+  noise?: { vol: number; filterHz: number; highpassHz?: number };
   dripHz?: number;
+  /** Sparse EM / metal ticks (ducts, vaults, beacons). */
+  tickHz?: number;
 };
 
 const PRESETS: Record<SectorId, AmbientPreset> = {
   plains: {
     drones: [
-      { freq: 55, type: 'sine', vol: 0.045 },
-      { freq: 82, type: 'triangle', vol: 0.02, lfoHz: 0.08, lfoDepth: 4 },
+      { freq: 55, type: 'sine', vol: 0.045, filterHz: 400 },
+      { freq: 82, type: 'triangle', vol: 0.02, lfoHz: 0.08, lfoDepth: 4, filterHz: 600 },
     ],
   },
   flood: {
-    drones: [{ freq: 48, type: 'sine', vol: 0.04, lfoHz: 0.12, lfoDepth: 6 }],
-    noise: { vol: 0.018, filterHz: 600 },
+    drones: [{ freq: 48, type: 'sine', vol: 0.04, lfoHz: 0.12, lfoDepth: 6, filterHz: 350 }],
+    noise: { vol: 0.02, filterHz: 550, highpassHz: 80 },
     dripHz: 0.35,
   },
   canopy: {
     drones: [
-      { freq: 70, type: 'triangle', vol: 0.03 },
-      { freq: 110, type: 'sine', vol: 0.015, lfoHz: 0.2, lfoDepth: 8 },
+      { freq: 70, type: 'triangle', vol: 0.03, filterHz: 500 },
+      { freq: 110, type: 'sine', vol: 0.015, lfoHz: 0.2, lfoDepth: 8, filterHz: 900 },
     ],
+    noise: { vol: 0.008, filterHz: 1200, highpassHz: 400 },
   },
   reef: {
     drones: [
-      { freq: 78, type: 'sine', vol: 0.032, lfoHz: 0.22, lfoDepth: 11 },
-      { freq: 156, type: 'triangle', vol: 0.012 },
+      { freq: 78, type: 'sine', vol: 0.032, lfoHz: 0.22, lfoDepth: 11, filterHz: 700 },
+      { freq: 156, type: 'triangle', vol: 0.012, filterHz: 1100 },
     ],
-    noise: { vol: 0.01, filterHz: 750 },
+    noise: { vol: 0.01, filterHz: 750, highpassHz: 120 },
   },
   spire: {
     drones: [
-      { freq: 88, type: 'sine', vol: 0.032, lfoHz: 0.18, lfoDepth: 10 },
-      { freq: 176, type: 'triangle', vol: 0.01 },
+      { freq: 88, type: 'sine', vol: 0.032, lfoHz: 0.18, lfoDepth: 10, filterHz: 800 },
+      { freq: 176, type: 'triangle', vol: 0.01, filterHz: 1400 },
     ],
+    tickHz: 0.22,
   },
   ruin: {
     drones: [
-      { freq: 62, type: 'sawtooth', vol: 0.012 },
-      { freq: 93, type: 'sine', vol: 0.03 },
+      { freq: 62, type: 'sawtooth', vol: 0.01, filterHz: 280 },
+      { freq: 93, type: 'sine', vol: 0.03, filterHz: 500 },
     ],
-    noise: { vol: 0.01, filterHz: 400 },
+    noise: { vol: 0.012, filterHz: 380, highpassHz: 60 },
+    tickHz: 0.12,
   },
   beacon: {
     drones: [
-      { freq: 90, type: 'sine', vol: 0.035, lfoHz: 0.15, lfoDepth: 12 },
-      { freq: 180, type: 'triangle', vol: 0.012 },
+      { freq: 90, type: 'sine', vol: 0.035, lfoHz: 0.15, lfoDepth: 12, filterHz: 700 },
+      { freq: 180, type: 'triangle', vol: 0.012, filterHz: 1200 },
     ],
+    tickHz: 0.28,
   },
   trench: {
     drones: [
-      { freq: 50, type: 'sine', vol: 0.038 },
-      { freq: 100, type: 'sawtooth', vol: 0.008, lfoHz: 0.06, lfoDepth: 4 },
+      { freq: 50, type: 'sine', vol: 0.038, filterHz: 320 },
+      { freq: 100, type: 'sawtooth', vol: 0.007, lfoHz: 0.06, lfoDepth: 4, filterHz: 260 },
     ],
-    noise: { vol: 0.012, filterHz: 350 },
+    noise: { vol: 0.014, filterHz: 320, highpassHz: 40 },
   },
   duct: {
     drones: [
-      { freq: 54, type: 'sine', vol: 0.036 },
-      { freq: 108, type: 'square', vol: 0.008, lfoHz: 0.09, lfoDepth: 5 },
+      { freq: 54, type: 'sine', vol: 0.036, filterHz: 400 },
+      { freq: 108, type: 'square', vol: 0.006, lfoHz: 0.09, lfoDepth: 5, filterHz: 350 },
     ],
-    noise: { vol: 0.014, filterHz: 450 },
+    noise: { vol: 0.016, filterHz: 420, highpassHz: 90 },
+    tickHz: 0.4,
   },
   ash: {
-    drones: [{ freq: 42, type: 'sawtooth', vol: 0.01 }],
-    noise: { vol: 0.028, filterHz: 900 },
+    drones: [{ freq: 42, type: 'sawtooth', vol: 0.008, filterHz: 220 }],
+    noise: { vol: 0.03, filterHz: 850, highpassHz: 150 },
   },
   brine: {
-    drones: [{ freq: 46, type: 'sine', vol: 0.038, lfoHz: 0.14, lfoDepth: 7 }],
-    noise: { vol: 0.02, filterHz: 500 },
+    drones: [{ freq: 46, type: 'sine', vol: 0.038, lfoHz: 0.14, lfoDepth: 7, filterHz: 380 }],
+    noise: { vol: 0.022, filterHz: 480, highpassHz: 70 },
     dripHz: 0.28,
   },
   vault: {
     drones: [
-      { freq: 75, type: 'sine', vol: 0.04 },
-      { freq: 150, type: 'square', vol: 0.008, lfoHz: 0.05, lfoDepth: 3 },
+      { freq: 75, type: 'sine', vol: 0.04, filterHz: 550 },
+      { freq: 150, type: 'square', vol: 0.006, lfoHz: 0.05, lfoDepth: 3, filterHz: 400 },
     ],
+    tickHz: 0.18,
   },
   fissure: {
     drones: [
-      { freq: 52, type: 'sawtooth', vol: 0.014 },
-      { freq: 104, type: 'sine', vol: 0.028, lfoHz: 0.11, lfoDepth: 6 },
+      { freq: 52, type: 'sawtooth', vol: 0.011, filterHz: 300 },
+      { freq: 104, type: 'sine', vol: 0.028, lfoHz: 0.11, lfoDepth: 6, filterHz: 600 },
     ],
-    noise: { vol: 0.016, filterHz: 700 },
+    noise: { vol: 0.018, filterHz: 650, highpassHz: 100 },
   },
   approach: {
     drones: [
-      { freq: 60, type: 'sawtooth', vol: 0.012 },
-      { freq: 120, type: 'sine', vol: 0.03, lfoHz: 0.16, lfoDepth: 8 },
+      { freq: 60, type: 'sawtooth', vol: 0.01, filterHz: 280 },
+      { freq: 120, type: 'sine', vol: 0.03, lfoHz: 0.16, lfoDepth: 8, filterHz: 700 },
     ],
-    noise: { vol: 0.018, filterHz: 650 },
+    noise: { vol: 0.018, filterHz: 600, highpassHz: 80 },
+    tickHz: 0.15,
   },
   ridge: {
     drones: [
-      { freq: 58, type: 'sine', vol: 0.035 },
-      { freq: 116, type: 'triangle', vol: 0.018, lfoHz: 0.1, lfoDepth: 5 },
+      { freq: 58, type: 'sine', vol: 0.035, filterHz: 450 },
+      { freq: 116, type: 'triangle', vol: 0.018, lfoHz: 0.1, lfoDepth: 5, filterHz: 900 },
     ],
   },
 };
 
 const TITLE_PRESET: AmbientPreset = {
   drones: [
-    { freq: 66, type: 'sine', vol: 0.04, lfoHz: 0.07, lfoDepth: 5 },
-    { freq: 99, type: 'triangle', vol: 0.015 },
+    { freq: 66, type: 'sine', vol: 0.04, lfoHz: 0.07, lfoDepth: 5, filterHz: 500 },
+    { freq: 99, type: 'triangle', vol: 0.015, filterHz: 700 },
   ],
 };
 
@@ -124,6 +141,7 @@ class AmbientEngine {
   private noiseNode: AudioBufferSourceNode | null = null;
   private noiseGain: GainNode | null = null;
   private dripTimer: number | null = null;
+  private tickTimer: number | null = null;
   private currentKey: string | null = null;
   private fadeGain: GainNode | null = null;
 
@@ -165,11 +183,16 @@ class AmbientEngine {
       osc.type = d.type;
       osc.frequency.value = d.freq;
       gain.gain.value = d.vol;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = d.filterHz ?? (d.type === 'sine' ? 800 : 450);
+      filter.Q.value = 0.7;
       osc.connect(gain);
-      gain.connect(this.fadeGain);
+      gain.connect(filter);
+      filter.connect(this.fadeGain);
       osc.start();
 
-      const voice: Voice = { osc, gain };
+      const voice: Voice = { osc, gain, filter };
       if (d.lfoHz && d.lfoDepth) {
         const lfo = ctx.createOscillator();
         const lfoGain = ctx.createGain();
@@ -189,12 +212,20 @@ class AmbientEngine {
       const src = ctx.createBufferSource();
       src.buffer = buffer;
       src.loop = true;
+      let node: AudioNode = src;
+      if (preset.noise.highpassHz) {
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = preset.noise.highpassHz;
+        src.connect(hp);
+        node = hp;
+      }
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.value = preset.noise.filterHz;
       const ng = ctx.createGain();
       ng.gain.value = preset.noise.vol;
-      src.connect(filter);
+      node.connect(filter);
       filter.connect(ng);
       ng.connect(this.fadeGain);
       src.start();
@@ -206,6 +237,10 @@ class AmbientEngine {
       const interval = 1000 / preset.dripHz;
       this.dripTimer = window.setInterval(() => this.drip(), interval + Math.random() * 400);
     }
+    if (preset.tickHz) {
+      const interval = 1000 / preset.tickHz;
+      this.tickTimer = window.setInterval(() => this.tick(), interval + Math.random() * 700);
+    }
   }
 
   private drip(): void {
@@ -214,16 +249,43 @@ class AmbientEngine {
     const t0 = ctx.currentTime;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1200 + Math.random() * 600;
+    f.Q.value = 2;
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880 + Math.random() * 400, t0);
-    osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.12);
+    osc.frequency.setValueAtTime(900 + Math.random() * 350, t0);
+    osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.14);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(0.04, t0 + 0.01);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
-    osc.connect(g);
+    g.gain.exponentialRampToValueAtTime(0.035, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+    osc.connect(f);
+    f.connect(g);
     g.connect(this.fadeGain);
     osc.start(t0);
-    osc.stop(t0 + 0.16);
+    osc.stop(t0 + 0.18);
+  }
+
+  /** Sparse conduit / relay ticks — short filtered noise, not melodic. */
+  private tick(): void {
+    if (audioBus.isMuted() || !this.fadeGain) return;
+    const ctx = audioBus.ensure();
+    const t0 = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(ctx, 0.2);
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1400 + Math.random() * 1200;
+    f.Q.value = 4;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.028, t0 + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+    src.connect(f);
+    f.connect(g);
+    g.connect(this.fadeGain);
+    src.start(t0);
+    src.stop(t0 + 0.06);
   }
 
   private noiseBuffer(ctx: AudioContext, seconds: number): AudioBuffer {
@@ -238,6 +300,10 @@ class AmbientEngine {
     if (this.dripTimer !== null) {
       clearInterval(this.dripTimer);
       this.dripTimer = null;
+    }
+    if (this.tickTimer !== null) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
     }
     const ctx = this.fadeGain ? audioBus.ensure() : null;
     const t = ctx?.currentTime ?? 0;
@@ -265,6 +331,7 @@ class AmbientEngine {
         }
         v.osc.disconnect();
         v.gain.disconnect();
+        v.filter?.disconnect();
         v.lfo?.disconnect();
         v.lfoGain?.disconnect();
       }

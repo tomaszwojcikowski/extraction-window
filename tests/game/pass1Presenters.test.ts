@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { STORM_TURNS } from '../../src/campaign/spine';
-import {
-  collectWakeTells,
-  wakeTellsAt,
-  wouldNoticeEnemy,
-} from '../../src/game/presenters/WakeTells';
 import { pressureRevealAt } from '../../src/game/presenters/PressureReveal';
 import { computeShearPressure, shearReadoutLabel } from '../../src/game/presenters/ShearPressure';
+import { wouldNoticeEnemy } from '../../src/sim/notice';
 import type { Enemy, GameState } from '../../src/sim/types';
 
 function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState {
@@ -132,105 +128,26 @@ describe('shearReadoutLabel', () => {
   });
 });
 
-describe('collectWakeTells', () => {
-  it('includes dark-prefer mites when they would notice', () => {
+describe('wouldNoticeEnemy (sim notice — presentation wake lines removed)', () => {
+  it('notices dark-prefer mites in range', () => {
     const st = stubState({
       enemies: [stubEnemy('mite', 6, 5)],
     });
-    expect(collectWakeTells(st).length).toBeGreaterThanOrEqual(1);
+    expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(true);
   });
 
-  it('mirrors ambush dark-notice at aggro range', () => {
+  it('guard engage gate: no notice beyond dist 2 without loot or alert', () => {
     const st = stubState({
-      enemies: [stubEnemy('stalker', 8, 5)], // ambush, dark-prefer; player tile dark
+      enemies: [stubEnemy('crawler', 9, 5)],
     });
-    st.illumination[5]![5] = 0;
-    const tells = collectWakeTells(st);
-    expect(tells).toHaveLength(1);
-    expect(tells[0]!.darkBoost).toBe(true);
-  });
-
-  it('does not warn lit ambush beyond adjacency when player is lit and enemy not in FOV', () => {
-    const visible = Array.from({ length: 11 }, () => Array.from({ length: 11 }, () => false));
-    visible[5]![5] = true; // player only
-    const st = stubState({
-      visible,
-      enemies: [stubEnemy('stalker', 8, 5)],
-    });
-    expect(collectWakeTells(st)).toHaveLength(0);
-  });
-
-  it('guard engage gate: no ring beyond dist 2 without loot or alert', () => {
-    const st = stubState({
-      enemies: [stubEnemy('crawler', 9, 5)], // guard, dist=4
-    });
-    expect(collectWakeTells(st)).toHaveLength(0);
     expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(false);
   });
 
-  it('guard engage gate: ring at dist 2', () => {
+  it('guard engage gate: notices at dist 2', () => {
     const st = stubState({
-      enemies: [stubEnemy('crawler', 7, 5)], // dist=2
+      enemies: [stubEnemy('crawler', 7, 5)],
     });
-    expect(collectWakeTells(st)).toHaveLength(1);
-  });
-
-  it('guard engage gate: ring at extended range when loot taken', () => {
-    const st = stubState({
-      lootTakenThisSector: true,
-      enemies: [stubEnemy('crawler', 9, 5)],
-    });
-    expect(collectWakeTells(st)).toHaveLength(1);
-  });
-
-  it('sentinel mirrors aggro-range notice', () => {
-    const st = stubState({
-      enemies: [stubEnemy('sentinel', 8, 5)], // dist=3, aggro 5
-    });
-    expect(collectWakeTells(st)).toHaveLength(1);
-  });
-
-  it('marks wander as neutral notice', () => {
-    const st = stubState({
-      enemies: [stubEnemy('mite', 6, 5)],
-    });
-    const tells = collectWakeTells(st);
-    expect(tells).toHaveLength(1);
-    expect(tells[0]!.neutralNotice).toBe(true);
-    expect(tells[0]!.litBoost).toBe(false);
-  });
-
-  it('wakeTellsAt preview differs from live when stepping into lit tile', () => {
-    const st = stubState({
-      enemies: [stubEnemy('wasp', 6, 6)], // lit-prefer
-    });
-    st.illumination[5]![5] = 0;
-    st.illumination[6]![6] = 4;
-    expect(collectWakeTells(st).every((t) => !t.litBoost)).toBe(true);
-    const preview = wakeTellsAt(st, 6, 6);
-    expect(preview.some((t) => t.litBoost)).toBe(true);
-  });
-
-  it('preview and live share identical tell sets at the same tile', () => {
-    const st = stubState({
-      enemies: [
-        stubEnemy('crawler', 7, 5),
-        stubEnemy('wasp', 6, 6),
-        stubEnemy('mite', 8, 5),
-      ],
-    });
-    st.player.x = 5;
-    st.player.y = 5;
-    const live = collectWakeTells(st);
-    const preview = wakeTellsAt(st, st.player.x, st.player.y);
-    expect(preview.map((t) => t.id).sort()).toEqual(live.map((t) => t.id).sort());
-    for (const id of live.map((t) => t.id)) {
-      const a = live.find((t) => t.id === id)!;
-      const b = preview.find((t) => t.id === id)!;
-      expect(b.litBoost).toBe(a.litBoost);
-      expect(b.darkBoost).toBe(a.darkBoost);
-      expect(b.neutralNotice).toBe(a.neutralNotice);
-    }
+    expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(true);
   });
 
   it('guard alerted extends engage to aggro range', () => {
@@ -238,25 +155,6 @@ describe('collectWakeTells', () => {
       enemies: [stubEnemy('crawler', 9, 5, { alerted: true })],
     });
     expect(wouldNoticeEnemy(st, st.enemies[0]!, 5, 5)).toBe(true);
-    expect(collectWakeTells(st)).toHaveLength(1);
-  });
-
-  it('swell pre-burst uses neutral notice bracket language', () => {
-    const st = stubState({
-      enemies: [stubEnemy('spore', 6, 5, { swellTurns: 0 })],
-    });
-    const tells = collectWakeTells(st);
-    expect(tells).toHaveLength(1);
-    expect(tells[0]!.neutralNotice).toBe(true);
-  });
-
-  it('preview footprint matches live wake at the same player tile', () => {
-    const st = stubState({
-      enemies: [stubEnemy('sentinel', 10, 5)], // dist=5, aggro 5
-    });
-    expect(collectWakeTells(st)).toHaveLength(1);
-    expect(wakeTellsAt(st, 5, 5)).toHaveLength(1);
-    expect(wakeTellsAt(st, 4, 5)).toHaveLength(0);
   });
 });
 
@@ -321,5 +219,6 @@ describe('pressureRevealAt', () => {
     expect(reveal).not.toBeNull();
     expect(reveal!.urgent).toBe(true);
     expect(reveal!.visible).toBe(true);
+    expect(reveal!.alpha).toBeGreaterThan(0.9);
   });
 });

@@ -4,16 +4,18 @@ import type { Action } from '../../sim';
 export type ChromeKey =
   | { kind: 'mute' }
   | { kind: 'toggle_help' }
-  | { kind: 'toggle_pages' };
+  | { kind: 'toggle_pages' }
+  | { kind: 'toggle_log' };
 
 /**
- * Map a keydown to mute / help / PADD chrome — null if not a chrome key.
+ * Map a keydown to mute / help / PADD / log chrome — null if not a chrome key.
  * Slot select (1–9) and skill forks stay in the scene (order depends on skillPick).
  */
 export function chromeFromKey(e: KeyboardEvent): ChromeKey | null {
   if (e.key === 'm' || e.key === 'M') return { kind: 'mute' };
   if (e.key === '?' || (e.key === '/' && e.shiftKey)) return { kind: 'toggle_help' };
   if (e.key === 'p' || e.key === 'P') return { kind: 'toggle_pages' };
+  if (e.key === 'l' || e.key === 'L') return { kind: 'toggle_log' };
   return null;
 }
 

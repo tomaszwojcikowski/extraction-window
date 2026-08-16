@@ -1,4 +1,4 @@
-/** Tiny synthesized one-shot SFX via Web Audio — no asset files. */
+/** Field-gear SFX — noise, sub thuds, and filter sweeps. No melodic arpeggios. */
 
 import { audioBus } from './bus';
 
@@ -25,15 +25,6 @@ export type SfxId =
   | 'enemy'
   | 'scuttle';
 
-type Tone = {
-  freq: number;
-  dur: number;
-  type?: OscillatorType;
-  vol?: number;
-  slide?: number;
-  delay?: number;
-};
-
 const COMBAT: SfxId[] = [
   'hit',
   'kill',
@@ -45,7 +36,12 @@ const COMBAT: SfxId[] = [
   'scuttle',
 ];
 
+/** Band-limited noise reads quiet — multiply before bus gain. */
+const VOICE = 3.2;
+
 class SfxBus {
+  private noiseBuf: AudioBuffer | null = null;
+
   isMuted(): boolean {
     return audioBus.isMuted();
   }
@@ -62,145 +58,270 @@ class SfxBus {
     if (audioBus.isMuted()) return;
     const ctx = audioBus.ensure();
     if (ctx.state === 'suspended') void ctx.resume();
-
     if (COMBAT.includes(id)) audioBus.duckAmbient();
-
-    const seq = this.sequence(id);
-    for (const tone of seq) this.beep(ctx, tone);
+    // Beds bury noise one-shots — always clear a pocket for SFX.
+    audioBus.duckMusic(id === 'ui' || id === 'move' || id === 'scuttle' ? 140 : 280);
+    this.render(ctx, id);
   }
 
-  private sequence(id: SfxId): Tone[] {
+  private render(ctx: AudioContext, id: SfxId): void {
+    const t = ctx.currentTime;
     switch (id) {
       case 'ui':
-        return [{ freq: 660, dur: 0.04, type: 'square', vol: 0.12 }];
+        // Soft plastic/pad tap — noise only.
+        this.noiseBurst(ctx, t, { dur: 0.028, vol: 0.07, bp: 1800, Q: 1.2, attack: 0.002 });
+        break;
       case 'move':
-        return [{ freq: 180, dur: 0.035, type: 'triangle', vol: 0.08, slide: -40 }];
+        // Boot grit on metal deck.
+        this.noiseBurst(ctx, t, { dur: 0.04, vol: 0.08, bp: 380, Q: 0.7, attack: 0.002 });
+        this.sub(ctx, t, { freq: 55, dur: 0.045, vol: 0.06, slide: -12 });
+        break;
       case 'blocked':
-        return [{ freq: 90, dur: 0.06, type: 'square', vol: 0.1, slide: -30 }];
+        this.noiseBurst(ctx, t, { dur: 0.07, vol: 0.1, bp: 220, Q: 0.6, attack: 0.003 });
+        this.sub(ctx, t, { freq: 70, dur: 0.08, vol: 0.08, slide: -20 });
+        break;
       case 'hit':
-        return [
-          { freq: 220, dur: 0.05, type: 'square', vol: 0.16 },
-          { freq: 140, dur: 0.07, type: 'sawtooth', vol: 0.1, delay: 0.04, slide: -80 },
-        ];
+        // Kinetic strike: transient grit → body thud.
+        this.noiseBurst(ctx, t, { dur: 0.05, vol: 0.16, bp: 1100, Q: 1.4, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.015, { dur: 0.08, vol: 0.08, bp: 450, Q: 0.8, attack: 0.005 });
+        this.sub(ctx, t, { freq: 75, dur: 0.1, vol: 0.12, slide: -30 });
+        break;
       case 'kill':
-        return [
-          { freq: 320, dur: 0.05, type: 'square', vol: 0.14 },
-          { freq: 480, dur: 0.08, type: 'triangle', vol: 0.12, delay: 0.05 },
-          { freq: 640, dur: 0.1, type: 'triangle', vol: 0.08, delay: 0.12, slide: 80 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.06, vol: 0.15, bp: 900, Q: 1.1, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.04, { dur: 0.14, vol: 0.09, bp: 280, Q: 0.5, attack: 0.02 });
+        this.sub(ctx, t + 0.02, { freq: 60, dur: 0.18, vol: 0.14, slide: -25 });
+        // Soft air release — not a victory chirp.
+        this.noiseBurst(ctx, t + 0.08, { dur: 0.16, vol: 0.05, bp: 1600, Q: 0.4, attack: 0.04 });
+        break;
       case 'hurt':
-        return [
-          { freq: 300, dur: 0.08, type: 'sawtooth', vol: 0.18, slide: -180 },
-          { freq: 120, dur: 0.12, type: 'square', vol: 0.12, delay: 0.05, slide: -40 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.1, vol: 0.14, bp: 700, Q: 0.9, attack: 0.003, sweep: -400 });
+        this.sub(ctx, t + 0.02, { freq: 90, dur: 0.16, vol: 0.13, slide: -40 });
+        this.noiseBurst(ctx, t + 0.06, { dur: 0.12, vol: 0.07, bp: 300, Q: 0.6, attack: 0.02 });
+        break;
       case 'pickup':
-        return [
-          { freq: 520, dur: 0.05, type: 'triangle', vol: 0.12 },
-          { freq: 780, dur: 0.07, type: 'triangle', vol: 0.1, delay: 0.05 },
-        ];
-      case 'quest':
-        return [
-          { freq: 440, dur: 0.07, type: 'square', vol: 0.12 },
-          { freq: 554, dur: 0.08, type: 'square', vol: 0.12, delay: 0.07 },
-          { freq: 659, dur: 0.14, type: 'triangle', vol: 0.14, delay: 0.14 },
-        ];
+        // Salvage latch — metallic scrape, not a chime.
+        this.noiseBurst(ctx, t, { dur: 0.05, vol: 0.09, bp: 2400, Q: 2.2, attack: 0.002 });
+        this.noiseBurst(ctx, t + 0.03, { dur: 0.08, vol: 0.06, bp: 900, Q: 1.2, attack: 0.01, sweep: -500 });
+        this.sub(ctx, t + 0.02, { freq: 110, dur: 0.07, vol: 0.05, slide: -15 });
+        break;
       case 'use':
-        return [
-          { freq: 400, dur: 0.05, type: 'sine', vol: 0.12 },
-          { freq: 560, dur: 0.08, type: 'sine', vol: 0.1, delay: 0.05 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.045, vol: 0.08, bp: 1400, Q: 1.5, attack: 0.003 });
+        this.noiseBurst(ctx, t + 0.035, { dur: 0.07, vol: 0.05, bp: 600, Q: 0.9, attack: 0.01 });
+        break;
+      case 'quest':
+        // Flagging stamp — short hiss + low confirm, no scale climb.
+        this.noiseBurst(ctx, t, { dur: 0.06, vol: 0.1, bp: 2000, Q: 1.8, attack: 0.004 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.12, vol: 0.07, bp: 500, Q: 0.7, attack: 0.02, sweep: 200 });
+        this.sub(ctx, t + 0.04, { freq: 98, dur: 0.14, vol: 0.07, slide: 8 });
+        break;
       case 'sector':
-        return [
-          { freq: 200, dur: 0.08, type: 'triangle', vol: 0.12, slide: 120 },
-          { freq: 320, dur: 0.12, type: 'triangle', vol: 0.1, delay: 0.1 },
-        ];
+        // Shear peel — rising band-limited wash.
+        this.noiseBurst(ctx, t, {
+          dur: 0.28,
+          vol: 0.1,
+          bp: 200,
+          Q: 0.5,
+          attack: 0.04,
+          sweep: 900,
+        });
+        this.sub(ctx, t + 0.05, { freq: 50, dur: 0.22, vol: 0.08, slide: 20 });
+        break;
       case 'beacon':
-        return [
-          { freq: 360, dur: 0.1, type: 'square', vol: 0.12 },
-          { freq: 540, dur: 0.12, type: 'square', vol: 0.12, delay: 0.1 },
-          { freq: 720, dur: 0.18, type: 'sine', vol: 0.14, delay: 0.22 },
-        ];
+        // Sodium relay settle — soft radio wash into a hum, not tones.
+        this.noiseBurst(ctx, t, { dur: 0.1, vol: 0.08, bp: 1200, Q: 1.2, attack: 0.02 });
+        this.noiseBurst(ctx, t + 0.08, { dur: 0.18, vol: 0.06, bp: 400, Q: 0.6, attack: 0.05 });
+        this.hum(ctx, t + 0.1, { freq: 85, dur: 0.28, vol: 0.06 });
+        break;
       case 'warn':
-        return [
-          { freq: 880, dur: 0.1, type: 'square', vol: 0.14 },
-          { freq: 660, dur: 0.12, type: 'square', vol: 0.12, delay: 0.12 },
-        ];
+        // Alarm as AM noise pulses — not square beeps.
+        this.noiseBurst(ctx, t, { dur: 0.09, vol: 0.12, bp: 950, Q: 2.5, attack: 0.004 });
+        this.noiseBurst(ctx, t + 0.12, { dur: 0.1, vol: 0.1, bp: 750, Q: 2.5, attack: 0.004 });
+        break;
       case 'win':
-        return [
-          { freq: 392, dur: 0.1, type: 'triangle', vol: 0.14 },
-          { freq: 494, dur: 0.1, type: 'triangle', vol: 0.14, delay: 0.1 },
-          { freq: 587, dur: 0.12, type: 'triangle', vol: 0.14, delay: 0.2 },
-          { freq: 784, dur: 0.22, type: 'sine', vol: 0.16, delay: 0.32 },
-        ];
+        // Pad swell + air, no fanfare notes.
+        this.hum(ctx, t, { freq: 65, dur: 0.55, vol: 0.08 });
+        this.hum(ctx, t + 0.05, { freq: 97, dur: 0.5, vol: 0.05 });
+        this.noiseBurst(ctx, t, {
+          dur: 0.45,
+          vol: 0.07,
+          bp: 600,
+          Q: 0.4,
+          attack: 0.08,
+          sweep: 800,
+        });
+        break;
       case 'lose':
-        return [
-          { freq: 300, dur: 0.15, type: 'sawtooth', vol: 0.14, slide: -100 },
-          { freq: 180, dur: 0.2, type: 'sawtooth', vol: 0.12, delay: 0.12, slide: -80 },
-          { freq: 90, dur: 0.28, type: 'triangle', vol: 0.14, delay: 0.28, slide: -40 },
-        ];
+        this.noiseBurst(ctx, t, {
+          dur: 0.35,
+          vol: 0.11,
+          bp: 500,
+          Q: 0.5,
+          attack: 0.02,
+          sweep: -350,
+        });
+        this.sub(ctx, t + 0.05, { freq: 70, dur: 0.4, vol: 0.12, slide: -35 });
+        this.noiseBurst(ctx, t + 0.2, { dur: 0.35, vol: 0.06, bp: 180, Q: 0.4, attack: 0.08 });
+        break;
       case 'start':
-        return [
-          { freq: 240, dur: 0.08, type: 'triangle', vol: 0.12 },
-          { freq: 360, dur: 0.1, type: 'triangle', vol: 0.12, delay: 0.08 },
-          { freq: 480, dur: 0.14, type: 'sine', vol: 0.14, delay: 0.18 },
-        ];
+        this.noiseBurst(ctx, t, {
+          dur: 0.22,
+          vol: 0.08,
+          bp: 350,
+          Q: 0.5,
+          attack: 0.05,
+          sweep: 500,
+        });
+        this.hum(ctx, t + 0.06, { freq: 70, dur: 0.28, vol: 0.06 });
+        break;
       case 'armor':
-        return [
-          { freq: 160, dur: 0.04, type: 'square', vol: 0.1 },
-          { freq: 110, dur: 0.06, type: 'triangle', vol: 0.08, delay: 0.03, slide: -20 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.03, vol: 0.1, bp: 2200, Q: 3.5, attack: 0.001 });
+        this.sub(ctx, t + 0.01, { freq: 80, dur: 0.06, vol: 0.07, slide: -10 });
+        break;
       case 'level':
-        return [
-          { freq: 400, dur: 0.06, type: 'square', vol: 0.12 },
-          { freq: 600, dur: 0.08, type: 'triangle', vol: 0.12, delay: 0.06 },
-          { freq: 800, dur: 0.12, type: 'sine', vol: 0.14, delay: 0.14 },
-        ];
+        this.noiseBurst(ctx, t, {
+          dur: 0.2,
+          vol: 0.08,
+          bp: 400,
+          Q: 0.6,
+          attack: 0.03,
+          sweep: 700,
+        });
+        this.hum(ctx, t + 0.04, { freq: 90, dur: 0.22, vol: 0.055 });
+        break;
       case 'extract':
-        return [
-          { freq: 330, dur: 0.08, type: 'triangle', vol: 0.12 },
-          { freq: 440, dur: 0.1, type: 'triangle', vol: 0.12, delay: 0.08 },
-          { freq: 660, dur: 0.16, type: 'sine', vol: 0.14, delay: 0.18 },
-        ];
+        this.noiseBurst(ctx, t, {
+          dur: 0.3,
+          vol: 0.09,
+          bp: 300,
+          Q: 0.45,
+          attack: 0.06,
+          sweep: 600,
+        });
+        this.hum(ctx, t + 0.08, { freq: 75, dur: 0.32, vol: 0.07 });
+        this.hum(ctx, t + 0.1, { freq: 112, dur: 0.28, vol: 0.04 });
+        break;
       case 'notice':
-        // Fauna latch — dry click into a rising scrape.
-        return [
-          { freq: 140, dur: 0.04, type: 'square', vol: 0.14 },
-          { freq: 420, dur: 0.09, type: 'sawtooth', vol: 0.12, delay: 0.03, slide: 160 },
-          { freq: 90, dur: 0.08, type: 'triangle', vol: 0.1, delay: 0.08, slide: -30 },
-        ];
+        // Fauna latch — dry click into scrape.
+        this.noiseBurst(ctx, t, { dur: 0.025, vol: 0.12, bp: 2800, Q: 4, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.02, {
+          dur: 0.12,
+          vol: 0.1,
+          bp: 500,
+          Q: 1.2,
+          attack: 0.008,
+          sweep: 700,
+        });
+        this.sub(ctx, t + 0.04, { freq: 55, dur: 0.1, vol: 0.08, slide: -15 });
+        break;
       case 'enemy':
-        // Hostile strike / pulse — heavier than player hit.
-        return [
-          { freq: 110, dur: 0.06, type: 'sawtooth', vol: 0.18 },
-          { freq: 70, dur: 0.1, type: 'square', vol: 0.14, delay: 0.04, slide: -35 },
-          { freq: 200, dur: 0.05, type: 'triangle', vol: 0.08, delay: 0.09 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.07, vol: 0.16, bp: 350, Q: 0.8, attack: 0.002 });
+        this.sub(ctx, t, { freq: 48, dur: 0.14, vol: 0.16, slide: -18 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.08, vol: 0.06, bp: 900, Q: 1.5, attack: 0.01 });
+        break;
       case 'scuttle':
-        // Closer footfalls while engaged.
-        return [
-          { freq: 95, dur: 0.03, type: 'triangle', vol: 0.09, slide: -25 },
-          { freq: 130, dur: 0.03, type: 'triangle', vol: 0.07, delay: 0.04, slide: -20 },
-        ];
+        this.noiseBurst(ctx, t, { dur: 0.03, vol: 0.07, bp: 600, Q: 1.3, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.04, { dur: 0.028, vol: 0.055, bp: 750, Q: 1.2, attack: 0.001 });
+        break;
     }
   }
 
-  private beep(ctx: AudioContext, tone: Tone): void {
-    const t0 = ctx.currentTime + (tone.delay ?? 0);
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = tone.type ?? 'square';
-    osc.frequency.setValueAtTime(tone.freq, t0);
-    if (tone.slide) {
-      osc.frequency.linearRampToValueAtTime(tone.freq + tone.slide, t0 + tone.dur);
+  /** Band-limited noise transient — the main “material” voice. */
+  private noiseBurst(
+    ctx: AudioContext,
+    t0: number,
+    opts: {
+      dur: number;
+      vol: number;
+      bp: number;
+      Q: number;
+      attack: number;
+      sweep?: number;
+    },
+  ): void {
+    const src = ctx.createBufferSource();
+    src.buffer = this.ensureNoise(ctx);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(Math.max(40, opts.bp), t0);
+    if (opts.sweep) {
+      bp.frequency.linearRampToValueAtTime(Math.max(40, opts.bp + opts.sweep), t0 + opts.dur);
     }
-    const vol = tone.vol ?? 0.12;
-    gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + tone.dur);
-    osc.connect(gain);
-    gain.connect(audioBus.channel('sfx'));
+    bp.Q.value = opts.Q;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + opts.attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(audioBus.channel('sfx'));
+    src.start(t0);
+    src.stop(t0 + opts.dur + 0.02);
+  }
+
+  /** Felt body — sine below clear pitch identity. */
+  private sub(
+    ctx: AudioContext,
+    t0: number,
+    opts: { freq: number; dur: number; vol: number; slide?: number },
+  ): void {
+    const osc = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(Math.max(28, opts.freq), t0);
+    if (opts.slide) {
+      osc.frequency.linearRampToValueAtTime(Math.max(28, opts.freq + opts.slide), t0 + opts.dur);
+    }
+    lp.type = 'lowpass';
+    lp.frequency.value = 180;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
+    osc.connect(lp);
+    lp.connect(g);
+    g.connect(audioBus.channel('sfx'));
     osc.start(t0);
-    osc.stop(t0 + tone.dur + 0.02);
+    osc.stop(t0 + opts.dur + 0.03);
+  }
+
+  /** Soft continuous hum for confirms / endings — still not a melody. */
+  private hum(
+    ctx: AudioContext,
+    t0: number,
+    opts: { freq: number; dur: number; vol: number },
+  ): void {
+    const osc = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = opts.freq;
+    lp.type = 'lowpass';
+    lp.frequency.value = 320;
+    const attack = Math.min(0.08, opts.dur * 0.25);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
+    osc.connect(lp);
+    lp.connect(g);
+    g.connect(audioBus.channel('sfx'));
+    osc.start(t0);
+    osc.stop(t0 + opts.dur + 0.03);
+  }
+
+  private ensureNoise(ctx: AudioContext): AudioBuffer {
+    if (this.noiseBuf && this.noiseBuf.sampleRate === ctx.sampleRate) return this.noiseBuf;
+    const len = Math.floor(ctx.sampleRate * 0.5);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    // Softened noise — less digital harshness than pure white.
+    let prev = 0;
+    for (let i = 0; i < len; i++) {
+      const white = Math.random() * 2 - 1;
+      prev = (prev + 0.02 * white) / 1.02;
+      data[i] = white * 0.55 + prev * 0.9;
+    }
+    this.noiseBuf = buf;
+    return buf;
   }
 }
 

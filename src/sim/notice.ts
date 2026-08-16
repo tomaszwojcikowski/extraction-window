@@ -8,7 +8,7 @@ import { manhattan } from './spatial';
 
 /**
  * Detection radius as if the player stood on (px, py).
- * Shared by AI (`effectiveAggro`) and wake/peek presentation.
+ * Shared by AI (`effectiveAggro`) and the tutorial's notice coaching.
  */
 export function effectiveAggroAt(
   state: GameState,

@@ -2,7 +2,13 @@ import Phaser from 'phaser';
 import { lore } from '../../data/lore';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
-import { describeObjective, stickyMilestone, type GameState } from '../../sim';
+import {
+  describeObjective,
+  stickyMilestone,
+  windowDrainRate,
+  windowTurnsLeft,
+  type GameState,
+} from '../../sim';
 import { statusHud } from '../../sim/status';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
@@ -10,8 +16,8 @@ import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
-import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
@@ -51,14 +57,14 @@ export type HudRedrawOpts = {
   screenH: number;
   helpOpen: boolean;
   pagesOpen: boolean;
+  /** Mission log strip open (`l`) — when false, log text stays empty; chips carry the beat. */
+  logOpen?: boolean;
   /** Scene tweens for meter needles + readout ticks. */
   tweens: Phaser.Tweens.TweenManager;
   /** Mutable holder so the scene can stop/replace the pulse tween. */
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
   /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
   shear?: ShearPressureSpec;
-  /** Shift-peek active — show wake-peek tip without opening help. */
-  movePreviewActive?: boolean;
 };
 
 type BarLayout = {
@@ -115,6 +121,12 @@ export class HudView {
     const shearPrimary = (opts.shear?.value ?? 0) > 0.12;
     const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.inkDim;
     const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.ink;
+    // The Window counts in units but is planned in turns, and late sectors spend
+    // up to 2.5 units a turn. Print the turns and name the rate that bought them.
+    const windowLeft = windowTurnsLeft(st);
+    const windowRate = windowDrainRate(st.sectorIndex);
+    const windowCaption =
+      windowRate > 1 ? `${lore('UI-BAR-WINDOW')} x${windowRate}` : lore('UI-BAR-WINDOW');
     this.placeBarSlot(
       0,
       14,
@@ -165,8 +177,8 @@ export class HudView {
       st.stormTurns / STORM_TURNS,
       Theme.arc,
       Theme.rust,
-      lore('UI-BAR-WINDOW'),
-      `${st.stormTurns}`,
+      windowCaption,
+      `${windowLeft}`,
       opts,
       secondaryCss,
       secondaryValCss,
@@ -191,7 +203,7 @@ export class HudView {
       100,
       barH,
       // When Shear owns the center readout, skip Window bar pulse (one channel).
-      !shearPrimary && st.stormTurns <= 80,
+      !shearPrimary && windowLeft <= 80,
       opts,
     );
 
@@ -268,6 +280,15 @@ export class HudView {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
+    // Compact OPT badge — amber world frame + quest line carry the verb.
+    if (st.roomQuest && !st.roomQuest.done) {
+      const n = st.roomQuest.steps.length;
+      const i = st.roomQuest.stepIndex + 1;
+      badgeSpecs.push({
+        label: n > 1 ? `${lore('UI-QUEST-BADGE')} ${i}/${n}` : lore('UI-QUEST-BADGE'),
+        fill: Theme.tape,
+      });
+    }
     if (st.extractFavor) {
       badgeSpecs.push({ label: FAVOR_LABEL[st.extractFavor.kind], fill: Theme.safe });
     }
@@ -301,24 +322,17 @@ export class HudView {
       'objCampaign',
     );
 
-    const questLine = roomQuestHudLine(st);
+    // Optional tracker: step verb + favor preview (never steals the extract objective).
+    const questLine = formatRoomQuestHudLine(st);
     if (questLine) {
+      this.setReadout(r.questText, questLine, opts, ThemeCss.tape, 'quest');
       r.questText.setVisible(true);
-      const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag;
-      this.setReadout(
-        r.questText,
-        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} · ${questLine.favor}  ${questLine.index}/${questLine.total}`,
-        opts,
-        questColor,
-        'quest',
-      );
     } else {
+      this.setReadout(r.questText, '', opts, ThemeCss.tape, 'quest');
       r.questText.setVisible(false);
-      r.questText.setText('');
-      this.lastQuest = '';
     }
 
-    const stormHot = st.stormTurns <= 80;
+    const stormHot = windowLeft <= 80;
     const urgencyParts: string[] = [];
     const skillLock = Boolean(st.skillPick);
     // Skill pick owns the line — Window/EM wait until the fork is chosen.
@@ -333,7 +347,7 @@ export class HudView {
       );
     } else {
       if (stormHot && !shearPrimary) {
-        urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+        urgencyParts.push(`${lore('HAZ-STORM')}  (${windowLeft})`);
       }
       if (st.emStress >= EM_HIGH) {
         urgencyParts.push(`EM CRIT ${st.emStress}`);
@@ -367,19 +381,23 @@ export class HudView {
       'milestone',
     );
 
-    const logs = st.log.slice(-5).map((l) => {
-      const base = lore(l.loreId);
-      return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
-    });
-    this.setReadout(
-      r.logText,
-      `${lore('UI-LOG')}  /  ? help\n${logs.join('\n')}`,
-      opts,
-      ThemeCss.ink,
-      'log',
-    );
+    if (opts.logOpen) {
+      const logs = st.log.slice(-5).map((l) => {
+        const base = lore(l.loreId);
+        return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
+      });
+      this.setReadout(
+        r.logText,
+        `${lore('UI-LOG')}  /  l close · ? help\n${logs.join('\n')}`,
+        opts,
+        ThemeCss.ink,
+        'log',
+      );
+    } else {
+      this.setReadout(r.logText, '', opts, ThemeCss.ink, 'log');
+    }
 
-    const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
+    const hint = resolveHintLine(st);
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
