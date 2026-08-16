@@ -56,6 +56,8 @@ Each emitter is a *thing*: hooded halogen (`lamp`), magnesium stick (`flare`), a
 
 Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is a few uneven, low-alpha washes with ray wobble — soft spill, not chalky onion rings or nested white sparks on every emitter.
 
+**Dynamic shadows:** opaque tiles throw soft floor umbra from flood-lit faces (`occluderShadows.ts`), and actors stretch a key-light silhouette that follows lamp carry mid-hop. Umbra must not punch through stone or invent brightness in the SHADOW band — same honesty rule as bloom. Reject drop-shadow filter ellipses and fake through-wall casts.
+
 ---
 
 ### Materials
@@ -174,6 +176,7 @@ Not this game's look, even when it is the fastest default:
 - Emoji, or icon-only status with no text label
 - Unmotivated glow — any emitter you cannot name as a physical object
 - Bloom or FX that reads as light through walls while help says the pool stops at walls
+- Umbra that punches through opaque tiles or invents brightness in the SHADOW ambush band
 
 ---
 
