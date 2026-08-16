@@ -1096,7 +1096,7 @@ export class GameScene extends Phaser.Scene {
     const sources = this.lightView.allSources(st, this.animFrame);
     // Skip motes mid-hop — static grit under a moving wash reads as noise.
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
-    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
+    this.lightView.drawDynamicShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
   }
 
@@ -1842,7 +1842,7 @@ export class GameScene extends Phaser.Scene {
 
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
-    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
+    this.lightView.drawDynamicShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
 
     drawThreatZones(this.threatGfx, st, this.animFrame);

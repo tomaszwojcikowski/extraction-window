@@ -13,6 +13,10 @@ import { EM_HIGH } from '../../sim/emStress';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { castReachTiles } from './castShadows';
+import {
+  collectOccluderShadows,
+  lightCastsOccluderShadow,
+} from './occluderShadows';
 import { marchPoolRays, marchPoolRaysAt, type PoolRay } from './poolReach';
 import { moveBlendDirtyCells } from './moveBlendDirty';
 
@@ -483,13 +487,11 @@ export class LightView {
   }
 
   /**
-   * Contact + cast shadows under actors and field props.
-   * Key light is flood energy — same wrap/scrub model as tile brightness — so
-   * a flare around a corner can cast, but one behind scrub/stone cannot fake it.
-   * Props that are themselves lamps still get a contact patch (own light is too
-   * close for a cast); other emitters can still throw a short silhouette.
+   * Dynamic floor umbra: opaque tiles cast soft wedges from flood-lit faces,
+   * and actors stretch a key-light silhouette. Both follow lampCarry mid-hop.
+   * Contact under feet is a single faint plant — not a drop-shadow filter.
    */
-  drawContactShadows(
+  drawDynamicShadows(
     st: GameState,
     actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
     sources: LightSource[],
@@ -498,6 +500,53 @@ export class LightView {
     if (!g) return;
     g.clear();
     this.ensureSourceEnergy(st, sources);
+
+    const focusX = this.lampCarry?.x ?? st.player.x;
+    const focusY = this.lampCarry?.y ?? st.player.y;
+    const occluderLights = sources.map((s) => ({
+      x: s.x,
+      y: s.y,
+      radius: s.radius,
+      intensity: s.intensity,
+      castsOccluderShadow: lightCastsOccluderShadow(s),
+    }));
+    const quads = collectOccluderShadows(
+      st.tiles,
+      st.visible,
+      occluderLights,
+      (i, x, y) => this.energyAt(i, x, y),
+      focusX,
+      focusY,
+    );
+    for (const q of quads) {
+      // Sample brightness near the face tip so SHADOW-band stays faint.
+      const sampleX = Math.min(
+        st.width - 1,
+        Math.max(0, Math.floor((q.x0 + q.x1 + q.x2 + q.x3) / 4)),
+      );
+      const sampleY = Math.min(
+        st.height - 1,
+        Math.max(0, Math.floor((q.y0 + q.y1 + q.y2 + q.y3) / 4)),
+      );
+      const brightness = tileBrightness(st, sampleX, sampleY);
+      const inShadowBand = brightness < SHADOW_THRESHOLD;
+      const alpha = Math.min(
+        0.42,
+        q.weight * (inShadowBand ? 0.12 : 0.28) * (0.35 + brightness * 0.9),
+      );
+      if (alpha < 0.03) continue;
+      g.fillStyle(Theme.groundDeep, alpha);
+      g.fillPoints(
+        [
+          new Phaser.Math.Vector2(q.x0 * TILE_DRAW, q.y0 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x1 * TILE_DRAW, q.y1 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x2 * TILE_DRAW, q.y2 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x3 * TILE_DRAW, q.y3 * TILE_DRAW),
+        ],
+        true,
+      );
+    }
+
     for (const actor of actors) {
       const { gx, gy } = actor;
       const tx = Math.round(gx);
@@ -512,7 +561,7 @@ export class LightView {
       for (let i = 0; i < sources.length; i++) {
         const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
-        // Own-tile lamp (or a prop sitting on its emitter): contact only.
+        // Own-tile lamp (or a prop sitting on its emitter): plant only.
         if (dist < 0.75) continue;
         const E = this.energyAt(i, tx, ty);
         if (E <= 0.004) continue;
@@ -524,48 +573,65 @@ export class LightView {
       const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * (actor.prop ? 0.22 : 0.28);
       const inShadowBand = brightness < SHADOW_THRESHOLD;
       const alpha = Math.min(
-        0.55,
-        (inShadowBand ? 0.08 : 0.14) + brightness * (inShadowBand ? 0.22 : 0.42),
+        0.5,
+        (inShadowBand ? 0.06 : 0.12) + brightness * (inShadowBand ? 0.18 : 0.38),
       );
-      const contactW = TILE_DRAW * (actor.prop ? 0.4 : 0.48);
-      const contactH = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
 
       const len = Math.hypot(vx, vy);
       if (key > 0.05 && len > 0.0001 && !inShadowBand) {
         const dirX = vx / len;
         const dirY = vy / len;
-        const tallScale = actor.tall ? 1.35 : 1;
-        const propScale = actor.prop ? 0.72 : 1;
+        const tallScale = actor.tall ? 1.45 : 1;
+        const propScale = actor.prop ? 0.78 : 1;
         const wantTiles =
-          (0.35 + Math.min(0.85, key * 0.65)) * tallScale * propScale;
+          (0.55 + Math.min(1.05, key * 0.85)) * tallScale * propScale;
         const reach = castReachTiles(st.tiles, tx, ty, dirX, dirY, wantTiles);
         if (reach > 0.12) {
           const throwLen = reach * TILE_DRAW;
           const px = -dirY;
           const py = dirX;
-          const halfNear = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
-          const halfFar = TILE_DRAW * Math.max(0.05, 0.1 * (reach / wantTiles));
+          const halfNear = TILE_DRAW * (actor.prop ? 0.14 : 0.18);
+          const halfFar = TILE_DRAW * Math.max(0.04, 0.08 * (reach / wantTiles));
           const fx = wx + dirX * throwLen;
-          const fy = wy + dirY * throwLen * 0.65;
-          g.fillStyle(Theme.groundDeep, alpha * 0.82);
+          const fy = wy + dirY * throwLen * 0.72;
+          // Soft penumbra skirt, then denser umbra core.
+          g.fillStyle(Theme.groundDeep, alpha * 0.45);
+          g.fillPoints(
+            [
+              new Phaser.Math.Vector2(wx + px * halfNear * 1.35, wy + py * halfNear * 1.35),
+              new Phaser.Math.Vector2(wx - px * halfNear * 1.2, wy - py * halfNear * 1.2),
+              new Phaser.Math.Vector2(fx - px * halfFar * 1.6, fy - py * halfFar * 1.6),
+              new Phaser.Math.Vector2(fx + px * halfFar * 1.75, fy + py * halfFar * 1.75),
+            ],
+            true,
+          );
+          g.fillStyle(Theme.groundDeep, alpha * 0.88);
           g.fillPoints(
             [
               new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
               new Phaser.Math.Vector2(wx - px * halfNear * 0.85, wy - py * halfNear * 0.85),
               new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
-              new Phaser.Math.Vector2(fx + px * halfFar * 1.15, fy + py * halfFar * 1.15),
+              new Phaser.Math.Vector2(fx + px * halfFar * 1.1, fy + py * halfFar * 1.1),
             ],
             true,
           );
         }
       }
-      g.fillStyle(Theme.groundDeep, alpha);
-      // Two offset patches beat one perfect ellipse (reads less like a drop-shadow filter).
-      const ox = actor.prop ? TILE_DRAW * 0.04 : 0;
-      g.fillEllipse(wx - ox, wy, contactW, contactH);
+      // Single plant — feet read as planted without a filter drop-shadow.
+      const contactW = TILE_DRAW * (actor.prop ? 0.32 : 0.36);
+      const contactH = TILE_DRAW * (actor.prop ? 0.12 : 0.14);
       g.fillStyle(Theme.groundDeep, alpha * 0.55);
-      g.fillEllipse(wx + contactW * 0.12, wy + contactH * 0.15, contactW * 0.7, contactH * 0.75);
+      g.fillEllipse(wx, wy, contactW, contactH);
     }
+  }
+
+  /** @deprecated Use drawDynamicShadows — kept as alias for any external callers. */
+  drawContactShadows(
+    st: GameState,
+    actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
+    sources: LightSource[],
+  ): void {
+    this.drawDynamicShadows(st, actors, sources);
   }
 
   /** Cached lighting tint from the last `applyTileLighting` pass. */
