@@ -23,7 +23,7 @@ For Meridian Shelf, the aesthetics we care about most:
 
 | Aesthetic | What it should feel like here |
 |-----------|-------------------------------|
-| **Challenge** | Two clocks (Window + Power) and fauna that punish careless light/wake |
+| **Challenge** | Two clocks (Window + Power) and fauna as a **wake tax** — careless light and open packs hurt; combat is not the skill pillar |
 | **Discovery** | Reading the shelf — LIT/SHADOW, windups, sealed routes |
 | **Tension / drama** | Shear pressure rising; hatch → real drop; uplink hold |
 | **Expression** | Kit loadout, light vs loud fights, skill forks — not towns/meta unlocks |
