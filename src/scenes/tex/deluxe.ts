@@ -54,37 +54,113 @@ function floorAccent(sector: SectorId): number {
   }
 }
 
-/** Five-layer biome floor: base, grain, edge wear, contact shade, sparse decal. */
+type FloorFamily = 'cliff' | 'wet' | 'built';
+
+function floorFamily(sector: SectorId): FloorFamily {
+  switch (sector) {
+    case 'flood':
+    case 'brine':
+    case 'reef':
+      return 'wet';
+    case 'duct':
+    case 'spire':
+    case 'vault':
+    case 'beacon':
+    case 'ruin':
+      return 'built';
+    default:
+      return 'cliff';
+  }
+}
+
+/**
+ * Per-biome floor construction: material base + bevel language first, then the
+ * sector decal. Tint stays a lift — the slab recipe itself must diverge so
+ * places still read when colour is ignored.
+ */
 export function drawDeluxeFloor(g: G, T: number, sector: SectorId, variant: number): void {
   const q = unit(T);
   const tint = BIOME_FLOOR_TINT[sector];
-  const base = mix(Theme.ground, tint, 0.1);
   const accent = floorAccent(sector);
+  const family = floorFamily(sector);
   g.clear();
 
-  // Base slab.
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, T, T);
-  g.fillStyle(base, 1);
-  g.fillRect(q(1), q(1), T - q(2), T - q(2));
-  g.fillStyle(mix(base, accent, 0.08), 1);
-  g.fillRect(q(3), q(3), T - q(6), T - q(7));
 
-  // Deterministic micro-noise.
-  for (let i = 0; i < 18; i++) {
-    const x = q(4 + ((i * 13 + variant * 7) % 40));
-    const y = q(4 + ((i * 19 + variant * 11) % 38));
-    g.fillStyle(i % 3 === 0 ? shade(tint, 0.38) : accent, i % 3 === 0 ? 0.28 : 0.16);
-    g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
+  if (family === 'cliff') {
+    // Rock bedding with chip bevels — open shelf / cut stone.
+    const bed = mix(Material.rock, tint, 0.18);
+    g.fillStyle(bed, 1);
+    g.fillRect(q(1), q(1), T - q(2), T - q(2));
+    g.fillStyle(mix(bed, Theme.groundDeep, 0.25), 1);
+    g.fillRect(q(2), q(2), T - q(4), T - q(5));
+    g.fillStyle(mix(bed, accent, 0.1), 1);
+    g.fillRect(q(3), q(3), T - q(6), T - q(8));
+    // Chip bevels — irregular lip, not a machined panel edge.
+    g.fillStyle(mix(Material.rock, Theme.inkMute, 0.3), 0.55);
+    g.fillRect(q(2), q(2), T - q(4), q(1));
+    for (let i = 0; i < 5; i++) {
+      const x = q(4 + ((i * 9 + variant * 5) % 36));
+      g.fillStyle(Material.recess, 0.7);
+      g.fillRect(x, q(2), q(3), q(2));
+    }
+    g.fillStyle(Theme.groundDeep, 0.65);
+    g.fillRect(q(2), T - q(4), T - q(4), q(2));
+    g.fillRect(T - q(4), q(4), q(2), T - q(8));
+  } else if (family === 'wet') {
+    // Dark throat under a skim — standing water / brine film.
+    g.fillStyle(Material.recess, 1);
+    g.fillRect(q(1), q(1), T - q(2), T - q(2));
+    g.fillStyle(mix(Material.brine, tint, 0.35), 1);
+    g.fillRect(q(2), q(2), T - q(4), T - q(5));
+    g.fillStyle(mix(Material.brine, accent, 0.2), 0.85);
+    g.fillEllipse(q(4), q(5), T - q(8), T - q(12));
+    // Specular skim along the top edge.
+    g.fillStyle(Theme.inkBright, 0.22);
+    g.fillRect(q(6 + variant), q(4), q(14), q(1));
+    g.fillStyle(mix(accent, Theme.biolumDeep, 0.4), 0.35);
+    g.fillRect(q(2), T - q(5), T - q(4), q(2));
+    g.fillStyle(Theme.groundDeep, 0.5);
+    g.fillRect(T - q(4), q(4), q(2), T - q(8));
+  } else {
+    // Machined deck plate with panel inset seams.
+    const deck = mix(Material.deck, tint, 0.2);
+    g.fillStyle(deck, 1);
+    g.fillRect(q(1), q(1), T - q(2), T - q(2));
+    g.fillStyle(mix(deck, Theme.panel, 0.35), 1);
+    g.fillRect(q(3), q(3), T - q(6), T - q(7));
+    // Panel seams.
+    g.fillStyle(Theme.groundDeep, 0.55);
+    g.fillRect(q(3), T / 2 - q(1), T - q(6), q(1));
+    g.fillRect(T / 2 - q(1), q(3), q(1), T - q(7));
+    // Machined lip — bright top/left, deep bottom/right.
+    g.fillStyle(Theme.panelEdge, 0.55);
+    g.fillRect(q(2), q(2), T - q(4), q(1));
+    g.fillRect(q(2), q(3), q(1), T - q(7));
+    g.fillStyle(Theme.groundDeep, 0.7);
+    g.fillRect(q(2), T - q(4), T - q(4), q(2));
+    g.fillRect(T - q(4), q(4), q(2), T - q(8));
+    // Corner fastener pits.
+    g.fillStyle(Theme.panelEdge, 0.7);
+    for (const [bx, by] of [
+      [5, 5],
+      [T - 9, 5],
+      [5, T - 11],
+      [T - 9, T - 11],
+    ] as const) {
+      g.fillRect(q(bx + (variant % 2)), q(by), q(2), q(2));
+    }
   }
 
-  // Worn bevel and floor-contact shadow.
-  g.fillStyle(mix(base, tint, 0.2), 0.45);
-  g.fillRect(q(2), q(2), T - q(4), q(1));
-  g.fillRect(q(2), q(3), q(1), T - q(7));
-  g.fillStyle(Theme.groundDeep, 0.58);
-  g.fillRect(q(2), T - q(4), T - q(4), q(2));
-  g.fillRect(T - q(4), q(4), q(2), T - q(8));
+  // Deterministic micro-noise — density follows family.
+  const grit = family === 'built' ? 12 : family === 'wet' ? 10 : 20;
+  for (let i = 0; i < grit; i++) {
+    const x = q(4 + ((i * 13 + variant * 7) % 40));
+    const y = q(4 + ((i * 19 + variant * 11) % 38));
+    g.fillStyle(i % 3 === 0 ? shade(tint, 0.38) : accent, i % 3 === 0 ? 0.28 : 0.14);
+    g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
+  }
 
   FLOOR_DECAL[sector]({ g, q, T, variant, accent, tint });
 }
@@ -917,9 +993,20 @@ const WALL_ACCENT: Record<SectorId, (p: WallPaint) => void> = {
 };
 
 
+/** Neutral recess underlay for rule props — not a fake plains slab. */
 function groundTile(g: G, T: number): (value: number) => number {
-  drawDeluxeFloor(g, T, 'plains', 0);
-  return unit(T);
+  const q = unit(T);
+  g.clear();
+  g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(0, 0, T, T);
+  g.fillStyle(Material.recess, 1);
+  g.fillRect(q(1), q(1), T - q(2), T - q(2));
+  g.fillStyle(mix(Material.deck, Theme.ground, 0.4), 0.85);
+  g.fillRect(q(2), q(2), T - q(4), T - q(5));
+  g.fillStyle(Theme.groundDeep, 0.5);
+  g.fillRect(q(2), T - q(4), T - q(4), q(2));
+  g.fillRect(T - q(4), q(4), q(2), T - q(8));
+  return q;
 }
 
 /** Distinct, full-tile utility silhouettes with four-frame hazard motion. */
