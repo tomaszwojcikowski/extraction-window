@@ -109,7 +109,6 @@ export type StatusId =
   | 'expose'
   | 'blind'
   | 'jam'
-  | 'fatigue'
   | 'marked';
 
 export type StatusMap = Partial<Record<StatusId, number>>;
@@ -295,10 +294,8 @@ export interface GameState {
   shuttlePos: Pos | null;
   beaconPos: Pos | null;
   roomQuest: RoomQuest | null;
-  /** Sector room layout for survey / pulse (reset each sector). */
+  /** Sector room layout for quest pulse (reset each sector). */
   rooms: MapRoom[];
-  /** Mid-room ids surveyed this sector (cap ~3). */
-  surveyedRoomIds: number[];
   /** Field NPCs already logged as sighted this run. */
   noticedNpcIds: number[];
   /** Branded elite/boss contacts already identified this run. */
@@ -314,8 +311,6 @@ export interface GameState {
   codexLog: LoreId[];
   /** EM contamination 0–100 (ADOM corruption-lite). */
   emStress: number;
-  /** Consecutive end-turns at EM-HIGH (resets below EM_HIGH). */
-  emHighStreak: number;
   /** Unknown salvage resolved into a known kit item this run. */
   salvageIdentified: number;
   /** Unknown salvage that bit back instead of resolving. */

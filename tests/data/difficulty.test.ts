@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   enemyCountBonus,
   enemyDepth,
-  progressEnergyTax,
-  progressStormTax,
   scaleEnemyCombat,
   sectorDepth,
 } from '../../src/data/difficulty';
@@ -39,11 +37,6 @@ describe('progress difficulty', () => {
     const high = scaleEnemyCombat(def, 12, 8, 'elite');
     expect(high.hp).toBeGreaterThan(low.hp);
     expect(high.atk).toBeGreaterThanOrEqual(low.atk);
-  });
-
-  it('progress storm/energy taxes are reserved (off for WR band)', () => {
-    expect(progressStormTax(8, 14, 6)).toBe(false);
-    expect(progressEnergyTax(8, 12, false)).toBe(0);
   });
 
   it('generateSectorMap with higher playerLevel yields tougher packs', () => {

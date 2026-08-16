@@ -66,12 +66,12 @@ export const LORE = {
     'PRIORITIES\n' +
     'Kit keeps you alive (med / Bus / Shield).\n' +
     'Splice Key + Nav Lattice unlock extract — they are not consumables.\n' +
-    'Survey procedures refund Window and grant XP / PADD.\n' +
+    'Optional procedures refund Window and grant XP / PADD.\n' +
     'Drop skiff: > start uplink · . hold · Coolant skips a hold · Flare repels the wave.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
-    'ATK / DEF combat · EM contamination (Coolant / Sealant / Quiet)\n' +
+    'ATK / DEF combat · EM contamination (Coolant / Sealant)\n' +
     'LIT / SHADOW / QUIET — how fauna reads your lamp (Quiet stance via EM Scrambler)\n' +
     'KEY / Lattice badges · Quiet stance (Scrambler item)',
   'UI-KIT-PURPOSE':
@@ -89,7 +89,7 @@ export const LORE = {
   'UI-HINT-SHUTTLE': 'Drop skiff — press > with Nav Lattice',
   'UI-HINT-UPLINK-HOLD': 'Uplink live — . hold · Coolant skips · Flare repels',
   'UI-HINT-DESYNC': 'Pattern desync — use Bus Coolant before skiff lock',
-  'UI-HINT-ITEM': 'Salvage here — press g',
+  'UI-HINT-ITEM': 'Salvage here — step onto it to take',
   'UI-HINT-AIM': 'Aim dart — direction to a lit target within 3',
   'UI-HINT-USE-MED': 'HP critical — kit (i) · Field Hypo (u)',
   'UI-HINT-USE-ENERGY': 'Bus low — kit (i) · Power Cell / Coolant (u)',
@@ -108,12 +108,11 @@ export const LORE = {
   'UI-HINT-LIGHT':
     'LIT clear · SHADOW ambush band · QUIET dims the lamp (Scrambler)',
   'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
-  'UI-HINT-EXPLORE': 'Explore more — hatch survey bonus near 55%',
   'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
   'UI-HINT-TELE': 'Hostile winding up — b brace · clear the ground · or kill it',
   'UI-HINT-TELE-REACH': 'Winding up in reach — f shove breaks its set',
   'UI-HINT-SHOVE-DIR': 'Shove which way? — press a direction',
-  'UI-HINT-BRAND': 'Branded elite — optional reward; route around or counter-kit',
+  'UI-HINT-BRAND': 'Branded elite — optional reward; route around or answer with Flare / Quiet / Filter',
   'UI-HINT-ALLY-DRONE': 'Drone lamp — can interrupt one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort cover while adjacent — +1 DEF',
   'UI-HINT-PREFER-DARK': 'Fauna likes shadow — stay LIT',
@@ -135,8 +134,6 @@ export const LORE = {
   'UI-TUT-STALKER': 'Stalker winding up — flare, brace, or slip south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window clock starts after',
   'UI-TUT-EXIT': 'On hatch — Enter (or walk off) to begin the drop',
-  'UI-SURVEY': 'SRV',
-  'UI-EXPLORE': 'EXP',
   'UI-QUEST-TRACK': 'QUEST',
   'UI-RQ-SALVAGE': 'Salvage console — press >',
   'UI-RQ-PURGE': 'Purge nest — clear hostiles, then >',
@@ -242,7 +239,7 @@ export const LORE = {
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
-    'Contact brief: marked specimen on this ground. Counter-kit first — it answers flare and dark differently.',
+    'Contact brief: marked specimen on this ground. It answers Flare, Quiet, and Filter differently — route around or match the brand.',
   'CODEX-FACT-BRINE':
     'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
   'CODEX-FACT-VENT':
@@ -256,7 +253,7 @@ export const LORE = {
   'CODEX-TECH':
     'Field tech: Halcyon probe reboot successful — short combat assist only.',
   'CODEX-SURVEY':
-    'Survey contact: map a mid-room or bring a Nav Ping — optional favor for Window refund.',
+    'Survey contact: bring a Nav Ping — optional favor for Window refund.',
   // Items
   'ITEM-RELAY-KEY': 'Splice Key',
   'ITEM-RELAY-KEY-DESC': 'Emergency Beacon inland authorization crystal.',
@@ -296,7 +293,7 @@ export const LORE = {
   'ITEM-MAPPER-DESC': 'Sensor ping — chevron to sector hatch for 40 turns (even unexplored).',
   'ITEM-SALVAGE': 'Unknown Salvage',
   'ITEM-SALVAGE-DESC':
-    'Unidentified crate — stow with g, then use (u) in the kit to array-scan. May backlash.',
+    'Unidentified crate — step onto it to take, then use (u) in the kit to array-scan. May backlash.',
 
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
@@ -372,7 +369,7 @@ export const LORE = {
   'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with > or step around.',
   'LOG-AGENDA-WANT-MED': 'Ensign needs a Field Hypo spare — hail again when you have one.',
   'LOG-AGENDA-WANT-QUIET': 'Tech wants a Scrambler or active Quiet — hail again when ready.',
-  'LOG-AGENDA-WANT-SURVEY': 'Contact wants a surveyed room this sector or a Nav Ping.',
+  'LOG-AGENDA-WANT-SURVEY': 'Contact wants a Nav Ping — hail again when you have one.',
   'LOG-AGENDA-NONE': 'Contact has nothing further.',
   'LOG-AGENDA-DONE': 'Favor repaid — Window refund.',
   'LOG-ALLY-UP': 'Ally online.',
@@ -386,8 +383,6 @@ export const LORE = {
   'LOG-DRONE-INTERRUPT': 'Drone lamp disrupts overwatch.',
   'LOG-NO-PICKUP': 'Nothing underfoot to recover.',
   'LOG-INV-FULL': 'Field kit capacity exceeded.',
-  'LOG-SURVEY-ROOM': 'Mid-room surveyed — Window and proficiency tick up.',
-  'LOG-SURVEY-SECTOR': 'Sector survey complete — hatch explore bonus.',
   'LOG-ELITE-CONTACT': 'Elite fauna on sensors — strong drop if engaged.',
   'LOG-BOSS-TELE': 'Apex hostile telegraphs — heavy strike incoming.',
   'LOG-BOSS-DOWN': 'Campaign apex neutralized — kit and Window refunded.',
@@ -449,7 +444,6 @@ export const LORE = {
   'LOG-STATUS-BLIND': 'Optics washed — vision narrowed.',
   'LOG-STATUS-JAM': 'Kit jammed — Probe / Scrambler blocked.',
   'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Probe or Scrambler.',
-  'LOG-STATUS-FATIGUE': 'Fatigue — Bus tax until it clears (harness cancels).',
   'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-BRAND-SIGHT': 'Branded hostile identified.',

@@ -41,10 +41,6 @@ export function actionFloatLabels(
       case 'LOG-QUIET-OFF':
         next = { label: 'QUIET OFF', color: ThemeCss.inkDim };
         break;
-      case 'LOG-SURVEY-ROOM':
-      case 'LOG-SURVEY-SECTOR':
-        next = { label: `WINDOW ${log.detail ?? '+'}`, color: ThemeCss.flag };
-        break;
       case 'LOG-TELE-POUNCE':
       case 'LOG-BOSS-TELE':
         next = { label: 'POUNCE INCOMING', color: ThemeCss.rust };
@@ -154,17 +150,6 @@ export function emitActionLights(
         life: 1,
       });
     }
-  }
-
-  if (has('LOG-SURVEY-ROOM') || has('LOG-SURVEY-SECTOR')) {
-    lights.addFxLight({
-      x: player.x,
-      y: player.y,
-      radius: 4,
-      color: Theme.arc,
-      intensity: 0.75,
-      life: 2,
-    });
   }
 
   if (has('LOG-NPC-HAIL') || has('LOG-ALLY-UP') || has('LOG-NPC-SIGHT')) {

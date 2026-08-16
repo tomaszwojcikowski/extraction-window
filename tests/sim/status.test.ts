@@ -9,7 +9,6 @@ import {
 } from '../../src/sim/status';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
 import { visionRadius } from '../../src/sim/vision';
-import { emEnergyTax, EM_HIGH } from '../../src/sim/emStress';
 import { applyAction } from '../../src/sim';
 
 describe('statusHud', () => {
@@ -17,8 +16,8 @@ describe('statusHud', () => {
     expect(statusHud({ stun: 1, bleed: 3, ion_burn: 2, expose: 4 })).toBe(
       'Stun 1 · Bleed 3 · Burn 2 · Exposed 4',
     );
-    expect(statusHud({ blind: 2, jam: 1, fatigue: 3, marked: 4 })).toBe(
-      'Blind 2 · Jam 1 · Fatigue 3 · Marked 4',
+    expect(statusHud({ blind: 2, jam: 1, marked: 4 })).toBe(
+      'Blind 2 · Jam 1 · Marked 4',
     );
     expect(statusHud({})).toBe('');
   });
@@ -91,26 +90,6 @@ describe('Wave-1 status effects', () => {
     expect(st.turn).toBe(turnBefore);
     expect(st.inventory.find((s) => s.kind === 'probe')?.count).toBe(probeBefore);
     expect(lastLog(st, 'LOG-JAM-BLOCK')).toBeTruthy();
-  });
-
-  it('fatigue taxes energy; harness cancels', () => {
-    const st = combatArena();
-    st.player.energy = 40;
-    addStatus(st.player, 'fatigue', 3);
-    const before = st.player.energy;
-    applyAction(st, { type: 'wait' });
-    // wait ends turn — fatigue tax applies (plus normal drip may apply)
-    expect(st.player.energy).toBeLessThan(before);
-    const taxed = before - st.player.energy;
-
-    const st2 = combatArena();
-    st2.player.energy = 40;
-    st2.player.equip.armor = 'harness';
-    addStatus(st2.player, 'fatigue', 3);
-    const before2 = st2.player.energy;
-    applyAction(st2, { type: 'wait' });
-    const taxed2 = before2 - st2.player.energy;
-    expect(taxed2).toBeLessThan(taxed);
   });
 
 });

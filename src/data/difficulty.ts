@@ -59,21 +59,3 @@ export function scaleEnemyCombat(
     def: def.def,
   };
 }
-
-/** Reserved for future deep-run clock pressure — currently off (WR band). */
-export function progressStormTax(
-  _playerLevel: number,
-  _sectorIndex: number,
-  _turn: number,
-): boolean {
-  return false;
-}
-
-/** Reserved — filter-friendly energy tax currently off (WR band). */
-export function progressEnergyTax(
-  _playerLevel: number,
-  _turn: number,
-  _filterActive: boolean,
-): number {
-  return 0;
-}

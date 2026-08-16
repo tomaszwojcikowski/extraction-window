@@ -1,25 +1,21 @@
 import { getSector } from '../data/encounters';
 import { ENEMIES } from '../data/enemies';
-import { progressEnergyTax, progressStormTax } from '../data/difficulty';
 import { CAMPAIGN_LENGTH } from '../campaign/spine';
 import { XP_SECTOR } from '../data/progression';
-import { equipCancelsFatigueTax } from '../data/items';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
-import { addStatus, addPlayerMarked, hasStatus, tickPlayerStatusEffects } from './status';
+import { addStatus, addPlayerMarked, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, emEnergyTax, EM_HIGH } from './emStress';
+import { addEmStress, emEnergyTax } from './emStress';
 import { mechanicsOnEndTurn } from './mechanics';
-import { grantSectorSurveyBonus } from './mechanics/survey';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
 import { consumeExtractFavor } from './extractFavor';
 import type { Enemy, GameState } from './types';
-import { pick } from './rng';
 
 function trySpawnNestMite(state: GameState): void {
   const dirs = [
@@ -92,19 +88,6 @@ export function finishSectorTransition(state: GameState): void {
   checkLose(state);
 }
 
-/** Sustained EM-HIGH wears the suit down. */
-function tickEmHighPressure(state: GameState): void {
-  if (state.emStress < EM_HIGH) {
-    state.emHighStreak = 0;
-    return;
-  }
-  state.emHighStreak += 1;
-  if (state.player.jammerTurns <= 0 && state.rng() < 0.06) {
-    addStatus(state.player, 'fatigue', 3);
-    pushLog(state, 'LOG-STATUS-FATIGUE');
-  }
-}
-
 /** Underfoot terrain tax — shared so the drill can teach visible hazards. */
 function tickUnderfootTerrain(state: GameState): void {
   const sector = getSector(state.sectorIndex);
@@ -122,21 +105,13 @@ function tickUnderfootTerrain(state: GameState): void {
   } else if (tile.kind === 'brine_pool') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     state.player.energy -= (filter ? 1 : 2) + brineExtra;
-    if (state.rng() < 0.18) {
-      addStatus(state.player, 'fatigue', 2);
-      pushLog(state, 'LOG-STATUS-FATIGUE');
-    }
     pushLog(state, 'LOG-BRINE-POOL');
   } else if (tile.kind === 'vent') {
     state.player.energy -= filter ? 0 : 1;
     if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
-    const ventRoll = state.rng();
-    if (ventRoll < 0.12) {
+    if (state.rng() < 0.12) {
       addStatus(state.player, 'jam', 1);
       pushLog(state, 'LOG-STATUS-JAM');
-    } else if (ventRoll < 0.22) {
-      addStatus(state.player, 'fatigue', 2);
-      pushLog(state, 'LOG-STATUS-FATIGUE');
     }
   } else if (tile.kind === 'tripwire') {
     addEmStress(state, 2, 'tripwire');
@@ -178,7 +153,6 @@ function tickEnvironment(state: GameState): void {
     if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
     tickContamination(state);
     tickPlayerStatusEffects(state);
-    tickEmHighPressure(state);
     mechanicsOnEndTurn(state);
     return;
   }
@@ -195,10 +169,6 @@ function tickEnvironment(state: GameState): void {
   if (sector.index >= 11) {
     state.stormTurns -= 1;
   }
-  // Leveled runs feel the clock sooner inland
-  if (progressStormTax(state.level, sector.index, state.turn)) {
-    state.stormTurns -= 1;
-  }
 
   const filter = state.player.filterTurns > 0;
   if (state.turn % 5 === 0) {
@@ -209,13 +179,7 @@ function tickEnvironment(state: GameState): void {
     }
   }
   state.player.energy -= emEnergyTax(state);
-  state.player.energy -= progressEnergyTax(state.level, state.turn, filter);
   state.player.energy -= filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
-
-  // Fatigue status: +1 energy tax / turn unless harness worn
-  if (hasStatus(state.player, 'fatigue') && !equipCancelsFatigueTax(state.player.equip.armor)) {
-    state.player.energy -= 1;
-  }
 
   tickUnderfootTerrain(state);
   // scrub / scrub_nest are sight-blockers — scrub_nest may also spawn
@@ -232,7 +196,6 @@ function tickEnvironment(state: GameState): void {
   if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
 
   tickPlayerStatusEffects(state);
-  tickEmHighPressure(state);
   mechanicsOnEndTurn(state);
 }
 
@@ -253,7 +216,6 @@ export function endPlayerTurn(state: GameState): void {
 
 export function advanceSector(state: GameState): boolean {
   if (state.sectorIndex >= CAMPAIGN_LENGTH - 1) return false;
-  grantSectorSurveyBonus(state);
   gainXp(state, XP_SECTOR, 'sector');
   // Plating is a per-sector shield, not a one-time buffer for the whole run:
   // you re-seat it in the hatch. Plate stays the mid-sector repair.

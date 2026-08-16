@@ -126,10 +126,8 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
       ok = true;
     }
   } else if (npc.kind === 'survey_contact') {
-    if (state.surveyedRoomIds.length > 0 || hasItem(state, 'mapper')) {
-      if (state.surveyedRoomIds.length === 0 && hasItem(state, 'mapper')) {
-        removeOne(state, 'mapper');
-      }
+    if (hasItem(state, 'mapper')) {
+      removeOne(state, 'mapper');
       ok = true;
     }
   } else {

@@ -14,7 +14,8 @@ flowchart TB
   wave3[Wave3 living shelf]
   wave4[Wave4 craft and coherence]
   wave5[Wave5 simplify]
-  pillars --> wave1 --> wave2 --> wave3 --> wave4 --> wave5
+  wave6[Wave6 simplify]
+  pillars --> wave1 --> wave2 --> wave3 --> wave4 --> wave5 --> wave6
 ```
 
 ---
@@ -24,9 +25,9 @@ flowchart TB
 | ADOM classic | EW today | Richness target |
 |--------------|----------|-----------------|
 | Corruption | EM 0–100 + quiet | EM tax + wider fauna aggro (scars tried and cut — see Wave 5) |
-| Hunger | Bus drip | Keep bus primary; fatigue status as soft pressure |
+| Hunger | Bus drip | Keep bus primary |
 | Identification | Single salvage | Biome tables on one salvage kind (tiers tried and cut — see Wave 5) |
-| Statuses | 4 | 8 with fauna/terrain/EM sources |
+| Statuses | 4 | 7 with fauna/terrain/EM sources (`fatigue` cut Wave 6) |
 | Skills | 3×2 forks | Readable forks; later mastery track |
 | Terrain | hazard/vent/scrub | Wave 2: traps, sealed hatches, pools |
 | NPC quests | Hail + ally | Wave 2: agendas |
@@ -41,7 +42,7 @@ flowchart TB
 
 | Ticket | Status |
 |--------|--------|
-| Status pack: `blind` / `jam` / `fatigue` / `marked` | Done |
+| Status pack: `blind` / `jam` / `marked` (`fatigue` cut Wave 6) | Done |
 | Tiered salvage ID (`salvage` / `sealed_crate` / `array_shard`) | Shipped, **cut in Wave 5** |
 | Sustained EM-HIGH → scan scars | Shipped, **cut in Wave 5** |
 | Situational equip tags | Done |
@@ -153,6 +154,25 @@ enemies, 18 items.
 mildly overfit (63% vs 59.5% true). Removing content shifts RNG consumption, so seeds land in
 different worlds and per-seed comparisons across a refactor are meaningless. Measure aggregates on a
 few hundred fresh seeds before concluding a change helped or hurt.
+
+---
+
+## Wave 6 — Simplify (done)
+
+Cut systems the player could not choose or always answered the same way. Pillars, Quiet, room
+quests, NPCs/allies, skills, and the extract spine stay.
+
+| Cut | Why |
+|-----|-----|
+| Survey soft refunds (mid-room + hatch explore%) | Always-answer explore → Window/XP; same class as Wave 5 surplus-salvage refund |
+| `fatigue` status + harness cancel tag | RNG Bus tax whose only answer was “wear harness”; harness keeps +6 shield capacity |
+| `emHighStreak` | Only fed the fatigue roll after scars were cut |
+| `progressStormTax` / `progressEnergyTax` stubs | Always off; dead call sites |
+
+**Rewires / copy:** `survey_contact` agenda requires a Nav Ping only. Stale teaching fixed (`press g`,
+`counter-kit`, Quiet-as-EM-flush).
+
+**Exit gate:** unit + cohere + smoke; WR stays in the 55–85% band.
 
 ---
 

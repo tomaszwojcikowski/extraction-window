@@ -43,7 +43,6 @@ export const EQUIP_TAGS = {
   blade: { onHitBleed: 1 },
   pulse_baton: { onHitStun: 2 },
   ablative_vest: { bleedDamage: 1, ionDamageReduction: 1 },
-  harness: { cancelFatigueTax: true },
 } as const;
 
 /** Ablative lattice blunts ion damage by a point while worn. */
@@ -59,10 +58,6 @@ export function equipOnHitBleed(tool: ItemKind | null): number {
 export function equipOnHitStun(tool: ItemKind | null): number {
   if (tool === 'pulse_baton') return EQUIP_TAGS.pulse_baton.onHitStun;
   return 0;
-}
-
-export function equipCancelsFatigueTax(armor: ItemKind | null): boolean {
-  return armor === 'harness';
 }
 
 export const ITEMS: Record<ItemKind, ItemDef> = {

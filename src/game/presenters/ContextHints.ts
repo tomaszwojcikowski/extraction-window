@@ -1,14 +1,10 @@
 import type { LoreId } from '../../data/lore';
 import { ITEMS } from '../../data/items';
 import { ENEMIES } from '../../data/enemies';
-import {
-  EXPLORE_BONUS_THRESHOLD,
-} from '../../data/progression';
 import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
-import { exploredFloorRatio } from '../../sim/mechanics/survey';
 import { shouldShowPeekTeach } from './PeekTeach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
@@ -126,15 +122,6 @@ export function contextHint(st: GameState): LoreId | null {
     const eq = ITEMS[slot.kind].equipSlot;
     if (!eq) continue;
     if (st.player.equip[eq] !== slot.kind) return 'UI-HINT-EQUIP';
-  }
-
-  const explore = exploredFloorRatio(st);
-  if (
-    st.exitPos &&
-    explore >= EXPLORE_BONUS_THRESHOLD * 0.82 &&
-    explore < EXPLORE_BONUS_THRESHOLD
-  ) {
-    return 'UI-HINT-EXPLORE';
   }
 
   return null;

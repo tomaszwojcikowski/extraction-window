@@ -49,7 +49,7 @@ Legal order unchanged: Key → beacon handshake → Lattice → pad.
 
 ## Ecology thesis
 
-Scan pressure (tools, nests, drop afterglow) raises the **EM meter**. High EM widens fauna interest and taxes the bus. **Quiet stance** (EM scrambler) shrinks FOV and fauna interest; at EM-HIGH it also suppresses the contamination aggro bump. Pattern desync and survey mechanics stay; framing is residual array bleed, not franchise scanners.
+Scan pressure (tools, nests, drop afterglow) raises the **EM meter**. High EM widens fauna interest and taxes the bus. **Quiet stance** (EM scrambler) shrinks FOV and fauna interest; at EM-HIGH it also suppresses the contamination aggro bump. Pattern desync stays; framing is residual array bleed, not franchise scanners.
 
 Early food chain (sectors 0–1 voice):
 

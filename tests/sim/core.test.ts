@@ -311,26 +311,7 @@ describe('equipment loadout', () => {
 
 });
 
-describe('survey and surplus salvage', () => {
-  it('surveys a mid-room once for storm + XP', () => {
-    const st = createGame(42);
-    expect(st.rooms.length).toBeGreaterThanOrEqual(3);
-    const mid = st.rooms[1]!;
-    const storm0 = st.stormTurns;
-    const xp0 = st.xp;
-    st.player.x = mid.cx;
-    st.player.y = mid.cy;
-    applyAction(st, { type: 'wait' });
-    expect(st.surveyedRoomIds.length).toBe(1);
-    expect(st.stormTurns).toBeGreaterThan(storm0 - 2); // wait drains 1; survey adds ≥2
-    expect(st.xp).toBeGreaterThanOrEqual(xp0);
-    const storm1 = st.stormTurns;
-    applyAction(st, { type: 'wait' });
-    expect(st.surveyedRoomIds.length).toBe(1);
-    // Second wait only drains storm — no second survey
-    expect(st.stormTurns).toBeLessThan(storm1);
-  });
-
+describe('kit pressure', () => {
   it('leaves salvage on the ground when the kit is full', () => {
     const st = createGame(42);
     while (st.inventory.length < 16) {

@@ -6,17 +6,12 @@ import { describeObjective, stickyMilestone, type GameState } from '../../sim';
 import { statusHud } from '../../sim/status';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
-import {
-  EXPLORE_BONUS_THRESHOLD,
-  SURVEY_ROOM_CAP,
-} from '../../data/progression';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
-import { exploredFloorRatio } from '../../sim/mechanics/survey';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 
@@ -285,25 +280,6 @@ export class HudView {
     }
     if (st.codexPages > 0) {
       badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.inkMute });
-    }
-    if (st.rooms.length >= 3) {
-      const surveyed = st.surveyedRoomIds.length;
-      if (surveyed > 0) {
-        badgeSpecs.push({
-          label: `${lore('UI-SURVEY')} ${surveyed}/${SURVEY_ROOM_CAP}`,
-          fill: Theme.inkMute,
-        });
-      }
-      const exploreRatio = exploredFloorRatio(st);
-      const expPct = Math.floor(exploreRatio * 100);
-      // Progressive disclosure — show EXP near hatch bonus or after first survey.
-      if (surveyed > 0 || exploreRatio >= 0.4) {
-        const exploreReady = exploreRatio >= EXPLORE_BONUS_THRESHOLD;
-        badgeSpecs.push({
-          label: `${lore('UI-EXPLORE')} ${expPct}%`,
-          fill: exploreReady ? Theme.arc : Theme.inkMute,
-        });
-      }
     }
     this.drawQuestBadges(badgeSpecs, opts.screenW, opts);
 

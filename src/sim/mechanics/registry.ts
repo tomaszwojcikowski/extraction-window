@@ -7,7 +7,6 @@ import { quietStanceMechanic } from './quietStance';
 import { patternBufferMechanic } from './patternBuffer';
 import { extractionUplinkMechanic } from './extractionUplink';
 import { scriptedEventsMechanic } from './scriptedEvents';
-import { surveyMechanic } from './survey';
 import { npcMechanic } from './npcMechanic';
 import { sealedHatchMechanic } from './sealedHatch';
 import { tutorialMechanic } from './tutorial';
@@ -33,7 +32,6 @@ const MECHANICS: Mechanic[] = [
   quietStanceMechanic,
   ionFrontMechanic,
   scriptedEventsMechanic,
-  surveyMechanic,
 ];
 
 export function mechanicsTryAction(state: GameState, action: Action): boolean {
