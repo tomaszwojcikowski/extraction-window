@@ -17,7 +17,7 @@ import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
-import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
+import { addLightSource, inShadow, isLit, LIGHT_TEMP, rebuildIllumination } from './light';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 import { flareDamageForEnemy } from './brands';
 import { tryUseUplinkAid } from './mechanics/extractionUplink';
@@ -278,7 +278,7 @@ export function useSelected(state: GameState): boolean {
         radius: 5.5,
         intensity: 1.35,
         life: 5,
-        color: 0xccffff,
+        color: LIGHT_TEMP.flare,
       });
       if (state.ionFrontTurns > 0) {
         state.ionFrontDampened = true;

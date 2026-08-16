@@ -907,7 +907,10 @@ export type MoveAnimHost = {
   state: GameState;
   syncActors(snapPositions: boolean): void;
   snapImg(img: Phaser.GameObjects.Image, gx: number, gy: number): void;
-  /** Drive lamp / wash with the surveyor hop (0 → 1). */
+  /**
+   * Drive lamp wash (when the surveyor hops) and refresh body shadows for any
+   * mover — progress is 0 → 1 across the shared MOVE_MS window.
+   */
   onPlayerMoveLight?: (t: number) => void;
 };
 
@@ -1029,9 +1032,16 @@ export function playMoveAnims(
       from: prev,
       to: { x: en.x, y: en.y },
       hop: false,
+      // Keep logical gx/gy on the sprite path — afterStart used to snap to the
+      // destination while the image lerped, so umbra jumped ahead of the body.
+      onProgress: (t) => {
+        view.gx = prev.x + (en.x - prev.x) * t;
+        view.gy = prev.y + (en.y - prev.y) * t;
+        host.onPlayerMoveLight?.(t);
+      },
       afterStart: () => {
-        view.gx = en.x;
-        view.gy = en.y;
+        view.gx = prev.x;
+        view.gy = prev.y;
       },
     });
   }
@@ -1048,9 +1058,14 @@ export function playMoveAnims(
       from: prev,
       to: { x: ally.x, y: ally.y },
       hop: false,
+      onProgress: (t) => {
+        view.gx = prev.x + (ally.x - prev.x) * t;
+        view.gy = prev.y + (ally.y - prev.y) * t;
+        host.onPlayerMoveLight?.(t);
+      },
       afterStart: () => {
-        view.gx = ally.x;
-        view.gy = ally.y;
+        view.gx = prev.x;
+        view.gy = prev.y;
       },
     });
   }
@@ -1066,9 +1081,14 @@ export function playMoveAnims(
       from: prev,
       to: { x: npc.x, y: npc.y },
       hop: false,
+      onProgress: (t) => {
+        view.gx = prev.x + (npc.x - prev.x) * t;
+        view.gy = prev.y + (npc.y - prev.y) * t;
+        host.onPlayerMoveLight?.(t);
+      },
       afterStart: () => {
-        view.gx = npc.x;
-        view.gy = npc.y;
+        view.gx = prev.x;
+        view.gy = prev.y;
       },
     });
   }

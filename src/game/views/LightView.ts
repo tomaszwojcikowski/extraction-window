@@ -13,6 +13,10 @@ import { EM_HIGH } from '../../sim/emStress';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { castReachTiles } from './castShadows';
+import {
+  collectOccluderShadows,
+  lightCastsOccluderShadow,
+} from './occluderShadows';
 import { marchPoolRays, marchPoolRaysAt, type PoolRay } from './poolReach';
 import { moveBlendDirtyCells } from './moveBlendDirty';
 
@@ -332,29 +336,30 @@ export class LightView {
   /**
    * Rebuild flood contribution per emitter when the source set changes.
    * Cached across anim frames within a turn so colour stays flood-honest
-   * without re-walking Dijkstra every tick.
+   * without re-walking Dijkstra every tick. Mid-hop the carried lamp is already
+   * in `sources[0]` — flood from that rounded tile so energy matches bloom.
    */
   private ensureSourceEnergy(st: GameState, sources: LightSource[]): void {
-    // During a hop the bloom lamp floats, but flood energy stays on the destination
-    // tile so we do not re-Dijkstra every tween frame.
-    const forFlood =
-      this.moveBlend?.locked
-        ? sources.map((s, i) =>
-            i === 0
-              ? { ...s, x: this.moveBlend!.lampTo.x, y: this.moveBlend!.lampTo.y }
-              : s,
-          )
-        : sources;
-    const key = `${st.turn}:${st.width}x${st.height}:${forFlood
-      .map((s) => `${s.x},${s.y},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`)
+    const key = `${st.turn}:${st.width}x${st.height}:${sources
+      .map(
+        (s) =>
+          `${Math.round(s.x)},${Math.round(s.y)},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`,
+      )
       .join('|')}`;
-    if (key === this.sourceEnergyKey && this.sourceEnergy.length === forFlood.length) return;
+    if (key === this.sourceEnergyKey && this.sourceEnergy.length === sources.length) return;
     this.sourceEnergyKey = key;
-    this.sourceEnergy = forFlood.map((s) => {
+    this.sourceEnergy = sources.map((s) => {
       const grid = Array.from({ length: st.height }, () =>
         Array.from({ length: st.width }, () => 0),
       );
-      floodAddLight(st.tiles, s.x, s.y, s.radius, s.intensity, grid);
+      floodAddLight(
+        st.tiles,
+        Math.round(s.x),
+        Math.round(s.y),
+        s.radius,
+        s.intensity,
+        grid,
+      );
       return grid;
     });
   }
@@ -483,89 +488,201 @@ export class LightView {
   }
 
   /**
-   * Contact + cast shadows under actors and field props.
-   * Key light is flood energy — same wrap/scrub model as tile brightness — so
-   * a flare around a corner can cast, but one behind scrub/stone cannot fake it.
-   * Props that are themselves lamps still get a contact patch (own light is too
-   * close for a cast); other emitters can still throw a short silhouette.
+   * Dynamic floor umbra: opaque tiles cast soft wedges from flood-lit faces,
+   * and actors stretch a key-light silhouette. Both follow lampCarry mid-hop.
+   * Contact under feet is a single faint plant — not a drop-shadow filter.
    */
-  drawContactShadows(
+  drawDynamicShadows(
     st: GameState,
-    actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
+    actors: Iterable<{
+      gx: number;
+      gy: number;
+      tall?: boolean;
+      prop?: boolean;
+      /** Ground kit — short solid plant + cast. */
+      item?: boolean;
+      /** Fauna / peers — body-scale umbra. */
+      body?: boolean;
+    }>,
     sources: LightSource[],
+    /** First-light reveal radius; null/omit = full FOV only. */
+    sweepRadius: number | null = null,
   ): void {
     const g = this.shadowGfx;
     if (!g) return;
     g.clear();
     this.ensureSourceEnergy(st, sources);
+
+    const focusX = this.lampCarry?.x ?? st.player.x;
+    const focusY = this.lampCarry?.y ?? st.player.y;
+    const occluderLights = sources.map((s) => ({
+      x: s.x,
+      y: s.y,
+      radius: s.radius,
+      intensity: s.intensity,
+      castsOccluderShadow: lightCastsOccluderShadow(s),
+    }));
+    const quads = collectOccluderShadows(
+      st.tiles,
+      st.visible,
+      occluderLights,
+      (i, x, y) => this.energyAt(i, x, y),
+      focusX,
+      focusY,
+    );
+    for (const q of quads) {
+      // Sample near the face tip so SHADOW-band stays faint.
+      const sampleX = Math.min(
+        st.width - 1,
+        Math.max(0, Math.floor((q.x0 + q.x1 + q.x2 + q.x3) / 4)),
+      );
+      const sampleY = Math.min(
+        st.height - 1,
+        Math.max(0, Math.floor((q.y0 + q.y1 + q.y2 + q.y3) / 4)),
+      );
+      if (!st.visible[sampleY]?.[sampleX]) continue;
+      if (
+        sweepRadius !== null &&
+        Math.hypot(sampleX - focusX, sampleY - focusY) > sweepRadius
+      ) {
+        continue;
+      }
+      const brightness = tileBrightness(st, sampleX, sampleY);
+      const inShadowBand = brightness < SHADOW_THRESHOLD;
+      // Weight from the casting face only — fill light must not darken the wedge.
+      const alpha = Math.min(0.42, q.weight * (inShadowBand ? 0.1 : 0.26));
+      if (alpha < 0.03) continue;
+      g.fillStyle(Theme.groundDeep, alpha);
+      g.fillPoints(
+        [
+          new Phaser.Math.Vector2(q.x0 * TILE_DRAW, q.y0 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x1 * TILE_DRAW, q.y1 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x2 * TILE_DRAW, q.y2 * TILE_DRAW),
+          new Phaser.Math.Vector2(q.x3 * TILE_DRAW, q.y3 * TILE_DRAW),
+        ],
+        true,
+      );
+    }
+
     for (const actor of actors) {
       const { gx, gy } = actor;
       const tx = Math.round(gx);
       const ty = Math.round(gy);
+      if (tx < 0 || ty < 0 || tx >= st.width || ty >= st.height) continue;
       if (!st.visible[ty]?.[tx]) continue;
+      if (sweepRadius !== null && Math.hypot(gx - focusX, gy - focusY) > sweepRadius) {
+        continue;
+      }
       const brightness = tileBrightness(st, tx, ty);
-      if (brightness < 0.06) continue;
+      // Bodies / kit still plant in dim light; only skip pitch black.
+      const minBright = actor.body || actor.item ? 0.03 : 0.06;
+      if (brightness < minBright) continue;
 
-      let vx = 0;
-      let vy = 0;
       let key = 0;
+      let keyDx = 0;
+      let keyDy = 0;
       for (let i = 0; i < sources.length; i++) {
         const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
-        // Own-tile lamp (or a prop sitting on its emitter): contact only.
+        // Own-tile lamp (or a prop sitting on its emitter): plant only.
         if (dist < 0.75) continue;
         const E = this.energyAt(i, tx, ty);
         if (E <= 0.004) continue;
-        vx += ((gx - s.x) / dist) * E;
-        vy += ((gy - s.y) / dist) * E;
-        key = Math.max(key, E);
+        // Dominant key light only — summing opposite sconces cancelled the cast.
+        if (E > key) {
+          key = E;
+          keyDx = gx - s.x;
+          keyDy = gy - s.y;
+        }
       }
+      const footBias = actor.item ? 0.18 : actor.prop ? 0.22 : 0.28;
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
-      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * (actor.prop ? 0.22 : 0.28);
+      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * footBias;
       const inShadowBand = brightness < SHADOW_THRESHOLD;
+      // Bodies keep a readable cast in soft shadow; furniture stays fainter there.
       const alpha = Math.min(
-        0.55,
-        (inShadowBand ? 0.08 : 0.14) + brightness * (inShadowBand ? 0.22 : 0.42),
+        actor.body ? 0.58 : actor.item ? 0.52 : 0.5,
+        (inShadowBand
+          ? actor.body || actor.item || actor.prop
+            ? 0.1
+            : 0.06
+          : 0.12) +
+          brightness * (inShadowBand ? (actor.body ? 0.28 : 0.18) : 0.38),
       );
-      const contactW = TILE_DRAW * (actor.prop ? 0.4 : 0.48);
-      const contactH = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
 
-      const len = Math.hypot(vx, vy);
-      if (key > 0.05 && len > 0.0001 && !inShadowBand) {
-        const dirX = vx / len;
-        const dirY = vy / len;
-        const tallScale = actor.tall ? 1.35 : 1;
-        const propScale = actor.prop ? 0.72 : 1;
+      const len = Math.hypot(keyDx, keyDy);
+      // Soft-band cast for fauna / kit / furniture so ambush rooms still read.
+      const allowCast =
+        key > (actor.body || actor.item ? 0.035 : 0.05) &&
+        len > 0.0001 &&
+        (!inShadowBand || actor.body || actor.item || actor.prop);
+      if (allowCast) {
+        const dirX = keyDx / len;
+        const dirY = keyDy / len;
+        const tallScale = actor.tall ? 1.55 : actor.body ? 1.15 : 1;
+        const propScale = actor.item ? 0.92 : actor.prop ? 0.78 : 1;
         const wantTiles =
-          (0.35 + Math.min(0.85, key * 0.65)) * tallScale * propScale;
+          (0.55 + Math.min(1.05, key * 0.85)) * tallScale * propScale *
+          (actor.body ? 1.12 : 1);
         const reach = castReachTiles(st.tiles, tx, ty, dirX, dirY, wantTiles);
         if (reach > 0.12) {
           const throwLen = reach * TILE_DRAW;
           const px = -dirY;
           const py = dirX;
-          const halfNear = TILE_DRAW * (actor.prop ? 0.16 : 0.2);
-          const halfFar = TILE_DRAW * Math.max(0.05, 0.1 * (reach / wantTiles));
+          const halfNear =
+            TILE_DRAW *
+            (actor.item ? 0.12 : actor.prop ? 0.14 : actor.body ? 0.2 : 0.18);
+          const halfFar = TILE_DRAW * Math.max(0.04, 0.08 * (reach / wantTiles));
           const fx = wx + dirX * throwLen;
-          const fy = wy + dirY * throwLen * 0.65;
-          g.fillStyle(Theme.groundDeep, alpha * 0.82);
+          const fy = wy + dirY * throwLen * (actor.body ? 0.78 : 0.72);
+          const castAlpha = inShadowBand ? alpha * 0.7 : alpha;
+          // Soft penumbra skirt, then denser umbra core.
+          g.fillStyle(Theme.groundDeep, castAlpha * 0.45);
+          g.fillPoints(
+            [
+              new Phaser.Math.Vector2(wx + px * halfNear * 1.35, wy + py * halfNear * 1.35),
+              new Phaser.Math.Vector2(wx - px * halfNear * 1.2, wy - py * halfNear * 1.2),
+              new Phaser.Math.Vector2(fx - px * halfFar * 1.6, fy - py * halfFar * 1.6),
+              new Phaser.Math.Vector2(fx + px * halfFar * 1.75, fy + py * halfFar * 1.75),
+            ],
+            true,
+          );
+          g.fillStyle(Theme.groundDeep, castAlpha * 0.88);
           g.fillPoints(
             [
               new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
               new Phaser.Math.Vector2(wx - px * halfNear * 0.85, wy - py * halfNear * 0.85),
               new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
-              new Phaser.Math.Vector2(fx + px * halfFar * 1.15, fy + py * halfFar * 1.15),
+              new Phaser.Math.Vector2(fx + px * halfFar * 1.1, fy + py * halfFar * 1.1),
             ],
             true,
           );
         }
       }
-      g.fillStyle(Theme.groundDeep, alpha);
-      // Two offset patches beat one perfect ellipse (reads less like a drop-shadow filter).
-      const ox = actor.prop ? TILE_DRAW * 0.04 : 0;
-      g.fillEllipse(wx - ox, wy, contactW, contactH);
-      g.fillStyle(Theme.groundDeep, alpha * 0.55);
-      g.fillEllipse(wx + contactW * 0.12, wy + contactH * 0.15, contactW * 0.7, contactH * 0.75);
+      // Single plant — feet / kit read as planted without a filter drop-shadow.
+      const contactW =
+        TILE_DRAW * (actor.item ? 0.28 : actor.prop ? 0.32 : actor.body ? 0.4 : 0.36);
+      const contactH =
+        TILE_DRAW * (actor.item ? 0.11 : actor.prop ? 0.12 : actor.body ? 0.16 : 0.14);
+      g.fillStyle(Theme.groundDeep, alpha * (actor.body || actor.item ? 0.7 : 0.55));
+      g.fillEllipse(wx, wy, contactW, contactH);
     }
+  }
+
+  /** @deprecated Use drawDynamicShadows — kept as alias for any external callers. */
+  drawContactShadows(
+    st: GameState,
+    actors: Iterable<{
+      gx: number;
+      gy: number;
+      tall?: boolean;
+      prop?: boolean;
+      item?: boolean;
+      body?: boolean;
+    }>,
+    sources: LightSource[],
+  ): void {
+    this.drawDynamicShadows(st, actors, sources);
   }
 
   /** Cached lighting tint from the last `applyTileLighting` pass. */
@@ -614,8 +731,16 @@ export class LightView {
 
   /**
    * Bloom sources: sim emitters (lamp/quiet/flare/world) + brief presentation FX.
+   * `bodyAt` supplies mid-hop positions for movers whose bloom should travel.
    */
-  allSources(st: GameState, animFrame: number): LightSource[] {
+  allSources(
+    st: GameState,
+    animFrame: number,
+    bodyAt?: {
+      enemy?: (id: number) => { x: number; y: number } | null;
+      ally?: (id: number) => { x: number; y: number } | null;
+    },
+  ): LightSource[] {
     const pulse = 0.85 + (animFrame % 3) * 0.08;
     const carry = this.lampCarry;
     const sim = collectLightSources(st).map((s, i) => {
@@ -635,11 +760,29 @@ export class LightView {
       return placed;
     });
 
+    // Probe drones: sim coords are the destination — slide bloom with the view.
+    for (const ally of st.allies) {
+      if (!ally.alive || ally.kind !== 'probe_drone') continue;
+      const pos = bodyAt?.ally?.(ally.id) ?? { x: ally.x, y: ally.y };
+      const src = sim.find(
+        (s) =>
+          s.color === LightTemp.pattern &&
+          s.radius === 3.2 &&
+          Math.round(s.x) === ally.x &&
+          Math.round(s.y) === ally.y,
+      );
+      if (src) {
+        src.x = pos.x;
+        src.y = pos.y;
+      }
+    }
+
     for (const en of st.enemies) {
       if (!en.alive || en.tier !== 'boss') continue;
+      const pos = bodyAt?.enemy?.(en.id) ?? { x: en.x, y: en.y };
       sim.push({
-        x: en.x,
-        y: en.y,
+        x: pos.x,
+        y: pos.y,
         radius: 3.2,
         color: Theme.rust,
         intensity: 0.75 * pulse,
@@ -853,21 +996,25 @@ export class LightView {
   applyActorLighting(
     st: GameState,
     playerSprite: Phaser.GameObjects.Image,
-    enemyViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
+    actorViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
     sources: LightSource[],
   ): void {
     this.ensureSourceEnergy(st, sources);
 
     const litAlpha = (x: number, y: number): number => {
-      if (!st.visible[y]?.[x]) return 0;
-      return 0.58 + 0.42 * tileBrightness(st, x, y);
+      const tx = Math.round(x);
+      const ty = Math.round(y);
+      if (!st.visible[ty]?.[tx]) return 0;
+      return 0.58 + 0.42 * tileBrightness(st, tx, ty);
     };
 
     const keyTint = (x: number, y: number): number | null => {
+      const tx = Math.round(x);
+      const ty = Math.round(y);
       let pull = 0;
       let acc = 0xffffff;
       for (let i = 0; i < sources.length; i++) {
-        const E = this.energyAt(i, x, y);
+        const E = this.energyAt(i, tx, ty);
         if (E <= 0.008) continue;
         pull += E;
         acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.7));
@@ -876,18 +1023,18 @@ export class LightView {
       return multiplyTint(0xffffff, acc, Math.min(0.36, pull * 0.32));
     };
 
-    playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));
+    // Mid-hop: sample from the carried lamp so alpha matches wash/tint, not dest tile.
+    const playerLight = this.lampCarry ?? { x: st.player.x, y: st.player.y };
+    playerSprite.setAlpha(litAlpha(playerLight.x, playerLight.y));
     if (st.patternDesync > 0) {
       playerSprite.setTint(LightTemp.pattern);
     } else {
-      const sampleX = this.lampCarry?.x ?? st.player.x;
-      const sampleY = this.lampCarry?.y ?? st.player.y;
-      const tint = keyTint(Math.round(sampleX), Math.round(sampleY));
+      const tint = keyTint(playerLight.x, playerLight.y);
       if (tint !== null) playerSprite.setTint(tint);
       else playerSprite.clearTint();
     }
 
-    for (const view of enemyViews) {
+    for (const view of actorViews) {
       if (!view.img.visible) continue;
       view.img.setAlpha(litAlpha(view.gx, view.gy));
       const tint = keyTint(view.gx, view.gy);

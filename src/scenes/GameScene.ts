@@ -68,6 +68,7 @@ export class GameScene extends Phaser.Scene {
   private state!: GameState;
   private mapLayer!: Phaser.GameObjects.Container;
   private lightLayer!: Phaser.GameObjects.Container;
+  private propLayer!: Phaser.GameObjects.Container;
   private itemLayer!: Phaser.GameObjects.Container;
   private shadowLayer!: Phaser.GameObjects.Container;
   private entityLayer!: Phaser.GameObjects.Container;
@@ -184,9 +185,11 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.cameraAtmosphere = addCameraAtmosphere(this);
     this.mapLayer = this.add.container(0, 0);
-    this.itemLayer = this.add.container(0, 0);
     // Contact shadows sit between the floor and the things casting them.
     this.shadowLayer = this.add.container(0, 0);
+    // Raised furniture above shadows so umbra sits under the art, not on it.
+    this.propLayer = this.add.container(0, 0);
+    this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
     // Bloom above actors so the player lamp isn't buried under the sprite.
     this.lightLayer = this.add.container(0, 0);
@@ -672,6 +675,7 @@ export class GameScene extends Phaser.Scene {
     this.goalPulseTween = null;
     this.animating = false;
     this.mapLayer.removeAll(true);
+    this.propLayer.removeAll(true);
     if (this.goalMarker?.parentContainer === this.itemLayer) {
       this.itemLayer.remove(this.goalMarker, false);
     }
@@ -725,7 +729,9 @@ export class GameScene extends Phaser.Scene {
           this.tileKey(kind, x, y),
         );
         img.setDisplaySize(TILE_DRAW, TILE_DRAW);
-        this.mapLayer.add(img);
+        // Raised props sit above the shadow layer so umbra falls under the art.
+        if (tileCastsPropShadow(kind)) this.propLayer.add(img);
+        else this.mapLayer.add(img);
         this.tileSprites[y]![x] = img;
       }
     }
@@ -1081,10 +1087,14 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  /** Lamp wash follows every hop frame; bloom/shadows step ~8× so the CPU stays free. */
+  /**
+   * Lamp wash follows every surveyor hop frame; bloom/shadows step ~8× so the
+   * CPU stays free. Enemy-only hops still refresh shadows (no wash blend).
+   */
   private tickMoveLight(t: number): void {
-    if (!this.lightView.hasMoveBlend()) return;
-    this.lightView.setMoveLightProgress(t, this.tileSprites);
+    if (this.lightView.hasMoveBlend()) {
+      this.lightView.setMoveLightProgress(t, this.tileSprites);
+    }
     const step = t >= 1 ? 8 : Math.floor(t * 8);
     if (step === this.moveLightFxStep) return;
     this.moveLightFxStep = step;
@@ -1093,11 +1103,60 @@ export class GameScene extends Phaser.Scene {
 
   private refreshMoveLightFx(): void {
     const st = this.state;
-    const sources = this.lightView.allSources(st, this.animFrame);
+    const sources = this.lightView.allSources(st, this.animFrame, this.bodyLightAt());
     // Skip motes mid-hop — static grit under a moving wash reads as noise.
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
-    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
-    this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+    this.lightView.drawDynamicShadows(
+      st,
+      this.shadowCasters(),
+      sources,
+      this.firstLight,
+    );
+    this.applyAllActorLighting(sources);
+  }
+
+  /** Mid-hop positions for movers whose bloom should travel with the sprite. */
+  private bodyLightAt(): {
+    enemy: (id: number) => { x: number; y: number } | null;
+    ally: (id: number) => { x: number; y: number } | null;
+  } {
+    return {
+      enemy: (id) => {
+        const v = this.enemyViews.get(id);
+        return v ? { x: v.gx, y: v.gy } : null;
+      },
+      ally: (id) => {
+        const v = this.allyViews.get(id);
+        return v ? { x: v.gx, y: v.gy } : null;
+      },
+    };
+  }
+
+  private *litActorViews(): Generator<{
+    img: Phaser.GameObjects.Image;
+    gx: number;
+    gy: number;
+  }> {
+    yield* this.enemyViews.values();
+    yield* this.allyViews.values();
+    yield* this.npcViews.values();
+  }
+
+  private applyAllActorLighting(
+    sources: ReturnType<LightView['allSources']>,
+  ): void {
+    this.lightView.applyActorLighting(
+      this.state,
+      this.playerSprite,
+      this.litActorViews(),
+      sources,
+    );
+    // Talked contacts stay dimmer than flood alone would allow.
+    for (const n of this.state.npcs) {
+      if (!n.talked) continue;
+      const view = this.npcViews.get(n.id);
+      if (view?.img.visible) view.img.setAlpha(view.img.alpha * 0.45);
+    }
   }
 
   private maybeEnd(): void {
@@ -1158,11 +1217,13 @@ export class GameScene extends Phaser.Scene {
   private syncActors(snapPositions: boolean): void {
     const st = this.state;
     const aliveIds = new Set<number>();
+    const visAt = (x: number, y: number): boolean =>
+      st.visible[Math.round(y)]?.[Math.round(x)] ?? false;
 
     for (const en of st.enemies) {
       if (!en.alive) continue;
       aliveIds.add(en.id);
-      const visible = st.visible[en.y]![en.x];
+      const destVis = visAt(en.x, en.y);
       let view = this.enemyViews.get(en.id);
       if (!view) {
         const img = this.add.image(0, 0, enemyTextureKey(en.kind, this.animFrame % 3));
@@ -1187,6 +1248,8 @@ export class GameScene extends Phaser.Scene {
         this.snapImg(img, en.x, en.y);
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
+      // Mid-hop: keep visible while either the body tile or dest is in FOV.
+      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
       view.img.setVisible(visible);
       view.label.setVisible(visible);
       view.img.setTexture(enemyTextureKey(en.kind, this.animFrame % 3));
@@ -1210,7 +1273,7 @@ export class GameScene extends Phaser.Scene {
     const npcIds = new Set<number>();
     for (const n of st.npcs) {
       npcIds.add(n.id);
-      const visible = st.visible[n.y]?.[n.x] ?? false;
+      const destVis = visAt(n.x, n.y);
       let view = this.npcViews.get(n.id);
       if (!view) {
         const img = this.add.image(0, 0, npcTextureKey(n.kind));
@@ -1230,6 +1293,7 @@ export class GameScene extends Phaser.Scene {
         this.snapImg(img, n.x, n.y);
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
+      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
       view.img.setVisible(visible);
       view.label.setVisible(false);
       view.img.setAlpha(n.talked ? 0.45 : 1);
@@ -1252,7 +1316,7 @@ export class GameScene extends Phaser.Scene {
     for (const a of st.allies) {
       if (!a.alive) continue;
       allyIds.add(a.id);
-      const visible = st.visible[a.y]?.[a.x] ?? false;
+      const destVis = visAt(a.x, a.y);
       let view = this.allyViews.get(a.id);
       if (!view) {
         const img = this.add.image(0, 0, allyTextureKey(a.kind));
@@ -1274,6 +1338,7 @@ export class GameScene extends Phaser.Scene {
         this.snapImg(img, a.x, a.y);
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
+      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
       view.img.setVisible(visible);
       view.label.setVisible(false);
       view.img.setTexture(allyTextureKey(a.kind));
@@ -1367,6 +1432,7 @@ export class GameScene extends Phaser.Scene {
       for (const layer of [
         this.mapLayer,
         this.shadowLayer,
+        this.propLayer,
         this.lightLayer,
         this.itemLayer,
         this.entityLayer,
@@ -1820,7 +1886,7 @@ export class GameScene extends Phaser.Scene {
     const st = this.state;
     const shear = computeShearPressure(st);
     this.lightView.syncTurn(st.turn);
-    const sources = this.lightView.allSources(st, this.animFrame);
+    const sources = this.lightView.allSources(st, this.animFrame, this.bodyLightAt());
 
     // Mid-hop: keep blending the captured wash — don't snap tiles to the destination.
     if (this.lightView.hasMoveBlend()) {
@@ -1842,8 +1908,13 @@ export class GameScene extends Phaser.Scene {
 
     this.drawFieldMotes();
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
-    this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
-    this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
+    this.lightView.drawDynamicShadows(
+      st,
+      this.shadowCasters(),
+      sources,
+      this.firstLight,
+    );
+    this.applyAllActorLighting(sources);
 
     drawThreatZones(this.threatGfx, st, this.animFrame);
 
@@ -1911,34 +1982,70 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Everything solid enough to throw a shadow this frame. */
-  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean; prop?: boolean }> {
+  private *shadowCasters(): Generator<{
+    gx: number;
+    gy: number;
+    tall?: boolean;
+    prop?: boolean;
+    item?: boolean;
+    body?: boolean;
+  }> {
     const st = this.state;
     const carry = this.lightView.lampCarryAt();
+    const visAt = (x: number, y: number): boolean =>
+      st.visible[Math.round(y)]?.[Math.round(x)] ?? false;
     yield {
       gx: carry?.x ?? st.player.x,
       gy: carry?.y ?? st.player.y,
+      body: true,
     };
+    // Prefer view positions so mid-hop fauna umbra travels with the sprite.
     for (const en of st.enemies) {
       if (!en.alive) continue;
-      yield { gx: en.x, gy: en.y, tall: en.tier !== 'normal' };
+      const view = this.enemyViews.get(en.id);
+      const gx = view?.gx ?? en.x;
+      const gy = view?.gy ?? en.y;
+      if (!visAt(gx, gy) && !visAt(en.x, en.y)) continue;
+      yield {
+        gx,
+        gy,
+        tall: en.tier !== 'normal',
+        body: true,
+      };
     }
     for (const a of st.allies) {
       if (!a.alive) continue;
-      yield { gx: a.x, gy: a.y };
+      const view = this.allyViews.get(a.id);
+      const gx = view?.gx ?? a.x;
+      const gy = view?.gy ?? a.y;
+      if (!visAt(gx, gy) && !visAt(a.x, a.y)) continue;
+      yield { gx, gy, body: true };
     }
-    for (const n of st.npcs) yield { gx: n.x, gy: n.y };
+    for (const n of st.npcs) {
+      const view = this.npcViews.get(n.id);
+      const gx = view?.gx ?? n.x;
+      const gy = view?.gy ?? n.y;
+      if (!visAt(gx, gy) && !visAt(n.x, n.y)) continue;
+      yield { gx, gy, body: true };
+    }
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
         if (!st.visible[y]?.[x]) continue;
-        const kind = st.tiles[y]![x]!.kind;
-        if (!tileCastsPropShadow(kind)) continue;
-        yield { gx: x, gy: y, tall: propShadowTall(kind), prop: true };
+        const tile = st.tiles[y]![x]!;
+        // Opaque mass already throws occluder umbra — skip a second prop cast.
+        if (!tile.transparent) continue;
+        if (!tileCastsPropShadow(tile.kind)) continue;
+        yield { gx: x, gy: y, tall: propShadowTall(tile.kind), prop: true };
       }
     }
+    const seenItems = new Set<string>();
     for (const it of st.items) {
       if (!st.visible[it.y]?.[it.x]) continue;
-      yield { gx: it.x, gy: it.y, prop: true };
+      const key = `${it.x},${it.y}`;
+      if (seenItems.has(key)) continue;
+      seenItems.add(key);
+      yield { gx: it.x, gy: it.y, item: true, prop: true };
     }
   }
 
