@@ -1,9 +1,8 @@
 import type { TileKind } from '../../sim/types';
 
 /**
- * Field props solid enough to throw a contact shadow — upright furniture and
- * landmarks. Recessed terrain (vent / brine / hazard stain) stays shadowless;
- * opaque scrub nests use occluder umbra instead of a second prop cast.
+ * Raised furniture / POIs drawn on `propLayer` above floor shadows so occluder
+ * umbra sits under the art. Not a second cast system — layering only.
  */
 export function tileCastsPropShadow(kind: TileKind): boolean {
   switch (kind) {
@@ -18,9 +17,4 @@ export function tileCastsPropShadow(kind: TileKind): boolean {
     default:
       return false;
   }
-}
-
-/** Upright fixtures read taller than a low pad or crate. */
-export function propShadowTall(kind: TileKind): boolean {
-  return kind === 'beacon' || kind === 'quest' || kind === 'landmark';
 }

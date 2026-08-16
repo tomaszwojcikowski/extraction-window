@@ -54,9 +54,9 @@ fails if any of them come back under those names.
 
 Each emitter is a *thing*: hooded halogen (`lamp`), magnesium stick (`flare`), animal (`fauna`), sodium relay (`beacon`), pad floods (`shuttle`), pattern tech (`pattern`), flagging (`marker`), scan wash (`scan`), hatch standby (`standby`).
 
-Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is a few uneven, low-alpha washes with ray wobble — soft spill, not chalky onion rings or nested white sparks on every emitter.
+Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is two soft ray-marched washes plus one core — spill, not onion rings or nested white sparks.
 
-**Dynamic shadows:** opaque tiles throw soft floor umbra from flood-lit faces (`occluderShadows.ts`); fauna, allies, NPCs, and ground kit stretch a key-light silhouette (bodies follow view positions; kit plants + casts). Umbra must not punch through stone or invent brightness in the SHADOW band — same honesty rule as bloom. Reject drop-shadow filter ellipses and fake through-wall casts.
+**Dynamic shadows (one language):** opaque tiles throw soft floor umbra from flood-lit faces (`occluderShadows.ts`). Bodies and ground kit get a single contact plant under the feet — no actor cast wedges, no furniture silhouette system (those fought the wall umbra). Umbra must not punch through stone or invent brightness in the SHADOW band. Reject drop-shadow filter stacks and fake through-wall casts.
 
 ---
 
