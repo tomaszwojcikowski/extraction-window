@@ -1257,8 +1257,11 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
 function actorBase(g: G, T: number): (value: number) => number {
   transparent(g, T);
   const q = unit(T);
-  g.fillStyle(0x000000, 0.6);
-  g.fillEllipse(q(8), q(38), q(32), q(7));
+  // Soft contact ellipse + hard ground line so hostiles sit on the tile.
+  g.fillStyle(0x000000, 0.45);
+  g.fillEllipse(q(6), q(39), q(36), q(8));
+  g.fillStyle(0x000000, 0.7);
+  g.fillEllipse(q(12), q(41), q(24), q(4));
   return q;
 }
 
@@ -1321,7 +1324,6 @@ function silhouetteFor(kind: EnemyKind): Silhouette {
     case 'guard':
       return 'bulwark';
     case 'sentinel':
-      // Machines split by what they actually do, or five of them read alike.
       if (def.overwatch) return 'turret';
       if (def.beam) return 'emitter';
       return 'chassis';
@@ -1332,14 +1334,27 @@ function silhouetteFor(kind: EnemyKind): Silhouette {
   }
 }
 
-/** Paired hostile optics, sized and placed to suit the body plan. */
-function hostileEyes(g: G, q: Q, cx: number, y: number, spread: number, size: number): void {
+/** Optics temperature follows damage type — kinetic warm, ion cool (bible §4a). */
+function hostileEyes(
+  g: G,
+  q: Q,
+  cx: number,
+  y: number,
+  spread: number,
+  size: number,
+  ion: boolean,
+): void {
+  const glow = ion ? Theme.biolum : Theme.rust;
+  const hot = ion ? Theme.arcWhite : Theme.arc;
   g.fillStyle(Theme.groundDeep, 1);
+  g.fillRect(q(cx - spread - size - 1), q(y - 1), q(size + 2), q(size + 2));
+  g.fillRect(q(cx + spread - 1), q(y - 1), q(size + 2), q(size + 2));
+  g.fillStyle(glow, 1);
   g.fillRect(q(cx - spread - size), q(y), q(size), q(size));
   g.fillRect(q(cx + spread), q(y), q(size), q(size));
-  g.fillStyle(Theme.rust, 1);
-  g.fillRect(q(cx - spread - size + 1), q(y + 1), q(size - 2), q(size - 2));
-  g.fillRect(q(cx + spread + 1), q(y + 1), q(size - 2), q(size - 2));
+  g.fillStyle(hot, 0.85);
+  g.fillRect(q(cx - spread - size + 1), q(y + 1), q(Math.max(1, size - 2)), q(Math.max(1, size - 2)));
+  g.fillRect(q(cx + spread + 1), q(y + 1), q(Math.max(1, size - 2)), q(Math.max(1, size - 2)));
 }
 
 function drawSilhouette(
@@ -1350,344 +1365,368 @@ function drawSilhouette(
   frame: number,
   bob: number,
   kind: EnemyKind,
+  ion: boolean,
 ): void {
-  const rim = mix(color, Theme.groundDeep, 0.62);
-  const lit = mix(color, Theme.inkBright, 0.25);
+  const rim = mix(color, Theme.groundDeep, 0.55);
+  const lit = mix(color, Theme.inkBright, 0.32);
+  const deep = mix(color, Theme.groundDeep, 0.78);
+  const threat = ion ? Theme.biolum : Theme.rust;
 
   switch (shape) {
     case 'scuttler': {
-      // Low, wide, many-legged. Occupies only the bottom band — reads as minor.
-      // Extra lateral splay so it never reads as a floating bloom blob.
-      const leg = frame === 1 ? 1 : 0;
-      g.fillStyle(rim, 1);
-      for (let i = 0; i < 5; i++) {
-        const lx = 8 + i * 8;
-        const out = i === 0 || i === 4 ? 2 : 0;
-        g.fillRect(q(lx), q(33 + bob + out), q(3), q(7 - leg));
+      // Low carapace + splayed legs — only occupies the bottom band.
+      const leg = frame === 1 ? 2 : frame === 2 ? -1 : 0;
+      g.fillStyle(deep, 1);
+      for (let i = 0; i < 6; i++) {
+        const lx = 6 + i * 7;
+        const out = i === 0 || i === 5 ? 3 : i === 1 || i === 4 ? 1 : 0;
+        g.fillRect(q(lx), q(32 + bob + out), q(3), q(8 - leg));
         g.fillRect(q(lx - 2), q(39 - leg + bob + out), q(7), q(2));
+        g.fillStyle(rim, 1);
+        g.fillRect(q(lx - 2), q(40 - leg + bob + out), q(7), q(1));
+        g.fillStyle(deep, 1);
       }
-      g.fillEllipse(q(24), q(32 + bob), q(34), q(14));
-      g.fillStyle(color, 1);
-      g.fillEllipse(q(24), q(31 + bob), q(26), q(9));
-      g.fillStyle(lit, 1);
-      g.fillRect(q(16), q(28 + bob), q(14), q(2));
-      // Mandible nubs — mite identity at tile scale.
       g.fillStyle(rim, 1);
-      g.fillRect(q(10), q(30 + bob), q(4), q(3));
-      g.fillRect(q(34), q(30 + bob), q(4), q(3));
-      hostileEyes(g, q, 24, 29 + bob, 5, 3);
+      g.fillEllipse(q(24), q(33 + bob), q(36), q(14));
+      g.fillStyle(color, 1);
+      g.fillEllipse(q(24), q(32 + bob), q(28), q(9));
+      g.fillStyle(lit, 1);
+      g.fillRect(q(14), q(29 + bob), q(16), q(2));
+      g.fillStyle(deep, 1);
+      g.fillRect(q(8), q(31 + bob), q(5), q(4));
+      g.fillRect(q(35), q(31 + bob), q(5), q(4));
+      hostileEyes(g, q, 24, 30 + bob, 6, 3, ion);
       break;
     }
     case 'bloom': {
-      // Visibly inflates frame to frame, so the swell timer reads off the body.
-      // Radial spines keep it from collapsing into the scuttler oval.
-      const r = 12 + frame * 2;
-      g.fillStyle(rim, 1);
-      g.fillCircle(q(24), q(26 + bob), q(r + 4));
-      for (let i = 0; i < 6; i++) {
-        const ang = (i / 6) * Math.PI * 2 + frame * 0.15;
-        const sx = 24 + Math.cos(ang) * (r + 2);
-        const sy = 26 + bob + Math.sin(ang) * (r + 2);
-        g.fillRect(q(sx - 1), q(sy - 1), q(3), q(3));
+      // Inflating orb with radial spines — swell timer readable off the body.
+      const r = 11 + frame * 3;
+      g.fillStyle(deep, 1);
+      g.fillCircle(q(24), q(26 + bob), q(r + 5));
+      for (let i = 0; i < 8; i++) {
+        const ang = (i / 8) * Math.PI * 2 + frame * 0.2;
+        const sx = 24 + Math.cos(ang) * (r + 3);
+        const sy = 26 + bob + Math.sin(ang) * (r + 3);
+        g.fillStyle(rim, 1);
+        g.fillRect(q(sx - 1), q(sy - 1), q(4), q(4));
+        g.fillStyle(threat, 0.7);
+        g.fillRect(q(sx), q(sy), q(2), q(2));
       }
       g.fillStyle(color, 1);
       g.fillCircle(q(24), q(26 + bob), q(r));
-      g.fillStyle(lit, 0.85);
-      g.fillCircle(q(19), q(21 + bob), q(4));
-      g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
-      g.fillCircle(q(24), q(26 + bob), q(3 + frame));
-      // Stress fissures widen as it charges.
-      g.fillStyle(Theme.rust, 0.35 + frame * 0.25);
+      g.fillStyle(lit, 0.9);
+      g.fillCircle(q(18), q(20 + bob), q(5));
+      g.fillStyle(Theme.arcWhite, 0.45 + frame * 0.2);
+      g.fillCircle(q(24), q(26 + bob), q(4 + frame));
+      g.fillStyle(threat, 0.4 + frame * 0.2);
       g.fillRect(q(23), q(26 - r + bob), q(2), q(r * 2));
       g.fillRect(q(24 - r), q(25 + bob), q(r * 2), q(2));
       break;
     }
     case 'darter': {
-      // Narrow body, big beating wings — a thing that bites and backs off.
-      // Peer split: wasp tip-sting, mastling bulky thorax, elites keep brand crown.
       const mastling = kind === 'mastling';
-      const span = mastling ? (frame === 1 ? 18 : 14) : frame === 1 ? 15 : 10;
-      const bodyW = mastling ? 12 : 9;
-      const bodyH = mastling ? 20 : 24;
-      g.fillStyle(mix(Theme.arcWhite, color, 0.5), 0.4);
-      g.fillTriangle(q(20), q(18 + bob), q(20 - span), q(8 + bob), q(20), q(30 + bob));
-      g.fillTriangle(q(28), q(18 + bob), q(28 + span), q(8 + bob), q(28), q(30 + bob));
+      const wing = mastling
+        ? frame === 1
+          ? 20
+          : frame === 2
+            ? 12
+            : 16
+        : frame === 1
+          ? 18
+          : frame === 2
+            ? 8
+            : 13;
+      // Wing membranes — translucent threat of skirmish hit-and-run.
+      g.fillStyle(mix(Theme.arcWhite, color, 0.4), 0.45);
+      g.fillTriangle(q(20), q(16 + bob), q(20 - wing), q(4 + bob), q(22), q(28 + bob));
+      g.fillTriangle(q(28), q(16 + bob), q(28 + wing), q(4 + bob), q(26), q(28 + bob));
+      g.fillStyle(rim, 0.6);
+      g.fillTriangle(q(20), q(18 + bob), q(20 - wing + 3), q(8 + bob), q(21), q(26 + bob));
+      g.fillTriangle(q(28), q(18 + bob), q(28 + wing - 3), q(8 + bob), q(27), q(26 + bob));
       g.fillStyle(rim, 1);
-      g.fillEllipse(q(24), q(25 + bob), q(mastling ? 18 : 14), q(mastling ? 26 : 30));
+      g.fillEllipse(q(24), q(24 + bob), q(mastling ? 18 : 14), q(mastling ? 28 : 32));
       g.fillStyle(color, 1);
-      g.fillEllipse(q(24), q(25 + bob), q(bodyW), q(bodyH));
+      g.fillEllipse(q(24), q(24 + bob), q(mastling ? 12 : 8), q(mastling ? 22 : 26));
       if (mastling) {
-        // Thick mid-band — heavier flyer than wasp.
-        g.fillStyle(rim, 1);
-        g.fillRect(q(16), q(24 + bob), q(16), q(4));
-      }
-      g.fillStyle(Theme.rust, 1);
-      if (mastling) {
-        g.fillRect(q(21), q(36 + bob), q(6), q(5));
+        g.fillStyle(deep, 1);
+        g.fillRect(q(15), q(23 + bob), q(18), q(5));
+        g.fillStyle(threat, 1);
+        g.fillRect(q(20), q(37 + bob), q(8), q(5));
       } else {
-        g.fillTriangle(q(22), q(36 + bob), q(26), q(36 + bob), q(24), q(43 + bob));
+        g.fillStyle(threat, 1);
+        g.fillTriangle(q(21), q(37 + bob), q(27), q(37 + bob), q(24), q(45 + bob));
       }
-      hostileEyes(g, q, 24, mastling ? 14 + bob : 16 + bob, 2, 4);
+      hostileEyes(g, q, 24, mastling ? 13 + bob : 14 + bob, 2, 4, ion);
       break;
     }
     case 'crouched': {
-      // Coiled haunches, head down and forward. Reads as waiting, not walking.
-      // Peer split so stalker / skitter / reef_skitter do not share one rodent blob.
       const reef = kind === 'reef_skitter';
       const skit = kind === 'skitter';
-      g.fillStyle(rim, 1);
       if (skit) {
-        // Flatter, many-legged crouch — no long snout.
-        g.fillEllipse(q(24), q(30 + bob), q(32), q(16));
-        for (let i = 0; i < 4; i++) {
-          const lx = 10 + i * 9;
-          g.fillRect(q(lx), q(36 + bob), q(3), q(6));
-          g.fillRect(q(lx - 1), q(40 + bob), q(5), q(2));
+        g.fillStyle(rim, 1);
+        g.fillEllipse(q(24), q(31 + bob), q(34), q(16));
+        for (let i = 0; i < 5; i++) {
+          const lx = 8 + i * 8;
+          const kick = frame === 1 && i % 2 === 0 ? 2 : 0;
+          g.fillRect(q(lx), q(37 + bob - kick), q(3), q(7 + kick));
+          g.fillRect(q(lx - 1), q(42 + bob), q(5), q(2));
         }
         g.fillStyle(color, 1);
-        g.fillEllipse(q(24), q(29 + bob), q(24), q(10));
-        g.fillStyle(Theme.rust, 1);
-        g.fillRect(q(20), q(28 + bob), q(8), q(3));
-        hostileEyes(g, q, 24, 27 + bob, 4, 3);
+        g.fillEllipse(q(24), q(30 + bob), q(26), q(10));
+        g.fillStyle(threat, 1);
+        g.fillRect(q(18), q(29 + bob), q(12), q(3));
+        hostileEyes(g, q, 24, 28 + bob, 5, 3, ion);
       } else if (reef) {
-        // Wide stance + dorsal crest — shelf fauna, not the plains stalker.
-        g.fillEllipse(q(28), q(30 + bob), q(30), q(18));
-        g.fillTriangle(q(22), q(18 + bob), q(28), q(6 + bob), q(34), q(18 + bob));
-        g.fillRect(q(8), q(28 + bob), q(18), q(10));
-        g.fillStyle(color, 1);
-        g.fillEllipse(q(28), q(29 + bob), q(22), q(12));
-        g.fillRect(q(10), q(30 + bob), q(14), q(6));
-        g.fillStyle(lit, 0.9);
-        g.fillTriangle(q(24), q(16 + bob), q(28), q(8 + bob), q(32), q(16 + bob));
         g.fillStyle(rim, 1);
-        g.fillRect(q(14), q(36 + bob), q(4), q(6));
-        g.fillRect(q(34), q(36 + bob), q(4), q(6));
-        g.fillStyle(Theme.rust, 1);
-        g.fillRect(q(6), q(31 + bob), q(5), q(3));
-        hostileEyes(g, q, 18, 29 + bob, 2, 3);
+        g.fillEllipse(q(28), q(31 + bob), q(32), q(18));
+        g.fillTriangle(q(20), q(16 + bob), q(28), q(2 + bob), q(36), q(16 + bob));
+        g.fillRect(q(6), q(28 + bob), q(20), q(12));
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(28), q(30 + bob), q(24), q(12));
+        g.fillRect(q(8), q(30 + bob), q(16), q(7));
+        g.fillStyle(lit, 1);
+        g.fillTriangle(q(23), q(14 + bob), q(28), q(4 + bob), q(33), q(14 + bob));
+        g.fillStyle(deep, 1);
+        g.fillRect(q(12), q(38 + bob), q(5), q(6));
+        g.fillRect(q(34), q(38 + bob), q(5), q(6));
+        g.fillStyle(threat, 1);
+        g.fillRect(q(4), q(32 + bob), q(6), q(3));
+        hostileEyes(g, q, 16, 30 + bob, 2, 3, ion);
       } else {
-        // Stalker — coiled haunches, head down and forward.
-        g.fillEllipse(q(30), q(28 + bob), q(26), q(20));
-        g.fillRect(q(10), q(26 + bob), q(20), q(11));
-        g.fillTriangle(q(4), q(30 + bob), q(14), q(24 + bob), q(14), q(36 + bob));
-        g.fillStyle(color, 1);
-        g.fillEllipse(q(30), q(27 + bob), q(19), q(13));
-        g.fillRect(q(12), q(28 + bob), q(16), q(7));
+        // Stalker — coiled, snout forward, haunches loaded.
+        const crouch = frame === 2 ? 2 : frame === 1 ? -1 : 0;
         g.fillStyle(rim, 1);
-        const crouch = frame === 2 ? 1 : 0;
-        g.fillRect(q(20), q(35 + bob), q(4), q(6 - crouch));
-        g.fillRect(q(34), q(35 + bob), q(4), q(6 - crouch));
-        g.fillStyle(Theme.rust, 1);
-        g.fillRect(q(6), q(29 + bob), q(5), q(3));
-        hostileEyes(g, q, 17, 27 + bob, 2, 3);
+        g.fillEllipse(q(32), q(29 + bob), q(28), q(20));
+        g.fillRect(q(8), q(26 + bob), q(22), q(12));
+        g.fillTriangle(q(2), q(30 + bob), q(14), q(22 + bob), q(14), q(38 + bob));
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(32), q(28 + bob), q(20), q(13));
+        g.fillRect(q(10), q(28 + bob), q(18), q(8));
+        g.fillStyle(deep, 1);
+        g.fillRect(q(18), q(36 + bob), q(5), q(7 - crouch));
+        g.fillRect(q(34), q(36 + bob), q(5), q(7 - crouch));
+        g.fillStyle(threat, 1);
+        g.fillRect(q(4), q(29 + bob), q(6), q(4));
+        hostileEyes(g, q, 15, 27 + bob, 2, 3, ion);
       }
       break;
     }
     case 'annelid': {
-      // Stacked segments under a ringed sucker — the siphon reads at a glance.
-      g.fillStyle(rim, 1);
-      for (let i = 0; i < 4; i++) {
-        const w = 22 - i * 3;
-        g.fillEllipse(q(24), q(36 - i * 8 + bob), q(w), q(10));
+      // Siphon stack — segments pulse toward the sucker.
+      const pulse = frame === 1 ? 1 : frame === 2 ? -1 : 0;
+      for (let i = 0; i < 5; i++) {
+        const w = 24 - i * 3 + (i === frame ? 2 : 0);
+        g.fillStyle(rim, 1);
+        g.fillEllipse(q(24), q(38 - i * 7 + bob + pulse), q(w), q(11));
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(24), q(38 - i * 7 + bob + pulse), q(w - 6), q(6));
+        g.fillStyle(deep, 0.8);
+        g.fillRect(q(24 - (w - 8) / 2), q(38 - i * 7 + bob + pulse), q(w - 8), q(1));
       }
-      g.fillStyle(color, 1);
-      for (let i = 0; i < 4; i++) {
-        const w = 16 - i * 3;
-        g.fillEllipse(q(24), q(36 - i * 8 + bob), q(w), q(6));
-      }
       g.fillStyle(rim, 1);
-      g.fillCircle(q(24), q(9 + bob), q(10));
-      g.fillStyle(Theme.rust, 1);
-      g.fillCircle(q(24), q(9 + bob), q(6 - (frame === 1 ? 1 : 0)));
+      g.fillCircle(q(24), q(8 + bob), q(11));
+      g.fillStyle(threat, 1);
+      g.fillCircle(q(24), q(8 + bob), q(7 - (frame === 1 ? 1 : 0)));
       g.fillStyle(Theme.groundDeep, 1);
-      g.fillCircle(q(24), q(9 + bob), q(3));
+      g.fillCircle(q(24), q(8 + bob), q(3));
+      g.fillStyle(Theme.arcWhite, 0.5);
+      g.fillCircle(q(24), q(8 + bob), q(1));
       break;
     }
     case 'bulwark': {
-      // Wide plated dome, planted on the tile. Nothing about it says mobile.
+      // Planted armour dome — ridges + tape band, zero mobility language.
+      g.fillStyle(deep, 1);
+      g.fillTriangle(q(1), q(42 + bob), q(8), q(12 + bob), q(40), q(12 + bob));
+      g.fillRect(q(5), q(12 + bob), q(38), q(28));
+      g.fillTriangle(q(47), q(42 + bob), q(40), q(12 + bob), q(8), q(12 + bob));
       g.fillStyle(rim, 1);
-      g.fillTriangle(q(2), q(40 + bob), q(10), q(14 + bob), q(38), q(14 + bob));
-      g.fillRect(q(6), q(14 + bob), q(36), q(26));
-      g.fillTriangle(q(46), q(40 + bob), q(38), q(14 + bob), q(10), q(14 + bob));
+      g.fillRect(q(9), q(16 + bob), q(30), q(22));
       g.fillStyle(color, 1);
-      g.fillRect(q(11), q(19 + bob), q(26), q(17));
-      // Plate ridges.
-      g.fillStyle(rim, 1);
-      g.fillRect(q(11), q(24 + bob), q(26), q(2));
-      g.fillRect(q(11), q(30 + bob), q(26), q(2));
-      g.fillStyle(Theme.tape, 0.75);
-      g.fillRect(q(11), q(19 + bob), q(26), q(2));
-      hostileEyes(g, q, 24, 21 + bob, 5, 4);
+      g.fillRect(q(11), q(18 + bob), q(26), q(18));
+      g.fillStyle(deep, 1);
+      g.fillRect(q(11), q(24 + bob), q(26), q(3));
+      g.fillRect(q(11), q(31 + bob), q(26), q(3));
+      g.fillStyle(Theme.tape, 0.85);
+      g.fillRect(q(11), q(18 + bob), q(26), q(3));
+      hostileEyes(g, q, 24, 21 + bob, 6, 4, ion);
       break;
     }
     case 'turret': {
-      // Squat mount under a swivelling head with a levelled barrel: it is
-      // aiming at ground, which is exactly what overwatch punishes.
+      const swivel = frame === 1 ? 4 : frame === 2 ? -4 : 0;
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillTriangle(q(6), q(42 + bob), q(14), q(26 + bob), q(34), q(26 + bob));
-      g.fillTriangle(q(42), q(42 + bob), q(34), q(26 + bob), q(14), q(26 + bob));
+      g.fillTriangle(q(4), q(44 + bob), q(12), q(26 + bob), q(36), q(26 + bob));
+      g.fillTriangle(q(44), q(44 + bob), q(36), q(26 + bob), q(12), q(26 + bob));
       g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(13), q(30 + bob), q(22), q(10));
-      // Swivel head, tracking across frames.
-      const swivel = frame === 1 ? 3 : frame === 2 ? -3 : 0;
+      g.fillRect(q(12), q(28 + bob), q(24), q(12));
+      g.fillStyle(deep, 1);
+      g.fillRect(q(14), q(30 + bob), q(20), q(8));
       g.fillStyle(color, 1);
-      g.fillRect(q(13 + swivel), q(12 + bob), q(22), q(16));
+      g.fillRect(q(11 + swivel), q(10 + bob), q(24), q(18));
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(15 + swivel), q(14 + bob), q(18), q(6));
-      // Levelled barrel — the aimed line reads even at tile size.
+      g.fillRect(q(13 + swivel), q(12 + bob), q(20), q(6));
+      // Levelled barrel — overwatch's tell.
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(33 + swivel), q(20 + bob), q(13), q(5));
+      g.fillRect(q(33 + swivel), q(18 + bob), q(14), q(6));
       g.fillStyle(Theme.tape, 1);
-      g.fillRect(q(43 + swivel), q(20 + bob), q(3), q(5));
-      g.fillStyle(Theme.rust, 1);
-      g.fillRect(q(17 + swivel), q(21 + bob), q(5), q(5));
+      g.fillRect(q(44 + swivel), q(18 + bob), q(3), q(6));
+      g.fillStyle(threat, 1);
+      g.fillRect(q(15 + swivel), q(20 + bob), q(6), q(5));
       break;
     }
     case 'emitter': {
-      // Dish and focusing prongs across a lane — it threatens a line, not a tile.
       const duct = kind === 'duct_drone';
       if (duct) {
-        // Conduit housing — boxy chassis + side vents, not the open dish drone.
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(8), q(12 + bob), q(32), q(24));
+        g.fillRect(q(6), q(10 + bob), q(36), q(26));
         g.fillStyle(Theme.panel, 1);
-        g.fillRect(q(11), q(15 + bob), q(26), q(18));
+        g.fillRect(q(9), q(13 + bob), q(30), q(20));
         g.fillStyle(color, 1);
-        g.fillRect(q(11), q(15 + bob), q(26), q(4));
+        g.fillRect(q(9), q(13 + bob), q(30), q(5));
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(2), q(20 + bob), q(8), q(6));
-        g.fillRect(q(38), q(20 + bob), q(8), q(6));
+        g.fillRect(q(1), q(18 + bob), q(9), q(8));
+        g.fillRect(q(38), q(18 + bob), q(9), q(8));
         g.fillStyle(Theme.groundDeep, 1);
-        g.fillRect(q(16), q(22 + bob), q(16), q(8));
-        g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
-        g.fillRect(q(20), q(24 + bob), q(8), q(4));
+        g.fillRect(q(14), q(22 + bob), q(20), q(10));
+        g.fillStyle(Theme.arcWhite, 0.45 + frame * 0.2);
+        g.fillRect(q(18), q(24 + bob), q(12), q(6));
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(12 - frame), q(8 + bob), q(24 + frame * 2), q(3));
+        g.fillRect(q(10 - frame), q(6 + bob), q(28 + frame * 2), q(4));
       } else {
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(12), q(14 + bob), q(24), q(20));
+        g.fillRect(q(10), q(12 + bob), q(28), q(22));
         g.fillStyle(Theme.panel, 1);
-        g.fillRect(q(14), q(16 + bob), q(20), q(16));
-        // Lane prongs reach out to both sides.
+        g.fillRect(q(12), q(14 + bob), q(24), q(18));
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(2), q(22 + bob), q(11), q(4));
-        g.fillRect(q(35), q(22 + bob), q(11), q(4));
+        g.fillRect(q(1), q(20 + bob), q(12), q(5));
+        g.fillRect(q(35), q(20 + bob), q(12), q(5));
         g.fillStyle(color, 1);
-        g.fillRect(q(2), q(20 + bob), q(3), q(9));
-        g.fillRect(q(43), q(20 + bob), q(3), q(9));
-        // Charging aperture at the centre.
+        g.fillRect(q(1), q(18 + bob), q(4), q(10));
+        g.fillRect(q(43), q(18 + bob), q(4), q(10));
         g.fillStyle(Theme.groundDeep, 1);
-        g.fillCircle(q(24), q(24 + bob), q(9));
-        g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
-        g.fillCircle(q(24), q(24 + bob), q(4 + frame));
-        // Rotor keeps it visibly airborne.
+        g.fillCircle(q(24), q(23 + bob), q(10));
+        g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.18);
+        g.fillCircle(q(24), q(23 + bob), q(5 + frame));
         g.fillStyle(Theme.panelEdge, 1);
-        g.fillRect(q(14 - frame), q(8 + bob), q(20 + frame * 2), q(3));
+        g.fillRect(q(12 - frame * 2), q(6 + bob), q(24 + frame * 4), q(4));
       }
       break;
     }
     case 'chassis': {
-      // Plain hard-cased machine — no lane, no held shot, just armour.
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(8), q(10 + bob), q(32), q(30));
+      g.fillRect(q(6), q(8 + bob), q(36), q(32));
       g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(11), q(13 + bob), q(26), q(24));
+      g.fillRect(q(9), q(11 + bob), q(30), q(26));
       g.fillStyle(color, 1);
-      g.fillRect(q(11), q(13 + bob), q(26), q(5));
-      g.fillRect(q(11), q(32 + bob), q(26), q(5));
-      // Recessed visor band.
+      g.fillRect(q(9), q(11 + bob), q(30), q(6));
+      g.fillRect(q(9), q(33 + bob), q(30), q(4));
       g.fillStyle(Theme.groundDeep, 1);
-      g.fillRect(q(13), q(21 + bob), q(22), q(8));
-      g.fillStyle(Theme.rust, 1);
-      g.fillRect(q(15 + frame * 7), q(23 + bob), q(6), q(4));
-      // Bolted feet.
+      g.fillRect(q(11), q(20 + bob), q(26), q(10));
+      g.fillStyle(threat, 1);
+      g.fillRect(q(13 + frame * 6), q(22 + bob), q(8), q(6));
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(10), q(40 + bob), q(7), q(4));
-      g.fillRect(q(31), q(40 + bob), q(7), q(4));
+      g.fillRect(q(8), q(40 + bob), q(8), q(5));
+      g.fillRect(q(32), q(40 + bob), q(8), q(5));
+      g.fillStyle(Theme.inkBright, 0.35);
+      g.fillRect(q(10), q(12 + bob), q(8), q(2));
       break;
     }
     case 'coil': {
-      // Coiled base, raised striking neck — the classic one-tile lunge.
+      const lean = frame === 1 ? 4 : frame === 2 ? -3 : 0;
       g.fillStyle(rim, 1);
-      g.fillEllipse(q(24), q(35 + bob), q(32), q(14));
-      g.fillEllipse(q(24), q(29 + bob), q(24), q(11));
-      const lean = frame === 1 ? 3 : frame === 2 ? -2 : 0;
-      g.fillRect(q(21 + lean), q(12 + bob), q(7), q(16));
+      g.fillEllipse(q(24), q(36 + bob), q(34), q(14));
+      g.fillEllipse(q(24), q(30 + bob), q(26), q(12));
+      g.fillRect(q(20 + lean), q(10 + bob), q(8), q(18));
       g.fillStyle(color, 1);
-      g.fillEllipse(q(24), q(34 + bob), q(24), q(8));
-      g.fillEllipse(q(24), q(29 + bob), q(17), q(6));
-      g.fillRect(q(22 + lean), q(13 + bob), q(4), q(14));
-      // Raised head and fangs.
+      g.fillEllipse(q(24), q(35 + bob), q(26), q(8));
+      g.fillEllipse(q(24), q(30 + bob), q(18), q(7));
+      g.fillRect(q(22 + lean), q(11 + bob), q(5), q(16));
       g.fillStyle(rim, 1);
-      g.fillTriangle(q(16 + lean), q(13 + bob), q(32 + lean), q(13 + bob), q(24 + lean), q(3 + bob));
-      g.fillStyle(Theme.rust, 1);
-      g.fillRect(q(21 + lean), q(13 + bob), q(2), q(4));
-      g.fillRect(q(25 + lean), q(13 + bob), q(2), q(4));
-      hostileEyes(g, q, 24 + lean, 8 + bob, 2, 3);
+      g.fillTriangle(
+        q(14 + lean),
+        q(12 + bob),
+        q(34 + lean),
+        q(12 + bob),
+        q(24 + lean),
+        q(1 + bob),
+      );
+      g.fillStyle(threat, 1);
+      g.fillRect(q(20 + lean), q(12 + bob), q(3), q(5));
+      g.fillRect(q(25 + lean), q(12 + bob), q(3), q(5));
+      hostileEyes(g, q, 24 + lean, 7 + bob, 3, 3, ion);
       break;
     }
     case 'reacher': {
-      // Long trailing limbs that visibly out-span the tile: it covers ground.
-      const stretch = frame === 1 ? 4 : 0;
+      const stretch = frame === 1 ? 6 : frame === 2 ? 2 : 0;
       g.fillStyle(rim, 1);
-      g.fillRect(q(19), q(8 + bob), q(10), q(24));
-      // Arms sweep wide and low.
-      g.fillTriangle(q(19), q(12 + bob), q(2), q(24 + stretch + bob), q(19), q(22 + bob));
-      g.fillTriangle(q(29), q(12 + bob), q(46), q(24 + stretch + bob), q(29), q(22 + bob));
-      // Tattered trailing body instead of legs.
-      g.fillTriangle(q(17), q(30 + bob), q(31), q(30 + bob), q(24), q(44 + bob));
+      g.fillRect(q(18), q(6 + bob), q(12), q(26));
+      g.fillTriangle(q(18), q(10 + bob), q(0), q(22 + stretch + bob), q(18), q(24 + bob));
+      g.fillTriangle(q(30), q(10 + bob), q(48), q(22 + stretch + bob), q(30), q(24 + bob));
+      g.fillTriangle(q(16), q(28 + bob), q(32), q(28 + bob), q(24), q(46 + bob));
       g.fillStyle(color, 1);
-      g.fillRect(q(21), q(11 + bob), q(6), q(19));
-      g.fillTriangle(q(20), q(31 + bob), q(28), q(31 + bob), q(24), q(40 + bob));
-      g.fillStyle(lit, 0.9);
-      g.fillRect(q(6), q(22 + stretch + bob), q(9), q(2));
-      g.fillRect(q(33), q(22 + stretch + bob), q(9), q(2));
-      hostileEyes(g, q, 24, 12 + bob, 2, 4);
+      g.fillRect(q(20), q(9 + bob), q(8), q(20));
+      g.fillTriangle(q(19), q(30 + bob), q(29), q(30 + bob), q(24), q(42 + bob));
+      g.fillStyle(lit, 0.95);
+      g.fillRect(q(2), q(20 + stretch + bob), q(12), q(3));
+      g.fillRect(q(34), q(20 + stretch + bob), q(12), q(3));
+      g.fillStyle(threat, 0.7);
+      g.fillRect(q(1), q(21 + stretch + bob), q(4), q(2));
+      g.fillRect(q(43), q(21 + stretch + bob), q(4), q(2));
+      hostileEyes(g, q, 24, 11 + bob, 3, 4, ion);
       break;
     }
     case 'aperture': {
-      // A ring around a core. The ring is the threatened radius, drawn on it.
+      const pulse = frame * 2;
       g.fillStyle(rim, 1);
-      g.fillCircle(q(24), q(24 + bob), q(21));
+      g.fillCircle(q(24), q(24 + bob), q(22));
       g.fillStyle(Theme.groundDeep, 1);
       g.fillCircle(q(24), q(24 + bob), q(17));
       g.lineStyle(q(3), color, 1);
       g.strokeCircle(q(24), q(24 + bob), q(19 - frame));
-      g.lineStyle(q(1), lit, 0.7);
-      g.strokeCircle(q(24), q(24 + bob), q(13 + frame));
+      g.lineStyle(q(2), lit, 0.75);
+      g.strokeCircle(q(24), q(24 + bob), q(12 + frame));
       g.fillStyle(color, 1);
-      g.fillCircle(q(24), q(24 + bob), q(6 + frame));
+      g.fillCircle(q(24), q(24 + bob), q(7 + frame));
       g.fillStyle(Theme.arcWhite, 0.9);
       g.fillCircle(q(24), q(24 + bob), q(3));
-      // Aperture blades mark the cardinal reach.
-      g.fillStyle(color, 0.85);
-      g.fillRect(q(23), q(2 + bob), q(2), q(6));
-      g.fillRect(q(23), q(40 + bob), q(2), q(6));
-      g.fillRect(q(2), q(23 + bob), q(6), q(2));
-      g.fillRect(q(40), q(23 + bob), q(6), q(2));
+      // Cardinal blades — zone reach.
+      g.fillStyle(threat, 0.9);
+      g.fillRect(q(22), q(1 + bob), q(4), q(7 + pulse / 2));
+      g.fillRect(q(22), q(40 + bob - pulse / 2), q(4), q(7));
+      g.fillRect(q(1), q(22 + bob), q(7 + pulse / 2), q(4));
+      g.fillRect(q(40 - pulse / 2), q(22 + bob), q(7), q(4));
       break;
     }
   }
 }
 
-const hoverShapes = new Set<Silhouette>(['darter', 'reacher', 'aperture', 'bloom']);
+const hoverShapes = new Set<Silhouette>(['darter', 'reacher', 'aperture', 'bloom', 'emitter']);
 
 export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number): void {
   const q = actorBase(g, T);
   const def = ENEMIES[kind];
   const shape = silhouetteFor(kind);
-  const bob = hoverShapes.has(shape) && frame === 1 ? -2 : frame === 2 ? 1 : 0;
-  drawSilhouette(g, q, shape, def.color, frame, bob, kind);
+  const ion = def.damageType === 'ion';
+  const bob = hoverShapes.has(shape)
+    ? frame === 1
+      ? -3
+      : frame === 2
+        ? 2
+        : 0
+    : frame === 2
+      ? 1
+      : 0;
+  drawSilhouette(g, q, shape, def.color, frame, bob, kind, ion);
 
-  // Branded field modifier — the crown says "this one drops kit and hits back
-  // harder" without disturbing the body plan underneath.
+  // Brand crown — elite/boss reads without rewriting the body plan.
   if (def.brand) {
     g.fillStyle(Theme.tape, 1);
-    g.fillTriangle(q(9), q(9), q(14), q(1), q(19), q(9));
-    g.fillTriangle(q(19), q(9), q(24), q(0), q(29), q(9));
-    g.fillTriangle(q(29), q(9), q(34), q(1), q(39), q(9));
+    g.fillTriangle(q(8), q(10), q(14), q(0), q(20), q(10));
+    g.fillTriangle(q(18), q(10), q(24), q(-1), q(30), q(10));
+    g.fillTriangle(q(28), q(10), q(34), q(0), q(40), q(10));
     g.fillStyle(Theme.groundDeep, 1);
-    g.fillRect(q(9), q(9), q(30), q(2));
+    g.fillRect(q(8), q(10), q(32), q(3));
+    g.fillStyle(Theme.inkBright, 0.45);
+    g.fillRect(q(10), q(10), q(8), q(1));
   }
 }
 
