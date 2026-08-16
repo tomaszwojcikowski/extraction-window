@@ -113,19 +113,24 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
    * Read as scatter, so it cannot be confused with ridge's banding.
    */
   plains: ({ g, q, variant, accent, tint }) => {
-    g.fillStyle(shade(tint, 0.55), 0.62);
-    for (let i = 0; i < 9; i++) {
-      const x = q(6 + ((i * 13 + variant * 7) % 34));
-      const y = q(7 + ((i * 17 + variant * 11) % 32));
-      const big = i % 4 === 0;
-      g.fillRect(x, y, q(big ? 3 : 2), q(big ? 3 : 2));
-      g.fillStyle(Theme.groundDeep, 0.5);
-      g.fillRect(x, y + q(big ? 3 : 2), q(big ? 3 : 2), q(1));
-      g.fillStyle(shade(tint, 0.55), 0.62);
+    g.fillStyle(shade(tint, 0.55), 0.65);
+    for (let i = 0; i < 11; i++) {
+      const x = q(5 + ((i * 13 + variant * 7) % 36));
+      const y = q(6 + ((i * 17 + variant * 11) % 34));
+      const big = i % 5 === 0;
+      g.fillRect(x, y, q(big ? 3 : 2), q(big ? 2 : 1));
+      g.fillStyle(Theme.groundDeep, 0.55);
+      g.fillRect(x, y + q(big ? 2 : 1), q(big ? 3 : 2), q(1));
+      g.fillStyle(shade(tint, 0.55), 0.65);
     }
-    g.fillStyle(accent, 0.2);
-    g.fillRect(q(8), q(13 + variant * 2), q(18), q(1));
-    g.fillRect(q(21), q(31 - variant), q(16), q(1));
+    // Sparse pebble clusters — still scatter, not ledges.
+    g.fillStyle(mix(Material.rock, tint, 0.25), 0.55);
+    g.fillRect(q(10 + variant * 2), q(18), q(2), q(2));
+    g.fillRect(q(13 + variant), q(19), q(1), q(1));
+    g.fillRect(q(28 - variant), q(27), q(2), q(1));
+    g.fillStyle(accent, 0.18);
+    g.fillRect(q(9), q(14 + variant * 2), q(4), q(1));
+    g.fillRect(q(30), q(33 - variant), q(5), q(1));
   },
 
   /**
@@ -134,88 +139,128 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
    */
   ridge: ({ g, q, T, variant, accent }) => {
     for (let i = 0; i < 3; i++) {
-      const y = q(9 + i * 12);
+      const y = q(8 + i * 12);
       const step = q(i * 4 + variant * 2);
-      g.fillStyle(accent, 0.34);
-      g.fillRect(q(4) + step, y, T - q(8) - step, q(4));
-      g.fillStyle(Theme.groundDeep, 0.7);
-      g.fillRect(q(4) + step, y + q(4), T - q(8) - step, q(2));
+      const w = T - q(8) - step;
+      g.fillStyle(mix(Material.rock, accent, 0.2), 0.55);
+      g.fillRect(q(4) + step, y, w, q(5));
+      g.fillStyle(accent, 0.28);
+      g.fillRect(q(4) + step, y, w, q(1));
+      g.fillStyle(Theme.groundDeep, 0.75);
+      g.fillRect(q(4) + step, y + q(5), w, q(2));
+      // Chip bites on the lip so ledges aren't ruler-straight.
+      g.fillStyle(Material.recess, 0.7);
+      g.fillRect(q(10 + i * 9 + variant * 2) + step, y + q(1), q(3), q(2));
     }
   },
 
   /** Leaf litter and a root run under it. */
   canopy: ({ g, q, variant, accent }) => {
-    g.fillStyle(accent, 0.4);
-    for (let i = 0; i < 6; i++) {
-      const x = q(7 + ((i * 11 + variant * 4) % 30));
-      const y = q(8 + ((i * 13 + variant * 7) % 29));
-      g.fillRect(x, y, q(4), q(1));
-      g.fillRect(x + q(3), y + q(1), q(3), q(1));
+    g.fillStyle(mix(Material.foliage, accent, 0.35), 0.55);
+    for (let i = 0; i < 7; i++) {
+      const x = q(6 + ((i * 11 + variant * 4) % 32));
+      const y = q(7 + ((i * 13 + variant * 7) % 30));
+      g.fillTriangle(x, y + q(2), x + q(3), y, x + q(5), y + q(3));
+      g.fillRect(x + q(1), y + q(2), q(3), q(1));
     }
-    g.lineStyle(q(2), shade(accent, 0.7), 0.36);
-    g.lineBetween(q(4), q(31 + variant), q(20), q(26));
-    g.lineBetween(q(20), q(26), q(43), q(30 - variant * 2));
+    // Root run with a darker underside.
+    g.lineStyle(q(3), mix(Material.foliage, Theme.groundDeep, 0.4), 0.55);
+    g.lineBetween(q(4), q(32 + variant), q(22), q(25));
+    g.lineBetween(q(22), q(25), q(44), q(31 - variant * 2));
+    g.lineStyle(q(1), shade(accent, 0.65), 0.4);
+    g.lineBetween(q(5), q(31 + variant), q(22), q(24));
+    g.lineBetween(q(22), q(24), q(43), q(30 - variant * 2));
   },
 
   /** A film of standing water still ringing from something that moved. */
   flood: ({ g, q, T, variant, accent }) => {
     const cx = T / 2 + q(variant * 3 - 3);
     const cy = T / 2 - q(2);
+    g.fillStyle(mix(Material.brine, accent, 0.25), 0.22);
+    g.fillEllipse(q(6), q(10), T - q(12), T - q(18));
     for (let r = 0; r < 3; r++) {
-      g.lineStyle(q(1), accent, 0.4 - r * 0.09);
+      g.lineStyle(q(1), accent, 0.42 - r * 0.1);
       g.strokeCircle(cx, cy, q(5 + r * 6));
     }
-    g.fillStyle(accent, 0.22);
+    // Specular skim — motivated reflection, not a UI ring.
+    g.fillStyle(Theme.inkBright, 0.22);
+    g.fillRect(cx - q(6), cy - q(8), q(8), q(1));
+    g.fillStyle(accent, 0.25);
     g.fillRect(q(5), q(38), T - q(10), q(2));
+    g.fillStyle(Theme.groundDeep, 0.35);
+    g.fillRect(q(5), q(40), T - q(10), q(1));
   },
 
-  /** Evaporated salt, cracked into crust cells. */
+  /** Evaporated salt, cracked into irregular crust cells — never a duct grate. */
   brine: ({ g, q, T, variant, accent }) => {
-    g.lineStyle(q(1), accent, 0.42);
-    const step = q(13);
-    for (let i = 0; i <= 2; i++) {
-      const off = q(((i + variant) % 2) * 3);
-      g.lineBetween(q(4), q(9) + i * step + off, T - q(4), q(11) + i * step);
-      g.lineBetween(q(9) + i * step, q(4), q(7) + i * step + off, T - q(4));
+    g.lineStyle(q(1), mix(accent, Theme.inkMute, 0.3), 0.5);
+    const cells = [
+      [6, 8, 18, 16],
+      [20, 6, 16, 14],
+      [8, 22, 14, 16],
+      [24, 20, 18, 18],
+      [14, 14, 12, 12],
+    ] as const;
+    for (let i = 0; i < cells.length; i++) {
+      const [x, y, w, h] = cells[i]!;
+      const ox = q(((i + variant) % 3) - 1);
+      g.strokeRect(q(x) + ox, q(y), q(w), q(h));
     }
+    g.fillStyle(accent, 0.28);
+    g.fillRect(q(12 + variant), q(12), q(3), q(3));
+    g.fillRect(q(28 - variant), q(26), q(2), q(2));
+    g.fillStyle(Theme.biolumDeep, 0.2);
+    g.fillRect(q(8), T - q(10), T - q(16), q(2));
   },
 
   /** Calcified growth pushing up through the floor. */
   reef: ({ g, q, variant, accent }) => {
-    g.fillStyle(accent, 0.42);
-    for (let i = 0; i < 4; i++) {
-      const x = q(7 + ((i * 11 + variant * 3) % 31));
-      const y = q(9 + ((i * 7 + variant * 5) % 25));
+    for (let i = 0; i < 5; i++) {
+      const x = q(6 + ((i * 11 + variant * 3) % 32));
+      const y = q(8 + ((i * 7 + variant * 5) % 26));
+      g.fillStyle(mix(Material.rock, accent, 0.35), 0.7);
+      g.fillRect(x + q(1), y + q(5), q(5), q(2));
+      g.fillStyle(accent, 0.5);
       g.fillTriangle(x, y + q(7), x + q(3), y, x + q(7), y + q(7));
+      g.fillStyle(Theme.inkBright, 0.2);
+      g.fillRect(x + q(2), y + q(2), q(1), q(3));
     }
   },
 
   /** Fallout, drifted into dunes against whatever stopped it. */
   ash: ({ g, q, T, variant, accent, tint }) => {
     for (let i = 0; i < 3; i++) {
-      const y = q(13 + i * 11 + variant);
-      const crest = q(13 + i * 9);
-      g.fillStyle(shade(tint, 0.5), 0.5);
-      g.fillTriangle(q(3), y + q(6), crest, y - q(1), T - q(3), y + q(6));
-      g.fillStyle(Theme.groundDeep, 0.6);
-      g.fillTriangle(crest, y - q(1), T - q(3), y + q(6), crest + q(2), y + q(6));
+      const y = q(12 + i * 11 + variant);
+      const crest = q(12 + i * 9 + variant * 2);
+      g.fillStyle(shade(tint, 0.45), 0.55);
+      g.fillTriangle(q(3), y + q(7), crest, y - q(2), T - q(3), y + q(7));
+      g.fillStyle(Theme.groundDeep, 0.65);
+      g.fillTriangle(crest, y - q(2), T - q(3), y + q(7), crest + q(3), y + q(7));
+      g.fillStyle(mix(accent, tint, 0.3), 0.25);
+      g.fillRect(crest - q(2), y, q(4), q(1));
     }
-    g.fillStyle(accent, 0.4);
-    for (let i = 0; i < 12; i++) {
-      const x = q(5 + ((i * 9 + variant * 5) % 37));
-      const y = q(6 + ((i * 7 + variant * 13) % 12));
+    g.fillStyle(accent, 0.45);
+    for (let i = 0; i < 14; i++) {
+      const x = q(4 + ((i * 9 + variant * 5) % 38));
+      const y = q(5 + ((i * 7 + variant * 13) % 14));
       g.fillRect(x, y, q(i % 3 === 0 ? 2 : 1), q(1));
     }
   },
 
   /** Ground that has already split, and is still deciding where next. */
   fissure: ({ g, q, T, variant, accent }) => {
-    g.lineStyle(q(2), Theme.groundDeep, 0.85);
-    g.lineBetween(q(6), q(4), q(22 + variant * 2), q(24));
-    g.lineBetween(q(22 + variant * 2), q(24), q(18), T - q(4));
-    g.lineStyle(q(1), accent, 0.45);
-    g.lineBetween(q(22 + variant * 2), q(24), q(38), q(15 + variant * 3));
-    g.lineBetween(q(22 + variant * 2), q(24), q(36), q(36));
+    const fork = q(22 + variant * 2);
+    g.fillStyle(Material.recess, 0.95);
+    g.fillTriangle(q(5), q(3), fork + q(2), q(24), q(4), q(5));
+    g.fillTriangle(fork - q(1), q(22), q(16), T - q(3), fork + q(3), q(26));
+    g.lineStyle(q(2), Theme.groundDeep, 0.9);
+    g.lineBetween(q(6), q(4), fork, q(24));
+    g.lineBetween(fork, q(24), q(18), T - q(4));
+    g.lineStyle(q(1), accent, 0.55);
+    g.lineBetween(fork, q(24), q(38), q(14 + variant * 3));
+    g.lineBetween(fork, q(24), q(36), q(36));
+    g.fillStyle(accent, 0.35);
+    g.fillRect(fork - q(1), q(23), q(2), q(2));
   },
 
   /**
@@ -223,46 +268,67 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
    * this is ordinary ground, and bright paint here would read as a rule.
    */
   approach: ({ g, q, T, variant, accent, tint }) => {
-    g.fillStyle(Theme.groundDeep, 0.45);
-    for (const lane of [q(14 + variant), q(29 + variant)]) {
-      g.fillRect(lane, q(4), q(6), T - q(8));
+    g.fillStyle(Theme.groundDeep, 0.5);
+    for (const lane of [q(13 + variant), q(28 + variant)]) {
+      g.fillRect(lane, q(4), q(7), T - q(8));
+      g.fillStyle(shade(tint, 0.35), 0.4);
+      g.fillRect(lane + q(1), q(4), q(1), T - q(8));
+      g.fillStyle(Theme.groundDeep, 0.5);
     }
-    g.fillStyle(shade(tint, 0.4), 0.5);
-    for (let i = 0; i < 6; i++) {
-      const y = q(6 + i * 7);
-      g.fillRect(q(14 + variant), y, q(6), q(1));
-      g.fillRect(q(29 + variant), y + q(3), q(6), q(1));
+    g.fillStyle(shade(tint, 0.4), 0.55);
+    for (let i = 0; i < 7; i++) {
+      const y = q(5 + i * 6);
+      // Broken tread blocks — not clean dashes.
+      g.fillRect(q(13 + variant), y, q(3), q(2));
+      g.fillRect(q(17 + variant), y + q(1), q(2), q(1));
+      g.fillRect(q(28 + variant), y + q(2), q(3), q(2));
+      g.fillRect(q(32 + variant), y + q(3), q(2), q(1));
     }
-    g.fillStyle(accent, 0.16);
-    g.fillRect(q(14 + variant), q(4), q(1), T - q(8));
+    g.fillStyle(accent, 0.14);
+    g.fillRect(q(13 + variant), q(4), q(1), T - q(8));
   },
 
   /** A cut channel, held open by revetment boards. */
   trench: ({ g, q, T, variant, accent }) => {
-    g.fillStyle(Theme.groundDeep, 0.5);
+    g.fillStyle(Theme.groundDeep, 0.55);
+    g.fillRect(q(3), q(5), q(9), T - q(10));
+    g.fillStyle(mix(Material.debris, accent, 0.2), 0.7);
     g.fillRect(q(4), q(6), q(7), T - q(12));
-    g.fillStyle(accent, 0.4);
+    g.fillStyle(accent, 0.45);
     for (let i = 0; i < 5; i++) {
       g.fillRect(q(4), q(7 + i * 7), q(7), q(1));
+      g.fillStyle(Theme.groundDeep, 0.4);
+      g.fillRect(q(5), q(8 + i * 7), q(2), q(1));
+      g.fillStyle(accent, 0.45);
     }
-    g.fillStyle(accent, 0.26);
+    g.fillStyle(mix(Material.debris, Theme.inkMute, 0.3), 0.55);
     for (let i = 0; i < 3; i++) {
-      g.fillRect(q(15), q(12 + i * 10 + variant), T - q(21), q(2));
+      const y = q(11 + i * 10 + variant);
+      g.fillRect(q(14), y, T - q(20), q(3));
+      g.fillStyle(Theme.groundDeep, 0.5);
+      g.fillRect(q(14), y + q(3), T - q(20), q(1));
+      g.fillStyle(mix(Material.debris, Theme.inkMute, 0.3), 0.55);
     }
   },
 
   /** A slab that came down, with its reinforcement still in it. */
   ruin: ({ g, q, variant, accent }) => {
-    const ox = q(7 + variant * 3);
-    g.fillStyle(accent, 0.4);
-    g.fillRect(ox, q(12), q(15), q(9));
-    g.fillRect(ox + q(6), q(21), q(11), q(6));
-    g.fillStyle(Theme.groundDeep, 0.75);
-    g.fillRect(ox + q(2), q(14), q(9), q(1));
-    g.fillStyle(Theme.rust, 0.5);
+    const ox = q(6 + variant * 3);
+    g.fillStyle(mix(Material.debris, accent, 0.25), 0.75);
+    g.fillRect(ox, q(11), q(17), q(10));
+    g.fillRect(ox + q(5), q(21), q(13), q(7));
+    g.fillStyle(Theme.groundDeep, 0.8);
+    g.fillRect(ox + q(2), q(13), q(11), q(1));
+    g.fillRect(ox + q(1), q(11), q(1), q(10));
+    g.fillStyle(Theme.rust, 0.65);
     for (let i = 0; i < 3; i++) {
-      g.fillRect(ox + q(3 + i * 5), q(9), q(1), q(4));
+      g.fillRect(ox + q(3 + i * 5), q(8), q(1), q(5));
+      g.fillRect(ox + q(2 + i * 5), q(8), q(3), q(1));
     }
+    // Masonry chips off the slab.
+    g.fillStyle(Material.rock, 0.7);
+    g.fillRect(ox + q(18), q(28), q(4), q(3));
+    g.fillTriangle(ox - q(2), q(30), ox + q(3), q(24), ox + q(5), q(32));
   },
 
   /**
@@ -270,25 +336,38 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
    * bars — the moment a cross member is added it reads as brine's crust cells.
    */
   duct: ({ g, q, T, variant, accent }) => {
+    g.fillStyle(Material.recess, 0.85);
+    g.fillRect(q(5), q(5), T - q(10), T - q(10));
     for (let x = q(7 + variant * 2); x < T - q(6); x += q(7)) {
-      g.fillStyle(Theme.groundDeep, 0.7);
+      g.fillStyle(Theme.groundDeep, 0.85);
       g.fillRect(x, q(5), q(4), T - q(10));
-      g.fillStyle(Theme.panelEdge, 0.62);
+      g.fillStyle(Theme.panelEdge, 0.7);
       g.fillRect(x, q(5), q(2), T - q(10));
+      g.fillStyle(mix(Theme.panelEdge, Theme.inkBright, 0.15), 0.35);
+      g.fillRect(x, q(5), q(1), T - q(10));
     }
-    g.fillStyle(accent, 0.5);
-    g.fillRect(q(4), q(22 + variant * 3), T - q(8), q(2));
+    g.fillStyle(accent, 0.4);
+    g.fillRect(q(4), q(22 + variant * 3), T - q(8), q(1));
   },
 
   /** Machined deck, bolted down on a grid. */
   spire: ({ g, q, T, variant, accent }) => {
-    g.fillStyle(Theme.panelEdge, 0.4);
-    g.fillRect(q(4), T / 2 - q(1), T - q(8), q(1));
-    g.fillRect(T / 2 - q(1), q(4), q(1), T - q(8));
-    g.fillStyle(accent, 0.5);
+    g.fillStyle(Theme.panelEdge, 0.35);
+    g.fillRect(q(4), T / 2 - q(1), T - q(8), q(2));
+    g.fillRect(T / 2 - q(1), q(4), q(2), T - q(8));
+    g.fillStyle(Theme.groundDeep, 0.4);
+    g.fillRect(q(4), T / 2 + q(1), T - q(8), q(1));
+    g.fillRect(T / 2 + q(1), q(4), q(1), T - q(8));
     for (let ry = 0; ry < 2; ry++) {
       for (let rx = 0; rx < 2; rx++) {
-        g.fillRect(q(12 + rx * 22 + variant), q(12 + ry * 22 + variant), q(3), q(3));
+        const bx = q(11 + rx * 22 + variant);
+        const by = q(11 + ry * 22 + variant);
+        g.fillStyle(Material.recess, 0.8);
+        g.fillRect(bx - q(1), by - q(1), q(5), q(5));
+        g.fillStyle(accent, 0.65);
+        g.fillRect(bx, by, q(3), q(3));
+        g.fillStyle(Theme.inkBright, 0.35);
+        g.fillRect(bx, by, q(1), q(1));
       }
     }
   },
@@ -296,25 +375,41 @@ const FLOOR_DECAL: Record<SectorId, (p: FloorPaint) => void> = {
   /** Sealed floor, chevroned where you are not supposed to stand. */
   vault: ({ g, q, T, variant, accent }) => {
     const c = T / 2;
-    g.lineStyle(q(2), accent, 0.36);
+    g.fillStyle(mix(Theme.panel, accent, 0.08), 0.35);
+    g.fillRect(q(10), q(10), T - q(20), T - q(20));
+    g.lineStyle(q(2), accent, 0.4);
     g.strokeRect(q(9), q(9), T - q(18), T - q(18));
-    g.lineStyle(q(1), accent, 0.5);
-    for (let i = 0; i < 3; i++) {
+    g.lineStyle(q(1), Theme.groundDeep, 0.55);
+    g.strokeRect(q(11), q(11), T - q(22), T - q(22));
+    g.fillStyle(accent, 0.55);
+    for (let i = 0; i < 4; i++) {
       const off = q(i * 4 + variant);
-      g.lineBetween(q(12) + off, c - q(4), q(16) + off, c);
-      g.lineBetween(q(16) + off, c, q(12) + off, c + q(4));
+      g.fillTriangle(q(12) + off, c - q(5), q(17) + off, c, q(12) + off, c + q(5));
     }
   },
 
   /** Pad markings, repainted often enough to still read. */
   beacon: ({ g, q, T, variant, accent }) => {
     const c = T / 2;
-    g.lineStyle(q(2), accent, 0.44);
+    g.fillStyle(mix(Theme.panel, accent, 0.12), 0.3);
+    g.fillCircle(c, c, q(14 + variant));
+    g.lineStyle(q(2), accent, 0.5);
     g.strokeCircle(c, c, q(11 + variant));
-    g.fillStyle(accent, 0.5);
-    g.fillRect(c - q(2), q(5), q(4), q(6));
-    g.fillRect(q(5), c - q(2), q(6), q(4));
-    g.fillRect(T - q(11), c - q(2), q(6), q(4));
+    g.lineStyle(q(1), Theme.inkBright, 0.25);
+    g.strokeCircle(c, c, q(8 + variant));
+    g.fillStyle(accent, 0.55);
+    g.fillRect(c - q(2), q(4), q(4), q(7));
+    g.fillRect(q(4), c - q(2), q(7), q(4));
+    g.fillRect(T - q(11), c - q(2), q(7), q(4));
+    // Dashed outer ring segments.
+    g.fillStyle(accent, 0.35);
+    for (let i = 0; i < 8; i++) {
+      if (i % 2 === 0) continue;
+      const ang = (i / 8) * Math.PI * 2;
+      const x = c + Math.cos(ang) * q(16);
+      const y = c + Math.sin(ang) * q(16);
+      g.fillRect(x - q(1), y - q(1), q(2), q(2));
+    }
   },
 };
 
@@ -523,11 +618,16 @@ export function drawDeluxeWall(
   g.fillRect(q(3), q(3), T - q(6), T - q(7));
 
   // Deterministic grit so adjacent variants don't stamp identical.
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 22; i++) {
     const x = q(4 + ((i * 11 + v * 9) % 38));
     const y = q(5 + ((i * 17 + v * 5) % 36));
-    g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.22 : 0.12);
+    g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.26 : 0.14);
     g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
+  }
+  // Scuff pits along the lower third — field wear, not UI noise.
+  g.fillStyle(Material.recess, 0.55);
+  for (let i = 0; i < 4; i++) {
+    g.fillRect(q(8 + i * 9 + v), q(34 + (i % 2)), q(3), q(2));
   }
 
   // Bright top/left bevel, deep bottom/right — machined lip.
@@ -583,9 +683,11 @@ export function drawDeluxeSconce(g: G, T: number, style: WallStyle): void {
     g.fillStyle(Theme.inkDim, 0.55);
     g.fillRect(q(14), q(20), q(3), q(1));
     g.fillRect(T - q(22), q(21), q(5), q(1));
-    // Clamp scar.
+    // Clamp scar + cable stub.
     g.fillStyle(Material.debris, 0.7);
     g.fillRect(q(9), q(16), q(3), q(11));
+    g.fillStyle(Material.conduit, 0.9);
+    g.fillRect(q(11), q(27), q(2), q(6));
   } else if (style === 'bulkhead') {
     g.fillStyle(housing, 1);
     g.fillRect(q(15), q(13), q(18), q(20));
@@ -598,12 +700,14 @@ export function drawDeluxeSconce(g: G, T: number, style: WallStyle): void {
     g.fillRect(q(21), q(20), q(6), q(5));
     g.fillStyle(Theme.inkBright, 0.35);
     g.fillRect(q(22), q(21), q(2), q(2));
-    // Uneven bolts + paint chip.
+    // Uneven bolts + paint chip + lens dirt.
     g.fillStyle(Theme.panelEdge, 0.9);
     g.fillRect(q(17), q(15), q(2), q(2));
     g.fillRect(T - q(19), q(28), q(2), q(2));
     g.fillStyle(Material.debris, 0.55);
     g.fillRect(q(27), q(14), q(4), q(2));
+    g.fillStyle(Theme.inkDim, 0.4);
+    g.fillRect(q(23), q(23), q(2), q(1));
   } else {
     // Cliff: crooked bracket, dirty bulb glass.
     g.fillStyle(Material.debris, 1);
@@ -615,8 +719,9 @@ export function drawDeluxeSconce(g: G, T: number, style: WallStyle): void {
     g.fillRect(q(20), q(26), q(8), q(6));
     g.fillStyle(glow, 0.75);
     g.fillRect(q(21), q(27), q(6), q(4));
-    g.fillStyle(Theme.inkDim, 0.4);
+    g.fillStyle(Theme.inkDim, 0.45);
     g.fillRect(q(22), q(28), q(2), q(1));
+    g.fillRect(q(25), q(29), q(1), q(1));
     g.fillStyle(Material.recess, 0.6);
     g.fillRect(q(19), q(33), q(3), q(1));
   }
@@ -640,16 +745,20 @@ function paintCliffFace(g: G, q: Q, T: number, v: number, accent: number): void 
     const w = q(22 - (i % 3) * 4 - (v % 2));
     g.fillStyle(Material.recess, 0.95);
     g.fillRect(x, y, w, q(3));
-    g.fillStyle(Theme.inkMute, 0.5);
+    g.fillStyle(Theme.inkMute, 0.55);
     g.fillRect(x, y, q(7 + (v % 3)), q(1));
+    g.fillStyle(mix(Material.rock, Theme.groundDeep, 0.3), 0.5);
+    g.fillRect(x, y + q(2), w, q(1));
     if (i % 2 === v % 2) {
-      g.fillStyle(mix(Material.rock, accent, 0.35), 0.4);
+      g.fillStyle(mix(Material.rock, accent, 0.35), 0.45);
       g.fillRect(x + q(2), y + q(1), q(4), q(1));
     }
   }
-  // Vertical joint crack.
-  g.fillStyle(Material.recess, 0.7);
+  // Vertical joint crack with a darker throat.
   const jx = q(14 + v * 5);
+  g.fillStyle(Material.recess, 0.85);
+  g.fillRect(jx, q(8), q(2), T - q(16));
+  g.fillStyle(Theme.groundDeep, 0.7);
   g.fillRect(jx, q(8), q(1), T - q(16));
 }
 
@@ -701,6 +810,12 @@ function paintConduitFace(g: G, q: Q, T: number, v: number, accent: number): voi
     // Clamp collar.
     g.fillStyle(Theme.panelEdge, 0.9);
     g.fillRect(q(8 + ((i + v) % 3) * 10), y - q(1), q(4), q(7));
+    if (wet) {
+      // Condensation drip under the wet run.
+      g.fillStyle(Theme.biolumDeep, 0.45);
+      g.fillRect(q(14 + v * 3), y + q(5), q(1), q(4));
+      g.fillRect(q(30 - v * 2), y + q(5), q(1), q(3));
+    }
   }
 
   // Vertical riser on odd variants.
@@ -933,43 +1048,84 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       }
       break;
     case 'brine_pool':
+      // Standing ion-brine with a crusted rim — pool silhouette, not a flat oval UI blob.
+      g.fillStyle(Theme.groundDeep, 0.7);
+      g.fillEllipse(q(2), q(12), q(44), q(30));
+      g.fillStyle(mix(Material.debris, Material.brine, 0.4), 0.9);
+      g.fillEllipse(q(4), q(14), q(40), q(26));
       g.fillStyle(Material.brine, 0.95);
-      g.fillEllipse(q(3), q(11), q(42), q(29));
-      g.fillStyle(Theme.biolumDeep, 0.85);
-      g.fillEllipse(q(7 + pulse), q(15), q(34 - pulse), q(20));
-      g.fillStyle(Theme.biolum, 0.7);
-      g.fillRect(q(10 + pulse * 3), q(21), q(9), q(2));
-      g.fillRect(q(25 - pulse * 2), q(29), q(11), q(2));
+      g.fillEllipse(q(7), q(16), q(34), q(22));
+      g.fillStyle(Theme.biolumDeep, 0.8);
+      g.fillEllipse(q(10 + pulse), q(18), q(28 - pulse), q(16));
+      // Surface skim that drifts with the frame.
+      g.fillStyle(Theme.biolum, 0.55);
+      g.fillRect(q(12 + pulse * 3), q(22), q(10), q(1));
+      g.fillRect(q(24 - pulse * 2), q(28), q(12), q(1));
+      g.fillStyle(Theme.inkBright, 0.2);
+      g.fillRect(q(14 + pulse), q(20), q(6), q(1));
+      // Salt crust chips on the rim.
+      g.fillStyle(mix(Theme.inkMute, Theme.biolum, 0.2), 0.75);
+      g.fillRect(q(8), q(15), q(3), q(2));
+      g.fillRect(q(36), q(30), q(3), q(2));
+      g.fillRect(q(20), q(36), q(4), q(2));
       break;
     case 'sealed':
     case 'exit': {
+      // Hatch as bolted deck plate — status colour only on the seal strip / chevron.
       const open = kind === 'exit';
-      g.fillStyle(open ? Theme.safe : Theme.arc, 1);
-      g.fillRect(q(4), q(3), q(40), q(42));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillRect(q(8), q(7), q(32), q(38));
+      const status = open ? Theme.safe : Theme.rust;
+      g.fillStyle(Theme.groundDeep, 0.85);
+      g.fillEllipse(q(6), q(40), q(36), q(6));
+      g.fillStyle(Material.deck, 1);
+      g.fillRect(q(5), q(4), q(38), q(38));
+      g.fillStyle(Theme.panelEdge, 0.9);
+      g.fillRect(q(5), q(4), q(38), q(2));
+      g.fillRect(q(5), q(4), q(2), q(38));
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillRect(q(5), q(40), q(38), q(2));
+      g.fillRect(q(41), q(4), q(2), q(38));
       g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(12), q(9), q(24), q(36));
-      g.fillStyle(open ? Theme.safe : Theme.rust, 0.95);
-      g.fillRect(q(22), q(10), q(4), q(34));
-      g.fillRect(q(13), q(24), q(22), q(3));
-      g.fillStyle(Theme.inkBright, 1);
+      g.fillRect(q(10), q(9), q(28), q(30));
+      // Seal strip / parting line.
+      g.fillStyle(status, 0.95);
+      g.fillRect(q(22), q(10), q(4), q(28));
+      g.fillRect(q(11), q(22), q(26), q(3));
+      g.fillStyle(Theme.panelEdge, 0.85);
+      for (const [bx, by] of [
+        [12, 11],
+        [34, 11],
+        [12, 34],
+        [34, 34],
+      ] as const) {
+        g.fillRect(q(bx), q(by), q(3), q(3));
+      }
+      g.fillStyle(Theme.inkBright, 0.9);
       if (open) {
-        g.fillTriangle(q(17), q(18), q(29), q(24), q(17), q(30));
+        g.fillTriangle(q(16), q(17), q(28), q(23), q(16), q(29));
       } else {
-        g.fillRect(q(19), q(19), q(10), q(3));
-        g.fillRect(q(23), q(15), q(3), q(11));
+        g.fillRect(q(18), q(18), q(12), q(3));
+        g.fillRect(q(22), q(14), q(3), q(12));
       }
       break;
     }
     case 'tripwire':
-      g.fillStyle(Theme.rust, 0.22);
-      g.fillRect(q(2), q(2), q(44), q(44));
-      g.lineStyle(q(2), Theme.arc, 0.95);
-      g.lineBetween(q(4), q(32), q(44), q(18));
-      g.fillStyle(Theme.inkBright, 1);
-      g.fillRect(q(4), q(27), q(4), q(10));
-      g.fillRect(q(40), q(13), q(4), q(10));
+      // Physical stakes + taut filament — silhouette first, rust wash second.
+      g.fillStyle(mix(Material.deck, Theme.rust, 0.15), 0.35);
+      g.fillRect(q(3), q(3), q(42), q(42));
+      g.fillStyle(Material.debris, 1);
+      g.fillRect(q(5), q(26), q(5), q(12));
+      g.fillRect(q(38), q(12), q(5), q(12));
+      g.fillStyle(Theme.panelEdge, 0.9);
+      g.fillRect(q(6), q(27), q(3), q(2));
+      g.fillRect(q(39), q(13), q(3), q(2));
+      g.lineStyle(q(2), mix(Theme.arc, Theme.rust, 0.35), 0.95);
+      g.lineBetween(q(8), q(30), q(40), q(18));
+      g.lineStyle(q(1), Theme.inkBright, 0.55);
+      g.lineBetween(q(8), q(29), q(40), q(17));
+      // Tension tabs.
+      g.fillStyle(Theme.tape, 0.7);
+      g.fillRect(q(14), q(26), q(3), q(2));
+      g.fillRect(q(30), q(19), q(3), q(2));
       break;
     case 'beacon':
       g.fillStyle(Theme.groundDeep, 0.8);
