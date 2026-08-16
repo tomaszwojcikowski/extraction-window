@@ -321,5 +321,6 @@ describe('pressureRevealAt', () => {
     expect(reveal).not.toBeNull();
     expect(reveal!.urgent).toBe(true);
     expect(reveal!.visible).toBe(true);
+    expect(reveal!.alpha).toBeGreaterThan(0.9);
   });
 });

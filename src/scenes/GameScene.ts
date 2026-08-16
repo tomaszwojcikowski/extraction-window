@@ -49,7 +49,7 @@ import {
   noticeImpactIds,
 } from '../game/presenters/NoticeImpact';
 import { flankPenalty } from '../sim/combat';
-import { pickCameraCue, type CameraCue } from '../game/presenters/EventCamera';
+import { pickCameraCue, shearBreachCue, type CameraCue } from '../game/presenters/EventCamera';
 import { CameraKick } from '../game/presenters/CameraKick';
 import { markPeekTeachDone } from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
@@ -620,12 +620,18 @@ export class GameScene extends Phaser.Scene {
 
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
     if (this.lastShearState !== shear.state) {
+      const prev = this.lastShearState;
       this.lastShearState = shear.state;
-      // Juice budget ~200ms — never flash-show Calm.
+      // Juice budget ~200ms — never flash-show Calm. Breaching may linger slightly.
       if (shear.state !== 'Calm') {
-        this.shearFlashUntil = this.time.now + 200;
+        this.shearFlashUntil = this.time.now + (shear.state === 'Breaching' ? 280 : 200);
       } else {
         this.shearFlashUntil = 0;
+      }
+      // Breaching-only climax: camera pressure beat + magnesium pinprick flash.
+      if (shear.state === 'Breaching' && prev !== 'Breaching') {
+        this.applyCameraCue(shearBreachCue());
+        this.flashFx(Theme.arcWhite, 0.16);
       }
     }
     const flash = this.shearFlashUntil > this.time.now;
@@ -1796,7 +1802,14 @@ export class GameScene extends Phaser.Scene {
           spr.setTexture(crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent));
         }
         spr.setVisible(reveal.visible);
-        spr.setAlpha(reveal.urgent ? 0.95 : 0.78);
+        spr.setAlpha(reveal.alpha);
+        if (reveal.urgent) {
+          // Soft size pulse so Breaching cracks feel live without a full-tile wash.
+          const pulse = 1 + 0.05 * Math.sin((this.animFrame + x + y) * 0.9);
+          spr.setDisplaySize(TILE_DRAW * pulse, TILE_DRAW * pulse);
+        } else {
+          spr.setDisplaySize(TILE_DRAW, TILE_DRAW);
+        }
       }
     }
     for (const [id, spr] of this.crackSprites) {

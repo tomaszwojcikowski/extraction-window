@@ -564,12 +564,14 @@ export function createArcSweep(scene: Phaser.Scene, depth: number): ArcSweep {
   return {
     setPressure(value: number, color: number): void {
       const v = Math.max(0, Math.min(1, value));
+      const breaching = v >= 0.75;
       line.setFillStyle(color, 1);
-      line.setAlpha(v < 0.25 ? 0 : 0.05 + v * 0.22);
+      line.setAlpha(v < 0.25 ? 0 : 0.05 + v * 0.22 + (breaching ? 0.1 : 0));
+      line.setDisplaySize(width, breaching ? 2 : 1);
       const bucket = Math.floor(v * 4);
       if (bucket !== lastBucket) {
         lastBucket = bucket;
-        restart(6400 - bucket * 1300);
+        restart(breaching ? 2200 : 6400 - bucket * 1300);
       }
     },
     destroy(): void {

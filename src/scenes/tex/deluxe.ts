@@ -349,12 +349,15 @@ export function drawPressureCrack(
 
   // Hot pinpricks at Breaching — magnesium bite, not nested bloom rings.
   if (urgent) {
-    g.fillStyle(Theme.arcWhite, 0.85);
-    for (let i = 0; i < 4; i++) {
-      const x = q(8 + ((i * 11 + v * 5) % 30));
-      const y = q(9 + ((i * 13 + v * 7) % 28));
+    g.fillStyle(Theme.arcWhite, 0.9);
+    for (let i = 0; i < 7; i++) {
+      const x = q(6 + ((i * 9 + v * 5) % 34));
+      const y = q(7 + ((i * 11 + v * 7) % 32));
       g.fillRect(x, y, q(1), q(1));
     }
+    // Secondary hairline so the breach reads as a network, not a single stroke.
+    g.lineStyle(q(1), Theme.arcWhite, 0.45);
+    g.lineBetween(q(8 + v), q(36), q(38 - v), q(10));
   }
 }
 
