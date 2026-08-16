@@ -28,12 +28,13 @@ export function enemyDepth(sectorIndex: number, playerLevel = 1): number {
 /**
  * ATK depth — steeper than HP so mid/late hits clear player DEF + vest and
  * tax the plating buffer that used to make every bump a sponge.
- * L1 S0 → 1.0; L8 S14 → ~1.91.
+ * Kept close enough to HP that the wake tax stays inside the WR band.
+ * L1 S0 → 1.0; L8 S14 → ~1.64.
  */
 export function enemyAtkDepth(sectorIndex: number, playerLevel = 1): number {
   const level = Math.max(1, Math.min(MAX_LEVEL, playerLevel));
-  const sectorTerm = 1 + Math.max(0, sectorIndex) * 0.055;
-  const levelTerm = (level - 1) * 0.02;
+  const sectorTerm = 1 + Math.max(0, sectorIndex) * 0.04;
+  const levelTerm = (level - 1) * 0.012;
   return sectorTerm + levelTerm;
 }
 

@@ -45,7 +45,6 @@ function trySpawnNestMite(state: GameState): void {
       alive: true,
       statuses: {},
       alerted: true,
-      firstContactBite: true,
       swellTurns: 0,
       homeX: x,
       homeY: y,

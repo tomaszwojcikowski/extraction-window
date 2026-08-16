@@ -127,7 +127,6 @@ function makeEnemy(
     alive: true,
     statuses: {},
     alerted: false,
-    firstContactBite: true,
     swellTurns: 0,
     homeX: p.x,
     homeY: p.y,

@@ -71,7 +71,6 @@ function stubEnemy(kind: Enemy['kind'], x: number, y: number, extra: Partial<Ene
     alive: true,
     statuses: {},
     alerted: false,
-    firstContactBite: true,
     swellTurns: 0,
     homeX: x,
     homeY: y,

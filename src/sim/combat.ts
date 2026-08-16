@@ -165,8 +165,7 @@ export function enemyAttack(
     lastWindow -
     flankPenalty(state) -
     (hasStatus(state.player, 'expose') ? 2 : 0);
-  const atk = enemy.atk + (opts?.bonusAtk ?? 0) + (enemy.firstContactBite ? 2 : 0);
-  if (enemy.firstContactBite) enemy.firstContactBite = false;
+  const atk = enemy.atk + (opts?.bonusAtk ?? 0);
   const rawDamage = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
   const dmg = dtype === 'ion' ? Math.max(1, rawDamage - brandIonAttackPenalty(enemy)) : rawDamage;

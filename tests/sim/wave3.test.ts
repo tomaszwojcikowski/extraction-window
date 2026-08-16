@@ -58,13 +58,7 @@ describe('Wave 3 branded rewards', () => {
     const st = combatArena();
     st.player.hp = 20;
     st.player.def = 0;
-    const ward = makeEnemy({
-      kind: 'isolinear_warden',
-      atk: 5,
-      x: st.player.x + 1,
-      y: st.player.y,
-      firstContactBite: false,
-    });
+    const ward = makeEnemy({ kind: 'isolinear_warden', atk: 5, x: st.player.x + 1, y: st.player.y });
     enemyAttack(st, ward, 0);
     expect(st.player.hp).toBe(16);
 
@@ -88,13 +82,7 @@ describe('Wave 3 companion field roles', () => {
     st.player.hp = 20;
     st.player.def = 0;
     st.allies = [makeAlly({ kind: 'away_escort', x: st.player.x + 1, y: st.player.y })];
-    const foe = makeEnemy({
-      kind: 'mite',
-      x: st.player.x - 1,
-      y: st.player.y,
-      atk: 3,
-      firstContactBite: false,
-    });
+    const foe = makeEnemy({ kind: 'mite', x: st.player.x - 1, y: st.player.y, atk: 3 });
 
     enemyAttack(st, foe, 0);
 

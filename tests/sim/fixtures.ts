@@ -32,7 +32,6 @@ export function makeEnemy(
     alive: overrides.alive ?? true,
     statuses: overrides.statuses ?? {},
     alerted: overrides.alerted ?? false,
-    firstContactBite: overrides.firstContactBite ?? true,
     swellTurns: overrides.swellTurns ?? 0,
     homeX: overrides.homeX ?? x,
     homeY: overrides.homeY ?? y,

@@ -80,7 +80,6 @@ export function generateTutorialMap(seed: number): GeneratedMap {
       alive: true,
       statuses: {},
       alerted: false,
-      firstContactBite: true,
       swellTurns: 0,
       homeX: stalkerPos.x,
       homeY: stalkerPos.y,
