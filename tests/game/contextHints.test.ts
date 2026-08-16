@@ -3,6 +3,7 @@ import { createGame, applyAction } from '../../src/sim';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
 import { hasItem } from '../../src/sim/inventory';
+import { ITEMS } from '../../src/data/items';
 import { makeEnemy } from '../sim/fixtures';
 
 describe('contextHint coaching', () => {
@@ -93,6 +94,66 @@ describe('contextHint coaching', () => {
     st.visible[sentinel.y]![sentinel.x] = true;
 
     expect(contextHint(st)).toBe('UI-HINT-TELE');
+  });
+
+  it('teaches dual clocks once after the drill bay', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorIndex = 0;
+    st.turn = 1;
+    st.scriptedFired.tut_welcome = true;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
+    st.player.equip = { tool: null, armor: null };
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.enemies = [];
+
+    expect(contextHint(st)).toBe('UI-HINT-CLOCKS');
+    expect(contextHint(st)).not.toBe('UI-HINT-CLOCKS');
+  });
+
+  it('teaches extract spine once after clocks', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorIndex = 0;
+    st.turn = 2;
+    st.scriptedFired.tut_welcome = true;
+    st.scriptedFired.teach_clocks = true;
+    st.objectives.hasRelayKey = false;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
+    st.player.equip = { tool: null, armor: null };
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.enemies = [];
+
+    expect(contextHint(st)).toBe('UI-HINT-EXTRACT');
+    expect(contextHint(st)).not.toBe('UI-HINT-EXTRACT');
+  });
+
+  it('teaches flank when two hostiles are in contact', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
+    st.player.equip = { tool: null, armor: null };
+    st.player.braceTurns = 0;
+    const a = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
+    const b = makeEnemy({ kind: 'mite', x: st.player.x - 1, y: st.player.y });
+    st.enemies = [a, b];
+    st.visible[a.y]![a.x] = true;
+    st.visible[b.y]![b.x] = true;
+
+    expect(contextHint(st)).toBe('UI-HINT-FLANK');
+    expect(contextHint(st)).not.toBe('UI-HINT-FLANK');
   });
 });
 

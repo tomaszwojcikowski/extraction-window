@@ -5,6 +5,7 @@ import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
+import { pillarCoachHint } from './PillarCoach';
 import { shouldShowPeekTeach } from './PeekTeach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
@@ -123,6 +124,9 @@ export function contextHint(st: GameState): LoreId | null {
     if (!eq) continue;
     if (st.player.equip[eq] !== slot.kind) return 'UI-HINT-EQUIP';
   }
+
+  const pillar = pillarCoachHint(st);
+  if (pillar) return pillar;
 
   return null;
 }

@@ -6,8 +6,8 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Recover the Nav Lattice · reach the drop skiff before the Window closes',
-  'UI-BRIEF-TUT': 'Training bay first — then extract before the Window closes',
+  'UI-BRIEF': 'Key → beacon → Lattice → skiff · race Window and Bus',
+  'UI-BRIEF-TUT': 'Training bay first — then race Window and Bus to extract',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
@@ -32,13 +32,13 @@ export const LORE = {
   'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
     'TRAINING BAY\n' +
-    'Reach the east hatch.\n' +
+    'Reach the east hatch. Window and Bus are paused until you leave.\n' +
     '\n' +
     'WASD move · Shift+dir peek wake · . wait\n' +
-    'Step on kit to take it · i kit · u use · Enter on hatch\n' +
+    'b brace · f shove · Step on kit to take it · i kit · u use\n' +
     '\n' +
-    'Ion tiles tax Bus — sealant (u) or south alcove.\n' +
-    'Window clock starts after you leave.\n' +
+    'Ion tiles tax Bus — Sealant (u) or south alcove.\n' +
+    'Wake lines = who notices you. Flare lights dark fights.\n' +
     '\n' +
     '? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
@@ -50,6 +50,10 @@ export const LORE = {
     'Enter / Space / > — hatch, beacon, pad, scan, hail\n' +
     'p — PADD notes · 1/2 — pick skill · ? — help · m — mute\n' +
     'Esc — close peek / kit / PADD / help\n' +
+    '\n' +
+    'CLOCKS\n' +
+    'Window — turns until the shear closes (race the extract).\n' +
+    'Bus — kit power; hazards, EM, and drip drain it. Empty Bus = lose.\n' +
     '\n' +
     'COMBAT\n' +
     'Walk into a hostile to strike it.\n' +
@@ -63,21 +67,23 @@ export const LORE = {
     'Every hostile in contact past the first pries a point off DEF —\n' +
     'fight in a doorway, or brace to cover your sides.\n' +
     '\n' +
-    'PRIORITIES\n' +
-    'Kit keeps you alive (med / Bus / Shield).\n' +
-    'Splice Key + Nav Lattice unlock extract — they are not consumables.\n' +
-    'Optional procedures refund Window and grant XP / PADD.\n' +
-    'Drop skiff: > start uplink · . hold · Coolant skips a hold · Flare repels the wave.\n' +
+    'LIGHT\n' +
+    'LIT clear · SHADOW ambush · QUIET dims the lamp (Scrambler item).\n' +
+    'Flare lights a fight. Quiet shrinks fauna interest and FOV.\n' +
+    '\n' +
+    'EXTRACT\n' +
+    'Splice Key → beacon handshake → Nav Lattice → drop skiff pad.\n' +
+    'Kit keeps you alive (med / Bus / Shield). Procedures are optional.\n' +
+    'Drop skiff: > start uplink · . hold · Coolant skips · Flare repels.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
-    'ATK / DEF combat · EM contamination (Coolant / Sealant)\n' +
-    'LIT / SHADOW / QUIET — how fauna reads your lamp (Quiet stance via EM Scrambler)\n' +
-    'KEY / Lattice badges · Quiet stance (Scrambler item)',
+    'ATK / DEF · EM contamination (Coolant / Sealant)\n' +
+    'KEY / Lattice badges · Quiet stance timer',
   'UI-KIT-PURPOSE':
     'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
   'UI-CONTROLS':
-    'WASD move · Shift peek · . wait · i kit · ? help',
+    'WASD move · Shift peek · . wait · b brace · f shove · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — Enter to advance',
@@ -108,8 +114,14 @@ export const LORE = {
   'UI-HINT-LIGHT':
     'LIT clear · SHADOW ambush band · QUIET dims the lamp (Scrambler)',
   'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
+  'UI-HINT-CLOCKS':
+    'Two clocks: Window is turns left · Bus is kit power — either empty loses',
+  'UI-HINT-EXTRACT':
+    'Extract: Splice Key → beacon → Nav Lattice → drop skiff',
+  'UI-HINT-FLANK':
+    'Flanked — extra contacts peel DEF; brace or fight in a doorway',
   'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
-  'UI-HINT-TELE': 'Hostile winding up — b brace · clear the ground · or kill it',
+  'UI-HINT-TELE': 'Hostile winding up — b brace · clear the painted ground · or kill it',
   'UI-HINT-TELE-REACH': 'Winding up in reach — f shove breaks its set',
   'UI-HINT-SHOVE-DIR': 'Shove which way? — press a direction',
   'UI-HINT-BRAND': 'Branded elite — optional reward; route around or answer with Flare / Quiet / Filter',
@@ -125,15 +137,15 @@ export const LORE = {
   'UI-TUT-MOVE': 'WASD move · Shift+dir peek wake · . wait',
   'UI-TUT-LIGHT':
     'Your lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dim',
-  'UI-TUT-KIT': 'i kit · u use — ID salvage / flare / seal',
+  'UI-TUT-KIT': 'i kit · u use — ID salvage · Scrambler = Quiet · Flare lights fights',
   'UI-TUT-HAZARD':
     'Ion hazard taxes Bus — cross, Sealant (u), or south alcove',
   'UI-TUT-WAKE':
     'Lines from your feet = who notices you · Shift+dir peeks next tile',
-  'UI-TUT-FIGHT': 'Bump to fight · b brace · flare if dark',
-  'UI-TUT-STALKER': 'Stalker winding up — flare, brace, or slip south',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window clock starts after',
-  'UI-TUT-EXIT': 'On hatch — Enter (or walk off) to begin the drop',
+  'UI-TUT-FIGHT': 'Bump to fight · b brace · f shove if adjacent · flare if dark',
+  'UI-TUT-STALKER': 'Stalker winding up — flare, brace, shove if in reach, or slip south',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window and Bus start after',
+  'UI-TUT-EXIT': 'On hatch — Enter to begin · Window and Bus go live',
   'UI-QUEST-TRACK': 'QUEST',
   'UI-RQ-SALVAGE': 'Salvage console — press >',
   'UI-RQ-PURGE': 'Purge nest — clear hostiles, then >',
@@ -185,8 +197,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Survey anomaly',
-  'OBJ-TUT-HATCH': '→ Drill hatch (learn wake, hazard, kit)',
-  'OBJ-TUT-BRIEF': 'Training bay — Window paused until you leave the hatch',
+  'OBJ-TUT-HATCH': '→ Drill hatch (wake · Bus hazard · kit · brace)',
+  'OBJ-TUT-BRIEF': 'Training bay — Window and Bus paused until you leave',
   'HAZ-STORM': 'Window critical',
   'UI-CODEX': 'PADD',
 
@@ -344,14 +356,15 @@ export const LORE = {
   'LOG-DROP':
     'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
   'LOG-TUT-WELCOME':
-    'Training bay — Window paused. Wake lines show who notices you; ion tiles tax Bus. East hatch starts the real drop.',
+    'Training bay — Window and Bus paused. Wake lines show notice; ion tiles tax Bus. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
     'Lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dims lamp (Scrambler).',
   'LOG-TUT-HAZARD':
     'Ion hazard drains Bus — seal with Sealant (u) or take the south alcove.',
   'LOG-TUT-WAKE':
     'Wake lines = fauna interest. Shift+dir peeks the next tile without moving.',
-  'LOG-TUT-DONE': 'Training complete — Relay Scar Flats. Window is live.',
+  'LOG-TUT-DONE':
+    'Window and Bus are live. Extract: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',
@@ -526,7 +539,8 @@ export const LORE = {
     'Quiet stance online — sensors narrowed; soft shadow can hide adjacent pounces.',
   'LOG-QUIET-OFF': 'Quiet stance offline — sensors and fauna interest return.',
   'LOG-QUIET-EM': 'Quiet stance holding — EM-HIGH aggro bump suppressed while FOV stays tight.',
-  'LOG-EVT-AFTERGLOW': 'Drop afterglow — residual field-array EM spike.',
+  'LOG-EVT-AFTERGLOW':
+    'Drop afterglow — residual EM spike. Coolant / Sealant flush; Scrambler for Quiet.',
   'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse the Bus; watch the pattern buffer.',
   'LOG-EVT-SHEAR': 'Window shear pulse — Bus tax under pad approach pressure.',
   'LOG-ION-FRONT': 'Ion front forming — taxes EM and Bus; lit fauna track harder.',

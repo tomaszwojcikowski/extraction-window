@@ -48,6 +48,13 @@ const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
   'UI-HINT-ALLY-ESCORT',
   'UI-HINT-PREFER-DARK',
   'UI-HINT-PREFER-LIT',
+  'UI-HINT-CLOCKS',
+  'UI-HINT-EXTRACT',
+  'UI-HINT-FLANK',
+  'UI-HINT-TELE-REACH',
+  'UI-HINT-SHOVE-DIR',
+  'UI-HINT-EQUIP',
+  'UI-HINT-COMMIT',
 ]);
 
 /** Early vertical-slice window for the one-shot Shift-peek cue. */

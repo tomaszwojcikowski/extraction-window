@@ -52,7 +52,7 @@ export function actionFloatLabels(
         next = { label: 'OVERWATCH', color: ThemeCss.tape };
         break;
       case 'LOG-BRACE':
-        next = { label: 'BRACE · DEF +2', color: ThemeCss.inkBright };
+        next = { label: 'BRACE · DEF +2 · flanks held', color: ThemeCss.inkBright };
         break;
       case 'LOG-SHOVE-SLAM':
         next = { label: 'SLAM · STAGGERED', color: ThemeCss.rust };
