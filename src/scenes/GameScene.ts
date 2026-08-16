@@ -184,9 +184,9 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.cameraAtmosphere = addCameraAtmosphere(this);
     this.mapLayer = this.add.container(0, 0);
-    this.itemLayer = this.add.container(0, 0);
     // Contact shadows sit between the floor and the things casting them.
     this.shadowLayer = this.add.container(0, 0);
+    this.itemLayer = this.add.container(0, 0);
     this.entityLayer = this.add.container(0, 0);
     // Bloom above actors so the player lamp isn't buried under the sprite.
     this.lightLayer = this.add.container(0, 0);
@@ -1081,10 +1081,14 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  /** Lamp wash follows every hop frame; bloom/shadows step ~8× so the CPU stays free. */
+  /**
+   * Lamp wash follows every surveyor hop frame; bloom/shadows step ~8× so the
+   * CPU stays free. Enemy-only hops still refresh shadows (no wash blend).
+   */
   private tickMoveLight(t: number): void {
-    if (!this.lightView.hasMoveBlend()) return;
-    this.lightView.setMoveLightProgress(t, this.tileSprites);
+    if (this.lightView.hasMoveBlend()) {
+      this.lightView.setMoveLightProgress(t, this.tileSprites);
+    }
     const step = t >= 1 ? 8 : Math.floor(t * 8);
     if (step === this.moveLightFxStep) return;
     this.moveLightFxStep = step;

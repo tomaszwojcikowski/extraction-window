@@ -358,7 +358,15 @@ export class LightView {
       const grid = Array.from({ length: st.height }, () =>
         Array.from({ length: st.width }, () => 0),
       );
-      floodAddLight(st.tiles, s.x, s.y, s.radius, s.intensity, grid);
+      // Dijkstra indexes are integer — round so a carried lamp still floods.
+      floodAddLight(
+        st.tiles,
+        Math.round(s.x),
+        Math.round(s.y),
+        s.radius,
+        s.intensity,
+        grid,
+      );
       return grid;
     });
   }
@@ -567,20 +575,22 @@ export class LightView {
       const minBright = actor.body || actor.item ? 0.03 : 0.06;
       if (brightness < minBright) continue;
 
-      let vx = 0;
-      let vy = 0;
       let key = 0;
+      let keyDx = 0;
+      let keyDy = 0;
       for (let i = 0; i < sources.length; i++) {
         const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
         // Own-tile lamp (or a prop sitting on its emitter): plant only.
-        // Bodies still take other emitters; kit on a marker keeps plant + far lamp cast.
         if (dist < 0.75) continue;
         const E = this.energyAt(i, tx, ty);
         if (E <= 0.004) continue;
-        vx += ((gx - s.x) / dist) * E;
-        vy += ((gy - s.y) / dist) * E;
-        key = Math.max(key, E);
+        // Dominant key light only — summing opposite sconces cancelled the cast.
+        if (E > key) {
+          key = E;
+          keyDx = gx - s.x;
+          keyDy = gy - s.y;
+        }
       }
       const footBias = actor.item ? 0.18 : actor.prop ? 0.22 : 0.28;
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
@@ -597,15 +607,15 @@ export class LightView {
           brightness * (inShadowBand ? (actor.body ? 0.28 : 0.18) : 0.38),
       );
 
-      const len = Math.hypot(vx, vy);
+      const len = Math.hypot(keyDx, keyDy);
       // Soft-band cast for fauna/kit so ambush rooms still show silhouettes.
       const allowCast =
         key > (actor.body || actor.item ? 0.035 : 0.05) &&
         len > 0.0001 &&
         (!inShadowBand || actor.body || actor.item);
       if (allowCast) {
-        const dirX = vx / len;
-        const dirY = vy / len;
+        const dirX = keyDx / len;
+        const dirY = keyDy / len;
         const tallScale = actor.tall ? 1.55 : actor.body ? 1.15 : 1;
         const propScale = actor.item ? 0.92 : actor.prop ? 0.78 : 1;
         const wantTiles =
