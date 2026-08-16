@@ -1,4 +1,4 @@
-/** Sparse procedural music beds — biome-tinted field + combat danger + storm densify. */
+/** Sustained pad beds — biome-tinted field pressure, not melodic pings. */
 
 import type { SectorId } from '../data/encounters';
 import { audioBus } from './bus';
@@ -13,41 +13,32 @@ export type MusicMood =
   | 'end_lose'
   | 'off';
 
-const NOTES: Record<Exclude<MusicMood, 'off' | 'field'>, number[]> = {
-  title: [196, 247, 294, 370],
-  storm: [185, 220, 247, 311],
-  critical: [208, 247, 277, 370],
-  combat: [185, 196, 233, 277, 311, 370], // tense minor climb
-  end_win: [262, 330, 392, 523],
-  end_lose: [196, 185, 165, 131],
+/** Root + cloudy interval (not bright major arpeggios). */
+const ROOTS: Record<Exclude<MusicMood, 'off' | 'field'>, number[]> = {
+  title: [55, 82, 98],
+  storm: [49, 73, 92],
+  critical: [52, 78, 104],
+  combat: [46, 69, 92],
+  end_win: [65, 98, 130],
+  end_lose: [49, 65, 82],
 };
 
-/** Biome melodic families — ambient drones stay in ambient.ts; these tint field/storm beds. */
-const SECTOR_NOTES: Record<SectorId, number[]> = {
-  plains: [165, 196, 220, 262], // open fifths
-  flood: [147, 175, 196, 233], // wet lower
-  canopy: [175, 208, 247, 294], // leafy mid
-  reef: [185, 220, 262, 311], // crystal shimmer
-  spire: [196, 233, 277, 330], // array shimmer
-  ruin: [155, 185, 208, 247], // wreck grit
-  beacon: [185, 220, 277, 330], // signal ping
-  trench: [139, 165, 185, 220], // deep cut
-  duct: [147, 175, 196, 233], // conduit hum
-  ash: [147, 175, 208, 247], // radiogenic dust
-  brine: [165, 196, 233, 277], // pulse brine
-  vault: [175, 208, 262, 311], // depot chill
-  fissure: [185, 208, 247, 294], // shear tension
-  approach: [196, 233, 277, 330], // pad shear
-  ridge: [196, 247, 294, 370], // pad approach lift
-};
-
-const STORM_TINT: Partial<Record<SectorId, number[]>> = {
-  ash: [175, 208, 247, 294],
-  brine: [185, 220, 262, 311],
-  vault: [196, 233, 277, 330],
-  fissure: [208, 247, 277, 349],
-  approach: [220, 247, 294, 349],
-  ridge: [220, 262, 311, 370],
+const SECTOR_ROOTS: Record<SectorId, number[]> = {
+  plains: [55, 82, 110],
+  flood: [46, 69, 92],
+  canopy: [58, 87, 116],
+  reef: [61, 92, 123],
+  spire: [65, 98, 130],
+  ruin: [49, 73, 98],
+  beacon: [61, 92, 138],
+  trench: [41, 61, 82],
+  duct: [46, 69, 92],
+  ash: [44, 65, 87],
+  brine: [52, 78, 104],
+  vault: [55, 82, 123],
+  fissure: [49, 73, 110],
+  approach: [58, 87, 130],
+  ridge: [61, 92, 138],
 };
 
 class MusicEngine {
@@ -60,7 +51,7 @@ class MusicEngine {
 
   setMood(mood: MusicMood): void {
     if (mood === this.mood && this.timer !== null) return;
-    this.stopInternal(mood === 'off' ? 0.4 : 0.2);
+    this.stopInternal(mood === 'off' ? 0.4 : 0.25);
     this.mood = mood;
     if (mood === 'off' || audioBus.isMuted()) return;
 
@@ -71,12 +62,11 @@ class MusicEngine {
 
       this.fadeGain = ctx.createGain();
       this.fadeGain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      this.fadeGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.5);
+      this.fadeGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.7);
       this.fadeGain.connect(audioBus.channel('music'));
 
       this.step = 0;
-      const interval = this.intervalMs(mood);
-      this.timer = window.setInterval(() => this.tick(), interval);
+      this.timer = window.setInterval(() => this.tick(), this.intervalMs(mood));
       this.tick();
       if (mood === 'combat') audioBus.duckAmbient(420);
     };
@@ -88,10 +78,6 @@ class MusicEngine {
     }
   }
 
-  /**
-   * Field sync: combat > storm critical/storm > biome-tinted field.
-   * Combat uses multi-turn hysteresis so beds don’t flicker on step-away.
-   */
   syncField(opts: { sectorId: SectorId; stormTurns: number; inCombat: boolean }): void {
     if (this.mood === 'title' || this.mood === 'end_win' || this.mood === 'end_lose') return;
 
@@ -125,170 +111,173 @@ class MusicEngine {
   private intervalMs(mood: MusicMood): number {
     switch (mood) {
       case 'title':
-        return 900;
+        return 2200;
       case 'field':
-        return 1000;
+        return 2400;
       case 'storm':
-        return 700;
+        return 1600;
       case 'critical':
-        return 420;
+        return 900;
       case 'combat':
-        return 260;
+        return 320;
       case 'end_win':
-        return 400;
+        return 1800;
       case 'end_lose':
-        return 700;
+        return 2000;
       default:
-        return 1200;
+        return 2400;
     }
   }
 
-  private scaleForMood(): number[] {
-    if (this.mood === 'field') return SECTOR_NOTES[this.currentSector] ?? SECTOR_NOTES.plains;
-    if (this.mood === 'storm') {
-      return STORM_TINT[this.currentSector] ?? NOTES.storm;
-    }
-    if (this.mood === 'off') return NOTES.title;
-    return NOTES[this.mood];
+  private roots(): number[] {
+    if (this.mood === 'field') return SECTOR_ROOTS[this.currentSector] ?? SECTOR_ROOTS.plains;
+    if (this.mood === 'off') return ROOTS.title;
+    return ROOTS[this.mood];
   }
 
   private tick(): void {
     if (this.mood === 'off' || !this.fadeGain || audioBus.isMuted()) return;
-    // Sparse skips — field still mostly present
-    if (this.mood === 'field' && Math.random() < 0.22) {
-      this.step++;
-      return;
-    }
-    if (this.mood === 'title' && Math.random() < 0.18) {
-      this.step++;
-      return;
-    }
-
-    const scale = this.scaleForMood();
-    const freq = scale[this.step % scale.length]!;
-    this.step++;
 
     const ctx = audioBus.ensure();
     if (ctx.state === 'suspended') return;
     const t0 = ctx.currentTime;
+    const roots = this.roots();
+    const root = roots[this.step % roots.length]!;
+    this.step++;
 
     if (this.mood === 'combat') {
-      this.tickCombat(ctx, t0, freq);
+      this.tickCombat(ctx, t0, root);
       return;
     }
 
+    // Long overlapping pads — pressure bed, not a melody.
+    const dur =
+      this.mood === 'critical' ? 1.1 : this.mood === 'storm' ? 1.6 : this.mood === 'end_lose' ? 2.0 : 2.2;
     const peak =
-      this.mood === 'critical'
-        ? 0.11
-        : this.mood === 'storm'
-          ? 0.095
-          : this.mood === 'end_win' || this.mood === 'end_lose'
-            ? 0.105
-            : 0.085;
-    const dur = this.mood === 'critical' ? 0.26 : this.mood === 'storm' ? 0.32 : 0.4;
-    this.note(ctx, t0, {
-      freq,
-      type: this.mood === 'critical' || this.mood === 'storm' ? 'triangle' : 'sine',
-      peak,
-      dur,
-      filterHz: this.mood === 'critical' ? 2200 : this.mood === 'storm' ? 1800 : 2400,
-      fifth: this.mood === 'field' || this.mood === 'title' || this.mood === 'end_win',
+      this.mood === 'critical' ? 0.07 : this.mood === 'storm' ? 0.055 : this.mood === 'end_win' ? 0.06 : 0.045;
+
+    this.pad(ctx, t0, { freq: root, dur, peak, filterHz: 420 });
+    this.pad(ctx, t0 + 0.08, {
+      freq: root * 1.498,
+      dur: dur * 0.9,
+      peak: peak * 0.55,
+      filterHz: 520,
     });
+    // Sparse cloudy dissonance on storm/critical.
+    if (this.mood === 'storm' || this.mood === 'critical') {
+      this.pad(ctx, t0 + 0.15, {
+        freq: root * 1.26,
+        dur: dur * 0.7,
+        peak: peak * 0.35,
+        filterHz: 380,
+      });
+    }
+    // Soft air layer so it doesn’t read as pure sine tone.
+    if (this.step % 2 === 0) {
+      this.air(ctx, t0, {
+        dur: dur * 0.6,
+        vol: peak * 0.5,
+        bp: 500 + (this.step % 3) * 200,
+      });
+    }
   }
 
-  private note(
+  private pad(
     ctx: AudioContext,
     t0: number,
-    opts: {
-      freq: number;
-      type: OscillatorType;
-      peak: number;
-      dur: number;
-      filterHz: number;
-      fifth?: boolean;
-    },
+    opts: { freq: number; dur: number; peak: number; filterHz: number },
   ): void {
     if (!this.fadeGain) return;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = opts.filterHz;
-    filter.Q.value = 0.8;
-    filter.connect(this.fadeGain);
-
     const osc = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
     const g = ctx.createGain();
-    osc.type = opts.type;
+    osc.type = 'sine';
     osc.frequency.value = opts.freq;
+    // Tiny detune wobble via LFO on a second voice would be heavier; slight freq drift:
+    osc.frequency.linearRampToValueAtTime(opts.freq * 1.01, t0 + opts.dur);
+    lp.type = 'lowpass';
+    lp.frequency.value = opts.filterHz;
+    lp.Q.value = 0.6;
+    const attack = Math.min(0.35, opts.dur * 0.3);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(opts.peak, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.peak, 0.0002), t0 + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
-    osc.connect(g);
-    g.connect(filter);
+    osc.connect(lp);
+    lp.connect(g);
+    g.connect(this.fadeGain);
     osc.start(t0);
-    osc.stop(t0 + opts.dur + 0.03);
-
-    if (opts.fifth) {
-      const h = ctx.createOscillator();
-      const hg = ctx.createGain();
-      h.type = 'sine';
-      h.frequency.value = opts.freq * 1.5;
-      hg.gain.setValueAtTime(0.0001, t0);
-      hg.gain.exponentialRampToValueAtTime(opts.peak * 0.32, t0 + 0.04);
-      hg.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur * 0.9);
-      h.connect(hg);
-      hg.connect(filter);
-      h.start(t0);
-      h.stop(t0 + opts.dur + 0.03);
-    }
+    osc.stop(t0 + opts.dur + 0.05);
   }
 
-  /** Danger bed — dual scrape + low pulse so combat reads over biome drones. */
-  private tickCombat(ctx: AudioContext, t0: number, freq: number): void {
+  private air(
+    ctx: AudioContext,
+    t0: number,
+    opts: { dur: number; vol: number; bp: number },
+  ): void {
     if (!this.fadeGain) return;
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 1600;
-    filter.connect(this.fadeGain);
+    const len = Math.floor(ctx.sampleRate * Math.min(opts.dur + 0.1, 2.5));
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = opts.bp;
+    bp.Q.value = 0.5;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol, 0.0002), t0 + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
+    src.connect(bp);
+    bp.connect(g);
+    g.connect(this.fadeGain);
+    src.start(t0);
+    src.stop(t0 + opts.dur + 0.05);
+  }
 
-    const lead = ctx.createOscillator();
-    const leadG = ctx.createGain();
-    lead.type = this.step % 2 === 0 ? 'sawtooth' : 'triangle';
-    lead.frequency.value = freq;
-    leadG.gain.setValueAtTime(0.0001, t0);
-    leadG.gain.exponentialRampToValueAtTime(0.14, t0 + 0.02);
-    leadG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
-    lead.connect(leadG);
-    leadG.connect(filter);
-    lead.start(t0);
-    lead.stop(t0 + 0.2);
+  /** Combat: rhythmic thuds + grit, not sawtooth melody. */
+  private tickCombat(ctx: AudioContext, t0: number, root: number): void {
+    if (!this.fadeGain) return;
 
-    const fifth = ctx.createOscillator();
-    const fifthG = ctx.createGain();
-    fifth.type = 'triangle';
-    fifth.frequency.value = freq * 1.5;
-    fifthG.gain.setValueAtTime(0.0001, t0);
-    fifthG.gain.exponentialRampToValueAtTime(0.06, t0 + 0.03);
-    fifthG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
-    fifth.connect(fifthG);
-    fifthG.connect(filter);
-    fifth.start(t0);
-    fifth.stop(t0 + 0.18);
+    const thud = ctx.createOscillator();
+    const thudG = ctx.createGain();
+    const lp = ctx.createBiquadFilter();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(root, t0);
+    thud.frequency.exponentialRampToValueAtTime(Math.max(30, root * 0.7), t0 + 0.14);
+    lp.type = 'lowpass';
+    lp.frequency.value = 160;
+    thudG.gain.setValueAtTime(0.0001, t0);
+    thudG.gain.exponentialRampToValueAtTime(0.16, t0 + 0.01);
+    thudG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
+    thud.connect(lp);
+    lp.connect(thudG);
+    thudG.connect(this.fadeGain);
+    thud.start(t0);
+    thud.stop(t0 + 0.17);
 
-    // Heartbeat thud every other step.
-    if (this.step % 2 === 0) {
-      const thud = ctx.createOscillator();
-      const thudG = ctx.createGain();
-      thud.type = 'sine';
-      thud.frequency.setValueAtTime(55, t0);
-      thud.frequency.exponentialRampToValueAtTime(38, t0 + 0.12);
-      thudG.gain.setValueAtTime(0.0001, t0);
-      thudG.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
-      thudG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
-      thud.connect(thudG);
-      thudG.connect(this.fadeGain);
-      thud.start(t0);
-      thud.stop(t0 + 0.16);
-    }
+    // Grit scrape every step.
+    const len = Math.floor(ctx.sampleRate * 0.12);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(400 + (this.step % 3) * 180, t0);
+    bp.frequency.linearRampToValueAtTime(250, t0 + 0.1);
+    bp.Q.value = 1.2;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.0001, t0);
+    ng.gain.exponentialRampToValueAtTime(0.07, t0 + 0.008);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.1);
+    src.connect(bp);
+    bp.connect(ng);
+    ng.connect(this.fadeGain);
+    src.start(t0);
+    src.stop(t0 + 0.12);
   }
 
   private stopInternal(fadeSec: number): void {
