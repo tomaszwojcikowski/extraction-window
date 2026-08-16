@@ -1235,40 +1235,67 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       break;
     case 'sealed':
     case 'exit': {
-      // Hatch as bolted deck plate — status colour only on the seal strip / chevron.
+      // Raised hatch furniture — depth + bolts; status colour only on the seal strip.
       const open = kind === 'exit';
       const status = open ? Theme.safe : Theme.rust;
-      g.fillStyle(Theme.groundDeep, 0.85);
-      g.fillEllipse(q(6), q(40), q(36), q(6));
-      g.fillStyle(Material.deck, 1);
-      g.fillRect(q(5), q(4), q(38), q(38));
-      g.fillStyle(Theme.panelEdge, 0.9);
-      g.fillRect(q(5), q(4), q(38), q(2));
-      g.fillRect(q(5), q(4), q(2), q(38));
       g.fillStyle(Theme.groundDeep, 0.9);
-      g.fillRect(q(5), q(40), q(38), q(2));
-      g.fillRect(q(41), q(4), q(2), q(38));
+      g.fillEllipse(q(5), q(40), q(38), q(7));
+      // Plinth under the lid.
+      g.fillStyle(mix(Material.deck, Theme.groundDeep, 0.35), 1);
+      g.fillRect(q(4), q(36), q(40), q(8));
+      g.fillStyle(Material.recess, 0.85);
+      g.fillRect(q(4), q(42), q(40), q(2));
+      // Bevelled lid mass.
+      g.fillStyle(Material.deck, 1);
+      g.fillRect(q(6), q(5), q(36), q(34));
+      g.fillStyle(Theme.panelEdge, 0.95);
+      g.fillRect(q(6), q(5), q(36), q(3));
+      g.fillRect(q(6), q(5), q(3), q(34));
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillRect(q(6), q(36), q(36), q(3));
+      g.fillRect(q(39), q(5), q(3), q(34));
+      // Recessed inner leaf.
       g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(10), q(9), q(28), q(30));
-      // Seal strip / parting line.
+      g.fillRect(q(11), q(10), q(26), q(24));
+      g.fillStyle(Material.recess, 0.55);
+      g.fillRect(q(13), q(12), q(22), q(20));
+      // Metal parting seam (neutral) — not a colour cross.
+      g.fillStyle(mix(Theme.panelEdge, Theme.groundDeep, 0.4), 1);
+      g.fillRect(q(22), q(12), q(4), q(20));
+      g.fillRect(q(13), q(20), q(22), q(3));
+      // Status strip only — thin edge tell.
       g.fillStyle(status, 0.95);
-      g.fillRect(q(22), q(10), q(4), q(28));
-      g.fillRect(q(11), q(22), q(26), q(3));
-      g.fillStyle(Theme.panelEdge, 0.85);
+      g.fillRect(q(11), q(8), q(26), q(2));
+      g.fillRect(q(8), q(10), q(2), q(24));
+      // Bolts around the lid.
+      g.fillStyle(Theme.panelEdge, 1);
       for (const [bx, by] of [
-        [12, 11],
-        [34, 11],
-        [12, 34],
-        [34, 34],
+        [8, 7],
+        [37, 7],
+        [8, 33],
+        [37, 33],
+        [8, 20],
+        [37, 20],
+        [22, 7],
+        [22, 33],
       ] as const) {
         g.fillRect(q(bx), q(by), q(3), q(3));
+        g.fillStyle(Theme.inkBright, 0.35);
+        g.fillRect(q(bx), q(by), q(1), q(1));
+        g.fillStyle(Theme.panelEdge, 1);
       }
-      g.fillStyle(Theme.inkBright, 0.9);
+      // Cut silhouette: open chevron recess vs sealed lock bar (metal, not glyph paint).
       if (open) {
-        g.fillTriangle(q(16), q(17), q(28), q(23), q(16), q(29));
+        g.fillStyle(Theme.groundDeep, 0.95);
+        g.fillTriangle(q(16), q(16), q(30), q(22), q(16), q(28));
+        g.fillStyle(Theme.inkBright, 0.45);
+        g.fillTriangle(q(17), q(17), q(27), q(22), q(17), q(27));
       } else {
-        g.fillRect(q(18), q(18), q(12), q(3));
-        g.fillRect(q(22), q(14), q(3), q(12));
+        g.fillStyle(mix(Material.deck, Theme.groundDeep, 0.2), 1);
+        g.fillRect(q(16), q(18), q(16), q(6));
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(18), q(19), q(12), q(2));
+        g.fillRect(q(22), q(15), q(4), q(10));
       }
       break;
     }
@@ -1291,41 +1318,187 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       g.fillRect(q(14), q(26), q(3), q(2));
       g.fillRect(q(30), q(19), q(3), q(2));
       break;
-    case 'beacon':
-      g.fillStyle(Theme.groundDeep, 0.8);
-      g.fillEllipse(q(8), q(38), q(32), q(6));
+    case 'beacon': {
+      // Sodium relay as bolted pedestal furniture — hooded lamp, status on the skirt.
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillEllipse(q(6), q(40), q(36), q(7));
+      // Base plate + skirt.
+      g.fillStyle(Material.deck, 1);
+      g.fillRect(q(8), q(34), q(32), q(8));
+      g.fillStyle(Theme.panelEdge, 0.95);
+      g.fillRect(q(8), q(34), q(32), q(2));
+      g.fillStyle(Theme.groundDeep, 0.85);
+      g.fillRect(q(8), q(40), q(32), q(2));
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(19), q(15), q(10), q(25));
-      g.fillRect(q(12), q(37), q(24), q(5));
-      g.fillStyle(Theme.ink, 1);
-      g.fillRect(q(22), q(17), q(4), q(18));
-      g.fillStyle(Theme.inkBright, 0.65 + pulse * 0.1);
-      g.fillCircle(q(24), q(10), q(5 + pulse));
+      for (const [bx, by] of [
+        [10, 36],
+        [35, 36],
+        [10, 39],
+        [35, 39],
+      ] as const) {
+        g.fillRect(q(bx), q(by), q(3), q(2));
+      }
+      // Status strip on the skirt only.
+      g.fillStyle(Theme.arc, 0.75 + pulse * 0.08);
+      g.fillRect(q(14), q(37), q(20), q(2));
+      // Mast with clamp collars.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(20), q(14), q(8), q(21));
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(22), q(15), q(4), q(19));
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(18), q(20), q(12), q(3));
+      g.fillRect(q(18), q(28), q(12), q(3));
+      // Hooded lamp housing — bead pulses inside the hood, not a floating UI pip.
+      g.fillStyle(mix(Material.deck, Theme.groundDeep, 0.25), 1);
+      g.fillRect(q(14), q(6), q(20), q(10));
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(14), q(6), q(20), q(2));
+      g.fillRect(q(14), q(6), q(2), q(10));
+      g.fillRect(q(32), q(6), q(2), q(10));
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(17), q(9), q(14), q(5));
+      g.fillStyle(Theme.arcWhite, 0.55 + pulse * 0.12);
+      g.fillRect(q(20), q(10), q(8), q(3));
+      g.fillStyle(Theme.inkBright, 0.35 + pulse * 0.1);
+      g.fillRect(q(22), q(11), q(4), q(1));
       break;
-    case 'shuttle':
+    }
+    case 'shuttle': {
+      // Extraction pad as raised deck furniture — floods + markings, not a green glyph tile.
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillEllipse(q(4), q(40), q(40), q(7));
+      g.fillStyle(mix(Material.deck, Theme.groundDeep, 0.2), 1);
+      g.fillRect(q(3), q(4), q(42), q(38));
+      g.fillStyle(Theme.panelEdge, 0.95);
+      g.fillRect(q(3), q(4), q(42), q(3));
+      g.fillRect(q(3), q(4), q(3), q(38));
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillRect(q(3), q(39), q(42), q(3));
+      g.fillRect(q(42), q(4), q(3), q(38));
+      // Recessed pad face.
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(8), q(9), q(32), q(28));
+      g.fillStyle(mix(Material.deck, Theme.ground, 0.35), 1);
+      g.fillRect(q(10), q(11), q(28), q(24));
+      // Deck cross as worn paint, not neon.
+      g.fillStyle(mix(Theme.inkMute, Theme.safe, 0.25), 0.85);
+      g.fillRect(q(22), q(13), q(4), q(20));
+      g.fillRect(q(12), q(21), q(24), q(4));
+      // Status strip — standby green only on the rim.
       g.fillStyle(Theme.safe, 0.9);
-      g.fillRect(q(3), q(3), q(42), q(42));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillRect(q(7), q(7), q(34), q(34));
-      g.fillStyle(Theme.inkBright, 1);
-      g.fillRect(q(21), q(10), q(6), q(28));
-      g.fillRect(q(10), q(21), q(28), q(6));
-      g.fillStyle(Theme.tape, 1);
-      g.fillRect(q(8), q(8), q(8), q(2));
-      g.fillRect(q(32), q(38), q(8), q(2));
+      g.fillRect(q(10), q(7), q(28), q(2));
+      // Corner flood housings.
+      for (const [fx, fy] of [
+        [5, 6],
+        [38, 6],
+        [5, 34],
+        [38, 34],
+      ] as const) {
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(fx), q(fy), q(5), q(5));
+        g.fillStyle(Theme.inkBright, 0.55);
+        g.fillRect(q(fx + 1), q(fy + 1), q(3), q(3));
+      }
+      // Bolts + tape flags.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(16), q(6), q(2), q(2));
+      g.fillRect(q(30), q(6), q(2), q(2));
+      g.fillStyle(Theme.tape, 0.9);
+      g.fillRect(q(9), q(36), q(8), q(2));
+      g.fillRect(q(31), q(36), q(8), q(2));
       break;
-    case 'landmark':
+    }
     case 'quest': {
-      const color = kind === 'quest' ? Theme.flag : Theme.ink;
-      g.fillStyle(color, 0.9);
-      g.fillCircle(q(24), q(24), q(18));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillCircle(q(24), q(24), q(13));
-      g.lineStyle(q(3), Theme.inkBright, 1);
-      g.strokeCircle(q(24), q(24), q(7 + pulse));
-      g.fillStyle(color, 1);
-      g.fillTriangle(q(24), q(10 + pulse), q(19), q(21), q(29), q(21));
-      g.fillRect(q(22), q(20), q(4), q(15));
+      // Field procedure console — chassis furniture; flag only on the status strip / screen wash.
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillEllipse(q(5), q(40), q(38), q(7));
+      // Desk body.
+      g.fillStyle(Material.deck, 1);
+      g.fillRect(q(6), q(18), q(36), q(22));
+      g.fillStyle(Theme.panelEdge, 0.95);
+      g.fillRect(q(6), q(18), q(36), q(2));
+      g.fillStyle(Theme.groundDeep, 0.85);
+      g.fillRect(q(6), q(38), q(36), q(2));
+      // Rear upright panel.
+      g.fillStyle(mix(Material.deck, Theme.panel, 0.3), 1);
+      g.fillRect(q(10), q(6), q(28), q(14));
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(10), q(6), q(28), q(2));
+      g.fillRect(q(10), q(6), q(2), q(14));
+      g.fillRect(q(36), q(6), q(2), q(14));
+      // Screen recess — cool wash, not a filled glyph disc.
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(14), q(9), q(20), q(9));
+      g.fillStyle(mix(Theme.flag, Theme.biolumDeep, 0.35), 0.55 + pulse * 0.08);
+      g.fillRect(q(15), q(10), q(18), q(7));
+      g.fillStyle(Theme.inkBright, 0.35);
+      g.fillRect(q(16 + pulse), q(12), q(8), q(1));
+      g.fillRect(q(18), q(14), q(12), q(1));
+      // Status strip only.
+      g.fillStyle(Theme.flag, 0.95);
+      g.fillRect(q(14), q(20), q(20), q(2));
+      // Keypad block + bolts.
+      g.fillStyle(Theme.panel, 1);
+      g.fillRect(q(12), q(24), q(10), q(10));
+      g.fillStyle(Theme.panelEdge, 0.8);
+      for (let i = 0; i < 4; i++) {
+        g.fillRect(q(14 + (i % 2) * 4), q(26 + Math.floor(i / 2) * 4), q(2), q(2));
+      }
+      g.fillStyle(Theme.tape, 0.85);
+      g.fillRect(q(28), q(26), q(10), q(3));
+      g.fillStyle(Theme.panelEdge, 1);
+      for (const [bx, by] of [
+        [8, 20],
+        [38, 20],
+        [8, 36],
+        [38, 36],
+      ] as const) {
+        g.fillRect(q(bx), q(by), q(3), q(3));
+      }
+      // Stub antenna — physical, not a floating marker triangle.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(22), q(2), q(3), q(5));
+      g.fillStyle(Theme.flag, 0.9);
+      g.fillRect(q(25), q(2 + (pulse % 2)), q(6), q(2));
+      break;
+    }
+    case 'landmark': {
+      // Survey cairn / marker post — bolted furniture, ink plaque, no UI disc.
+      g.fillStyle(Theme.groundDeep, 0.9);
+      g.fillEllipse(q(6), q(40), q(36), q(7));
+      g.fillStyle(Material.rock, 1);
+      g.fillRect(q(10), q(30), q(28), q(10));
+      g.fillStyle(mix(Material.debris, Material.rock, 0.3), 1);
+      g.fillRect(q(14), q(28), q(10), q(6));
+      g.fillRect(q(26), q(26), q(8), q(8));
+      // Stake post.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(21), q(8), q(6), q(24));
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(23), q(9), q(2), q(22));
+      // Plaque with status strip.
+      g.fillStyle(Theme.panel, 1);
+      g.fillRect(q(14), q(12), q(20), q(12));
+      g.fillStyle(Theme.panelEdge, 0.95);
+      g.fillRect(q(14), q(12), q(20), q(2));
+      g.fillStyle(Theme.ink, 0.9);
+      g.fillRect(q(16), q(16), q(16), q(2));
+      g.fillRect(q(16), q(19), q(10), q(2));
+      g.fillStyle(Theme.inkDim, 0.95);
+      g.fillRect(q(16), q(22), q(16), q(2));
+      // Pulse as a thin scan line on the plaque, not a ring.
+      g.fillStyle(Theme.inkBright, 0.45 + pulse * 0.1);
+      g.fillRect(q(16), q(15 + pulse), q(16), q(1));
+      g.fillStyle(Theme.panelEdge, 1);
+      for (const [bx, by] of [
+        [12, 32],
+        [34, 32],
+        [16, 14],
+        [30, 14],
+      ] as const) {
+        g.fillRect(q(bx), q(by), q(3), q(3));
+      }
       break;
     }
   }
