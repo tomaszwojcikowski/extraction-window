@@ -67,8 +67,8 @@ const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
 const BAR_SLOTS = HUD_BAR_SLOTS;
 const BADGE_SLOTS = HUD_BADGE_SLOTS;
-/** Causal float linger — readable without eating the next turn's juice. */
-const ACTION_FLOAT_MS = 720;
+/** Causal float linger — long enough to read mid-move; still clears before the next beat feels sticky. */
+const ACTION_FLOAT_MS = 1200;
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
