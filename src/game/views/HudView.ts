@@ -11,6 +11,7 @@ import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosph
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
@@ -267,12 +268,12 @@ export class HudView {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
-    // Compact OPT badge — world amber frame carries the rest (no essay line).
+    // Compact OPT badge — amber world frame + quest line carry the verb.
     if (st.roomQuest && !st.roomQuest.done) {
       const n = st.roomQuest.steps.length;
       const i = st.roomQuest.stepIndex + 1;
       badgeSpecs.push({
-        label: n > 1 ? `OPT ${i}/${n}` : 'OPT',
+        label: n > 1 ? `${lore('UI-QUEST-BADGE')} ${i}/${n}` : lore('UI-QUEST-BADGE'),
         fill: Theme.tape,
       });
     }
@@ -309,10 +310,15 @@ export class HudView {
       'objCampaign',
     );
 
-    // Optional site copy lives on the world frame + OPT badge, not a third HUD essay.
-    r.questText.setVisible(false);
-    r.questText.setText('');
-    this.lastQuest = '';
+    // Optional tracker: step verb + favor preview (never steals the extract objective).
+    const questLine = formatRoomQuestHudLine(st);
+    if (questLine) {
+      this.setReadout(r.questText, questLine, opts, ThemeCss.tape, 'quest');
+      r.questText.setVisible(true);
+    } else {
+      this.setReadout(r.questText, '', opts, ThemeCss.tape, 'quest');
+      r.questText.setVisible(false);
+    }
 
     const stormHot = st.stormTurns <= 80;
     const urgencyParts: string[] = [];

@@ -137,7 +137,7 @@ export const LORE = {
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
-  'UI-HINT-QUEST': 'Optional site — Enter / Space / >',
+  'UI-HINT-QUEST': 'Optional site — follow the amber OPT line',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
   'UI-TUT-MOVE': 'WASD move · . wait · lamp and Flare change who notices you',
   'UI-TUT-LIGHT':

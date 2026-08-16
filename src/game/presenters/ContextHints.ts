@@ -70,7 +70,9 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-BEACON';
   }
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
-  if (tile.kind === 'quest') return 'UI-HINT-QUEST';
+  // Active optional-site coaching comes from roomQuestMechanic (step prompt).
+  // Other quest tiles stay quiet — amber frame + OPT line carry the read.
+  if (tile.kind === 'quest') return null;
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
     return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
   }
