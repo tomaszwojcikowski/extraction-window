@@ -41,7 +41,6 @@ export { manhattan, enemyAt, allyAt, npcAt } from './spatial';
 export {
   effectiveAggro,
   effectiveAggroAt,
-  isJammerSilenced,
   wouldNoticeEnemy,
 } from './notice';
 export {

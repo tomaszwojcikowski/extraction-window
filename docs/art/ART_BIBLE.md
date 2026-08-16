@@ -52,7 +52,7 @@ fails if any of them come back under those names.
 
 ### Emitter temperatures
 
-Each emitter is a *thing*: hooded halogen (`lamp`), red night filter (`lampQuiet`), magnesium stick (`flare`), animal (`fauna`), sodium relay (`beacon`), pad floods (`shuttle`), pattern tech (`pattern`), flagging (`marker`), scan wash (`scan`), hatch standby (`standby`).
+Each emitter is a *thing*: hooded halogen (`lamp`), magnesium stick (`flare`), animal (`fauna`), sodium relay (`beacon`), pad floods (`shuttle`), pattern tech (`pattern`), flagging (`marker`), scan wash (`scan`), hatch standby (`standby`).
 
 Because `theme.ts` re-exports the sim table, **palette and gameplay lighting cannot drift apart** — keep it that way. Light gameplay is sim illumination drawn by `LightView`, never Phaser Light2D. Tile hue, bloom pools, casts, and actor tints share flood energy (wrap + scrub); bloom dies in thicket the way brightness does; casts clip at opaque tiles and stay faint in the SHADOW band so presentation does not lie about ambush darkness. Bloom is a few uneven, low-alpha washes with ray wobble — soft spill, not chalky onion rings or nested white sparks on every emitter.
 
@@ -136,7 +136,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 - Bars: HP · Shield · Bus · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
 - **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
-- **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed; Quiet is badge plus log, not badge plus float plus camera.
+- **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.
 - Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.
 - HUD stat changes ease meters (~140ms) and stamp readouts (~90ms hard flash + 1px lift) — instrument motion, not soft UI pulses. Log feed does not stamp every turn.

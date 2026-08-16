@@ -176,7 +176,7 @@ describe('drill bay tutorial', () => {
     if (!st.inventory.some((s) => s.kind === 'flare')) {
       st.inventory.push({ kind: 'flare', count: 1 });
     }
-    // Force soft-shadow underfoot (tutorial ambient can keep jammer dimming lit).
+    // Force soft-shadow underfoot (tutorial ambient can keep the lamp tile lit).
     st.player.x = 10;
     st.player.y = 8;
     st.illumination[st.player.y]![st.player.x] = 0.2;

@@ -45,7 +45,6 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
       def: 2,
       armor: 12,
       maxArmor: 12,
-      jammerTurns: 0,
       probeTurns: 0,
       stimTurns: 0,
       filterTurns: 0,
@@ -147,18 +146,6 @@ describe('NoticeImpact', () => {
     const farSnap = captureNoticeSnap(st);
     en.x = 6; // re-enter notice
     expect(noticeImpactIds(st, farSnap, latch)).toEqual([1]);
-  });
-
-  it('stays quiet under jammer silence (no false Impact)', () => {
-    const near = stubEnemy('mite', 9, 5);
-    const base = stubState({});
-    const st = stubState({
-      enemies: [near],
-      player: { ...base.player, x: 5, y: 5, jammerTurns: 5 },
-    });
-    const prev = captureNoticeSnap(st);
-    near.x = 6;
-    expect(noticeImpactIds(st, prev)).toEqual([]);
   });
 
   it('corridor empty of fauna → zero Impact', () => {

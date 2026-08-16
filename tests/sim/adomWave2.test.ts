@@ -79,7 +79,7 @@ describe('ADOM Wave 2 — unknown salvage', () => {
 });
 
 describe('ADOM Wave 2 — lightPrefer aggro', () => {
-  it('applies the stronger light and quiet stance modifiers', () => {
+  it('applies lightPrefer modifiers without Quiet aggro shrink', () => {
     const st = combatArena(7);
     const darkHunter = makeEnemy({ kind: 'stalker', x: st.player.x + 3, y: st.player.y });
     const litHunter = makeEnemy({ kind: 'wasp', x: st.player.x + 3, y: st.player.y });
@@ -89,9 +89,7 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
     rebuildIllumination(st);
     expect(effectiveAggro(st, darkHunter)).toBe(ENEMIES.stalker.aggroRange - 2);
     expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 2);
-
-    st.player.jammerTurns = 5;
-    expect(effectiveAggro(st, neutral)).toBe(ENEMIES.crawler.aggroRange - 3);
+    expect(effectiveAggro(st, neutral)).toBe(ENEMIES.crawler.aggroRange);
   });
 
   it('dark-prefer mite loses aggro when player is lit', () => {

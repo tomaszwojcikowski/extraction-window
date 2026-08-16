@@ -111,8 +111,6 @@ export const ThemeCss = {
   arcWhite: '#cfefff',
   scanWash: '#bfd45e',
   safe: '#6fa87a',
-  /** Quiet stance's red night filter. */
-  lampQuiet: '#d8734a',
   hintBg: '#0d1416ee',
 } as const;
 

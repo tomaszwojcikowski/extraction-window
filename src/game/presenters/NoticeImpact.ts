@@ -1,5 +1,5 @@
 import type { Enemy, GameState } from '../../sim/types';
-import { isJammerSilenced, wouldNoticeEnemy } from '../../sim/notice';
+import { wouldNoticeEnemy } from '../../sim/notice';
 
 /** Pre-turn fauna snapshot for Notice Impact deltas (presentation only). */
 export type NoticeSnap = {
@@ -11,32 +11,26 @@ export type NoticeSnap = {
   /** Would notice the player at the pre-turn player tile. */
   wouldNotice: boolean;
   visible: boolean;
-  /** Jammer-silenced kinds — no live tell, no Impact. */
-  silenced: boolean;
 };
 
 function manhattan(ax: number, ay: number, bx: number, by: number): number {
   return Math.abs(ax - bx) + Math.abs(ay - by);
 }
 
-export { isJammerSilenced } from '../../sim/notice';
 
 /** Capture notice predicates before applyAction. */
 export function captureNoticeSnap(state: GameState): NoticeSnap[] {
   const px = state.player.x;
   const py = state.player.y;
   return state.enemies.map((en) => {
-    const silenced = en.alive && isJammerSilenced(state, en);
     return {
       id: en.id,
       x: en.x,
       y: en.y,
       alive: en.alive,
       alerted: en.alerted,
-      wouldNotice:
-        en.alive && !silenced ? wouldNoticeEnemy(state, en, px, py) : false,
+      wouldNotice: en.alive ? wouldNoticeEnemy(state, en, px, py) : false,
       visible: state.visible[en.y]?.[en.x] ?? false,
-      silenced,
     };
   });
 }
@@ -59,7 +53,6 @@ function stillNoticeThreat(
 ): boolean {
   if (!en.alive) return false;
   if (!(state.visible[en.y]?.[en.x] ?? false)) return false;
-  if (isJammerSilenced(state, en)) return false;
   return wouldNoticeEnemy(state, en, px, py);
 }
 
@@ -81,7 +74,6 @@ export function pruneNoticeChaseLatch(
 
 /**
  * Fauna that newly noticed / engaged this turn — honest Impact targets only.
- * Quiet/jammer-suppressed notice never punches.
  * Chase Impact latches per id until leave-notice so sustained approach is not strobe.
  */
 export function noticeImpactIds(

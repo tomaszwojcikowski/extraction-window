@@ -16,7 +16,7 @@ import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, purgeEmStress, EM_HIGH } from './emStress';
+import { addEmStress, purgeEmStress } from './emStress';
 import { addLightSource, inShadow, isLit, rebuildIllumination } from './light';
 import { tryClearPatternDesync } from './mechanics/patternBuffer';
 import { flareDamageForEnemy } from './brands';
@@ -43,7 +43,7 @@ function biomeIdTable(sectorId: SectorId): ItemKind[] {
   if (mid.includes(sectorId)) {
     return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe'];
   }
-  return ['med', 'energy', 'filter', 'plate', 'sealant', 'jammer', 'stim', 'mapper'];
+  return ['med', 'energy', 'filter', 'plate', 'sealant', 'stim', 'mapper'];
 }
 
 const SALVAGE_FAIL = 0.18;
@@ -293,17 +293,6 @@ export function useSelected(state: GameState): boolean {
       }
       break;
     }
-    case 'jammer':
-      if (hasStatus(state.player, 'jam')) {
-        pushLog(state, 'LOG-JAM-BLOCK');
-        return false;
-      }
-      state.player.jammerTurns = Math.max(state.player.jammerTurns, 12);
-      removeOne(state, kind);
-      addEmStress(state, 5, 'scrambler');
-      pushLog(state, 'LOG-USE-JAMMER');
-      if (state.emStress >= EM_HIGH) pushLog(state, 'LOG-QUIET-EM');
-      break;
     case 'salvage':
       identifyUnknown(state);
       break;

@@ -66,13 +66,6 @@ describe('tickPlayerStatusEffects', () => {
 });
 
 describe('Wave-1 status effects', () => {
-  it('quiet stance trades two FOV tiles for reduced attention', () => {
-    const st = combatArena();
-    const clear = visionRadius(st);
-    st.player.jammerTurns = 5;
-    expect(visionRadius(st)).toBe(Math.max(3, clear - 2));
-  });
-
   it('blind shrinks FOV', () => {
     const st = combatArena();
     const clear = visionRadius(st);
@@ -80,7 +73,7 @@ describe('Wave-1 status effects', () => {
     expect(visionRadius(st)).toBe(Math.max(2, clear - 2));
   });
 
-  it('jam blocks probe and jammer without consuming', () => {
+  it('jam blocks probe without consuming', () => {
     const st = combatArena();
     addStatus(st.player, 'jam', 2);
     const probeBefore = st.inventory.find((s) => s.kind === 'probe')?.count ?? 0;

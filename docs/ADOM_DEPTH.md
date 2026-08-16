@@ -192,3 +192,10 @@ quests, NPCs/allies, skills, and the extract spine stay.
 ## Feel / onboarding
 
 Human starts (`GameScene`) run a short **drill bay** tutorial (`tutorialActive`, `skipTutorial: false`) before real plains — not a 16th campaign sector. Harness / autopilot keep default `skipTutorial: true`. Storm clock and bus drip pause in the bay; hatch exit calls `finishTutorial` → load plains (afterglow fires once).
+
+
+## Wave 7 — Cut Quiet stance
+
+Removed the EM Scrambler / Quiet stance system end-to-end (item, `jammerTurns`, FOV/lamp dim, mite silence, EM-HIGH suppress, ion Quiet shield, QUIET badge). Field light remains LIT/SHADOW + flare. Autopilot persona id `quiet` kept as a conservative flare-hoard profile only.
+
+Finding #1 (Quiet as mandatory tax) is closed by deletion rather than retune — expect WR to need a follow-up measure.

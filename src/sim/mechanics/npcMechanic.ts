@@ -101,7 +101,7 @@ function agendaWantLog(npc: FieldNpc): LoreId {
     case 'stranded_ensign':
       return 'LOG-AGENDA-WANT-MED';
     case 'field_tech':
-      return 'LOG-AGENDA-WANT-QUIET';
+      return 'LOG-AGENDA-WANT-SEALANT';
     case 'survey_contact':
       return 'LOG-AGENDA-WANT-SURVEY';
     default:
@@ -119,10 +119,11 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
       ok = true;
     }
   } else if (npc.kind === 'field_tech') {
-    if (state.player.jammerTurns > 0) {
+    if (hasItem(state, 'sealant')) {
+      removeOne(state, 'sealant');
       ok = true;
-    } else if (hasItem(state, 'jammer')) {
-      removeOne(state, 'jammer');
+    } else if (hasItem(state, 'filter')) {
+      removeOne(state, 'filter');
       ok = true;
     }
   } else if (npc.kind === 'survey_contact') {

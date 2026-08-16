@@ -10,7 +10,7 @@ import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
 import { inShadow } from './light';
 import { enemyAt, manhattan, npcAt } from './spatial';
 import { leaveContamination } from './contamination';
-import { effectiveAggro, isJammerSilenced } from './notice';
+import { effectiveAggro } from './notice';
 import type { Enemy, GameState, Pos } from './types';
 
 export { effectiveAggro } from './notice';
@@ -328,7 +328,7 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
     return;
   }
 
-  // Soft-shadow player (quiet lamp / dark tile): skip telegraph and strike if adjacent
+  // Soft-shadow player (dark tile): skip telegraph and strike if adjacent
   if (style !== 'zone' && dist === 1 && inShadow(state, state.player.x, state.player.y)) {
     tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
     return;
@@ -372,7 +372,7 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
       return;
     }
     if (enemy.kind === 'pattern_custodian') {
-      // Quiet-break / FOV drain pulse
+      // FOV drain pulse
       state.player.energy -= 2;
       addStatus(state.player, 'expose', 1);
       pushLog(state, 'LOG-DRAIN', `${lore(ENEMIES[enemy.kind].loreName)} -2E`);
@@ -405,10 +405,6 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
   }
 }
 
-function silenced(state: GameState, enemy: Enemy): boolean {
-  return isJammerSilenced(state, enemy);
-}
-
 /**
  * Run one AI tick for all living enemies.
  */
@@ -431,7 +427,6 @@ export function moveEnemies(state: GameState): void {
     const def = ENEMIES[enemy.kind];
     const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
     const inFov = state.visible[enemy.y]?.[enemy.x] ?? false;
-    const quiet = silenced(state, enemy);
     const aggro = effectiveAggro(state, enemy);
 
     if (def.beam && dist <= aggro && tryBeamPattern(state, enemy)) {
@@ -440,10 +435,6 @@ export function moveEnemies(state: GameState): void {
 
     switch (def.behavior) {
       case 'wander': {
-        if (quiet) {
-          randomStep(state, enemy);
-          break;
-        }
         if (dist <= aggro) {
           if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
         } else {
@@ -479,10 +470,6 @@ export function moveEnemies(state: GameState): void {
         break;
       }
       case 'skirmish': {
-        if (quiet) {
-          randomStep(state, enemy);
-          break;
-        }
         if (dist > aggro) break;
         if (enemy.skirmishRetreat) {
           stepAway(state, enemy);

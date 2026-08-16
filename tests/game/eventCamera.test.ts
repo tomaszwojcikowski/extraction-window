@@ -84,8 +84,8 @@ describe('pickCameraCue', () => {
     expect(notice.shakeMs).toBeLessThanOrEqual(200);
   });
 
-  it('keeps Quiet hush profile defined but does not cue on Quiet logs', () => {
-    expect(pickCameraCue(['LOG-QUIET-ON', 'LOG-USE-JAMMER'])).toBeNull();
+  it('does not cue on unmapped lore ids', () => {
+    expect(pickCameraCue(['LOG-WAIT' as never])).toBeNull();
   });
 
   it('treats approach shear as pressure, not a punch', () => {

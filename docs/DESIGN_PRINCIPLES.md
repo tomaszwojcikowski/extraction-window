@@ -24,9 +24,9 @@ For Meridian Shelf, the aesthetics we care about most:
 | Aesthetic | What it should feel like here |
 |-----------|-------------------------------|
 | **Challenge** | Two clocks (Window + Bus) and fauna that punish careless light/wake |
-| **Discovery** | Reading the shelf — wake lines, LIT/SHADOW/QUIET, sealed routes |
+| **Discovery** | Reading the shelf — wake lines, LIT/SHADOW, sealed routes |
 | **Tension / drama** | Shear pressure rising; hatch → real drop; uplink hold |
-| **Expression** | Kit loadout, Quiet vs loud, skill forks — not towns/meta unlocks |
+| **Expression** | Kit loadout, light vs loud fights, skill forks — not towns/meta unlocks |
 | **Submission / flow** | Fluid WASD cadence; opt-in Shift-peek (forced wake-commit is dead — Pass 4) |
 
 If a feature doesn’t serve one of these (or a V1 pillar), it’s probably noise.
@@ -81,7 +81,6 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 | Bus | Energy / EPS / life-support (help may gloss once) |
 | Window | Storm / shear storm (Shear = pressure *presentation*) |
 | Shield | Armor / SHD |
-| Quiet | Jammer / scrambler as the *item*; Quiet as the *stance* |
 | Nav Lattice / Splice Key | CORE / KEY only as short badges |
 
 **Anti-pattern:** Help says “energy,” bar says “BUS,” log says “life-support.”
@@ -129,7 +128,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Illumination / LIT / SHADOW / QUIET drive combat hooks; bloom is decoration around that grid.
+- Illumination / LIT / SHADOW drive combat hooks; bloom is decoration around that grid.
 - Wake Impact only for fauna the player could already read via live/peek tells.
 - Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use.
 - A rule that quietly changes a number has to show that number moving. Encirclement rides the DEF readout as `DEF 4+1−2` rather than earning a badge, so the penalty is legible where its effect is.
@@ -181,7 +180,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - Telegraphs for windups; wake lines for notice; Bus/Window numbers stay visible.
-- Ambush-in-shadow is a *known* Quiet/SHADOW trade, taught in drill + badge.
+- Ambush-in-shadow is a *known* SHADOW trade, taught in drill + badge.
 - Legal win path stays causal (Key → handshake → Lattice → pad) — feel polish never softens assertLegalWin.
 
 **Anti-pattern:** Hidden timers or silent state flips that only appear in postmortem.
@@ -229,9 +228,9 @@ If more than two boxes fail, shrink the proposal.
 |--------|------------------|
 | Dual clocks + Shear Pressure | Challenge, progressive disclosure, juice budget |
 | Wake tells + Shift-peek + Notice Impact | Map first, opt-in preview, honest juice |
-| Field light / LIT·SHADOW·QUIET | Discovery, one name, honest presentation |
+| Field light / LIT·SHADOW | Discovery, one name, honest presentation |
 | Drill bay + context hints | Teach at need |
-| Kit / Quiet / EM | Few verbs, fair info |
+| Kit / EM | Few verbs, fair info |
 | Autopilot + playtest | Measure dynamics |
 
 ---

@@ -278,7 +278,6 @@ export interface GameState {
     probeTurns: number;
     stimTurns: number;
     filterTurns: number;
-    jammerTurns: number;
     mapperTurns: number;
     /** Brace persists through this enemy phase, then expires next player turn. */
     braceTurns: number;

@@ -101,7 +101,6 @@ describe('autopilot personas', () => {
   it('stable keeps the calibrated thresholds the WR band is tuned to', () => {
     expect(PERSONAS.stable.healAt).toBe(0.65);
     expect(PERSONAS.stable.rechargeAt).toBe(0.65);
-    expect(PERSONAS.stable.useQuiet).toBe(true);
     expect(PERSONAS.stable.useFlare).toBe(true);
     expect(PERSONAS.stable.pushProbe).toBe(false);
   });
@@ -118,24 +117,10 @@ describe('autopilot personas', () => {
     expect(action?.type === 'use' && kind === 'med').toBe(false);
   });
 
-  it('probe refuses the quiet crutch that stable reaches for', () => {
-    /** Healthy, one jammer in kit, one noisy mite in range — the jammer decision. */
-    function jammerChoice() {
-      const st = createGame(42);
-      st.player.hp = st.player.maxHp;
-      st.player.energy = st.player.maxEnergy;
-      st.player.armor = st.player.maxArmor;
-      st.inventory = [{ kind: 'jammer', count: 1 }];
-      st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 3, y: st.player.y })];
-      return st;
-    }
-
-    const quiet = jammerChoice();
-    expect(chooseAction(quiet, PERSONAS.quiet)).toEqual({ type: 'use' });
-    expect(quiet.inventory[quiet.ui.selectedSlot]?.kind).toBe('jammer');
-
-    const probe = jammerChoice();
-    expect(chooseAction(probe, PERSONAS.probe)).not.toEqual({ type: 'use' });
+  it('quiet persona hoards flares while probe spends them', () => {
+    expect(PERSONAS.quiet.useFlare).toBe(false);
+    expect(PERSONAS.probe.useFlare).toBe(true);
+    expect(PERSONAS.probe.pushProbe).toBe(true);
   });
 });
 

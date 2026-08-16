@@ -1,6 +1,5 @@
 import type { SectorId } from '../data/encounters';
 import { EM_HIGH } from './emStress';
-import { isQuietStance } from './mechanics/quietStance';
 import { playerFovRadius } from './fov';
 import type { GameState, Tile, TileKind, FieldLightSource } from './types';
 
@@ -11,8 +10,8 @@ export const LIGHT_NEAR = 0.75;
 export const LIT_THRESHOLD = 0.12;
 
 /**
- * Soft shadow band — quiet-dimmed lamp puts the player here while still
- * technically above LIT_THRESHOLD at the lamp tile. Ambush fauna prefer this.
+ * Soft shadow band — ambient / distance falloff can put the player here while
+ * still technically above LIT_THRESHOLD at the lamp tile. Ambush fauna prefer this.
  */
 export const SHADOW_THRESHOLD = 0.4;
 
@@ -210,8 +209,6 @@ export type SimLightSource = FieldLightSource;
 export const LIGHT_TEMP = {
   /** Hooded work lamp through scratched glass. */
   lamp: 0xffd9a8,
-  /** Quiet stance: the same lamp behind a red night filter. */
-  lampQuiet: 0xd8734a,
   /** Magnesium flare — chemical burn, near-white with a warm skirt. */
   flare: 0xfff4e2,
   /** Fauna / reef bioluminescence — cold, wet, green-cyan. */
@@ -262,11 +259,7 @@ function emptyGrid(w: number, h: number): number[][] {
 }
 
 function fovRadius(state: GameState): number {
-  let base =
-    playerFovRadius(state.player.probeTurns) + state.paddMods.fovBonus;
-  // Mirror quietStance.modifyFov without importing the registry (avoid cycles).
-  if (isQuietStance(state)) base = Math.max(3, base - 1);
-  return base;
+  return playerFovRadius(state.player.probeTurns) + state.paddMods.fovBonus;
 }
 
 function playerLamp(state: GameState): SimLightSource {
@@ -277,18 +270,12 @@ function playerLamp(state: GameState): SimLightSource {
     radius = Math.max(radius, 6.5);
     intensity = 1.45;
   }
-  if (isQuietStance(state)) {
-    intensity *= 0.45;
-    radius = Math.max(2.2, radius - 0.8);
-  }
   return {
     x: state.player.x,
     y: state.player.y,
     radius,
     intensity,
-    // Quiet stance swaps the hood for a red night filter — the stance is a
-    // visible change in the colour of your light, not just a stat.
-    color: isQuietStance(state) ? LIGHT_TEMP.lampQuiet : LIGHT_TEMP.lamp,
+    color: LIGHT_TEMP.lamp,
   };
 }
 

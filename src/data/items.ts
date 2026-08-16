@@ -3,7 +3,7 @@ import type { LoreId } from './lore';
 /**
  * One clear tool per job. Every kit item owns a job no other item does:
  * med heals, energy charges the bus, filter and sealant answer EM two
- * different ways, probe sees, mapper remembers, jammer hides, flare and
+ * different ways, probe sees, mapper remembers, flare and
  * dart and plate fight, salvage gambles.
  */
 export type ItemKind =
@@ -21,7 +21,6 @@ export type ItemKind =
   | 'harness'
   | 'ablative_vest'
   | 'dart'
-  | 'jammer'
   | 'sealant'
   | 'mapper'
   | 'salvage';
@@ -160,13 +159,6 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     kind: 'dart',
     loreName: 'ITEM-DART',
     loreDesc: 'ITEM-DART-DESC',
-    quest: false,
-    stackable: true,
-  },
-  jammer: {
-    kind: 'jammer',
-    loreName: 'ITEM-JAMMER',
-    loreDesc: 'ITEM-JAMMER-DESC',
     quest: false,
     stackable: true,
   },

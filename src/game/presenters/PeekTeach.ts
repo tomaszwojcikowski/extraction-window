@@ -26,8 +26,6 @@ const PEEK_TEACH_YIELDS_TO: ReadonlySet<LoreId> = new Set([
   'UI-HINT-USE-PATCH',
   'UI-HINT-USE-SEALANT',
   'UI-HINT-FLARE',
-  'UI-HINT-QUIET',
-  'UI-HINT-QUIET-EM',
   'UI-HINT-ION-FRONT',
   'UI-HINT-EXIT',
   'UI-HINT-EXIT-NEED-KEY',
@@ -67,7 +65,7 @@ export function peekTeachEligible(st: GameState): boolean {
 
 /**
  * True when live wake tells are up, or a visible threat sits in notice range.
- * Presentation gate only — mirrors WakeTells honesty (incl. quiet/jammer silence).
+ * Presentation gate only — mirrors WakeTells honesty.
  */
 export function peekTeachThreatVisible(st: GameState): boolean {
   if (collectWakeTells(st).length > 0) return true;

@@ -34,12 +34,10 @@ export function emEnergyTax(state: GameState): number {
 }
 
 /**
- * Extra aggro range for EM-sensitive fauna.
- * Quiet stance (jammer) at EM-HIGH fully suppresses the contamination bump —
- * FOV cost still applies via quietStance.modifyFov.
+ * Extra aggro range for EM-sensitive fauna once contamination hits EM_HIGH.
+ * EM_WARN still logs the rising threat without the full ecology bump.
  */
 export function emAggroBonus(state: GameState): number {
-  if (state.emStress < EM_WARN) return 0;
-  if (state.emStress >= EM_HIGH && state.player.jammerTurns > 0) return 0;
+  if (state.emStress < EM_HIGH) return 0;
   return 1;
 }

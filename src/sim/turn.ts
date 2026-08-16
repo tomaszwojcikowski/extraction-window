@@ -145,10 +145,6 @@ function tickEnvironment(state: GameState): void {
     if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
     if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
     if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
-    if (state.player.jammerTurns > 0) {
-      state.player.jammerTurns -= 1;
-      if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
-    }
     if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
     if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
     tickContamination(state);
@@ -188,10 +184,6 @@ function tickEnvironment(state: GameState): void {
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
-  if (state.player.jammerTurns > 0) {
-    state.player.jammerTurns -= 1;
-    if (state.player.jammerTurns === 0) pushLog(state, 'LOG-QUIET-OFF');
-  }
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
   if (state.player.braceTurns > 0) state.player.braceTurns -= 1;
 

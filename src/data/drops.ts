@@ -43,13 +43,13 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'filter', weight: 2 },
   ],
   drone: [
-    { kind: 'jammer', weight: 2 },
+    { kind: 'energy', weight: 2 },
     { kind: 'sealant', weight: 2 },
     { kind: 'salvage', weight: 1 },
   ],
   mastling: [
     { kind: 'probe', weight: 3 },
-    { kind: 'jammer', weight: 1 },
+    { kind: 'filter', weight: 1 },
   ],
   skitter: [
     { kind: 'med', weight: 3 },
@@ -65,7 +65,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
   ],
   duct_drone: [
     { kind: 'sealant', weight: 2 },
-    { kind: 'jammer', weight: 1 },
+    { kind: 'filter', weight: 1 },
   ],
   elite_skirmisher: [
     { kind: 'pulse_baton', weight: 2 },
@@ -92,8 +92,8 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
     { kind: 'probe', weight: 1 },
   ],
   pattern_custodian: [
-    { kind: 'jammer', weight: 4 },
-    { kind: 'probe', weight: 1 },
+    { kind: 'probe', weight: 3 },
+    { kind: 'filter', weight: 2 },
   ],
   shear_sovereign: [
     { kind: 'filter', weight: 2 },

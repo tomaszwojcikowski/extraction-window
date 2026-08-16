@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { ENEMIES } from '../../data/enemies';
 import { inShadow, isLit } from '../../sim/light';
 import {
-  isJammerSilenced,
   wouldNoticeEnemy,
 } from '../../sim/notice';
 import { manhattan } from '../../sim/spatial';
@@ -40,7 +39,6 @@ export function wakeTellsAt(st: GameState, px: number, py: number): WakeTell[] {
   for (const en of st.enemies) {
     if (!en.alive) continue;
     if (!(st.visible[en.y]?.[en.x] ?? false)) continue;
-    if (isJammerSilenced(st, en)) continue;
 
     const dist = manhattan(en.x, en.y, px, py);
     if (!wouldNoticeEnemy(st, en, px, py)) continue;

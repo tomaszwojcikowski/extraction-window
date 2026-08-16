@@ -46,7 +46,7 @@ function cue(
  * - pressure: shelf/Window stress (vignette lead; soft zoom)
  * - bloom: player power / milestone (zoom + vignette; little shake)
  * - reward: kill resolve (soft zoom; no trauma stack)
- * - hush: Quiet stance (vignette only — Quiet must not hog chrome)
+ * - hush: reserved soft vignette (unused after Quiet cut)
  */
 const CUES: Record<string, CameraCue> = {
   extract: cue('extract', 100, 'bloom', {
@@ -161,15 +161,6 @@ const CUES: Record<string, CameraCue> = {
     zoomScale: 1.04,
     zoomMs: 180,
   }),
-  quiet: cue('quiet', 45, 'hush', {
-    shakeMs: 0,
-    shakeIntensity: 0,
-    vignette: 0.14,
-    vignetteMs: 180,
-    nudgePx: 0,
-    zoomScale: 1,
-    zoomMs: 0,
-  }),
   elite: cue('elite', 68, 'reward', {
     shakeMs: 50,
     shakeIntensity: 0.002,
@@ -210,7 +201,7 @@ const CUES: Record<string, CameraCue> = {
 
 /**
  * Lore → cue. Intentionally omits routine ticks:
- * bleed ticks, ion pulses, uplink hold ticks, Quiet-off, PB soft stress
+ * bleed ticks, ion pulses, uplink hold ticks, PB soft stress
  * (approach already cues via LOG-EVT-APPROACH).
  */
 const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
@@ -235,7 +226,6 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-USED-KEY', 'handshake'],
   ['LOG-HS-START', 'handshake'],
   ['LOG-UPLINK-START', 'uplink_done'],
-  // Quiet: badge + meta timer only — no camera (juice budget / one channel).
   ['LOG-PB-DESYNC', 'desync'],
   ['LOG-SEALED-OPEN', 'hatch'],
   ['LOG-SEALED-PRY', 'hatch'],

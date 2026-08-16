@@ -15,7 +15,7 @@ import { roomQuestHudLine } from '../../src/sim/mechanics/roomQuestMechanic';
 import { combatArena, makeEnemy } from './fixtures';
 
 describe('ADOM Wave 3 — ion fronts', () => {
-  it('taxes EM and bus, while Quiet or a filter dampens its pulse', () => {
+  it('taxes EM and bus, while a filter dampens its pulse', () => {
     const st = combatArena();
     startIonFront(st);
     const em = st.emStress;
@@ -24,12 +24,6 @@ describe('ADOM Wave 3 — ion fronts', () => {
     mechanicsOnEndTurn(st);
     expect(st.emStress).toBe(em + 2);
     expect(st.player.energy).toBe(energy - 2);
-
-    st.ionFrontTurns = 2;
-    st.player.jammerTurns = 4;
-    const quietEnergy = st.player.energy;
-    mechanicsOnEndTurn(st);
-    expect(st.player.energy).toBe(quietEnergy);
 
     st.ionFrontTurns = 2;
     st.player.filterTurns = 4;

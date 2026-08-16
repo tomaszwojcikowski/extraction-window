@@ -11,7 +11,6 @@ import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosph
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
-import { isQuietStance } from '../../sim/mechanics/quietStance';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
@@ -74,7 +73,6 @@ type BarLayout = {
 /** The light badge must mirror the shadow predicate used by ambush AI. */
 export function stanceBadgeSpec(st: GameState): { label: string; fill: number } | null {
   const label = stanceBadgeLabel(st);
-  if (label === 'QUIET') return { label, fill: Theme.inkMute };
   if (label === 'SHADOW') return { label, fill: Theme.flag };
   if (label === 'LIT') return { label, fill: Theme.tape };
   return null;
@@ -199,8 +197,6 @@ export class HudView {
     const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
     const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
-    const jam = st.player.jammerTurns > 0 ? `Quiet ${st.player.jammerTurns}` : '';
-    const quiet = isQuietStance(st) && st.player.jammerTurns <= 0 ? 'Quiet' : '';
     const mapper = st.player.mapperTurns > 0 ? `Hatch ${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
@@ -213,7 +209,7 @@ export class HudView {
           )
         ? lore('UI-ALLY-ESCORT')
         : '';
-    const sysBits = [probe, stim, filter, jam, quiet, mapper, desync, allyRole].filter(
+    const sysBits = [probe, stim, filter, mapper, desync, allyRole].filter(
       Boolean,
     );
     const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';

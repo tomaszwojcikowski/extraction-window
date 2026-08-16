@@ -397,7 +397,6 @@ export class LightView {
 
       const personal =
         s.color === LightTemp.lamp ||
-        s.color === LightTemp.lampQuiet ||
         isSconce;
       // Only chemical / pad floods earn a white-hot tip — pattern/fauna stay murky.
       const hotCore =

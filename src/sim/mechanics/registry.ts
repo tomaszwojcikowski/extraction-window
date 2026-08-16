@@ -3,7 +3,6 @@ import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 import { roomQuestMechanic } from './roomQuestMechanic';
 import { beaconHandshakeMechanic } from './beaconHandshake';
-import { quietStanceMechanic } from './quietStance';
 import { patternBufferMechanic } from './patternBuffer';
 import { extractionUplinkMechanic } from './extractionUplink';
 import { scriptedEventsMechanic } from './scriptedEvents';
@@ -19,7 +18,6 @@ import { ionFrontMechanic } from './ionFront';
  * so mid-handshake or desync clear is not interrupted by side-quest pathing.
  * Field NPCs hail before room quests when both claim `>`.
  * Sealed pry after NPCs so hail still wins when both are adjacent.
- * Quiet after interactables so stance coaching never blocks hatch/NPC/quest hints.
  */
 const MECHANICS: Mechanic[] = [
   tutorialMechanic,
@@ -29,7 +27,6 @@ const MECHANICS: Mechanic[] = [
   npcMechanic,
   sealedHatchMechanic,
   roomQuestMechanic,
-  quietStanceMechanic,
   ionFrontMechanic,
   scriptedEventsMechanic,
 ];

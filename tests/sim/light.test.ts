@@ -120,18 +120,6 @@ describe('field illumination gameplay', () => {
     expect(st.illumination).toEqual(a);
   });
 
-  it('quiet stance dims lamp and puts player in soft shadow', () => {
-    const st = createGame(42);
-    expect(inShadow(st, st.player.x, st.player.y)).toBe(false);
-    const before = st.illumination[st.player.y]![st.player.x]!;
-    st.player.jammerTurns = 5;
-    rebuildIllumination(st);
-    const after = st.illumination[st.player.y]![st.player.x]!;
-    expect(after).toBeLessThan(before);
-    expect(inShadow(st, st.player.x, st.player.y)).toBe(true);
-    expect(toneMap(after)).toBeLessThan(SHADOW_THRESHOLD);
-  });
-
   it('tiles far from the lamp fail isLit without flare', () => {
     const st = createGame(42);
     let found = false;

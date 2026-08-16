@@ -58,25 +58,9 @@ describe('contextHint coaching', () => {
 
   it('shows SHADOW instead of LIT in the soft-shadow band', () => {
     const st = createGame(42);
-    st.player.jammerTurns = 0;
     st.illumination[st.player.y]![st.player.x] = 0.2;
 
     expect(stanceBadgeLabel(st)).toBe('SHADOW');
-  });
-
-  it('one-shots Quiet soft-shadow ambush tip then yields the hint line', () => {
-    const st = createGame(42);
-    st.player.jammerTurns = 12;
-    st.scriptedFired.quiet_hint = true;
-    st.items = [];
-    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.illumination[st.player.y]![st.player.x] = 0.2;
-    const stalker = makeEnemy({ kind: 'stalker', x: st.player.x + 1, y: st.player.y });
-    st.enemies = [stalker];
-    st.visible[stalker.y]![stalker.x] = true;
-
-    expect(contextHint(st)).toBe('UI-HINT-QUIET');
-    expect(contextHint(st)).not.toBe('UI-HINT-QUIET');
   });
 
   it('prioritizes visible windups over an exit interaction', () => {

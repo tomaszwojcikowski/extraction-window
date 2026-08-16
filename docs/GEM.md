@@ -16,7 +16,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 |--------|----------------------|
 | Dual clocks | Window vs Bus — every turn is paid for twice |
 | Causal extract | Key → handshake → Lattice → pad; no shortcut, no fetch-quest padding |
-| Field light | Lamp / flare / Quiet change notice, aggro, dart clarity — not tint |
+| Field light | Lamp / flare change notice, aggro, dart clarity — not tint |
 | Kit + pressure | 16 slots, tool + armor equip, consumables; scarcity forces improvisation |
 | In-run mastery | Levels 1–8 and forks, learned inside one run |
 | Headless truth | `sim/` owns rules; presentation may not invent them |
@@ -31,7 +31,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 | Cross-run unlocks | Cut | Moves mastery out of the run |
 | Towns / shops | Cut | Turns scarcity into a shopping list |
 | Real-time physics / knockback | Cut | Breaks turn legibility and the oracle |
-| Weather as spectacle | Reframe | Only as ion-front EM/Bus pressure with Quiet/filter/flare counters |
+| Weather as spectacle | Reframe | Only as ion-front EM/Bus pressure with filter/flare counters |
 
 ---
 
@@ -41,7 +41,7 @@ No single correct build. Each path must fail *differently*; if two paths die the
 
 | Path | Fantasy | Distinct failure mode |
 |------|---------|-----------------------|
-| Quiet survey | Move dark, unseen, cheap | Cornered in the dark with Quiet tools spent |
+| Shadow survey | Move dark, careful | Cornered in the dark without flares |
 | Probe / flare | Light as a weapon; clarity on demand | EM spiral into a wake cascade |
 | Kinetic kit | Solve rooms with force | Bus bankruptcy and empty consumables late |
 | Companion / contact | Agendas, escort cover, drone lamp | Value soft-locked if ignored while clocks run |

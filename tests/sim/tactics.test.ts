@@ -88,22 +88,6 @@ describe('Iteration 2 tactical threats', () => {
 
     expect(lastLog(st, 'LOG-OVERWATCH-FIRE')).toBeTruthy();
   });
-
-  it('quiet stance prevents an undetected drone from winding up a beam', () => {
-    const st = combatArena();
-    st.player.x = 5;
-    st.player.y = 5;
-    st.player.jammerTurns = 12;
-    const drone = makeEnemy({ kind: 'drone', x: 8, y: 5 });
-    st.enemies = [drone];
-    floor(st, 6, 5);
-    floor(st, 7, 5);
-
-    moveEnemies(st);
-
-    expect(drone.intent).toBeUndefined();
-    expect(lastLog(st, 'LOG-TELE-BEAM')).toBeUndefined();
-  });
 });
 
 describe('Iteration 2 player tactics', () => {

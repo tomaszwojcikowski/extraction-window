@@ -36,7 +36,6 @@ function stubState(over: Partial<{ px: number; py: number; wallAt?: [number, num
       maxHp: 10,
       energy: 50,
       maxEnergy: 50,
-      jammerTurns: 0,
     },
   } as GameState;
 }

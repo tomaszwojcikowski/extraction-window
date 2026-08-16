@@ -64,8 +64,8 @@ export const LORE = {
     'Two+ hostiles touching you peel DEF — brace or fight in a doorway.\n' +
     '\n' +
     'LIGHT\n' +
-    'LIT — safe read · SHADOW — ambush risk · QUIET — Scrambler dims your lamp.\n' +
-    'Quiet: fauna notices you less; FOV shrinks. Flare lights a dark fight.\n' +
+    'LIT — safe read · SHADOW — ambush risk.\n' +
+    'Flare lights a dark fight.\n' +
     '\n' +
     'EXTRACT (required order)\n' +
     '1 Splice Key · 2 beacon handshake · 3 Nav Lattice · 4 drop skiff pad\n' +
@@ -74,7 +74,7 @@ export const LORE = {
     '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
-    'EM high — Sealant flushes residue; Scrambler for Quiet',
+    'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
   'UI-CONTROLS':
@@ -99,15 +99,11 @@ export const LORE = {
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
   'UI-HINT-SEALED': 'Sealed hatch — Sealant Foam or baton pry (>)',
   'UI-HINT-PRY-SEALED': 'Sealed hatch — pry open with baton (>)',
-  'UI-HINT-QUIET':
-    'Quiet on — lamp dim, fauna less interested; FOV smaller (Scrambler)',
-  'UI-HINT-QUIET-EM':
-    'EM high — use Scrambler (u) for Quiet to cut aggro (FOV shrinks)',
   'UI-HINT-ION-FRONT':
-    'Ion front — Filter, Flare, or Scrambler softens the next pulse',
+    'Ion front — Filter or Flare softens the next pulse',
   'UI-HINT-FLARE': 'In the dark near hostiles — Flare lights the fight',
   'UI-HINT-LIGHT':
-    'LIT safe · SHADOW ambush risk · QUIET = Scrambler dims lamp',
+    'LIT safe · SHADOW ambush risk — Flare lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
     'Window = turns left · Bus = kit power — either hitting 0 ends the run',
@@ -119,7 +115,7 @@ export const LORE = {
   'UI-HINT-TELE': 'Windup painted — b brace, leave those tiles, or kill it',
   'UI-HINT-TELE-REACH': 'Windup next to you — f shove breaks it',
   'UI-HINT-SHOVE-DIR': 'Choose shove direction — press a direction key',
-  'UI-HINT-BRAND': 'Branded elite — optional; Flare, Quiet, or Filter match its brand',
+  'UI-HINT-BRAND': 'Branded elite — optional; Flare, Probe, or Filter match its brand',
   'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
@@ -131,8 +127,8 @@ export const LORE = {
     'Lines from your feet show who notices you — Shift+direction peeks before you step',
   'UI-TUT-MOVE': 'WASD to move · Shift+direction peeks notice · . waits',
   'UI-TUT-LIGHT':
-    'Lamp stops at walls — LIT safe · SHADOW ambush · QUIET dims (Scrambler)',
-  'UI-TUT-KIT': 'i opens kit · u uses item — scan salvage · Scrambler = Quiet · Flare = light',
+    'LIT is a safe read · SHADOW invites ambush — Flare lights dark fights',
+  'UI-TUT-KIT': 'i opens kit · u uses item — scan salvage · Flare = light',
   'UI-TUT-HAZARD':
     'Ion tile drains Bus — step off, Sealant (u), or take the south detour',
   'UI-TUT-WAKE':
@@ -168,7 +164,6 @@ export const LORE = {
   'UI-ALLY-DRONE': 'DRONE LAMP',
   'UI-ALLY-ESCORT': 'ESCORT',
   'UI-FILTER': 'FILTER',
-  'UI-JAMMER': 'Quiet',
   'UI-WORN': 'worn',
   'UI-WEARABLE': 'equip',
   'UI-WIN': 'EXTRACTION COMPLETE',
@@ -251,7 +246,7 @@ export const LORE = {
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
-    'Contact brief: marked specimen on this ground. It answers Flare, Quiet, and Filter differently — route around or match the brand.',
+    'Contact brief: marked specimen on this ground. It answers Flare, Probe, and Filter differently — route around or match the brand.',
   'CODEX-FACT-BRINE':
     'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
   'CODEX-FACT-VENT':
@@ -297,9 +292,6 @@ export const LORE = {
   'ITEM-VEST-DESC': 'Equip for +4 max Shield and +1 DEF. Use again to stow.',
   'ITEM-DART': 'Plasma Microdart',
   'ITEM-DART-DESC': 'u then a direction: hit a lit target within 3 — damage and expose.',
-  'ITEM-JAMMER': 'EM Scrambler',
-  'ITEM-JAMMER-DESC':
-    'Starts Quiet for 12 turns: fauna notices you less, FOV shrinks, lamp dims. At high EM, also blocks the aggro spike.',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC':
     'Clears hazard/vent underfoot, or flushes EM if used on clean ground.',
@@ -360,7 +352,7 @@ export const LORE = {
   'LOG-TUT-WELCOME':
     'Drill bay — Window and Bus paused. Lines from your feet show notice; ion tiles drain Bus. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
-    'Lamp stops at walls. Badge: LIT safe · SHADOW ambush · QUIET dims lamp (Scrambler).',
+    'Lamp stops at walls. Badge: LIT safe · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
     'Ion tile drains Bus — Sealant (u) or take the south detour.',
   'LOG-TUT-WAKE':
@@ -383,7 +375,7 @@ export const LORE = {
   'LOG-NPC-SURVEY': 'Survey contact shares bearing notes — optional favor open.',
   'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with > or step around.',
   'LOG-AGENDA-WANT-MED': 'Ensign needs a Field Hypo spare — hail again when you have one.',
-  'LOG-AGENDA-WANT-QUIET': 'Tech wants a Scrambler or active Quiet — hail again when ready.',
+  'LOG-AGENDA-WANT-SEALANT': 'Tech wants Sealant Foam or a Filter — hail again when ready.',
   'LOG-AGENDA-WANT-SURVEY': 'Contact wants a Nav Ping — hail again when you have one.',
   'LOG-AGENDA-NONE': 'Contact has nothing further.',
   'LOG-AGENDA-DONE': 'Favor repaid — Window refund.',
@@ -415,7 +407,6 @@ export const LORE = {
   'LOG-USE-VEST': 'Ablative vest equipped — Shield + DEF.',
   'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
-  'LOG-USE-JAMMER': 'Quiet stance online — Scrambler dims the lamp.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
   'LOG-SEALED-OPEN': 'Sealant cracks the sealed hatch — floor cleared.',
   'LOG-SEALED-PRY': 'Pulse baton pries the sealed hatch open.',
@@ -457,8 +448,8 @@ export const LORE = {
   'LOG-STATUS-BLEED': 'Bleed tick',
   'LOG-STATUS-ION': 'Plasma burn',
   'LOG-STATUS-BLIND': 'Optics washed — vision narrowed.',
-  'LOG-STATUS-JAM': 'Kit jammed — Probe / Scrambler blocked.',
-  'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Probe or Scrambler.',
+  'LOG-STATUS-JAM': 'Kit jammed — Probe / Sealant blocked.',
+  'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Probe or Sealant.',
   'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-BRAND-SIGHT': 'Branded hostile identified.',
@@ -537,16 +528,12 @@ export const LORE = {
   'LOG-PB-SYNC': 'Pattern buffer restabilized.',
   'LOG-PB-REJECT': 'Skiff refuses lock — pattern still desynced (need Power Cell).',
   'LOG-PB-STRESS': 'Pattern buffer under Window stress.',
-  'LOG-QUIET-ON':
-    'Quiet on — fauna notices you less; FOV shrinks; lamp dims.',
-  'LOG-QUIET-OFF': 'Quiet off — normal notice and FOV.',
-  'LOG-QUIET-EM': 'Quiet holding — high-EM aggro spike suppressed.',
   'LOG-EVT-AFTERGLOW':
-    'Drop afterglow — EM spike. Sealant helps clean residue; Scrambler starts Quiet.',
+    'Drop afterglow — EM spike. Sealant Foam helps clean residue.',
   'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse the Bus; watch the pattern buffer.',
   'LOG-EVT-SHEAR': 'Window shear pulse — Bus tax under pad approach pressure.',
   'LOG-ION-FRONT': 'Ion front forming — taxes EM and Bus; lit fauna track harder.',
-  'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 Bus; Quiet, Filter, or Flare dampens it.',
+  'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 Bus; Filter or Flare dampens it.',
   'LOG-ION-DAMPEN': 'Ion front pulse dampened by field kit.',
   'LOG-ION-CLEAR': 'Ion front clearing — sector pressure subsides.',
   'LOG-XP': 'Survey proficiency gained.',
@@ -556,7 +543,7 @@ export const LORE = {
   'LOG-SKILL-NEED': 'Skill choice pending — press 1 or 2.',
   'LOG-EM-WARN': 'EM contamination rising — fauna growing agitated.',
   'LOG-EM-HIGH':
-    'EM contamination critical — Bus tax and wider aggro. Quiet stance (Scrambler) suppresses the bump.',
+    'EM contamination critical — Bus tax and wider aggro. Sealant Foam flushes residue.',
   'LOG-EM-PURGE': 'EM contamination flushed.',
   'LOG-SALVAGE-ID': 'Array ID complete — known kit item.',
   'LOG-SALVAGE-BAD': 'Unstable salvage — EM backlash and local wake.',

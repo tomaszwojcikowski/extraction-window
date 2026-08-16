@@ -38,7 +38,6 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
       def: 2,
       armor: 12,
       maxArmor: 12,
-      jammerTurns: 0,
       probeTurns: 0,
       stimTurns: 0,
       filterTurns: 0,
@@ -134,12 +133,11 @@ describe('shearReadoutLabel', () => {
 });
 
 describe('collectWakeTells', () => {
-  it('suppresses jammer-silenced dark-prefer kinds', () => {
+  it('includes dark-prefer mites when they would notice', () => {
     const st = stubState({
-      player: { ...stubState({}).player, jammerTurns: 3 },
       enemies: [stubEnemy('mite', 6, 5)],
     });
-    expect(collectWakeTells(st)).toHaveLength(0);
+    expect(collectWakeTells(st).length).toBeGreaterThanOrEqual(1);
   });
 
   it('mirrors ambush dark-notice at aggro range', () => {
@@ -252,14 +250,13 @@ describe('collectWakeTells', () => {
     expect(tells[0]!.neutralNotice).toBe(true);
   });
 
-  it('quiet jammer shrinks preview footprint same as live', () => {
+  it('preview footprint matches live wake at the same player tile', () => {
     const st = stubState({
       enemies: [stubEnemy('sentinel', 10, 5)], // dist=5, aggro 5
     });
     expect(collectWakeTells(st)).toHaveLength(1);
-    st.player.jammerTurns = 3; // aggro shrinks to 2 — out of range
-    expect(collectWakeTells(st)).toHaveLength(0);
-    expect(wakeTellsAt(st, 5, 5)).toHaveLength(0);
+    expect(wakeTellsAt(st, 5, 5)).toHaveLength(1);
+    expect(wakeTellsAt(st, 4, 5)).toHaveLength(0);
   });
 });
 

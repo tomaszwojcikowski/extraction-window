@@ -27,8 +27,6 @@ export interface Persona {
   healAt: number;
   /** Energy fraction at or below which it spends a charge. */
   rechargeAt: number;
-  /** Spend jammer/quiet to duck notice. */
-  useQuiet: boolean;
   /** Burn probe/lens for clarity whenever idle — buys read, pays EM. */
   pushProbe: boolean;
   /** Light as a weapon; when false the persona hoards flares. */
@@ -74,17 +72,15 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'stable',
     healAt: 0.65,
     rechargeAt: 0.65,
-    useQuiet: true,
     pushProbe: false,
     useFlare: true,
     skillPrefer: SURVIVAL_FORKS,
   },
-  /** Quiet survey: hides instead of shooting, hoards light. */
+  /** Conservative survey: hoards flares, heals earlier. */
   quiet: {
     id: 'quiet',
     healAt: 0.6,
     rechargeAt: 0.7,
-    useQuiet: true,
     pushProbe: false,
     useFlare: false,
     skillPrefer: ['deep_reserve', 'triage', 'last_window'],
@@ -94,7 +90,6 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'probe',
     healAt: 0.65,
     rechargeAt: 0.65,
-    useQuiet: false,
     pushProbe: true,
     useFlare: true,
     skillPrefer: ['overcharge', 'scavenger', 'last_window'],
@@ -104,7 +99,6 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     id: 'reckless',
     healAt: 0.35,
     rechargeAt: 0.4,
-    useQuiet: false,
     pushProbe: false,
     useFlare: true,
     skillPrefer: ['overcharge', 'triage'],
@@ -283,23 +277,6 @@ export function chooseAction(
     }
   }
 
-  // Jammer: mites/wasps nearby, or EM-HIGH (quiet suppresses contamination aggro bump)
-  if (persona.useQuiet && state.player.jammerTurns <= 0) {
-    const emCritical = state.emStress >= EM_HIGH;
-    const noisyNear = state.enemies.some(
-      (e) =>
-        e.alive &&
-        (e.kind === 'mite' || e.kind === 'wasp') &&
-        Math.abs(e.x - state.player.x) + Math.abs(e.y - state.player.y) <= 4,
-    );
-    if (emCritical || noisyNear) {
-      const jIdx = state.inventory.findIndex((s) => s.kind === 'jammer');
-      if (jIdx >= 0) {
-        state.ui.selectedSlot = jIdx;
-        return { type: 'use' };
-      }
-    }
-  }
 
   const shove = shoveOpportunity(state);
   if (shove) return { type: 'shove', dx: shove.dx, dy: shove.dy };

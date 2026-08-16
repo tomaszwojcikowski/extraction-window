@@ -86,7 +86,7 @@ export function contextHint(st: GameState): LoreId | null {
   if (adjSealed && hasItem(st, 'sealant')) {
     return 'UI-HINT-USE-SEALANT';
   }
-  // Quiet ambush trade is one-shot via quietStanceMechanic — do not re-hog here.
+  // Soft-shadow ambush tip is one-shot via drill / light badge — do not re-hog here.
   if (
     inShadow(st, st.player.x, st.player.y) &&
     hasItem(st, 'flare') &&

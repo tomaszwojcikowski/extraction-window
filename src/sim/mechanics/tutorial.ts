@@ -3,7 +3,7 @@ import { bfsPath } from '../fov';
 import { inShadow } from '../light';
 import { hasItem } from '../inventory';
 import { pushLog } from '../log';
-import { isJammerSilenced, wouldNoticeEnemy } from '../notice';
+import { wouldNoticeEnemy } from '../notice';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 
@@ -49,10 +49,10 @@ export const tutorialMechanic: Mechanic = {
     // Until first turn resolves — teach movement + peek
     if (state.turn === 0) return 'UI-TUT-MOVE';
 
-    // Once: hooded lamp / LIT·SHADOW·QUIET — teach when SHADOW/Quiet first matters (map already speaks LIT).
+    // Once: hooded lamp / LIT·SHADOW — teach when SHADOW first matters (map already speaks LIT).
     if (
       !state.scriptedFired.tut_light &&
-      (inShadow(state, state.player.x, state.player.y) || state.player.jammerTurns > 0)
+      inShadow(state, state.player.x, state.player.y)
     ) {
       once(state, 'tut_light');
       return 'UI-TUT-LIGHT';
@@ -86,7 +86,6 @@ export const tutorialMechanic: Mechanic = {
         (e) =>
           e.alive &&
           (state.visible[e.y]?.[e.x] ?? false) &&
-          !isJammerSilenced(state, e) &&
           wouldNoticeEnemy(state, e, px, py),
       );
       if (wakeActive && !state.scriptedFired.tut_wake) {

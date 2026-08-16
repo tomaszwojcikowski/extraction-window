@@ -22,7 +22,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 ## Causal Chain
 
 1. **CAUSE-EM** — Field array / survey-probe EM agitates local ecology → hostile fauna packs.
-   Player beat: `LOG-DROP` + EM-named hostiles + Field Array Pulse ranging. Quiet stance suppresses EM-HIGH aggro bump.
+   Player beat: `LOG-DROP` + EM-named hostiles + Field Array Pulse ranging.
 2. **CAUSE-ARRAY** — Long-range array down → only inland spare Nav Lattice can restore drop skiff lock.
 3. **CAUSE-SEAL** — Inland path sealed behind Emergency Beacon → needs Splice Key.
 4. **CAUSE-STORM** — Shear window = environmental turn budget; bus drains under ion stress / hazards.
@@ -134,7 +134,6 @@ Capacity 16 slots, and one clear tool per job — 18 kinds total.
 | Plasma Filter | Blunt ion damage |
 | Field Array Pulse | See further |
 | Nav Ping | Remember the layout |
-| EM Scrambler | Go unnoticed |
 | Plasma Flare, Plasma Microdart, Combat Stim | Fight |
 | Unknown Salvage | The one gamble: scan it for kit, or take the backlash |
 

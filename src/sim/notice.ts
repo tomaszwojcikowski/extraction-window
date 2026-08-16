@@ -1,17 +1,10 @@
+import type { Enemy, GameState } from './types';
 import { ENEMIES } from '../data/enemies';
 import { emAggroBonus } from './emStress';
 import { inShadow, isLit } from './light';
 import { hasStatus } from './status';
 import { shadowboundDarkAggro } from './brands';
 import { manhattan } from './spatial';
-import type { Enemy, GameState } from './types';
-
-/** Quiet (jammer) silences mite / wasp / reef_skitter interest. */
-export function isJammerSilenced(state: GameState, enemy: Enemy): boolean {
-  if (state.player.jammerTurns <= 0) return false;
-  const kind = enemy.kind;
-  return kind === 'mite' || kind === 'wasp' || kind === 'reef_skitter';
-}
 
 /**
  * Detection radius as if the player stood on (px, py).
@@ -37,7 +30,6 @@ export function effectiveAggroAt(
     if (def.behavior === 'sentinel' || def.behavior === 'guard') r += 2;
   }
   if (hasStatus(state.player, 'marked')) r += 2;
-  if (state.player.jammerTurns > 0) r = Math.max(1, r - 3);
   if (def.lightPrefer) {
     const lit = isLit(state, px, py);
     const dark = inShadow(state, px, py);
@@ -83,12 +75,6 @@ export function wouldNoticeEnemy(
         st.lootTakenThisSector || dist <= 2 || (enemy.alerted && dist <= aggro)
       );
     case 'sentinel':
-      return dist <= aggro;
-    case 'swell':
-    case 'wander':
-    case 'skirmish':
-    case 'drain':
-    case 'hunter':
       return dist <= aggro;
     default:
       return dist <= aggro;

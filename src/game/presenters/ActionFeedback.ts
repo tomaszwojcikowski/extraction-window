@@ -120,9 +120,6 @@ export function collectActionFloatLabels(
       case 'LOG-EXTRACT':
         next = { label: 'EXTRACT LOCK', color: ThemeCss.safe };
         break;
-      case 'LOG-QUIET-OFF':
-        next = { label: 'QUIET OFF', color: ThemeCss.inkDim };
-        break;
       case 'LOG-TELE-POUNCE':
       case 'LOG-BOSS-TELE':
         next = { label: 'POUNCE INCOMING', color: ThemeCss.rust };
@@ -428,7 +425,6 @@ export function playActionSfx(
     has('LOG-USE-VEST') ||
     has('LOG-UNEQUIP') ||
     has('LOG-USE-DART') ||
-    has('LOG-USE-JAMMER') ||
     has('LOG-USE-SEALANT')
   ) {
     sfx.play('use');

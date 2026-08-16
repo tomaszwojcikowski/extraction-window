@@ -1,7 +1,6 @@
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
 import { hasItem } from '../inventory';
-import { isQuietStance } from './quietStance';
 import type { GameState } from '../types';
 import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
@@ -29,8 +28,7 @@ function pulseIonFront(state: GameState): void {
   }
 
   addEmStress(state, 2, 'ion front');
-  // Quiet remains useful under broad-spectrum shear without nullifying the front.
-  state.player.energy -= state.player.jammerTurns > 0 ? 0 : 2;
+  state.player.energy -= 2;
   pushLog(state, 'LOG-ION-PULSE');
 }
 
@@ -54,16 +52,12 @@ export const ionFrontMechanic: Mechanic = {
 
   contextHint(state: GameState): LoreId | null {
     if (state.ionFrontTurns <= 0) return null;
-    if (state.player.filterTurns > 0 || state.ionFrontDampened || isQuietStance(state)) {
+    if (state.player.filterTurns > 0 || state.ionFrontDampened) {
       return null;
     }
     if (state.scriptedFired.ion_front_hint) return null;
     // Teach only when kit can act — otherwise badge + LOG-ION-* are enough.
-    if (
-      !hasItem(state, 'filter') &&
-      !hasItem(state, 'flare') &&
-      !hasItem(state, 'jammer')
-    ) {
+    if (!hasItem(state, 'filter') && !hasItem(state, 'flare')) {
       return null;
     }
     state.scriptedFired.ion_front_hint = true;
