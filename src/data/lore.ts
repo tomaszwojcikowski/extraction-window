@@ -29,7 +29,7 @@ export const LORE = {
   'UI-DEF': 'DEF',
   'UI-INV': 'Field kit',
   'UI-LOG': 'Log',
-  'UI-OBJECTIVE': 'Objective',
+  'UI-OBJECTIVE': 'Required',
   'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
     'TRAINING BAY\n' +
@@ -49,7 +49,7 @@ export const LORE = {
     'Shift+direction — peek who would notice you (no turn spent)\n' +
     '. — wait\n' +
     'i — kit · u — use or equip · step onto kit to pick it up\n' +
-    'Enter / Space / > — hatch, beacon, pad, procedure, hail\n' +
+    'Enter / Space / > — hatch, beacon, pad, optional site, hail\n' +
     'p — PADD · 1/2 — pick skill · ? — help · m — mute · Esc — close\n' +
     '\n' +
     'TWO CLOCKS (both can kill you)\n' +
@@ -65,20 +65,25 @@ export const LORE = {
     'LIT — safe read · SHADOW — ambush risk.\n' +
     'Flare lights a dark fight.\n' +
     '\n' +
-    'EXTRACT (required order)\n' +
+    'EXTRACT (required — pink marker)\n' +
     '1 Splice Key · 2 beacon handshake · 3 Nav Lattice · 4 drop skiff pad\n' +
-    'Optional procedures earn extract rewards (+Window, hazard skip, or desync block). Kit (Field Hypo / Power Cell / Shield Charge) keeps you alive.\n' +
     'On the skiff: > start · . hold · Power Cell skips a hold · Flare blocks the wave.\n' +
+    '\n' +
+    'OPTIONAL SITES (amber marker — skip anytime)\n' +
+    'At most one per sector. Salvage / purge / vent-seal.\n' +
+    'Pays an extract reward (+Window, hazard skip, or desync block) — never required.\n' +
+    'HUD OPTIONAL line shows step + payoff. Enter / Space / > on the site.\n' +
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
     'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
+    'Required — extract chain. OPTIONAL — side site (ignore if Window is tight).\n' +
     'HP · Shield · Power · Window · XP\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Procedures earn extract rewards.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
   'UI-CONTROLS':
     'WASD move · Shift peek · . wait · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
@@ -136,7 +141,16 @@ export const LORE = {
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
-  'UI-HINT-QUEST': 'Procedure site — Enter / Space / >',
+  'UI-HINT-QUEST':
+    'Optional site — Enter / Space / > (not required for extract)',
+  'UI-HINT-QUEST-SALVAGE':
+    'Optional salvage — Enter / Space / > · pays +15 Window at extract',
+  'UI-HINT-QUEST-PURGE':
+    'Optional purge — clear nest hostiles, then Enter / Space / > · pays hazard skip',
+  'UI-HINT-QUEST-VENT-A':
+    'Optional vent seal 1/2 — Sealant Foam here (i → select → u)',
+  'UI-HINT-QUEST-VENT-B':
+    'Optional vent seal 2/2 — Enter / Space / > on this console to finish',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
   'UI-HINT-COMMIT': 'Shift+direction peeks who would wake · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
@@ -154,7 +168,9 @@ export const LORE = {
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Power then tick)',
   'UI-TUT-EXIT':
     'On hatch — step on it or press Enter / Space to start the drop (Window and Power go live)',
-  'UI-QUEST-TRACK': 'PROCEDURE',
+  'UI-QUEST-TRACK': 'OPTIONAL',
+  'UI-QUEST-PAYS': 'pays',
+  'UI-QUEST-BADGE': 'OPTIONAL',
   'UI-QUEST-REWARD': 'reward',
   'UI-RQ-SALVAGE': 'Salvage console — Enter / Space / >',
   'UI-RQ-PURGE': 'Purge nest — clear hostiles, then Enter / Space / >',
@@ -164,7 +180,7 @@ export const LORE = {
   'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
   'UI-PAGES-HINT': 'p or Esc — close',
   'UI-PAGES-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Procedures earn extract rewards.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective · proficiency',
   'UI-QUEST-KEY': 'SPLICE KEY',
@@ -209,7 +225,7 @@ export const LORE = {
   'OBJ-LOCAL-BEACON': '→ Beacon console',
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
-  'OBJ-LOCAL-ROOM': '→ Optional procedure',
+  'OBJ-LOCAL-ROOM': '⇢ Optional site (skip anytime)',
   'OBJ-TUT-HATCH': '→ East hatch (learn notice, Power hazard, kit)',
   'OBJ-TUT-BRIEF': 'Training — Window and Power paused until you leave',
   'HAZ-STORM': 'Window critical',

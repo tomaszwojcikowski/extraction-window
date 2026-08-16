@@ -25,10 +25,15 @@ export const roomQuestMechanic: Mechanic = {
     const rq = state.roomQuest;
     if (!rq || rq.done) return null;
     const step = activeQuestStep(rq);
-    if (step && state.player.x === step.pos.x && state.player.y === step.pos.y) {
-      return 'UI-HINT-QUEST';
+    if (!step || state.player.x !== step.pos.x || state.player.y !== step.pos.y) {
+      return null;
     }
-    return null;
+    if (rq.kind === 'salvage') return 'UI-HINT-QUEST-SALVAGE';
+    if (rq.kind === 'purge') return 'UI-HINT-QUEST-PURGE';
+    if (rq.kind === 'vent_seal') {
+      return rq.stepIndex === 0 ? 'UI-HINT-QUEST-VENT-A' : 'UI-HINT-QUEST-VENT-B';
+    }
+    return 'UI-HINT-QUEST';
   },
 
   autopilotHint(_state: GameState): Action | null {

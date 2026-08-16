@@ -268,6 +268,9 @@ export class HudView {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
+    if (st.roomQuest && !st.roomQuest.done) {
+      badgeSpecs.push({ label: lore('UI-QUEST-BADGE'), fill: Theme.tape });
+    }
     if (st.extractFavor) {
       badgeSpecs.push({ label: FAVOR_LABEL[st.extractFavor.kind], fill: Theme.safe });
     }
@@ -304,10 +307,12 @@ export class HudView {
     const questLine = roomQuestHudLine(st);
     if (questLine) {
       r.questText.setVisible(true);
-      const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag;
+      const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.tape;
+      const stepTag =
+        questLine.total > 1 ? ` ${questLine.index}/${questLine.total}` : '';
       this.setReadout(
         r.questText,
-        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} · ${lore('UI-QUEST-REWARD')} ${questLine.favor} · ${questLine.index}/${questLine.total}`,
+        `${lore('UI-QUEST-TRACK')}${stepTag}: ${lore(questLine.prompt)} · ${lore('UI-QUEST-PAYS')} ${questLine.favor}`,
         opts,
         questColor,
         'quest',

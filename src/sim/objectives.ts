@@ -42,6 +42,8 @@ export type ObjectiveDesc = {
   local: LoreId;
   campaign: LoreId;
   pos: Pos | null;
+  /** True when `pos` tracks an optional room site, not the extract spine. */
+  optionalGoal: boolean;
 };
 
 /** Shared HUD / coherency description of the active goal. */
@@ -51,6 +53,7 @@ export function describeObjective(state: GameState): ObjectiveDesc {
       local: 'OBJ-TUT-HATCH',
       campaign: 'OBJ-TUT-BRIEF',
       pos: state.exitPos,
+      optionalGoal: false,
     };
   }
 
@@ -68,12 +71,16 @@ export function describeObjective(state: GameState): ObjectiveDesc {
   const questDist = step
     ? Math.abs(state.player.x - step.pos.x) + Math.abs(state.player.y - step.pos.y)
     : 999;
+  // Only pull the chevron onto an optional site when you're on it, mid-chain,
+  // or standing next to a visible console — never steal extract guidance from afar.
   const preferRoom =
     step &&
-    (state.explored[step.pos.y]?.[step.pos.x] || questDist <= 8);
+    (questDist <= 1 ||
+      (rq !== null && rq.stepIndex > 0) ||
+      (questDist <= 3 && (state.visible[step.pos.y]?.[step.pos.x] ?? false)));
 
   if (preferRoom && step) {
-    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: step.pos };
+    return { local: 'OBJ-LOCAL-ROOM', campaign, pos: step.pos, optionalGoal: true };
   }
 
   if (state.sectorId === 'ruin' && !state.objectives.hasRelayKey) {
@@ -105,7 +112,7 @@ export function describeObjective(state: GameState): ObjectiveDesc {
     }
   }
 
-  return { local, campaign, pos };
+  return { local, campaign, pos, optionalGoal: false };
 }
 
 /** Latest causal milestone for sticky HUD (key → used → core). */

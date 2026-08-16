@@ -1411,11 +1411,17 @@ export class GameScene extends Phaser.Scene {
       layer.setPosition(ox, oy);
     }
     // Keep chevron fresh as camera drifts
-    if (!snap) this.syncGoalVisuals(describeObjective(this.state).pos);
+    if (!snap) {
+      const goal = describeObjective(this.state);
+      this.syncGoalVisuals(goal.pos, goal.optionalGoal);
+    }
   }
 
   /** Pulse explored/visible goal tile; edge chevron when known but off-screen. */
-  private syncGoalVisuals(pos: { x: number; y: number } | null): void {
+  private syncGoalVisuals(
+    pos: { x: number; y: number } | null,
+    optionalGoal = false,
+  ): void {
     this.chevronGfx.clear();
     const st = this.state;
     if (!pos) {
@@ -1438,7 +1444,9 @@ export class GameScene extends Phaser.Scene {
     const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
     const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
     this.goalMarker.setPosition(wx, wy);
-    this.goalMarker.setTint(Theme.flag);
+    // Pink = required extract spine; amber = optional site (never required).
+    const mark = optionalGoal ? Theme.tape : Theme.flag;
+    this.goalMarker.setTint(mark);
     if (!this.goalPulseTween) {
       this.goalMarker.setAlpha(0.75);
       this.goalPulseTween = this.tweens.add({
@@ -1476,7 +1484,7 @@ export class GameScene extends Phaser.Scene {
     const ex = cx + ux * edgeDist;
     const ey = cy + uy * edgeDist;
 
-    this.chevronGfx.fillStyle(Theme.flag, 0.95);
+    this.chevronGfx.fillStyle(mark, 0.95);
     this.chevronGfx.lineStyle(1, Theme.inkBright, 1);
     const s = 10;
     const px = -uy;
@@ -2029,6 +2037,7 @@ export class GameScene extends Phaser.Scene {
       this.preferenceHint = null;
     }
 
-    this.syncGoalVisuals(describeObjective(st).pos);
+    const goal = describeObjective(st);
+    this.syncGoalVisuals(goal.pos, goal.optionalGoal);
   }
 }
