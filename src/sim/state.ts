@@ -81,7 +81,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       stimTurns: 0,
       filterTurns: 0,
       mapperTurns: 0,
-      braceTurns: 0,
       statuses: {},
       equip: { tool: null, armor: null },
     },
@@ -148,7 +147,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       inventoryOpen: false,
       selectedSlot: 0,
       aimingDart: false,
-      aimingShove: false,
       questFlash: 0,
     },
     nextEntityId: map.nextEntityId,
@@ -217,7 +215,6 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.ionFrontTurns = 0;
   state.ionFrontDampened = false;
   state.ui.aimingDart = false;
-  state.ui.aimingShove = false;
   state.ui.questFlash = 0;
   state.nextEntityId = Math.max(state.nextEntityId, map.nextEntityId);
 

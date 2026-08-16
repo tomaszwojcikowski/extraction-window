@@ -1062,14 +1062,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // A shove that put the target into cover leaves both actors in place, so
-    // the lunge is the only thing that sells the impact.
+    // A bump that did not relocate still needs a lunge to sell the impact.
     const lunge =
-      action.type === 'move'
-        ? { dx: action.dx, dy: action.dy }
-        : action.type === 'shove' && action.dx !== undefined && action.dy !== undefined
-          ? { dx: action.dx, dy: action.dy }
-          : null;
+      action.type === 'move' ? { dx: action.dx, dy: action.dy } : null;
     if (lunge) {
       bumpAttack(
         this.tweens,
@@ -1332,7 +1327,7 @@ export class GameScene extends Phaser.Scene {
       view.label.setFontSize(11);
       return;
     }
-    // Each marker names the answer, not just the threat: brace it, or leave.
+    // Marker names the windup type so the player can choose leave vs fight.
     const marker =
       enemy.intent === 'beam'
         ? 'BEAM'

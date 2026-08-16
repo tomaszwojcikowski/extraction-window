@@ -16,11 +16,11 @@ describe('ActionFeedback', () => {
       actionFloatLabels([
         { loreId: 'LOG-ARMOR-ABSORB', detail: 'Rift Mite -2' },
         { loreId: 'LOG-DRAIN', detail: 'Duct Drone -2E' },
-        { loreId: 'LOG-BRACE' },
+        { loreId: 'LOG-PUNISH' },
       ]),
     ).toEqual([
       { label: 'BUS Duct Drone -2E', color: ThemeCss.arc },
-      { label: 'BRACE · DEF +2 · flanks held', color: ThemeCss.inkBright },
+      { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag },
     ]);
   });
 

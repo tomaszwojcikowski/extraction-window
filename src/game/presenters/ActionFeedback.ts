@@ -136,18 +136,6 @@ export function collectActionFloatLabels(
       case 'LOG-TELE-OVERWATCH':
         next = { label: 'OVERWATCH', color: ThemeCss.tape };
         break;
-      case 'LOG-BRACE':
-        next = { label: 'BRACE · DEF +2 · flanks held', color: ThemeCss.inkBright };
-        break;
-      case 'LOG-SHOVE-SLAM':
-        next = { label: 'SLAM · STAGGERED', color: ThemeCss.rust };
-        break;
-      case 'LOG-SHOVE-GROUND':
-        next = { label: 'INTO LIVE GROUND', color: ThemeCss.arc };
-        break;
-      case 'LOG-SHOVE-COLLIDE':
-        next = { label: 'COLLISION · BOTH DOWN', color: ThemeCss.rust };
-        break;
       case 'LOG-PUNISH':
         next = { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag };
         break;
@@ -182,9 +170,6 @@ export function collectActionFloatLabels(
         break;
       case 'LOG-JAM-BLOCK':
         next = { label: 'JAMMED · PULSE', color: ThemeCss.rust };
-        break;
-      case 'LOG-SHOVE-EMPTY':
-        next = { label: 'NO SHOVE TARGET', color: ThemeCss.inkDim };
         break;
       case 'LOG-EXIT-NEED-KEY':
       case 'LOG-NEED-KEY':
@@ -443,12 +428,7 @@ export function playActionSfx(
     sfx.play('hit');
     return;
   }
-  if (has('LOG-SHOVE')) {
-    sfx.play('move');
-    return;
-  }
   if (
-    has('LOG-BRACE') ||
     has('LOG-USE-MED') ||
     has('LOG-USE-ENERGY') ||
     has('LOG-USE-PROBE') ||
@@ -484,8 +464,7 @@ export function playActionSfx(
     has('LOG-NEED-CORE') ||
     has('LOG-USE-EMPTY') ||
     has('LOG-USE-FAIL') ||
-    has('LOG-JAM-BLOCK') ||
-    has('LOG-SHOVE-EMPTY')
+    has('LOG-JAM-BLOCK')
   ) {
     sfx.play('blocked');
     return;

@@ -80,14 +80,3 @@ describe('being surrounded pries defence open', () => {
     expect(damageFrom(3)).toBeGreaterThan(damageFrom(1));
   });
 });
-
-describe('brace is the answer to a crowd', () => {
-  it('covers the flanks entirely while it holds', () => {
-    const st = openFloor();
-    surround(st, 4);
-    expect(flankPenalty(st)).toBe(2);
-
-    st.player.braceTurns = 2;
-    expect(flankPenalty(st)).toBe(0);
-  });
-});

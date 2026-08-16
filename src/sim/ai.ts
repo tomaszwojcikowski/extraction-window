@@ -278,7 +278,7 @@ function huntStyle(enemy: Enemy): HuntStyle {
  * reward for reading the tell — the counter is the punish, not the dodge.
  */
 function resolveCharge(state: GameState, enemy: Enemy, steps: number): void {
-  const bonus = state.player.braceTurns > 0 ? 0 : 3;
+  const bonus = 3;
   let moved = 0;
   for (let i = 0; i < steps; i++) {
     if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) break;
@@ -296,8 +296,8 @@ function resolveCharge(state: GameState, enemy: Enemy, steps: number): void {
 }
 
 /**
- * Standoff ion pulse. It never closes and never touches you, so bracing is the
- * wrong answer — the counter is to leave the radius or kill it mid-charge.
+ * Standoff ion pulse. It never closes and never touches you — the counter is
+ * to leave the radius or kill it mid-charge.
  */
 function resolveZonePulse(state: GameState, enemy: Enemy): void {
   const dist = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
@@ -330,7 +330,7 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
 
   // Soft-shadow player (dark tile): skip telegraph and strike if adjacent
   if (style !== 'zone' && dist === 1 && inShadow(state, state.player.x, state.player.y)) {
-    tryMelee(state, enemy, state.player.braceTurns > 0 ? 0 : 3);
+    tryMelee(state, enemy, 3);
     return;
   }
   if (dist <= HUNT_RANGE[style]) {

@@ -41,9 +41,9 @@ export type EnemyBrand = 'flarebound' | 'warded' | 'shadowbound';
 /**
  * How a windup resolves. Each style has a different correct answer, so the
  * player has to read which hunter is charging before deciding:
- * - `lunge` — one step then a bonus strike. Brace it or leave the 2-tile ring.
- * - `reach` — closes up to two tiles. Stepping back does not break it; brace.
- * - `zone`  — stationary ion pulse over a radius. Brace does nothing; step out.
+ * - `lunge` — one step then a bonus strike. Leave the 2-tile ring or kill it.
+ * - `reach` — closes up to two tiles. Stepping back does not break it; kill or tank.
+ * - `zone`  — stationary ion pulse over a radius. Step out of the ring.
  */
 export type HuntStyle = 'lunge' | 'reach' | 'zone';
 

@@ -35,7 +35,7 @@ export const LORE = {
     'Reach the east hatch. Window and Bus are paused here.\n' +
     '\n' +
     'WASD — move · Shift+direction — peek who notices you\n' +
-    '. — wait · b — brace · f — shove · step on kit to take it\n' +
+    '. — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
     '\n' +
     'Yellow ion tiles drain Bus — Sealant (u) or take the south detour.\n' +
@@ -46,7 +46,7 @@ export const LORE = {
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
     'Shift+direction — peek who would notice you (no turn spent)\n' +
-    '. — wait · b — brace · f — shove (then a direction)\n' +
+    '. — wait\n' +
     'i — kit · u — use or equip · step onto kit to pick it up\n' +
     'Enter / Space / > — hatch, beacon, pad, procedure, hail\n' +
     'p — PADD · 1/2 — pick skill · ? — help · m — mute · Esc — close\n' +
@@ -57,11 +57,8 @@ export const LORE = {
     '\n' +
     'COMBAT\n' +
     'Walk into a hostile to hit it.\n' +
-    'Windup paints the tiles it will strike next turn.\n' +
-    'At range: b brace, leave those tiles, or kill it.\n' +
-    'Adjacent windup: f shove breaks the windup.\n' +
-    'Shove into a wall = slam; into hazard = burn; into another foe = both fall.\n' +
-    'Two+ hostiles touching you peel DEF — brace or fight in a doorway.\n' +
+    'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
+    'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
     '\n' +
     'LIGHT\n' +
     'LIT — safe read · SHADOW — ambush risk.\n' +
@@ -82,7 +79,7 @@ export const LORE = {
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
   'UI-CONTROLS':
-    'WASD move · Shift peek · . wait · b brace · f shove · i kit · ? help',
+    'WASD move · Shift peek · . wait · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',
@@ -118,13 +115,11 @@ export const LORE = {
   'UI-HINT-EXTRACT':
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':
-    'Two+ hostiles touching you — DEF drops; brace or fight in a doorway',
-  'UI-HINT-BRACE-SHOVE': 'Hostile beside you — b brace (DEF) · f shove (push)',
+    'Two+ hostiles touching you — DEF drops; fight in a doorway or break contact',
   'UI-HINT-SKILL':
     'Choose a field skill — press 1 or 2 (effects above; move locked until then)',
-  'UI-HINT-TELE': 'Windup painted — b brace, leave those tiles, or kill it',
-  'UI-HINT-TELE-REACH': 'Windup next to you — f shove breaks it',
-  'UI-HINT-SHOVE-DIR': 'Choose shove direction — press a direction key',
+  'UI-HINT-TELE': 'Windup painted — leave those tiles or kill it',
+  'UI-HINT-TELE-REACH': 'Windup next to you — kill it or step clear if you can',
   'UI-HINT-BRAND': 'Branded elite — optional; Flare, Probe, or Filter match its brand',
   'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
@@ -143,8 +138,8 @@ export const LORE = {
     'Ion tile drains Bus — step off, Sealant (u), or take the south detour',
   'UI-TUT-WAKE':
     'Lines from your feet = who notices you · Shift+direction peeks the next tile',
-  'UI-TUT-FIGHT': 'Walk into them to hit · b brace · f shove if adjacent · Flare if dark',
-  'UI-TUT-STALKER': 'Hunter winding up — Flare, brace, shove if adjacent, or go south',
+  'UI-TUT-FIGHT': 'Walk into them to hit · Flare if dark',
+  'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Bus then tick)',
   'UI-TUT-EXIT':
     'On hatch — step on it or press Enter / Space to start the drop (Window and Bus go live)',
@@ -349,7 +344,7 @@ export const LORE = {
   'ENEMY-RIFT-NOTE': 'Holds range and pulses ion. Plating will not save you — leave the ring.',
   'ENEMY-REEF-NOTE': 'Crystal-bank ambush — plasma bite.',
   'ENEMY-DUCT-NOTE': 'Bus junction machine — cuts a beam down the lane it faces.',
-  'ENEMY-SERPENT-NOTE': 'Coils, then lunges one tile. Brace it or clear the ring.',
+  'ENEMY-SERPENT-NOTE': 'Coils, then lunges one tile. Clear the ring or kill it.',
   'ENEMY-WRAITH-NOTE': 'Covers two tiles on the charge — stepping back will not break it.',
   'ENEMY-SENTINEL-NOTE': 'Arms overwatch on the tiles beside it — do not step in while it is locked.',
   'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and Window refund on kill.',
@@ -441,25 +436,18 @@ export const LORE = {
   'LOG-DRAIN': 'Bus siphoned',
   'LOG-SPORE-BURST': 'Wash spore burst — power spike and burn.',
   'LOG-TELE-SWELL': 'Spore swelling — burst imminent.',
-  'LOG-TELE-POUNCE': 'Hostile windup — one-tile lunge. Brace or clear the ring.',
-  'LOG-TELE-REACH': 'Long windup — it can cover two tiles. Brace; backing off will not break it.',
+  'LOG-TELE-POUNCE': 'Hostile windup — one-tile lunge. Clear the ring or kill it.',
+  'LOG-TELE-REACH': 'Long windup — it can cover two tiles. Backing off will not break it.',
   'LOG-CHARGE-WINDED': 'Overcommitted charge — it lands winded and open.',
   'LOG-TELE-ZONE': 'Rift charging a standoff pulse — leave the ring, plating will not hold.',
   'LOG-ZONE-PULSE': 'Ion pulse washes the ring — seams exposed.',
   'LOG-ZONE-FIZZLE': 'Ion pulse discharges into empty ground.',
-  'LOG-TELE-BEAM': 'Drone beam charging — break line or brace.',
+  'LOG-TELE-BEAM': 'Drone beam charging — break line or kill it.',
   'LOG-BEAM-FIRE': 'Drone ion beam rakes the lane.',
   'LOG-BEAM-BLOCKED': 'Drone beam splashes against cover.',
   'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
   'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
-  'LOG-BRACE': 'Brace set — defense reinforced; pounce impact blunted.',
-  'LOG-SHOVE': 'Shoulder in — driven back a tile.',
-  'LOG-SHOVE-SLAM': 'Backed against cover — it eats the impact.',
-  'LOG-SHOVE-COLLIDE': 'Driven into the one behind it — both go down hard.',
   'LOG-PUNISH': 'It has lost its footing — the strike goes in clean.',
-  'LOG-SHOVE-GROUND': 'Thrown into live ground.',
-  'LOG-SHOVE-EMPTY': 'Nothing in reach to shove.',
-  'LOG-SHOVE-WHICH': 'Shove which way?',
   'LOG-CONTAMINATION': 'Spore contamination tile tax drains the Bus.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',

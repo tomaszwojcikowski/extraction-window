@@ -279,8 +279,6 @@ export interface GameState {
     stimTurns: number;
     filterTurns: number;
     mapperTurns: number;
-    /** Brace persists through this enemy phase, then expires next player turn. */
-    braceTurns: number;
     statuses: StatusMap;
     equip: EquipSlots;
   };
@@ -353,8 +351,6 @@ export interface GameState {
     selectedSlot: number;
     /** After using dart, next move key aims */
     aimingDart: boolean;
-    /** Shove was called with more than one hostile in reach; next move key picks. */
-    aimingShove: boolean;
     /** Turns remaining to sticky-flash quest milestone in HUD */
     questFlash: number;
   };
@@ -369,9 +365,6 @@ export type Action =
   | { type: 'select_slot'; index: number }
   | { type: 'use' }
   | { type: 'aim'; dx: number; dy: number }
-  | { type: 'brace' }
-  /** Omit the direction to auto-pick when only one hostile is in reach. */
-  | { type: 'shove'; dx?: number; dy?: number }
   | { type: 'exit' }
   | { type: 'close_ui' }
   | { type: 'pick_skill'; id: SkillId };

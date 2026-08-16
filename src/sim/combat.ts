@@ -37,16 +37,11 @@ export function armorDefBonus(state: GameState): number {
  * You cannot cover every side at once. Each hostile in contact past the first
  * peels a point of defence off, which is what makes the shape of a room worth
  * anything: a doorway lets one of them reach you, open floor lets four.
- *
- * Bracing plants you and covers the sides, which is the active answer: against
- * a crowd it is worth more than the two points it prints, and it is the one
- * reply that does not hand the turn straight back. Capped so a swarm is a
- * reason to change ground rather than an instant death.
+ * Capped so a swarm is a reason to change ground rather than an instant death.
  */
 const MAX_FLANK_PENALTY = 2;
 
 export function flankPenalty(state: GameState): number {
-  if (state.player.braceTurns > 0) return 0;
   const inContact = state.enemies.filter(
     (enemy) =>
       enemy.alive &&
@@ -165,7 +160,6 @@ export function enemyAttack(
   const def =
     state.player.def +
     armorDefBonus(state) +
-    (state.player.braceTurns > 0 ? 2 : 0) +
     (hasEscortCover(state) ? 1 : 0) +
     lastWindow -
     flankPenalty(state) -

@@ -5,7 +5,7 @@ import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
-import { pillarCoachHint, braceShoveCoachHint } from './PillarCoach';
+import { pillarCoachHint } from './PillarCoach';
 import { shouldShowPeekTeach } from './PeekTeach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
@@ -18,10 +18,7 @@ export function contextHint(st: GameState): LoreId | null {
   // The first-run drill deliberately teaches its bespoke stalker response.
   if (st.tutorialActive && fromMechanic) return fromMechanic;
 
-  if (st.ui.aimingShove) return 'UI-HINT-SHOVE-DIR';
-
-  // A shoulder only reaches what is already on top of you; everything winding
-  // up further out has to be braced, outrun, or killed.
+  // Everything winding up has to be outrun or killed.
   const armed = st.enemies.filter(
     (e) => e.alive && (st.visible[e.y]?.[e.x] ?? false) && e.windup > 0,
   );
@@ -31,9 +28,6 @@ export function contextHint(st: GameState): LoreId | null {
     );
     return inReach ? 'UI-HINT-TELE-REACH' : 'UI-HINT-TELE';
   }
-
-  const braceShove = braceShoveCoachHint(st);
-  if (braceShove) return braceShove;
 
   if (fromMechanic) return fromMechanic;
 

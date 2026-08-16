@@ -42,8 +42,6 @@ export function actionFromKey(e: KeyboardEvent): Action | null {
   if (k === 'Escape') return { type: 'close_ui' };
   if (k === 'i' || k === 'I') return { type: 'toggle_inventory' };
   if (k === 'u' || k === 'U') return { type: 'use' };
-  if (k === 'b' || k === 'B') return { type: 'brace' };
-  if (k === 'f' || k === 'F') return { type: 'shove' };
   if (k === '.' && !e.shiftKey) return { type: 'wait' };
   // Hatch / interact — `>` needs Shift on many layouts; `=` / Enter / Space are reliable.
   if (
@@ -74,8 +72,6 @@ export function isQueueableAction(action: Action): boolean {
     action.type === 'move' ||
     action.type === 'wait' ||
     action.type === 'use' ||
-    action.type === 'brace' ||
-    action.type === 'shove' ||
     action.type === 'exit' ||
     action.type === 'aim'
   );

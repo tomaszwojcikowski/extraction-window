@@ -129,7 +129,6 @@ describe('contextHint coaching', () => {
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
     st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
     st.player.equip = { tool: null, armor: null };
-    st.player.braceTurns = 0;
     const a = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
     const b = makeEnemy({ kind: 'mite', x: st.player.x - 1, y: st.player.y });
     st.enemies = [a, b];
@@ -138,26 +137,6 @@ describe('contextHint coaching', () => {
 
     expect(contextHint(st)).toBe('UI-HINT-FLANK');
     expect(contextHint(st)).not.toBe('UI-HINT-FLANK');
-  });
-
-  it('teaches brace/shove once on adjacent hostile after peek window', () => {
-    const st = createGame(42);
-    st.tutorialActive = false;
-    st.sectorIndex = 3;
-    st.items = [];
-    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
-    st.player.hp = st.player.maxHp;
-    st.player.energy = st.player.maxEnergy;
-    st.player.armor = st.player.maxArmor;
-    st.player.statuses = {};
-    const mite = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
-    st.enemies = [mite];
-    st.visible[mite.y]![mite.x] = true;
-
-    expect(contextHint(st)).toBe('UI-HINT-BRACE-SHOVE');
-    expect(contextHint(st)).not.toBe('UI-HINT-BRACE-SHOVE');
   });
 });
 

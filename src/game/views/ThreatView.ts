@@ -20,7 +20,7 @@ type ThreatStyle = { color: number; alpha: number };
 
 const STYLES: Record<NonNullable<Enemy['intent']>, ThreatStyle> = {
   // Melee charges read as impact; the standoff pulse and held shots read as
-  // machine hazard so the player can tell "brace" apart from "leave".
+  // machine hazard so leave-the-tile reads apart from soak-the-hit.
   pounce: { color: Theme.rust, alpha: 0.3 },
   reach: { color: Theme.rust, alpha: 0.3 },
   zone: { color: Theme.scanWash, alpha: 0.26 },

@@ -73,14 +73,13 @@ describe('hunt styles pose different questions', () => {
     expect(st.player.hp).toBe(hp);
   });
 
-  it('zone pulses without closing, and ignores brace', () => {
+  it('zone pulses without closing', () => {
     const { st, enemy } = arenaWith('rift', 2);
 
     moveEnemies(st);
     expect(enemy.intent).toBe('zone');
     expect(lastLog(st, 'LOG-TELE-ZONE')).toBeTruthy();
 
-    st.player.braceTurns = 2;
     const hp = st.player.hp;
     const { x, y } = enemy;
     moveEnemies(st);

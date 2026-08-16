@@ -269,7 +269,7 @@ describe('turn economy', () => {
     // Adjacent, so the shoulder can still break the set.
     expect(contextHint(st)).toBe('UI-HINT-TELE-REACH');
 
-    // Out of reach, the answer is brace or ground instead.
+    // Out of reach, leave the painted tiles or kill it instead.
     en.x = Math.min(st.width - 2, st.player.x + 2);
     st.visible[en.y]![en.x] = true;
     expect(contextHint(st)).toBe('UI-HINT-TELE');

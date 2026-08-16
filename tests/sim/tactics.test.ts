@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction } from '../../src/sim/actions';
 import { hasBeamLine, moveEnemies, triggerOverwatch } from '../../src/sim/ai';
-import { enemyAttack } from '../../src/sim/combat';
 import { leaveContamination, tickContamination } from '../../src/sim/contamination';
 import { useSelected } from '../../src/sim/inventory';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
@@ -105,20 +104,6 @@ describe('Iteration 2 player tactics', () => {
     expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('floor');
     expect(st.inventory).toHaveLength(0);
     expect(lastLog(st, 'LOG-USE-SEALANT')).toBeTruthy();
-  });
-
-  it('brace raises defense for the following enemy phase', () => {
-    const st = combatArena();
-    st.player.armor = 0;
-    st.player.def = 0;
-    st.player.hp = 30;
-    st.player.maxHp = 30;
-    st.enemies = [];
-    applyAction(st, { type: 'brace' });
-    expect(st.player.braceTurns).toBe(1);
-    const hp = st.player.hp;
-    enemyAttack(st, makeEnemy({ kind: 'mite', atk: 6 }), 0);
-    expect(st.player.hp).toBe(hp - 4);
   });
 
   it('walking away from an adjacent enemy costs no bus', () => {
