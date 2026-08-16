@@ -36,6 +36,9 @@ const COMBAT: SfxId[] = [
   'scuttle',
 ];
 
+/** Band-limited noise reads quiet — multiply before bus gain. */
+const VOICE = 3.2;
+
 class SfxBus {
   private noiseBuf: AudioBuffer | null = null;
 
@@ -56,6 +59,8 @@ class SfxBus {
     const ctx = audioBus.ensure();
     if (ctx.state === 'suspended') void ctx.resume();
     if (COMBAT.includes(id)) audioBus.duckAmbient();
+    // Beds bury noise one-shots — always clear a pocket for SFX.
+    audioBus.duckMusic(id === 'ui' || id === 'move' || id === 'scuttle' ? 140 : 280);
     this.render(ctx, id);
   }
 
@@ -244,7 +249,7 @@ class SfxBus {
     bp.Q.value = opts.Q;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol, 0.0002), t0 + opts.attack);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + opts.attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
     src.connect(bp);
     bp.connect(g);
@@ -270,7 +275,7 @@ class SfxBus {
     lp.type = 'lowpass';
     lp.frequency.value = 180;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol, 0.0002), t0 + 0.008);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + 0.008);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
     osc.connect(lp);
     lp.connect(g);
@@ -294,7 +299,7 @@ class SfxBus {
     lp.frequency.value = 320;
     const attack = Math.min(0.08, opts.dur * 0.25);
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol, 0.0002), t0 + attack);
+    g.gain.exponentialRampToValueAtTime(Math.max(opts.vol * VOICE, 0.0002), t0 + attack);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
     osc.connect(lp);
     lp.connect(g);
