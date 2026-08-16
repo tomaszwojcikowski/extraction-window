@@ -82,11 +82,26 @@ function lerpTint(a: number, b: number, t: number): number {
   );
 }
 
-/** Presentation bloom gain — duct swallows, plains lifts, ash chokes. */
+/** Presentation bloom gain — scrub scatters, brine reflects, ash chokes, duct swallows. */
 function biomeBloomGain(sectorId: SectorId): number {
   const a = BIOME_AMBIENT[sectorId].ambient;
-  // Map 0.17–0.44 → ~0.62–0.9 — softer than full-gain additive chalk.
-  return 0.48 + a * 0.95;
+  // Wider spread than linear ambient alone so tint-off sectors still diverge.
+  let gain = 0.4 + a * 1.12;
+  if (sectorId === 'plains' || sectorId === 'canopy' || sectorId === 'ridge') {
+    // Scrub scatter — soft extra spill under open / littered canopy.
+    gain *= 1.1;
+  }
+  if (sectorId === 'brine' || sectorId === 'flood' || sectorId === 'reef') {
+    // Standing water throws spill farther (cool reflection).
+    gain *= 1.08;
+  }
+  if (sectorId === 'ash' || sectorId === 'approach') {
+    gain *= 0.8;
+  }
+  if (sectorId === 'duct') {
+    gain *= 0.68;
+  }
+  return Math.min(1.18, Math.max(0.42, gain));
 }
 
 /**
@@ -677,9 +692,15 @@ export class LightView {
     const floorTint = BIOME_FLOOR_TINT[st.sectorId];
     const ambientTint = biome.tint;
     const reflect =
-      st.sectorId === 'brine' || st.sectorId === 'flood' || st.sectorId === 'reef' ? 1.14 : 1;
+      st.sectorId === 'brine' || st.sectorId === 'flood' || st.sectorId === 'reef' ? 1.24 : 1;
+    const scatter =
+      st.sectorId === 'plains' || st.sectorId === 'canopy' || st.sectorId === 'ridge' ? 1.06 : 1;
     const choke =
-      st.sectorId === 'ash' || st.sectorId === 'approach' || st.sectorId === 'duct' ? 0.88 : 1;
+      st.sectorId === 'duct'
+        ? 0.76
+        : st.sectorId === 'ash' || st.sectorId === 'approach'
+          ? 0.82
+          : 1;
     this.ensureSourceEnergy(st, sources);
     if (this.alphaGrid.length !== st.height) {
       this.alphaGrid = Array.from({ length: st.height }, () => new Array<number>(st.width).fill(0));
@@ -730,7 +751,12 @@ export class LightView {
           tint = multiplyTint(tint, colorAcc, Math.min(0.55, colorPull * 0.48));
         }
         if (brightness < SHADOW_THRESHOLD) {
-          const wash = st.sectorId === 'ash' || st.sectorId === 'approach' ? 0.55 : 0.45;
+          const wash =
+            st.sectorId === 'duct'
+              ? 0.62
+              : st.sectorId === 'ash' || st.sectorId === 'approach'
+                ? 0.58
+                : 0.45;
           tint = multiplyTint(tint, Theme.shadowWash, wash * (1 - brightness / SHADOW_THRESHOLD));
         }
         // Gentler lift — lit floor stays warm metal, not chalk-white.
@@ -742,7 +768,10 @@ export class LightView {
 
         const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.04;
         // Softer response curve: dark stays readable, bright doesn't punch.
-        const alpha = Math.min(1, (0.2 + 0.78 * Math.pow(brightness, 0.85)) * occlusion * choke);
+        const alpha = Math.min(
+          1,
+          (0.2 + 0.78 * Math.pow(brightness, 0.85)) * occlusion * choke * scatter,
+        );
         if (paint) {
           img.setTint(tint);
           img.setAlpha(alpha);
