@@ -1662,30 +1662,63 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Capped procedural dust/ion motes; rebuilt so no particle survives outside FOV. */
+  /** Biome-native field motes — ecology in the air, rebuilt each tick inside FOV. */
   private drawFieldMotes(): void {
     const st = this.state;
     this.fieldMotes.clear();
     let count = 0;
-    const maxMotes = 44;
+    const maxMotes = 52;
+    const sector = st.sectorId;
+
     for (let y = 0; y < st.height && count < maxMotes; y++) {
       for (let x = 0; x < st.width && count < maxMotes; x++) {
-        if (!st.visible[y]?.[x] || tileBrightness(st, x, y) < 0.28) continue;
+        if (!st.visible[y]?.[x] || tileBrightness(st, x, y) < 0.22) continue;
         const hash = (x * 73856093) ^ (y * 19349663) ^ (st.seed * 83492791);
-        if (Math.abs(hash) % 7 !== this.animFrame % 4) continue;
-        const ion = (Math.abs(hash >> 4) + this.animFrame) % 5 === 0;
-        const ox = 5 + (Math.abs(hash >> 7) % Math.max(1, TILE_DRAW - 10));
-        const oy =
-          5 +
-          ((Math.abs(hash >> 13) + this.animFrame * (ion ? 3 : 1)) %
-            Math.max(1, TILE_DRAW - 10));
-        this.fieldMotes.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.5 : 0.28);
-        this.fieldMotes.fillRect(
-          x * TILE_DRAW + ox,
-          y * TILE_DRAW + oy,
-          ion ? 2 : 1,
-          ion ? 2 : 1,
-        );
+        // Density gate — denser in ash/duct/brine, sparse on open shelf.
+        const dens =
+          sector === 'ash' || sector === 'duct' || sector === 'brine' || sector === 'flood'
+            ? 5
+            : sector === 'canopy' || sector === 'reef'
+              ? 6
+              : 8;
+        if (Math.abs(hash) % dens !== this.animFrame % Math.min(4, dens)) continue;
+
+        const ox = 4 + (Math.abs(hash >> 7) % Math.max(1, TILE_DRAW - 8));
+        let oy =
+          4 +
+          ((Math.abs(hash >> 13) + this.animFrame) % Math.max(1, TILE_DRAW - 8));
+        const px = x * TILE_DRAW + ox;
+        const py = y * TILE_DRAW + oy;
+
+        if (sector === 'ash' || sector === 'approach') {
+          // Fallout grit drifting down.
+          oy = (oy + this.animFrame * 2) % Math.max(1, TILE_DRAW - 6);
+          this.fieldMotes.fillStyle(Theme.arc, 0.35);
+          this.fieldMotes.fillRect(px, y * TILE_DRAW + oy, 1, 2);
+        } else if (sector === 'brine' || sector === 'flood' || sector === 'reef') {
+          // Cool mist beads.
+          this.fieldMotes.fillStyle(Theme.biolum, 0.4);
+          this.fieldMotes.fillRect(px, py, 2, 1);
+          if ((hash & 3) === 0) {
+            this.fieldMotes.fillStyle(Theme.biolumDeep, 0.35);
+            this.fieldMotes.fillRect(px + 1, py + 2, 1, 1);
+          }
+        } else if (sector === 'duct' || sector === 'spire' || sector === 'vault') {
+          // Steam / conduit vapour rising.
+          oy = (TILE_DRAW - 6 - ((oy + this.animFrame) % Math.max(1, TILE_DRAW - 6))) | 0;
+          this.fieldMotes.fillStyle(Theme.inkDim, 0.32);
+          this.fieldMotes.fillRect(px, y * TILE_DRAW + oy, 1, 3);
+        } else if (sector === 'canopy') {
+          // Pollen / leaf flecks.
+          this.fieldMotes.fillStyle(Theme.safe, 0.38);
+          this.fieldMotes.fillRect(px, py, 2, 1);
+          this.fieldMotes.fillRect(px + 1, py + 1, 1, 1);
+        } else {
+          // Open shelf grit + rare biolum mote.
+          const ion = (Math.abs(hash >> 4) + this.animFrame) % 6 === 0;
+          this.fieldMotes.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.45 : 0.26);
+          this.fieldMotes.fillRect(px, py, ion ? 2 : 1, ion ? 2 : 1);
+        }
         count += 1;
       }
     }

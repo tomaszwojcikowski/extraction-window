@@ -19,19 +19,19 @@ export type LightSource = FieldLightSource & { color: number };
 
 const MAX_SOURCES = 12;
 
-/** Additive washes per pool — larger, softer shells so spill feathers out. */
-const POOL_SCALES = [1.12, 0.7, 0.38] as const;
+/** Additive washes per pool — uneven shells so spill feathers, not onion rings. */
+const POOL_SCALES = [1.22, 0.88, 0.55, 0.32] as const;
 /** Relative alpha per wash (outer → body) — muted so pools aren't chalky. */
-const POOL_ALPHA = [0.12, 0.22, 0.34] as const;
+const POOL_ALPHA = [0.1, 0.16, 0.26, 0.38] as const;
 
 function poolSeed(x: number, y: number, radius: number): number {
   return ((Math.floor(x * 17) ^ Math.floor(y * 31) ^ Math.floor(radius * 10)) >>> 0) || 1;
 }
 
-/** Deterministic ±~10% radius wobble so pools aren't rotationally perfect. */
+/** Deterministic ±~14% radius wobble so pools aren't rotationally perfect. */
 function rayWobble(i: number, seed: number): number {
   const n = ((i * 1103515245 + seed * 12345) >>> 0) % 1000;
-  return 0.9 + (n / 1000) * 0.2;
+  return 0.86 + (n / 1000) * 0.28;
 }
 
 function multiplyTint(base: number, light: number, amount: number): number {
@@ -456,9 +456,12 @@ export class LightView {
       }
 
       if (isSconce) {
-        const core = Math.max(3, TILE_DRAW * 0.14 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.32);
+        // Fixture spill — short bright tongue from the mount, still ray-clipped.
+        const core = Math.max(3, TILE_DRAW * 0.16 * gain);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.38);
         this.lightsGfx.fillCircle(wx, wy, core);
+        this.lightsGfx.fillStyle(s.color, aCore * 0.18);
+        this.lightsGfx.fillCircle(wx, wy, core * 1.7);
       } else if (personal) {
         const core = Math.max(4, TILE_DRAW * 0.16 * gain);
         this.lightsGfx.fillStyle(s.color, aCore * 0.28);
@@ -683,13 +686,19 @@ export class LightView {
     return { colorAcc, colorPull };
   }
 
-  /** Blocking neighbours — cheap ambient occlusion where floor meets wall. */
+  /** Blocking neighbours — ambient occlusion where floor meets mass (incl. diagonals). */
   private contactOcclusion(st: GameState, x: number, y: number): number {
     let blocked = 0;
-    if (st.tiles[y - 1]?.[x]?.transparent === false) blocked++;
-    if (st.tiles[y + 1]?.[x]?.transparent === false) blocked++;
-    if (st.tiles[y]?.[x - 1]?.transparent === false) blocked++;
-    if (st.tiles[y]?.[x + 1]?.transparent === false) blocked++;
+    const solid = (tx: number, ty: number): boolean =>
+      st.tiles[ty]?.[tx]?.transparent === false;
+    if (solid(x, y - 1)) blocked += 1.0;
+    if (solid(x, y + 1)) blocked += 1.0;
+    if (solid(x - 1, y)) blocked += 1.0;
+    if (solid(x + 1, y)) blocked += 1.0;
+    if (solid(x - 1, y - 1)) blocked += 0.45;
+    if (solid(x + 1, y - 1)) blocked += 0.45;
+    if (solid(x - 1, y + 1)) blocked += 0.45;
+    if (solid(x + 1, y + 1)) blocked += 0.45;
     return blocked;
   }
 
@@ -790,7 +799,7 @@ export class LightView {
           tint = multiplyTint(tint, LightTemp.scan, 0.12);
         }
 
-        const occlusion = 1 - this.contactOcclusion(st, x, y) * 0.04;
+        const occlusion = 1 - Math.min(0.55, this.contactOcclusion(st, x, y) * 0.07);
         // Softer response curve: dark stays readable, bright doesn't punch.
         const alpha = Math.min(
           1,
