@@ -42,3 +42,13 @@ export function computeShearPressure(st: GameState): ShearPressureSpec {
   }
   return { value, state: 'Breaching', accent: Theme.arcWhite, windowDrain, busDrain, drainingLeg };
 }
+
+/**
+ * Center chrome for Charged+ — names pressure and which clock is leading,
+ * without inventing a third resource called "Shear".
+ */
+export function shearReadoutLabel(spec: ShearPressureSpec): string {
+  const leg =
+    spec.drainingLeg === 'storm' ? 'WINDOW' : spec.drainingLeg === 'bus' ? 'BUS' : 'BOTH';
+  return `PRESSURE  ${spec.state.toUpperCase()}  ·  ${leg}`;
+}

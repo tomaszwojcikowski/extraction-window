@@ -31,7 +31,11 @@ export function drawKitOverlay(
           const num = i < 9 ? `${i + 1}` : ' ';
           const name = lore(ITEMS[slot.kind].loreName);
           const desc = lore(ITEMS[slot.kind].loreDesc);
-          const worn = isWorn(st, slot.kind) ? ' [E]' : ITEMS[slot.kind].equipSlot ? ' [e]' : '';
+          const worn = isWorn(st, slot.kind)
+            ? ` · ${lore('UI-WORN')}`
+            : ITEMS[slot.kind].equipSlot
+              ? ` · ${lore('UI-WEARABLE')}`
+              : '';
           const sel = i === st.ui.selectedSlot ? `  — ${desc}` : '';
           return `${mark} ${num}  ${name}${worn} ×${slot.count}${sel}`;
         });

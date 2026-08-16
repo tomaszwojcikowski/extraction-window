@@ -12,6 +12,7 @@ import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { isQuietStance } from '../../sim/mechanics/quietStance';
+import { FAVOR_LABEL } from '../../sim/extractFavor';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 
@@ -150,7 +151,7 @@ export class HudView {
       st.player.energy / st.player.maxEnergy,
       Theme.tape,
       Theme.arc,
-      shearPrimary ? '' : lore('UI-BAR-EPS'),
+      lore('UI-BAR-EPS'),
       `${st.player.energy}/${st.player.maxEnergy}`,
       opts,
       secondaryCss,
@@ -165,7 +166,7 @@ export class HudView {
       st.stormTurns / STORM_TURNS,
       Theme.arc,
       Theme.rust,
-      shearPrimary ? '' : lore('UI-BAR-WINDOW'),
+      lore('UI-BAR-WINDOW'),
       `${st.stormTurns}`,
       opts,
       secondaryCss,
@@ -200,7 +201,7 @@ export class HudView {
     const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
     const jam = st.player.jammerTurns > 0 ? `Quiet ${st.player.jammerTurns}` : '';
     const quiet = isQuietStance(st) && st.player.jammerTurns <= 0 ? 'Quiet' : '';
-    const mapper = st.player.mapperTurns > 0 ? `Map ${st.player.mapperTurns}` : '';
+    const mapper = st.player.mapperTurns > 0 ? `Hatch ${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
       ? lore('UI-ALLY-DRONE')
@@ -215,9 +216,9 @@ export class HudView {
     const sysBits = [probe, stim, filter, jam, quiet, mapper, desync, allyRole].filter(
       Boolean,
     );
-    const systems = sysBits.length ? ` / ${sysBits.join(' / ')}` : '';
+    const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
     const statuses = statusHud(st.player.statuses);
-    const statusLine = statuses ? ` / ${statuses}` : '';
+    const statusLine = statuses ? ` · ${statuses}` : '';
     const atkBonus =
       toolAtkBonus(st) +
       (st.player.probeTurns > 0 ? 2 : 0) +
@@ -227,7 +228,7 @@ export class HudView {
     // rides the existing DEF readout rather than earning a badge of its own.
     const flanked = flankPenalty(st);
     const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
-    const emPart = shearPrimary ? '' : ` / ${lore('UI-EM')} ${st.emStress}`;
+    const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
     const meta = `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
@@ -259,23 +260,21 @@ export class HudView {
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
     if (st.extractFavor) {
-      const label = {
-        storm_shelter: '+15 WINDOW',
-        hazard_pass: 'HAZARD PASS',
-        pattern_fail_safe: 'PATTERN BUFFER',
-      }[st.extractFavor.kind];
-      badgeSpecs.push({ label, fill: Theme.safe });
+      badgeSpecs.push({ label: FAVOR_LABEL[st.extractFavor.kind], fill: Theme.safe });
     }
     if (st.handshake?.active) {
       badgeSpecs.push({
-        label: `HS ${st.handshake.progress}/2`,
+        label: `${lore('UI-HANDSHAKE')} ${st.handshake.progress}/2`,
         fill: Theme.safe,
       });
     }
     if (st.uplink?.active) {
-      badgeSpecs.push({ label: `UPLINK ${st.uplink.progress}/3`, fill: Theme.arc });
+      badgeSpecs.push({
+        label: `${lore('UI-UPLINK')} ${st.uplink.progress}/3`,
+        fill: Theme.arc,
+      });
       if (st.uplink.progress === 1 && !st.uplink.repelled) {
-        badgeSpecs.push({ label: 'WAVE NEXT', fill: Theme.rust });
+        badgeSpecs.push({ label: lore('UI-WAVE-NEXT'), fill: Theme.rust });
       }
     }
     if (st.codexPages > 0) {
@@ -299,7 +298,7 @@ export class HudView {
       const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag;
       this.setReadout(
         r.questText,
-        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} → ${questLine.favor}  ${questLine.index}/${questLine.total}`,
+        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} · ${questLine.favor}  ${questLine.index}/${questLine.total}`,
         opts,
         questColor,
         'quest',
@@ -327,7 +326,7 @@ export class HudView {
     const urgencyColor = stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim;
     this.setReadout(
       r.urgencyText,
-      hasUrgency ? urgencyParts.join('  /  ') : '',
+      hasUrgency ? urgencyParts.join(' · ') : '',
       opts,
       urgencyColor,
       'urgency',

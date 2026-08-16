@@ -132,7 +132,7 @@ function unequipSlot(state: GameState, slot: EquipSlotId): void {
 }
 
 /**
- * Toggle or swap worn gear. Equipped pieces stay in inventory (marked [E] in kit).
+ * Toggle or swap worn gear. Equipped pieces stay in inventory (kit marks them worn).
  * Use again on the worn piece to stow.
  */
 export function tryEquipItem(state: GameState, kind: ItemKind): void {

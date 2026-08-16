@@ -57,7 +57,7 @@ import { drawFovVignette } from '../game/views/MapView';
 import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
-import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
+import { computeShearPressure, shearReadoutLabel, type ShearPressureState } from '../game/presenters/ShearPressure';
 import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters/WakeTells';
 import { pressureRevealAt } from '../game/presenters/PressureReveal';
 
@@ -633,7 +633,7 @@ export class GameScene extends Phaser.Scene {
       this.shearPlate.setVisible(false);
     } else {
       this.shearReadout.setVisible(true);
-      this.shearReadout.setText(`SHEAR  ${shear.state.toUpperCase()}`);
+      this.shearReadout.setText(shearReadoutLabel(shear));
       this.shearReadout.setColor(
         shear.state === 'Breaching'
           ? ThemeCss.arcWhite

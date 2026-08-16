@@ -6,7 +6,7 @@ import {
   wouldNoticeEnemy,
 } from '../../src/game/presenters/WakeTells';
 import { pressureRevealAt } from '../../src/game/presenters/PressureReveal';
-import { computeShearPressure } from '../../src/game/presenters/ShearPressure';
+import { computeShearPressure, shearReadoutLabel } from '../../src/game/presenters/ShearPressure';
 import type { Enemy, GameState } from '../../src/sim/types';
 
 function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState {
@@ -116,6 +116,20 @@ describe('computeShearPressure', () => {
       stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
     );
     expect(spec.drainingLeg).toBe('bus');
+  });
+});
+
+describe('shearReadoutLabel', () => {
+  it('names pressure and the leading clock, not a Shear resource', () => {
+    const busLed = computeShearPressure(
+      stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
+    );
+    expect(shearReadoutLabel(busLed)).toBe(`PRESSURE  ${busLed.state.toUpperCase()}  ·  BUS`);
+
+    const windowLed = computeShearPressure(
+      stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
+    );
+    expect(shearReadoutLabel(windowLed)).toBe('PRESSURE  BREACHING  ·  WINDOW');
   });
 });
 

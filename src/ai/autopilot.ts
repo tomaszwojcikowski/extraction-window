@@ -236,8 +236,7 @@ export function chooseAction(
       return { type: 'use' };
     }
   }
-  // Coolant used to flush EM as a side effect of every bus top-up. With the two
-  // jobs split, the flush has to be a deliberate call — make it before EM-HIGH.
+  // Sealant Foam flushes EM — use it before EM-HIGH, not as a bus top-up side effect.
   if (state.emStress >= EM_WARN + 10) {
     const sealIdx = state.inventory.findIndex((s) => s.kind === 'sealant');
     if (sealIdx >= 0) {
