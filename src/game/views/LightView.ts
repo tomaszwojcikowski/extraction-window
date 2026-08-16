@@ -59,6 +59,19 @@ function blendTowardWhite(base: number, amount: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
+/** Pull chroma toward grey — survey memory keeps silhouette, loses hue. */
+function desaturate(base: number, amount: number): number {
+  const br = (base >> 16) & 0xff;
+  const bg = (base >> 8) & 0xff;
+  const bb = base & 0xff;
+  const t = Math.min(1, Math.max(0, amount));
+  const gray = Math.round(br * 0.3 + bg * 0.59 + bb * 0.11);
+  const r = Math.round(br + (gray - br) * t);
+  const g = Math.round(bg + (gray - bg) * t);
+  const b = Math.round(bb + (gray - bb) * t);
+  return (r << 16) | (g << 8) | b;
+}
+
 function withColor(s: FieldLightSource, fallback = LightTemp.lamp): LightSource {
   return { ...s, color: s.color ?? fallback };
 }
@@ -724,12 +737,23 @@ export class LightView {
 
         if (paint) img.setTexture(tileKey(kind, x, y));
         if (!st.visible[y]![x]) {
+          // Explored-unseen: keep the remembered tile art, wash it cold and flat.
+          const isTerrain =
+            kind === 'floor' ||
+            kind === 'scrub' ||
+            kind === 'scrub_nest' ||
+            kind === 'rubble' ||
+            kind === 'tripwire';
+          let mem = isTerrain ? floorTint : 0xffffff;
+          mem = desaturate(mem, 0.72);
+          mem = multiplyTint(mem, Theme.memoryWash, 0.42);
+          mem = multiplyTint(mem, Theme.memory, 0.28);
           if (paint) {
-            img.setTint(Theme.memory);
-            img.setAlpha(0.26);
+            img.setTint(mem);
+            img.setAlpha(0.4);
           }
-          this.alphaGrid[y]![x] = 0.26;
-          this.tintGrid[y]![x] = Theme.memory;
+          this.alphaGrid[y]![x] = 0.4;
+          this.tintGrid[y]![x] = mem;
           continue;
         }
 

@@ -94,9 +94,14 @@ function drawFog(g: G, T: number): void {
 }
 
 function drawMemory(g: G, T: number): void {
+  // Fallback chalk wash — runtime memory prefers real tile + desat tint.
   g.clear();
-  ink(g, 0x000000);
+  ink(g, Theme.memory);
   g.fillRect(0, 0, T, T);
+  ink(g, Theme.memoryWash, 0.35);
+  for (let i = 0; i < 12; i++) {
+    g.fillRect(4 + ((i * 11) % 36), 5 + ((i * 7) % 34), i % 3 === 0 ? 2 : 1, 1);
+  }
 }
 
 export function registerTextures(scene: Phaser.Scene): void {
