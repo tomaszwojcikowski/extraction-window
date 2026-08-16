@@ -145,9 +145,12 @@ Equipment (two slots — tool and armor): Combat Knife, Pulse Baton; EVA Harness
 
 Statuses: stun, bleed, plasma burn, expose — tick on turns; HUD glyphs beside vitals.
 
-## Field audio (synthesized)
+## Field audio
 
-Away gear listens to local EM / ion stress. Ambient drones shift by biome; melodic beds tint to the sector and densify as the shear window closes. Nearby hostiles trigger a combat danger layer. `m` mutes all buses. Procedural Web Audio only.
+Away gear listens to local EM / ion stress. **Sampled ambient music beds**
+(`public/audio/music/`) crossfade by mood (title / field / storm / combat / end).
+Procedural biome drones stay as a quiet underlayer. One-shot SFX are synthesized.
+`m` mutes all buses. See `public/audio/music/CREDITS.md` for track provenance.
 
 ---
 

@@ -11,8 +11,8 @@ class AudioBus {
   private muted = false;
   private readonly channelLevels: Record<BusChannel, number> = {
     sfx: 0.42,
-    ambient: 0.26,
-    music: 0.22,
+    ambient: 0.12,
+    music: 0.38,
   };
   private duckUntil = 0;
 

@@ -172,6 +172,7 @@ export class TitleScene extends Phaser.Scene {
 
   private onKey(e: KeyboardEvent): void {
     sfx.unlock();
+    music.prefetch();
     if (e.key === 'm' || e.key === 'M') {
       sfx.toggleMute();
       this.muteText.setText(this.muteLabel());

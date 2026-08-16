@@ -1,4 +1,5 @@
 import { applyAction, type Action, type GameState } from '../../sim';
+import { music } from '../../audio/music';
 import { sfx } from '../../audio/sfx';
 import {
   actionFromKey,
@@ -50,6 +51,7 @@ export type InputHost = {
  */
 export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   sfx.unlock();
+  music.prefetch();
 
   // While tweens run, accept mute + one-deep gameplay queue — drop other input.
   if (host.isAnimating()) {
