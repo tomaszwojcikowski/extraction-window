@@ -41,6 +41,59 @@ function signedDelta(n: number): string {
   return n > 0 ? `+${n}` : `${n}`;
 }
 
+/** Prefer a short combat subject · damage pair from formatCombatDetail. */
+function shortCombatDetail(detail: string | undefined): string | null {
+  if (!detail) return null;
+  return detail.split(' · ').slice(0, 2).join(' · ');
+}
+
+function labelMentions(labels: ReadonlyArray<ActionFloat>, re: RegExp): boolean {
+  return labels.some((l) => re.test(l.label));
+}
+
+/**
+ * When a vitals channel moved but no log float already named it, print the
+ * delta — catches hazard Bus tax, armor-only hits with odd logs, etc.
+ */
+export function appendMissingVitalsFloats(
+  labels: ActionFloat[],
+  vitals?: ActionFloatVitals,
+): ActionFloat[] {
+  if (!vitals) return labels;
+  const extra: ActionFloat[] = [];
+  if (
+    vitals.hpDelta !== undefined &&
+    vitals.hpDelta !== 0 &&
+    !labelMentions(labels, /\bHP\b|BLEED/)
+  ) {
+    extra.push({
+      label: `HP ${signedDelta(vitals.hpDelta)}`,
+      color: vitals.hpDelta > 0 ? ThemeCss.safe : ThemeCss.rust,
+    });
+  }
+  if (
+    vitals.armorDelta !== undefined &&
+    vitals.armorDelta !== 0 &&
+    !labelMentions(labels, /\bSHIELD\b/)
+  ) {
+    extra.push({
+      label: `SHIELD ${signedDelta(vitals.armorDelta)}`,
+      color: ThemeCss.inkBright,
+    });
+  }
+  if (
+    vitals.energyDelta !== undefined &&
+    vitals.energyDelta !== 0 &&
+    !labelMentions(labels, /\bBUS\b|BURN/)
+  ) {
+    extra.push({
+      label: `BUS ${signedDelta(vitals.energyDelta)}`,
+      color: vitals.energyDelta > 0 ? ThemeCss.tape : ThemeCss.arc,
+    });
+  }
+  return extra.length ? [...labels, ...extra] : labels;
+}
+
 /**
  * Select short, causal labels for recent events. The log remains the complete
  * history; these are deliberately transient presentation cues.
@@ -54,20 +107,85 @@ export function collectActionFloatLabels(
     let next: ActionFloat | null = null;
     switch (log.loreId) {
       case 'LOG-ARMOR-ABSORB':
-        next = { label: `SHIELD ${log.detail ?? 'HIT'}`, color: ThemeCss.inkBright };
+        next = {
+          label:
+            vitals?.armorDelta !== undefined && vitals.armorDelta !== 0
+              ? `SHIELD ${signedDelta(vitals.armorDelta)}`
+              : `SHIELD ${log.detail ?? 'HIT'}`,
+          color: ThemeCss.inkBright,
+        };
         break;
       case 'LOG-DRAIN':
-        next = { label: `BUS ${log.detail ?? 'DRAIN'}`, color: ThemeCss.arc };
+      case 'LOG-BEAM-FIRE':
+        next = {
+          label: log.detail
+            ? `BUS ${shortCombatDetail(log.detail) ?? log.detail}`
+            : vitals?.energyDelta !== undefined && vitals.energyDelta !== 0
+              ? `BUS ${signedDelta(vitals.energyDelta)}`
+              : 'BUS DRAIN',
+          color: ThemeCss.arc,
+        };
+        break;
+      case 'LOG-HAZARD':
+      case 'LOG-BRINE-POOL':
+      case 'LOG-CONTAMINATION':
+      case 'LOG-ION-PULSE':
+      case 'LOG-UPLINK-WAVE-HIT':
+        next = {
+          label:
+            vitals?.energyDelta !== undefined && vitals.energyDelta !== 0
+              ? `BUS ${signedDelta(vitals.energyDelta)}`
+              : log.detail
+                ? `BUS ${shortCombatDetail(log.detail) ?? log.detail}`
+                : 'BUS DRAIN',
+          color: ThemeCss.arc,
+        };
         break;
       case 'LOG-HURT':
-      case 'LOG-STATUS-BLEED':
         next = {
           label:
             vitals?.hpDelta !== undefined && vitals.hpDelta < 0
               ? `HP ${signedDelta(vitals.hpDelta)}`
-              : 'HP HIT',
+              : shortCombatDetail(log.detail)
+                ? `HP · ${shortCombatDetail(log.detail)}`
+                : 'HP HIT',
           color: ThemeCss.rust,
         };
+        break;
+      case 'LOG-HIT':
+        next = {
+          label: shortCombatDetail(log.detail)
+            ? `HIT · ${shortCombatDetail(log.detail)}`
+            : 'HIT',
+          color: ThemeCss.flag,
+        };
+        break;
+      case 'LOG-STATUS-BLEED':
+        next = {
+          label:
+            vitals?.hpDelta !== undefined && vitals.hpDelta < 0
+              ? `BLEED · HP ${signedDelta(vitals.hpDelta)}`
+              : 'BLEED',
+          color: ThemeCss.rust,
+        };
+        break;
+      case 'LOG-STATUS-ION':
+        next = {
+          label:
+            vitals?.energyDelta !== undefined && vitals.energyDelta < 0
+              ? `BURN · BUS ${signedDelta(vitals.energyDelta)}`
+              : 'BURN · BUS',
+          color: ThemeCss.arc,
+        };
+        break;
+      case 'LOG-STATUS-BLIND':
+        next = { label: 'BLIND', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-STATUS-JAM':
+        next = { label: 'JAMMED', color: ThemeCss.rust };
+        break;
+      case 'LOG-STATUS-MARKED':
+        next = { label: 'MARKED', color: ThemeCss.tape };
         break;
       case 'LOG-USE-MED':
         next = {
@@ -93,6 +211,15 @@ export function collectActionFloatLabels(
             vitals?.armorDelta !== undefined && vitals.armorDelta > 0
               ? `SHIELD ${signedDelta(vitals.armorDelta)}`
               : 'SHIELD CHARGE',
+          color: ThemeCss.inkBright,
+        };
+        break;
+      case 'LOG-ARMOR-RESEAT':
+        next = {
+          label:
+            vitals?.armorDelta !== undefined && vitals.armorDelta > 0
+              ? `SHIELD ${signedDelta(vitals.armorDelta)}`
+              : 'SHIELD RESTORED',
           color: ThemeCss.inkBright,
         };
         break;
@@ -185,18 +312,21 @@ export function collectActionFloatLabels(
     }
     if (next) labels.push(next);
   }
-  return labels;
+  return appendMissingVitalsFloats(labels, vitals);
 }
 
-/** Cap at two floats — last events win so the newest consequence stays visible. */
+/** Cap floats so the newest consequences stay readable without stacking a wall. */
+const ACTION_FLOAT_CAP = 3;
+
+/** Cap at three floats — last events win so the newest consequence stays visible. */
 export function actionFloatLabels(
   logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
   vitals?: ActionFloatVitals,
 ): ActionFloat[] {
-  return collectActionFloatLabels(logs, vitals).slice(-2);
+  return collectActionFloatLabels(logs, vitals).slice(-ACTION_FLOAT_CAP);
 }
 
-/** Log floats plus flank edge, still capped at two. */
+/** Log floats plus flank edge, still capped. */
 export function causalActionFloats(
   logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
   opts?: {
@@ -210,7 +340,7 @@ export function causalActionFloats(
     const flank = flankEdgeFloat(opts.flankBefore, opts.flankAfter);
     if (flank) labels.push(flank);
   }
-  return labels.slice(-2);
+  return labels.slice(-ACTION_FLOAT_CAP);
 }
 
 /**
