@@ -184,6 +184,39 @@ describe('hint line resolver', () => {
   });
 });
 
+describe('sealed hatch coaching', () => {
+  function placeAdjacentSealed(st: ReturnType<typeof createGame>): void {
+    st.enemies = [];
+    st.npcs = [];
+    st.items = [];
+    const sx = Math.min(st.width - 2, st.player.x + 1);
+    st.tiles[st.player.y]![sx] = { kind: 'sealed', walkable: false, transparent: true };
+  }
+
+  it('names Sealant Foam press sequence when foam is in kit', () => {
+    const st = createGame(42);
+    placeAdjacentSealed(st);
+    st.inventory = [{ kind: 'sealant', count: 1 }];
+    expect(contextHint(st)).toBe('UI-HINT-SEALED-SEALANT');
+  });
+
+  it('names pry when Pulse Baton is equipped', () => {
+    const st = createGame(42);
+    placeAdjacentSealed(st);
+    st.inventory = [];
+    st.player.equip.tool = 'pulse_baton';
+    expect(contextHint(st)).toBe('UI-HINT-PRY-SEALED');
+  });
+
+  it('lists what is needed when neither tool is ready', () => {
+    const st = createGame(42);
+    placeAdjacentSealed(st);
+    st.inventory = [];
+    st.player.equip.tool = null;
+    expect(contextHint(st)).toBe('UI-HINT-SEALED');
+  });
+});
+
 describe('kit use failure clarity', () => {
   it('logs LOG-USE-EMPTY on empty kit', () => {
     const st = createGame(42);

@@ -60,7 +60,7 @@ export const sealedHatchMechanic: Mechanic = {
   contextHint(state: GameState): LoreId | null {
     if (!adjacentSealed(state)) return null;
     if (state.player.equip.tool === 'pulse_baton') return 'UI-HINT-PRY-SEALED';
-    if (hasItem(state, 'sealant')) return 'UI-HINT-USE-SEALANT';
+    if (hasItem(state, 'sealant')) return 'UI-HINT-SEALED-SEALANT';
     return 'UI-HINT-SEALED';
   },
 };

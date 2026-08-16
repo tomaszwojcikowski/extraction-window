@@ -72,6 +72,10 @@ export const LORE = {
     'Optional procedures refund Window. Kit (med / Bus / Shield) keeps you alive.\n' +
     'On the skiff: > start · . hold · Power Cell skips a hold · Flare blocks the wave.\n' +
     '\n' +
+    'HATCHES\n' +
+    'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
+    'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then >.\n' +
+    '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
     'EM high — Sealant Foam flushes residue',
@@ -97,8 +101,11 @@ export const LORE = {
   'UI-HINT-USE-ARMOR': 'Shield low — use a Shield Charge (u)',
   'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Medpatch, press u',
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
-  'UI-HINT-SEALED': 'Sealed hatch — Sealant Foam or baton pry (>)',
-  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry open with baton (>)',
+  'UI-HINT-SEALED':
+    'Sealed hatch (optional) — need Sealant Foam or equip Pulse Baton',
+  'UI-HINT-SEALED-SEALANT':
+    'Sealed hatch — i, select Sealant Foam, press u to open',
+  'UI-HINT-PRY-SEALED': 'Sealed hatch — press > to pry open (Pulse Baton equipped)',
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare softens the next pulse',
   'UI-HINT-FLARE': 'In the dark near hostiles — Flare lights the fight',
@@ -242,7 +249,7 @@ export const LORE = {
   'CODEX-FACT-TRIPWIRE':
     'Prior team strung wire across the approach. It still answers — and it tells the whole room.',
   'CODEX-FACT-SEALED':
-    'Hatch memo: pressure seals held. Whatever is behind them cost the last crew their window.',
+    'Sealed hatch: optional. Stand beside it — Sealant Foam (u) or equip Pulse Baton and press >. Opens a short cache (+Window).',
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
@@ -285,7 +292,8 @@ export const LORE = {
   'ITEM-BLADE': 'Combat Knife',
   'ITEM-BLADE-DESC': 'Equip for +1 ATK. Use again to stow.',
   'ITEM-BATON': 'Pulse Baton',
-  'ITEM-BATON-DESC': 'Equip for +1 ATK; melee stuns 1 turn. Use again to stow.',
+  'ITEM-BATON-DESC':
+    'Equip for +1 ATK; melee stuns 1 turn. Adjacent sealed hatch: press > to pry. Use again to stow.',
   'ITEM-HARNESS': 'EVA Harness',
   'ITEM-HARNESS-DESC': 'Equip for +6 max Shield (refills). Use again to stow.',
   'ITEM-VEST': 'Ablative Vest',
@@ -294,7 +302,7 @@ export const LORE = {
   'ITEM-DART-DESC': 'u then a direction: hit a lit target within 3 — damage and expose.',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC':
-    'Clears hazard/vent underfoot, or flushes EM if used on clean ground.',
+    'Clears ion/vent/brine underfoot, flushes EM, or opens an adjacent sealed hatch (u).',
   'ITEM-MAPPER': 'Nav Ping',
   'ITEM-MAPPER-DESC': 'Marks the sector hatch for 40 turns (even through fog).',
   'ITEM-SALVAGE': 'Unknown Salvage',
@@ -408,9 +416,9 @@ export const LORE = {
   'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
-  'LOG-SEALED-OPEN': 'Sealant cracks the sealed hatch — floor cleared.',
-  'LOG-SEALED-PRY': 'Pulse baton pries the sealed hatch open.',
-  'LOG-SEALED-CACHE': 'Hatch cache recovered — Window refunded.',
+  'LOG-SEALED-OPEN': 'Sealant Foam opens the sealed hatch — path clear.',
+  'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
+  'LOG-SEALED-CACHE': 'Sealed hatch cache — +6 Window.',
   'LOG-TRIPWIRE': 'Tripwire snaps — EM spike; nearby fauna alerted.',
   'LOG-BRINE-POOL': 'Brine pool drains the Bus.',
   'LOG-SCRUB-NEST': 'Scrub nest stirs — mite emerges.',
@@ -458,9 +466,9 @@ export const LORE = {
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Contingency Cache holds spare Nav Lattice.',
   'LOG-NEED-KEY': 'Beacon sealed. Splice Key required.',
-  'LOG-EXIT-NEED-KEY': 'Hatch sealed — recover the Splice Key in this wreck first.',
-  'LOG-EXIT-NEED-CORE': 'Hatch sealed — recover the Nav Lattice before vault will release you.',
-  'LOG-EXIT-NEED-BEACON': 'Hatch sealed — authorize the beacon console first.',
+  'LOG-EXIT-NEED-KEY': 'Hatch locked — recover the Splice Key in this wreck first.',
+  'LOG-EXIT-NEED-CORE': 'Hatch locked — recover the Nav Lattice before vault will release you.',
+  'LOG-EXIT-NEED-BEACON': 'Hatch locked — authorize the beacon console first.',
   'LOG-GOT-CORE': 'Nav Lattice secured from Contingency Cache. Return to Drop Skiff Ridge pad.',
   'LOG-NEED-CORE': 'Drop skiff refuses lock — Nav Lattice missing.',
   'LOG-SECTOR': 'Sector boundary crossed.',

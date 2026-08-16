@@ -84,8 +84,9 @@ export function contextHint(st: GameState): LoreId | null {
     return t?.kind === 'sealed';
   });
   if (adjSealed && hasItem(st, 'sealant')) {
-    return 'UI-HINT-USE-SEALANT';
+    return 'UI-HINT-SEALED-SEALANT';
   }
+  if (adjSealed) return 'UI-HINT-SEALED';
   // Soft-shadow ambush tip is one-shot via drill / light badge — do not re-hog here.
   if (
     inShadow(st, st.player.x, st.player.y) &&
