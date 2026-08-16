@@ -5,7 +5,7 @@ import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
-import { pillarCoachHint } from './PillarCoach';
+import { pillarCoachHint, braceShoveCoachHint } from './PillarCoach';
 import { shouldShowPeekTeach } from './PeekTeach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
@@ -31,6 +31,9 @@ export function contextHint(st: GameState): LoreId | null {
     );
     return inReach ? 'UI-HINT-TELE-REACH' : 'UI-HINT-TELE';
   }
+
+  const braceShove = braceShoveCoachHint(st);
+  if (braceShove) return braceShove;
 
   if (fromMechanic) return fromMechanic;
 
@@ -107,7 +110,7 @@ export function contextHint(st: GameState): LoreId | null {
   }
   if (
     st.player.energy <= st.player.maxEnergy * 0.35 &&
-    (hasItem(st, 'energy') || hasItem(st, 'energy') || hasItem(st, 'energy'))
+    hasItem(st, 'energy')
   ) {
     return 'UI-HINT-USE-ENERGY';
   }

@@ -120,6 +120,12 @@ export function collectActionFloatLabels(
       case 'LOG-EXTRACT':
         next = { label: 'EXTRACT LOCK', color: ThemeCss.safe };
         break;
+      case 'LOG-PICKUP':
+        next = {
+          label: log.detail ? `STOWED · ${log.detail}` : 'STOWED',
+          color: ThemeCss.safe,
+        };
+        break;
       case 'LOG-TELE-POUNCE':
       case 'LOG-BOSS-TELE':
         next = { label: 'POUNCE INCOMING', color: ThemeCss.rust };

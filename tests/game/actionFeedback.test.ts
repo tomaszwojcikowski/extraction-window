@@ -65,6 +65,12 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats kit pickup with item name', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-PICKUP', detail: 'Field Hypo' }])).toEqual([
+      { label: 'STOWED · Field Hypo', color: ThemeCss.safe },
+    ]);
+  });
+
   it('floats handshake and uplink progress', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-HS-TICK', detail: '1/2' }])).toEqual([
       { label: 'HANDSHAKE 1/2', color: ThemeCss.safe },

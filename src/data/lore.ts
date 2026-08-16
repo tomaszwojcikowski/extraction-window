@@ -74,7 +74,7 @@ export const LORE = {
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
-    'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then >.\n' +
+    'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
@@ -88,10 +88,10 @@ export const LORE = {
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',
   'UI-HINT-EXIT-NEED-KEY': 'Hatch locked — get the Splice Key in this wreck first',
   'UI-HINT-EXIT-NEED-CORE': 'Hatch locked — get the Nav Lattice first',
-  'UI-HINT-EXIT-NEED-BEACON': 'Hatch locked — finish the beacon (>) first',
-  'UI-HINT-BEACON': 'Beacon — press > to start the handshake',
+  'UI-HINT-EXIT-NEED-BEACON': 'Hatch locked — finish the beacon (Enter / Space / >) first',
+  'UI-HINT-BEACON': 'Beacon — press Enter / Space / > to start the handshake',
   'UI-HINT-HANDSHAKE': 'Handshake running — stay on the beacon',
-  'UI-HINT-SHUTTLE': 'Drop skiff — press > while carrying the Nav Lattice',
+  'UI-HINT-SHUTTLE': 'Drop skiff — press Enter / Space / > while carrying the Nav Lattice',
   'UI-HINT-UPLINK-HOLD': 'Uplink live — . to hold · Power Cell skips · Flare blocks the wave',
   'UI-HINT-DESYNC': 'Pattern desync — use a Power Cell before the skiff will lock',
   'UI-HINT-ITEM': 'Kit on this tile — step onto it to pick it up',
@@ -105,7 +105,8 @@ export const LORE = {
     'Sealed hatch (optional) — need Sealant Foam or equip Pulse Baton',
   'UI-HINT-SEALED-SEALANT':
     'Sealed hatch — i, select Sealant Foam, press u to open',
-  'UI-HINT-PRY-SEALED': 'Sealed hatch — press > to pry open (Pulse Baton equipped)',
+  'UI-HINT-PRY-SEALED':
+    'Sealed hatch — press Enter / Space / > to pry open (Pulse Baton equipped)',
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare softens the next pulse',
   'UI-HINT-FLARE': 'In the dark near hostiles — Flare lights the fight',
@@ -118,7 +119,9 @@ export const LORE = {
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':
     'Two+ hostiles touching you — DEF drops; brace or fight in a doorway',
-  'UI-HINT-SKILL': 'Choose a field skill — press 1 or 2 (move locked until then)',
+  'UI-HINT-BRACE-SHOVE': 'Hostile beside you — b brace (DEF) · f shove (push)',
+  'UI-HINT-SKILL':
+    'Choose a field skill — press 1 or 2 (effects above; move locked until then)',
   'UI-HINT-TELE': 'Windup painted — b brace, leave those tiles, or kill it',
   'UI-HINT-TELE-REACH': 'Windup next to you — f shove breaks it',
   'UI-HINT-SHOVE-DIR': 'Choose shove direction — press a direction key',
@@ -127,8 +130,8 @@ export const LORE = {
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
-  'UI-HINT-QUEST': 'Optional procedure here — press >',
-  'UI-HINT-NPC': 'Field contact — press > to talk',
+  'UI-HINT-QUEST': 'Optional procedure here — press Enter / Space / >',
+  'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
   'UI-HINT-COMMIT': 'Shift+direction peeks notice · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
     'Lines from your feet show who notices you — Shift+direction peeks before you step',
@@ -143,12 +146,13 @@ export const LORE = {
   'UI-TUT-FIGHT': 'Walk into them to hit · b brace · f shove if adjacent · Flare if dark',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, brace, shove if adjacent, or go south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Bus then tick)',
-  'UI-TUT-EXIT': 'On hatch — step on it or press Enter to start the drop (Window and Bus go live)',
+  'UI-TUT-EXIT':
+    'On hatch — step on it or press Enter / Space to start the drop (Window and Bus go live)',
   'UI-QUEST-TRACK': 'OPTIONAL',
-  'UI-RQ-SALVAGE': 'Salvage console — press >',
-  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press >',
+  'UI-RQ-SALVAGE': 'Salvage console — press Enter / Space / >',
+  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press Enter / Space / >',
   'UI-RQ-VENT-A': 'Vent — use Sealant Foam here',
-  'UI-RQ-VENT-B': 'Seal console — press > to finish',
+  'UI-RQ-VENT-B': 'Seal console — press Enter / Space / > to finish',
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
   'UI-PAGES-HINT': 'p or Esc — close',
@@ -249,7 +253,7 @@ export const LORE = {
   'CODEX-FACT-TRIPWIRE':
     'Prior team strung wire across the approach. It still answers — and it tells the whole room.',
   'CODEX-FACT-SEALED':
-    'Sealed hatch: optional. Stand beside it — Sealant Foam (u) or equip Pulse Baton and press >. Opens a short cache (+Window).',
+    'Sealed hatch: optional. Stand beside it — Sealant Foam (u) or equip Pulse Baton and Enter / Space / >. Opens a short cache (+Window).',
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
@@ -279,7 +283,7 @@ export const LORE = {
   'ITEM-ENERGY-DESC':
     '+32 Bus. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
-  'ITEM-PROBE-DESC': '+3 ATK and +3 vision for a short time.',
+  'ITEM-PROBE-DESC': '+2 ATK and +4 vision for 25 turns.',
   'ITEM-STIM': 'Combat Stim',
   'ITEM-STIM-DESC': '+3 ATK for 15 turns.',
   'ITEM-PLATE': 'Shield Charge',
@@ -293,7 +297,7 @@ export const LORE = {
   'ITEM-BLADE-DESC': 'Equip for +1 ATK. Use again to stow.',
   'ITEM-BATON': 'Pulse Baton',
   'ITEM-BATON-DESC':
-    'Equip for +1 ATK; melee stuns 1 turn. Adjacent sealed hatch: press > to pry. Use again to stow.',
+    'Equip for +1 ATK; melee stuns 2 turns. Adjacent sealed hatch: Enter / Space / > to pry. Use again to stow.',
   'ITEM-HARNESS': 'EVA Harness',
   'ITEM-HARNESS-DESC': 'Equip for +6 max Shield (refills). Use again to stow.',
   'ITEM-VEST': 'Ablative Vest',
@@ -368,7 +372,7 @@ export const LORE = {
   'LOG-TUT-DONE':
     'Window and Bus are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',
-  'LOG-WAIT': 'Holding position. Bus ticks.',
+  'LOG-WAIT': 'Holding position.',
   'LOG-HIT': 'You strike',
   'LOG-KILL': 'Hostile down',
   'LOG-HURT': 'You take a hit',
@@ -381,7 +385,7 @@ export const LORE = {
   'LOG-NPC-ENSIGN': 'Ensign transfers kit scrap and escort protocol.',
   'LOG-NPC-TECH': 'Tech reboots a Halcyon probe for temporary assist.',
   'LOG-NPC-SURVEY': 'Survey contact shares bearing notes — optional favor open.',
-  'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with > or step around.',
+  'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with Enter / Space / > or step around.',
   'LOG-AGENDA-WANT-MED': 'Ensign needs a Field Hypo spare — hail again when you have one.',
   'LOG-AGENDA-WANT-SEALANT': 'Tech wants Sealant Foam or a Filter — hail again when ready.',
   'LOG-AGENDA-WANT-SURVEY': 'Contact wants a Nav Ping — hail again when you have one.',
@@ -417,11 +421,11 @@ export const LORE = {
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
   'LOG-SEALED-BLOCK':
-    'Sealed hatch — optional. Sealant Foam (u) or equip Pulse Baton then >.',
+    'Sealed hatch — optional. Sealant Foam (u) or equip Pulse Baton then Enter / Space / >.',
   'LOG-SEALED-NEED-TOOL':
-    'Sealed hatch — Sealant Foam (i then u) or equip Pulse Baton then >.',
+    'Sealed hatch — Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.',
   'LOG-INTERACT-MISS':
-    'Not on a hatch, beacon, or pad — stand on it, then Enter / >.',
+    'Not on a hatch, beacon, or pad — stand on it, then Enter / Space / >.',
   'LOG-SEALED-OPEN': 'Sealant Foam opens the sealed hatch — path clear.',
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache — +6 Window.',
@@ -553,8 +557,8 @@ export const LORE = {
   'LOG-XP': 'Survey proficiency gained.',
   'LOG-LEVEL': 'Survey proficiency advanced.',
   'LOG-SKILL': 'Field skill unlocked.',
-  'LOG-SKILL-PICK': 'Choose a field skill — press 1 or 2.',
-  'LOG-SKILL-NEED': 'Skill choice pending — press 1 or 2.',
+  'LOG-SKILL-PICK': 'Choose a field skill — press 1 or 2 (read the effects on the urgency line).',
+  'LOG-SKILL-NEED': 'Skill choice pending — press 1 or 2 (effects on the urgency line).',
   'LOG-EM-WARN': 'EM contamination rising — fauna growing agitated.',
   'LOG-EM-HIGH':
     'EM contamination critical — Bus tax and wider aggro. Sealant Foam flushes residue.',

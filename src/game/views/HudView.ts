@@ -197,7 +197,7 @@ export class HudView {
     const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
     const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
-    const mapper = st.player.mapperTurns > 0 ? `Hatch ${st.player.mapperTurns}` : '';
+    const mapper = st.player.mapperTurns > 0 ? `Nav Ping ${st.player.mapperTurns}` : '';
     const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
       ? lore('UI-ALLY-DRONE')
@@ -313,7 +313,12 @@ export class HudView {
     }
     if (st.skillPick) {
       urgencyParts.push(
-        `${lore('UI-SKILL-PICK')}: 1 ${lore(SKILLS[st.skillPick[0]!].loreName)}${st.skillPick[1] ? `  2 ${lore(SKILLS[st.skillPick[1]!].loreName)}` : ''}`,
+        st.skillPick
+          .map(
+            (id, i) =>
+              `${i + 1} ${lore(SKILLS[id]!.loreName)} — ${lore(SKILLS[id]!.loreDesc)}`,
+          )
+          .join(' · '),
       );
     }
     if (!shearPrimary && st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);

@@ -1,11 +1,31 @@
 import type { LoreId } from '../../data/lore';
 import { flankPenalty } from '../../sim/combat';
 import type { GameState } from '../../sim/types';
+import { peekTeachEligible } from './PeekTeach';
 
 function once(state: GameState, id: string): boolean {
   if (state.scriptedFired[id]) return false;
   state.scriptedFired[id] = true;
   return true;
+}
+
+/**
+ * One-shot brace/shove tip on first adjacent hostile after the Shift-peek
+ * window — drill already teaches b/f via UI-TUT-FIGHT.
+ */
+export function braceShoveCoachHint(st: GameState): LoreId | null {
+  if (st.tutorialActive) return null;
+  // Peek tip owns early first-contact; flank tip owns encirclement.
+  if (peekTeachEligible(st)) return null;
+  if (flankPenalty(st) > 0) return null;
+  const adjacent = st.enemies.some(
+    (e) =>
+      e.alive && Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
+  );
+  if (adjacent && once(st, 'teach_brace_shove')) {
+    return 'UI-HINT-BRACE-SHOVE';
+  }
+  return null;
 }
 
 /**
