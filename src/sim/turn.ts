@@ -15,6 +15,7 @@ import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
 import { consumeExtractFavor } from './extractFavor';
+import { spendWindow, windowDrainAt, windowDrainRate } from './window';
 import type { Enemy, GameState } from './types';
 
 function trySpawnNestMite(state: GameState): void {
@@ -79,10 +80,7 @@ export function checkLose(state: GameState): void {
 /** Storm tick + FOV after a sector load (no enemy moves / energy drip). */
 export function finishSectorTransition(state: GameState): void {
   state.turn += 1;
-  state.stormTurns -= 1;
-  if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
-    pushLog(state, 'LOG-STORM-WARN');
-  }
+  spendWindow(state, 1);
   refreshVision(state);
   syncObjectiveFlags(state);
   checkLose(state);
@@ -153,17 +151,7 @@ function tickEnvironment(state: GameState): void {
   }
 
   const sector = getSector(state.sectorIndex);
-  state.stormTurns -= 1;
-  if (state.stormTurns === 200 || state.stormTurns === 80 || state.stormTurns === 50 || state.stormTurns === 20) {
-    pushLog(state, 'LOG-STORM-WARN');
-  }
-  // Late-sector storm tax — duct onward (index 8+); vault+ every turn
-  if (sector.index >= 8 && state.turn % 2 === 0) {
-    state.stormTurns -= 1;
-  }
-  if (sector.index >= 11) {
-    state.stormTurns -= 1;
-  }
+  spendWindow(state, windowDrainAt(sector.index, state.turn));
 
   const filter = state.player.filterTurns > 0;
   if (state.turn % 5 === 0) {
@@ -206,6 +194,10 @@ export function endPlayerTurn(state: GameState): void {
 
 export function advanceSector(state: GameState): boolean {
   if (state.sectorIndex >= CAMPAIGN_LENGTH - 1) return false;
+  const nextIndex = state.sectorIndex + 1;
+  // Crossing into a taxed sector shortens the run far more than the counter
+  // suggests, so it is called out at the hatch rather than discovered later.
+  const taxRises = windowDrainRate(nextIndex) > windowDrainRate(state.sectorIndex);
   gainXp(state, XP_SECTOR, 'sector');
   // Plating is a per-sector shield, not a one-time buffer for the whole run:
   // you re-seat it in the hatch. Plate stays the mid-sector repair.
@@ -213,6 +205,7 @@ export function advanceSector(state: GameState): boolean {
     state.player.armor = state.player.maxArmor;
     pushLog(state, 'LOG-ARMOR-RESEAT');
   }
-  loadSector(state, state.sectorIndex + 1);
+  loadSector(state, nextIndex);
+  if (taxRises) pushLog(state, 'LOG-WINDOW-TAX');
   return true;
 }

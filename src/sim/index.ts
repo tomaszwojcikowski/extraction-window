@@ -31,6 +31,7 @@ export {
   SHADOW_THRESHOLD,
 } from './light';
 export { refreshVision } from './vision';
+export { windowDrainRate, windowTurnsLeft } from './window';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';

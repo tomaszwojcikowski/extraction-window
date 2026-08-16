@@ -528,6 +528,7 @@ export const LORE = {
   'LOG-UPLINK-FLARE': 'Flare ready for the incoming pressure wave.',
   'LOG-UPLINK-INTERRUPT': 'Uplink interrupted — left the ridge pad.',
   'LOG-STORM-WARN': 'Window low — extract soon.',
+  'LOG-WINDOW-TAX': 'Shear pressure deepens — the Window burns faster from here.',
   'LOG-WINDUP-KILL': 'Windup interrupted — salvage bonus.',
   'LOG-USE-MAPPER': 'Nav ping — hatch bearing locked.',
   'LOG-RQ-SALVAGE': 'Salvage procedure complete — kit and PADD page recovered.',

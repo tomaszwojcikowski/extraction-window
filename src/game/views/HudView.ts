@@ -2,7 +2,13 @@ import Phaser from 'phaser';
 import { lore } from '../../data/lore';
 import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
-import { describeObjective, stickyMilestone, type GameState } from '../../sim';
+import {
+  describeObjective,
+  stickyMilestone,
+  windowDrainRate,
+  windowTurnsLeft,
+  type GameState,
+} from '../../sim';
 import { statusHud } from '../../sim/status';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
@@ -115,6 +121,12 @@ export class HudView {
     const shearPrimary = (opts.shear?.value ?? 0) > 0.12;
     const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.inkDim;
     const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.ink;
+    // The Window counts in units but is planned in turns, and late sectors spend
+    // up to 2.5 units a turn. Print the turns and name the rate that bought them.
+    const windowLeft = windowTurnsLeft(st);
+    const windowRate = windowDrainRate(st.sectorIndex);
+    const windowCaption =
+      windowRate > 1 ? `${lore('UI-BAR-WINDOW')} x${windowRate}` : lore('UI-BAR-WINDOW');
     this.placeBarSlot(
       0,
       14,
@@ -165,8 +177,8 @@ export class HudView {
       st.stormTurns / STORM_TURNS,
       Theme.arc,
       Theme.rust,
-      lore('UI-BAR-WINDOW'),
-      `${st.stormTurns}`,
+      windowCaption,
+      `${windowLeft}`,
       opts,
       secondaryCss,
       secondaryValCss,
@@ -191,7 +203,7 @@ export class HudView {
       100,
       barH,
       // When Shear owns the center readout, skip Window bar pulse (one channel).
-      !shearPrimary && st.stormTurns <= 80,
+      !shearPrimary && windowLeft <= 80,
       opts,
     );
 
@@ -320,7 +332,7 @@ export class HudView {
       r.questText.setVisible(false);
     }
 
-    const stormHot = st.stormTurns <= 80;
+    const stormHot = windowLeft <= 80;
     const urgencyParts: string[] = [];
     const skillLock = Boolean(st.skillPick);
     // Skill pick owns the line — Window/EM wait until the fork is chosen.
@@ -335,7 +347,7 @@ export class HudView {
       );
     } else {
       if (stormHot && !shearPrimary) {
-        urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+        urgencyParts.push(`${lore('HAZ-STORM')}  (${windowLeft})`);
       }
       if (st.emStress >= EM_HIGH) {
         urgencyParts.push(`EM CRIT ${st.emStress}`);
