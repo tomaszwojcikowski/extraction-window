@@ -54,14 +54,14 @@ describe('tickPlayerStatusEffects', () => {
     addStatus(st.player, 'ion_burn', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.energy).toBe(27);
-    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-3 Bus · 27 left');
+    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-3 Power · 27 left');
 
     st.log = [];
     st.player.filterTurns = 2;
     addStatus(st.player, 'ion_burn', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.energy).toBe(26);
-    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-1 Bus · 26 left');
+    expect(lastLog(st, 'LOG-STATUS-ION')?.detail).toBe('-1 Power · 26 left');
   });
 });
 

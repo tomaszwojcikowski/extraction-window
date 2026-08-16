@@ -96,7 +96,7 @@ class SheetScene extends Phaser.Scene {
         draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.22, Theme.safe, Theme.rust),
       },
       {
-        label: 'Bus mid',
+        label: 'Power mid',
         draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.55, Theme.tape, Theme.arc),
       },
       {

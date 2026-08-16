@@ -43,7 +43,7 @@ export function tickPlayerStatusEffects(state: GameState): void {
     if (hasStatus(p, 'ion_burn')) {
       const drain = p.filterTurns > 0 ? 1 : 3;
       p.energy -= drain;
-      pushLog(state, 'LOG-STATUS-ION', `-${drain} Bus · ${Math.max(0, p.energy)} left`);
+      pushLog(state, 'LOG-STATUS-ION', `-${drain} Power · ${Math.max(0, p.energy)} left`);
     }
   }
   tickStatuses(p);

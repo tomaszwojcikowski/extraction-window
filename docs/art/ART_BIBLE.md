@@ -40,7 +40,7 @@ Nothing here is a starship bridge console. Nothing is a default sci-fi glow: eve
 | Ecology | `biolum`, `biolumDeep` | Fauna and vent bioluminescence: cold, wet, green-cyan |
 | Failure | `rust` | Brine corrosion — damage, failure |
 | Player marks | `flag` | Surveyor's flagging tape — objectives the player cares about |
-| Stored charge | `tape` | Reflective hazard tape — the Bus |
+| Stored charge | `tape` | Reflective hazard tape — Power |
 | Window closing | `arc`, `arcWhite` | Shear heat, then arc blow-out at Breaching |
 | Contamination | `scanWash` | Sallow EM-HIGH wash — sickly, unwelcome |
 | Safe / standby | `safe` | Hatch standby, all-clear |
@@ -133,7 +133,7 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 
 Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 
-- Bars: HP · Shield · Bus · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
+- Bars: HP · Shield · Power · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
 - **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.

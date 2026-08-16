@@ -23,7 +23,7 @@ For Meridian Shelf, the aesthetics we care about most:
 
 | Aesthetic | What it should feel like here |
 |-----------|-------------------------------|
-| **Challenge** | Two clocks (Window + Bus) and fauna that punish careless light/wake |
+| **Challenge** | Two clocks (Window + Power) and fauna that punish careless light/wake |
 | **Discovery** | Reading the shelf — wake lines, LIT/SHADOW, sealed routes |
 | **Tension / drama** | Shear pressure rising; hatch → real drop; uplink hold |
 | **Expression** | Kit loadout, light vs loud fights, skill forks — not towns/meta unlocks |
@@ -59,7 +59,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Bars: HP · Shield · Bus · Window · XP.
+- Bars: HP · Shield · Power · Window · XP.
 - Meta line: combat/EM + *active* timers/statuses — not permanent equip dump.
 - Shear Calm: don’t triple-signal (center + badge + bar). Escalate chrome when Charged+.
 - Drill `?` = short page; full manual after the hatch.
@@ -78,12 +78,12 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 | Prefer | Avoid mixing in UI |
 |--------|-------------------|
-| Bus | Energy / EPS / life-support (help may gloss once) |
+| Power | Energy / Bus / EPS (help may gloss once as kit charge) |
 | Window | Storm / shear storm (Shear = pressure *presentation*) |
 | Shield | Armor / SHD |
 | Nav Lattice / Splice Key | CORE / KEY only as short badges |
 
-**Anti-pattern:** Help says “energy,” bar says “BUS,” log says “life-support.”
+**Anti-pattern:** Help says “energy,” bar says “POWER,” log says “life-support.”
 
 ---
 
@@ -97,7 +97,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 - Drill bay: move → light → hazard → kit → wake → fight → hatch.
 - One-shot coaches (peek teach) that **yield** to tele/vitals/drill priority.
-- Visible ion tax before abstract Bus lectures.
+- Visible ion tax before abstract Power lectures.
 - Autopilot WR band still validates that teaching didn’t soft-lock the run.
 
 **Anti-pattern:** Wall-of-text `?` before the player has a body on the map; hints that never yield to combat urgency.
@@ -165,7 +165,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - Move (which is also how you pick things up), wait, brace, shove, kit/use, interact (`>` / Enter), peek.
 - Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail).
 - Help lists verbs first; “why gather” second.
-- A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Bus. Shove passes both: it answers a windup already in reach, and on open floor it is a wasted turn.
+- A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Power. Shove passes both: it answers a windup already in reach, and on open floor it is a wasted turn.
 
 **Anti-pattern:** New letter per niche action when `u` / `>` / kit already covers it.
 
@@ -179,7 +179,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Telegraphs for windups; wake lines for notice; Bus/Window numbers stay visible.
+- Telegraphs for windups; wake lines for notice; Power/Window numbers stay visible.
 - Ambush-in-shadow is a *known* SHADOW trade, taught in drill + badge.
 - Legal win path stays causal (Key → handshake → Lattice → pad) — feel polish never softens assertLegalWin.
 

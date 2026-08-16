@@ -20,7 +20,7 @@ describe('ActionFeedback', () => {
       ]),
     ).toEqual([
       { label: 'SHIELD Rift Mite -2', color: ThemeCss.inkBright },
-      { label: 'BUS Duct Drone -2E', color: ThemeCss.arc },
+      { label: 'POWER Duct Drone -2E', color: ThemeCss.arc },
       { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag },
     ]);
   });
@@ -47,7 +47,7 @@ describe('ActionFeedback', () => {
       { label: 'HP +22', color: ThemeCss.safe },
     ]);
     expect(actionFloatLabels([{ loreId: 'LOG-USE-ENERGY' }], { energyDelta: 32 })).toEqual([
-      { label: 'BUS +32', color: ThemeCss.tape },
+      { label: 'POWER +32', color: ThemeCss.tape },
     ]);
     expect(actionFloatLabels([{ loreId: 'LOG-USE-PLATE' }], { armorDelta: 12 })).toEqual([
       { label: 'SHIELD +12', color: ThemeCss.inkBright },
@@ -60,7 +60,7 @@ describe('ActionFeedback', () => {
     ).toEqual([{ label: 'BLEED · HP -2', color: ThemeCss.rust }]);
     expect(
       actionFloatLabels([{ loreId: 'LOG-STATUS-ION' }], { energyDelta: -3 }),
-    ).toEqual([{ label: 'BURN · BUS -3', color: ThemeCss.arc }]);
+    ).toEqual([{ label: 'BURN · POWER -3', color: ThemeCss.arc }]);
     expect(actionFloatLabels([{ loreId: 'LOG-STATUS-BLIND' }])).toEqual([
       { label: 'BLIND', color: ThemeCss.inkDim },
     ]);
@@ -75,7 +75,7 @@ describe('ActionFeedback', () => {
     ).toEqual([{ label: 'HIT · Scar Mite · -5', color: ThemeCss.flag }]);
     expect(
       actionFloatLabels([{ loreId: 'LOG-HAZARD' }], { energyDelta: -2 }),
-    ).toEqual([{ label: 'BUS -2', color: ThemeCss.arc }]);
+    ).toEqual([{ label: 'POWER -2', color: ThemeCss.arc }]);
   });
 
   it('backfills vitals floats when logs omit a channel', () => {
@@ -87,7 +87,7 @@ describe('ActionFeedback', () => {
     ).toEqual([
       { label: 'STOWED · Power Cell', color: ThemeCss.safe },
       { label: 'HP -2', color: ThemeCss.rust },
-      { label: 'BUS -1', color: ThemeCss.arc },
+      { label: 'POWER -1', color: ThemeCss.arc },
     ]);
   });
 

@@ -1,6 +1,6 @@
 # Extraction Window
 
-Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before **Window** (turns) or **Bus** (kit power) hits zero.
+Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before **Window** (turns) or **Power** (kit charge) hits zero.
 
 Prior team’s field array never shut down cleanly; residual scan pressure keeps the ecology hot. Your field lamp and flares are how you work the Shelf.
 

@@ -25,7 +25,7 @@ export function pillarCoachHint(st: GameState): LoreId | null {
 
   if (!st.scriptedFired.tut_welcome) return null;
 
-  // Window + Bus go live the moment the drill hatch closes.
+  // Window + Power go live the moment the drill hatch closes.
   if (st.sectorIndex === 0 && st.turn <= 4 && once(st, 'teach_clocks')) {
     return 'UI-HINT-CLOCKS';
   }

@@ -6,18 +6,18 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Nav Lattice → drop skiff · Window and Bus both kill you',
+  'UI-BRIEF': 'Nav Lattice → drop skiff · Window and Power both kill you',
   'UI-BRIEF-TUT': 'Drill first — then Splice Key → beacon → Nav Lattice → skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
   'UI-SEED-HINT': '← → adjust · R randomize',
   'UI-HP': 'Vitals',
-  'UI-ENERGY': 'Bus',
+  'UI-ENERGY': 'Power',
   'UI-WINDOW': 'Window',
   'UI-BAR-HP': 'HP',
   'UI-BAR-SHD': 'Shield',
-  'UI-BAR-EPS': 'Bus',
+  'UI-BAR-EPS': 'Power',
   'UI-BAR-WINDOW': 'Window',
   'UI-BAR-XP': 'XP',
   'UI-SECTOR': 'Sector',
@@ -32,13 +32,13 @@ export const LORE = {
   'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
     'TRAINING BAY\n' +
-    'Reach the east hatch. Window and Bus are paused here.\n' +
+    'Reach the east hatch. Window and Power are paused here.\n' +
     '\n' +
     'WASD — move · Shift+direction — peek who notices you\n' +
     '. — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
     '\n' +
-    'Yellow ion tiles drain Bus — Sealant (u) or take the south detour.\n' +
+    'Yellow ion tiles drain Power — Sealant (u) or take the south detour.\n' +
     'Lines from your feet = who notices you. Flare lights dark fights.\n' +
     '\n' +
     'Press ? after the hatch for the full manual.\n',
@@ -53,7 +53,7 @@ export const LORE = {
     '\n' +
     'TWO CLOCKS (both can kill you)\n' +
     'Window — turns left before the extract closes.\n' +
-    'Bus — kit power. Hazards, EM, and drip drain it. Empty Bus = lose.\n' +
+    'Power — kit charge. Hazards, EM, and drip drain it. Empty Power = lose.\n' +
     '\n' +
     'COMBAT\n' +
     'Walk into a hostile to hit it.\n' +
@@ -74,7 +74,7 @@ export const LORE = {
     'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
-    'HP · Shield · Bus · Window · XP\n' +
+    'HP · Shield · Power · Window · XP\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
@@ -94,7 +94,7 @@ export const LORE = {
   'UI-HINT-ITEM': 'Kit on this tile — step onto it to pick it up',
   'UI-HINT-AIM': 'Aim dart — press a direction toward a lit target within 3',
   'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
-  'UI-HINT-USE-ENERGY': 'Bus low — open kit (i), select Power Cell, press u',
+  'UI-HINT-USE-ENERGY': 'Power low — open kit (i), select Power Cell, press u',
   'UI-HINT-USE-ARMOR': 'Shield low — open kit (i), select Shield Charge, press u',
   'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
@@ -111,7 +111,7 @@ export const LORE = {
     'LIT safe · SHADOW ambush risk — Flare lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
-    'Window = turns left · Bus = kit power — either hitting 0 ends the run',
+    'Window = turns left · Power = kit charge — either hitting 0 ends the run',
   'UI-HINT-EXTRACT':
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':
@@ -135,14 +135,14 @@ export const LORE = {
     'LIT is a safe read · SHADOW invites ambush — Flare lights dark fights',
   'UI-TUT-KIT': 'i opens kit · u uses item — scan salvage · Flare = light',
   'UI-TUT-HAZARD':
-    'Ion tile drains Bus — step off, Sealant (u), or take the south detour',
+    'Ion tile drains Power — step off, Sealant (u), or take the south detour',
   'UI-TUT-WAKE':
     'Lines from your feet = who notices you · Shift+direction peeks the next tile',
   'UI-TUT-FIGHT': 'Walk into them to hit · Flare if dark',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Bus then tick)',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Power then tick)',
   'UI-TUT-EXIT':
-    'On hatch — step on it or press Enter / Space to start the drop (Window and Bus go live)',
+    'On hatch — step on it or press Enter / Space to start the drop (Window and Power go live)',
   'UI-QUEST-TRACK': 'OPTIONAL',
   'UI-RQ-SALVAGE': 'Salvage console — press Enter / Space / >',
   'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press Enter / Space / >',
@@ -176,8 +176,8 @@ export const LORE = {
   'UI-WIN-BODY': 'Nav lock restored. Halcyon confirms drop skiff pickup.',
   'UI-LOSE-HP': 'SURVEY OFFICER DOWN',
   'UI-LOSE-HP-BODY': 'HP reached 0 — fatal contact.',
-  'UI-LOSE-ENERGY': 'BUS FAILURE',
-  'UI-LOSE-ENERGY-BODY': 'Bus hit 0 — kit power gone.',
+  'UI-LOSE-ENERGY': 'POWER FAILURE',
+  'UI-LOSE-ENERGY-BODY': 'Power hit 0 — kit charge gone.',
   'UI-LOSE-STORM': 'WINDOW COLLAPSED',
   'UI-LOSE-STORM-BODY': 'Window hit 0 — the extract closed.',
   'UI-LOSE-STUCK': 'MISSION ABORT',
@@ -198,8 +198,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '→ Optional procedure',
-  'OBJ-TUT-HATCH': '→ East hatch (learn notice, Bus hazard, kit)',
-  'OBJ-TUT-BRIEF': 'Training — Window and Bus paused until you leave',
+  'OBJ-TUT-HATCH': '→ East hatch (learn notice, Power hazard, kit)',
+  'OBJ-TUT-BRIEF': 'Training — Window and Power paused until you leave',
   'HAZ-STORM': 'Window critical',
   'UI-CODEX': 'PADD',
 
@@ -212,7 +212,7 @@ export const LORE = {
   'SEC-RUIN': 'Crash Wreck Belt',
   'SEC-BEACON': 'Emergency Beacon',
   'SEC-TRENCH': 'Inland Fault Cut',
-  'SEC-DUCT': 'Bus Conduit Warren',
+  'SEC-DUCT': 'Power Conduit Warren',
   'SEC-ASH': 'Shear Ash Fields',
   'SEC-BRINE': 'Pulse Brine Flats',
   'SEC-VAULT': 'Contingency Cache',
@@ -234,7 +234,7 @@ export const LORE = {
   'CODEX-REEF':
     'Reef survey: pulse-crystal banks scatter array returns — hunters ride the pulse.',
   'CODEX-DUCT':
-    'Conduit memo: abandoned bus junctions still vent; duct drones patrol seal points.',
+    'Conduit memo: abandoned power junctions still vent; duct drones patrol seal points.',
   'CODEX-APPROACH':
     'Approach brief: Window pressure desyncs the Lattice — Power Cell before skiff lock.',
   'CODEX-GENERIC': 'PADD fragment recovered — Halcyon survey hand, incomplete.',
@@ -244,7 +244,7 @@ export const LORE = {
   'CODEX-FACT-BRINE-HUNTER':
     'Waterline note: pool glare hides the approach. Something patient works this flat — do not wade blind.',
   'CODEX-FACT-VENT-EM':
-    'Conduit note: venting under contamination doubles the bus bill. Seal it or hold your breath and move.',
+    'Conduit note: venting under contamination doubles the Power bill. Seal it or hold your breath and move.',
   'CODEX-FACT-TRIPWIRE':
     'Prior team strung wire across the approach. It still answers — and it tells the whole room.',
   'CODEX-FACT-SEALED':
@@ -256,13 +256,13 @@ export const LORE = {
   'CODEX-FACT-BRINE':
     'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
   'CODEX-FACT-VENT':
-    'Vent field: bus junctions still bleed here. Sealant pays for itself within a corridor.',
+    'Vent field: power junctions still bleed here. Sealant pays for itself within a corridor.',
   'CODEX-FACT-RUBBLE':
     'Collapse note: rubble reads as cover until it shifts. Prior hand lost a window to a wrong line.',
   'CODEX-HOLO':
     'Archive holo: prior survey noted Splice Key wreckage inland — Window clock is the real enemy.',
   'CODEX-ENSIGN':
-    'Stranded ensign: escort protocol armed — temporary ally expires when Bus fades.',
+    'Stranded ensign: escort protocol armed — temporary ally expires when Power fades.',
   'CODEX-TECH':
     'Field tech: Halcyon probe reboot successful — short combat assist only.',
   'CODEX-SURVEY':
@@ -276,7 +276,7 @@ export const LORE = {
   'ITEM-MED-DESC': 'Restore +22 HP and clear bleed.',
   'ITEM-ENERGY': 'Power Cell',
   'ITEM-ENERGY-DESC':
-    '+32 Bus. Also clears pattern desync and skips one skiff uplink hold.',
+    '+32 Power. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
   'ITEM-PROBE-DESC': '+2 ATK and +4 vision for 25 turns.',
   'ITEM-STIM': 'Combat Stim',
@@ -287,7 +287,7 @@ export const LORE = {
   'ITEM-FLARE-DESC':
     'Lights nearby tiles for 4 turns; damages and stuns adjacent foes; cancels overwatch; blocks the skiff pressure wave.',
   'ITEM-FILTER': 'Plasma Filter',
-  'ITEM-FILTER-DESC': 'Halves Bus drain from hazards and plasma hits (50 turns).',
+  'ITEM-FILTER-DESC': 'Halves Power drain from hazards and plasma hits (50 turns).',
   'ITEM-BLADE': 'Combat Knife',
   'ITEM-BLADE-DESC': 'Equip for +1 ATK. Use again to stow.',
   'ITEM-BATON': 'Pulse Baton',
@@ -343,7 +343,7 @@ export const LORE = {
   'ENEMY-SKITTER-NOTE': 'Fast ambush — opens wounds on contact.',
   'ENEMY-RIFT-NOTE': 'Holds range and pulses ion. Plating will not save you — leave the ring.',
   'ENEMY-REEF-NOTE': 'Crystal-bank ambush — plasma bite.',
-  'ENEMY-DUCT-NOTE': 'Bus junction machine — cuts a beam down the lane it faces.',
+  'ENEMY-DUCT-NOTE': 'Power junction machine — cuts a beam down the lane it faces.',
   'ENEMY-SERPENT-NOTE': 'Coils, then lunges one tile. Clear the ring or kill it.',
   'ENEMY-WRAITH-NOTE': 'Covers two tiles on the charge — stepping back will not break it.',
   'ENEMY-SENTINEL-NOTE': 'Arms overwatch on the tiles beside it — do not step in while it is locked.',
@@ -355,17 +355,17 @@ export const LORE = {
 
   // Logs
   'LOG-DROP':
-    'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Bus hits 0.',
+    'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Power hits 0.',
   'LOG-TUT-WELCOME':
-    'Drill bay — Window and Bus paused. Lines from your feet show notice; ion tiles drain Bus. East hatch starts the real drop.',
+    'Drill bay — Window and Power paused. Lines from your feet show notice; ion tiles drain Power. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
     'Lamp stops at walls. Badge: LIT safe · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
-    'Ion tile drains Bus — Sealant (u) or take the south detour.',
+    'Ion tile drains Power — Sealant (u) or take the south detour.',
   'LOG-TUT-WAKE':
     'Lines from your feet = who notices you. Shift+direction peeks the next tile (no turn).',
   'LOG-TUT-DONE':
-    'Window and Bus are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
+    'Window and Power are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',
   'LOG-WAIT': 'Holding position.',
   'LOG-HIT': 'You strike',
@@ -402,7 +402,7 @@ export const LORE = {
   'LOG-BOSS-DOWN': 'Campaign apex neutralized — kit and Window refunded.',
   'LOG-ELITE-DOWN': 'Elite down — salvage and Window refund.',
   'LOG-USE-MED': 'Field hypo administered.',
-  'LOG-USE-ENERGY': 'Power cell slotted into bus.',
+  'LOG-USE-ENERGY': 'Power cell slotted into the kit.',
   'LOG-USE-PROBE': 'Field array pulse active — ATK up.',
   'LOG-USE-STIM': 'Combat stim active — ATK surge.',
   'LOG-USE-PLATE': 'Shield charge bonded — pool repaired.',
@@ -425,7 +425,7 @@ export const LORE = {
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache — +6 Window.',
   'LOG-TRIPWIRE': 'Tripwire snaps — EM spike; nearby fauna alerted.',
-  'LOG-BRINE-POOL': 'Brine pool drains the Bus.',
+  'LOG-BRINE-POOL': 'Brine pool drains Power.',
   'LOG-SCRUB-NEST': 'Scrub nest stirs — mite emerges.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
@@ -433,7 +433,7 @@ export const LORE = {
   'LOG-USE-FAIL': 'No usable item selected.',
   'LOG-USE-EMPTY': 'Field kit empty — nothing to use.',
   'LOG-USE-QUEST': 'Objective item — not consumable (carry to beacon / drop skiff).',
-  'LOG-DRAIN': 'Bus siphoned',
+  'LOG-DRAIN': 'Power siphoned',
   'LOG-SPORE-BURST': 'Wash spore burst — power spike and burn.',
   'LOG-TELE-SWELL': 'Spore swelling — burst imminent.',
   'LOG-TELE-POUNCE': 'Hostile windup — one-tile lunge. Clear the ring or kill it.',
@@ -448,7 +448,7 @@ export const LORE = {
   'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
   'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
   'LOG-PUNISH': 'It has lost its footing — the strike goes in clean.',
-  'LOG-CONTAMINATION': 'Spore contamination tile tax drains the Bus.',
+  'LOG-CONTAMINATION': 'Spore contamination tile tax drains Power.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
   'LOG-STATUS-BLEED': 'Bleed tick',
@@ -473,7 +473,7 @@ export const LORE = {
   'LOG-SEC-PLAINS':
     'Relay Scar Flats. Drop burns still warm — scar mites graze residual array bleed on the flats.',
   'LOG-SEC-FLOOD':
-    'Shearwash Basin. Standing shear-water sheets the shelf — bus will feel every step; wash spores bloom in the wet EM.',
+    'Shearwash Basin. Standing shear-water sheets the shelf — Power will feel every step; wash spores bloom in the wet EM.',
   'LOG-SEC-CANOPY':
     'Shear Canopy. Dense EM scatter under the leaf decks — hunters stalk warm gear.',
   'LOG-SEC-REEF':
@@ -486,8 +486,8 @@ export const LORE = {
   'LOG-SEC-TRENCH':
     'Inland Fault Cut. Inland after seal — cut rock, deep fauna, no ship cover.',
   'LOG-SEC-DUCT':
-    'Bus Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
-  'LOG-SEC-ASH': 'Shear Ash Fields. Baseline radiation — bus drain elevated.',
+    'Power Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
+  'LOG-SEC-ASH': 'Shear Ash Fields. Baseline radiation — Power drain elevated.',
   'LOG-SEC-BRINE':
     'Pulse Brine Flats. Ion-brine pools lace the shelf — hazard density spikes before the cache.',
   'LOG-SEC-VAULT':
@@ -498,7 +498,7 @@ export const LORE = {
     'Skiff Approach. Storm shear over the final choke — Drop Skiff Ridge ahead.',
   'LOG-SEC-RIDGE': 'Drop Skiff Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
   'LOG-EXIT-BLOCKED': 'Sector hatch will not open yet.',
-  'LOG-HAZARD': 'Ion hazard — bus drain.',
+  'LOG-HAZARD': 'Ion hazard — Power drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-FAVOR-GRANT': 'Extract favor secured.',
   'LOG-FAVOR-CONSUME': 'Extract favor spent.',
@@ -536,10 +536,10 @@ export const LORE = {
   'LOG-PB-STRESS': 'Pattern buffer under Window stress.',
   'LOG-EVT-AFTERGLOW':
     'Drop afterglow — EM spike. Sealant Foam helps clean residue.',
-  'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse the Bus; watch the pattern buffer.',
-  'LOG-EVT-SHEAR': 'Window shear pulse — Bus tax under pad approach pressure.',
-  'LOG-ION-FRONT': 'Ion front forming — taxes EM and Bus; lit fauna track harder.',
-  'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 Bus; Filter or Flare dampens it.',
+  'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse Power; watch the pattern buffer.',
+  'LOG-EVT-SHEAR': 'Window shear pulse — Power tax under pad approach pressure.',
+  'LOG-ION-FRONT': 'Ion front forming — taxes EM and Power; lit fauna track harder.',
+  'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 Power; Filter or Flare dampens it.',
   'LOG-ION-DAMPEN': 'Ion front pulse dampened by field kit.',
   'LOG-ION-CLEAR': 'Ion front clearing — sector pressure subsides.',
   'LOG-XP': 'Survey proficiency gained.',
@@ -549,7 +549,7 @@ export const LORE = {
   'LOG-SKILL-NEED': 'Skill choice pending — press 1 or 2 (effects on the urgency line).',
   'LOG-EM-WARN': 'EM contamination rising — fauna growing agitated.',
   'LOG-EM-HIGH':
-    'EM contamination critical — Bus tax and wider aggro. Sealant Foam flushes residue.',
+    'EM contamination critical — Power tax and wider aggro. Sealant Foam flushes residue.',
   'LOG-EM-PURGE': 'EM contamination flushed.',
   'LOG-SALVAGE-ID': 'Salvage scan complete — kit item recovered.',
   'LOG-SALVAGE-BAD': 'Unstable salvage — EM backlash and local wake.',
@@ -568,7 +568,7 @@ export const LORE = {
   'SKILL-ION-SKIN-NAME': 'Plasma Skin',
   'SKILL-ION-SKIN-DESC': 'Active filter also halves kinetic hits.',
   'SKILL-DEEP-RESERVE-NAME': 'Deep Reserve',
-  'SKILL-DEEP-RESERVE-DESC': 'Skip one bus drip every 10 turns.',
+  'SKILL-DEEP-RESERVE-DESC': 'Skip one Power drip every 10 turns.',
   'SKILL-LAST-WINDOW-NAME': 'Last Window',
   'SKILL-LAST-WINDOW-DESC': '+1 DEF while Window ≤ 80.',
 } as const;

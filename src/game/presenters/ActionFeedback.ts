@@ -53,7 +53,7 @@ function labelMentions(labels: ReadonlyArray<ActionFloat>, re: RegExp): boolean 
 
 /**
  * When a vitals channel moved but no log float already named it, print the
- * delta — catches hazard Bus tax, armor-only hits with odd logs, etc.
+ * delta — catches hazard Power tax, armor-only hits with odd logs, etc.
  */
 export function appendMissingVitalsFloats(
   labels: ActionFloat[],
@@ -84,10 +84,10 @@ export function appendMissingVitalsFloats(
   if (
     vitals.energyDelta !== undefined &&
     vitals.energyDelta !== 0 &&
-    !labelMentions(labels, /\bBUS\b|BURN/)
+    !labelMentions(labels, /\bPOWER\b|BURN/)
   ) {
     extra.push({
-      label: `BUS ${signedDelta(vitals.energyDelta)}`,
+      label: `POWER ${signedDelta(vitals.energyDelta)}`,
       color: vitals.energyDelta > 0 ? ThemeCss.tape : ThemeCss.arc,
     });
   }
@@ -119,10 +119,10 @@ export function collectActionFloatLabels(
       case 'LOG-BEAM-FIRE':
         next = {
           label: log.detail
-            ? `BUS ${shortCombatDetail(log.detail) ?? log.detail}`
+            ? `POWER ${shortCombatDetail(log.detail) ?? log.detail}`
             : vitals?.energyDelta !== undefined && vitals.energyDelta !== 0
-              ? `BUS ${signedDelta(vitals.energyDelta)}`
-              : 'BUS DRAIN',
+              ? `POWER ${signedDelta(vitals.energyDelta)}`
+              : 'POWER DRAIN',
           color: ThemeCss.arc,
         };
         break;
@@ -134,10 +134,10 @@ export function collectActionFloatLabels(
         next = {
           label:
             vitals?.energyDelta !== undefined && vitals.energyDelta !== 0
-              ? `BUS ${signedDelta(vitals.energyDelta)}`
+              ? `POWER ${signedDelta(vitals.energyDelta)}`
               : log.detail
-                ? `BUS ${shortCombatDetail(log.detail) ?? log.detail}`
-                : 'BUS DRAIN',
+                ? `POWER ${shortCombatDetail(log.detail) ?? log.detail}`
+                : 'POWER DRAIN',
           color: ThemeCss.arc,
         };
         break;
@@ -173,8 +173,8 @@ export function collectActionFloatLabels(
         next = {
           label:
             vitals?.energyDelta !== undefined && vitals.energyDelta < 0
-              ? `BURN · BUS ${signedDelta(vitals.energyDelta)}`
-              : 'BURN · BUS',
+              ? `BURN · POWER ${signedDelta(vitals.energyDelta)}`
+              : 'BURN · POWER',
           color: ThemeCss.arc,
         };
         break;
@@ -200,8 +200,8 @@ export function collectActionFloatLabels(
         next = {
           label:
             vitals?.energyDelta !== undefined && vitals.energyDelta > 0
-              ? `BUS ${signedDelta(vitals.energyDelta)}`
-              : 'BUS CELL',
+              ? `POWER ${signedDelta(vitals.energyDelta)}`
+              : 'POWER CELL',
           color: ThemeCss.tape,
         };
         break;

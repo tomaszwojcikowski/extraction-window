@@ -123,7 +123,7 @@ describe('shearReadoutLabel', () => {
     const busLed = computeShearPressure(
       stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
     );
-    expect(shearReadoutLabel(busLed)).toBe(`PRESSURE  ${busLed.state.toUpperCase()}  ·  BUS`);
+    expect(shearReadoutLabel(busLed)).toBe(`PRESSURE  ${busLed.state.toUpperCase()}  ·  POWER`);
 
     const windowLed = computeShearPressure(
       stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),

@@ -49,6 +49,6 @@ export function computeShearPressure(st: GameState): ShearPressureSpec {
  */
 export function shearReadoutLabel(spec: ShearPressureSpec): string {
   const leg =
-    spec.drainingLeg === 'storm' ? 'WINDOW' : spec.drainingLeg === 'bus' ? 'BUS' : 'BOTH';
+    spec.drainingLeg === 'storm' ? 'WINDOW' : spec.drainingLeg === 'bus' ? 'POWER' : 'BOTH';
   return `PRESSURE  ${spec.state.toUpperCase()}  ·  ${leg}`;
 }
