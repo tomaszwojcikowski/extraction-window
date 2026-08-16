@@ -29,7 +29,7 @@ flowchart TB
 | Identification | Single salvage | Biome tables on one salvage kind (tiers tried and cut — see Wave 5) |
 | Statuses | 4 | 7 with fauna/terrain/EM sources (`fatigue` cut Wave 6) |
 | Skills | 3×2 forks | Readable forks; later mastery track |
-| Terrain | hazard/vent/scrub | Wave 2: traps, sealed hatches, pools |
+| Terrain | hazard/vent/scrub + sealed hatch caches | Further traps / pools as needed |
 | NPC quests | Hail + ally | Wave 2: agendas |
 | Crafting | None | Wave 2: 2–3 field recipes |
 | Brands | Flat equip | Situational equip tags (Wave 1) |

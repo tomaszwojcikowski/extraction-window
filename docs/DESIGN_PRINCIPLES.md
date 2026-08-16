@@ -45,7 +45,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 - Wake lines, notice impact, wall-cut light, shear dial / badges.
 - Combat and notice juice on sprites/tells before stacking another log line.
-- Context hints for *what to do now*; logs for *what just happened*.
+- Context hints for *what to do now*; floats / signal chips for *what just happened*; full log (`l`) confirms.
 
 **Anti-pattern:** Teaching a mechanic only in a multi-line log while the map stays silent.
 
@@ -53,7 +53,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 ### 2. Show what’s needed now; hide the rest
 
-**Idea:** Ambient UI shows decision-critical state. Detail lives one key away (kit, PADD, help, skill pick).
+**Idea:** Ambient UI shows decision-critical state. Detail lives one key away (kit, PADD, help, mission log, skill pick).
 
 **Lineage:** Progressive disclosure; RogueBasin “relevant now”; modern roguelike accessibility essays (transparent systems without a wiki).
 
@@ -62,6 +62,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - Bars: HP · Shield · Power · Window · XP.
 - Meta line: combat/EM + *active* timers/statuses — not permanent equip dump.
 - Shear Calm: don’t triple-signal (center + badge + bar). Escalate chrome when Charged+.
+- Mission log strip is **collapsed by default** (`l` toggles). Causal floats + a short signal-rail of plated chips carry the beat; the text feed confirms when you open it.
 - Drill `?` = short page; full manual after the hatch.
 
 **Anti-pattern:** Always-on ALL-CAPS soup that players learn to ignore.
@@ -162,10 +163,10 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Move (which is also how you pick things up), wait, brace, shove, kit/use, interact (`>` / Enter), peek.
-- Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail).
+- Move (which is also how you pick things up), wait, kit/use, interact (Enter / Space / `>`), peek.
+- Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail / sealed pry).
 - Help lists verbs first; “why gather” second.
-- A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Power. Shove passes both: it answers a windup already in reach, and on open floor it is a wasted turn.
+- A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Power. Dedicated brace/shove hotkeys stay cut until they clear the same bar (windup answers today: leave the paint, kill mid-charge, or baton stun).
 
 **Anti-pattern:** New letter per niche action when `u` / `>` / kit already covers it.
 

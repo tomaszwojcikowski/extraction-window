@@ -124,8 +124,9 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 - **An armed windup paints the tiles it threatens.**
   [`ThreatView.ts`](../../src/game/views/ThreatView.ts) hatches the ground using
   `enemyThreatTiles` from the sim, so the overlay cannot drift from what actually
-  resolves. Colour encodes the answer, not the attacker: rust = brace it, sallow = leave
-  the ring, hazard tape = held shot, arc-white = beam lane.
+  resolves. Colour encodes the answer, not the attacker: rust = eat the charge
+  or kill mid-windup, sallow = leave the ring, hazard tape = held shot,
+  arc-white = beam lane.
 
 ---
 
@@ -136,6 +137,8 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 - Bars: HP · Shield · Power · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
 - **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
+- **Mission log is opt-in.** Bottom strip height is `0` until `l` opens `HUD_BOTTOM_LOG`. While closed, recent causal floats dock as plated chips (`SignalRail`) — confirm in the text feed, don’t keep a permanent ticker.
+- **Title is an aperture.** `drawTitleWindow` is a recessed survey glass in the case lid (sight brackets, grit, stepped scan tick); mission ID / begin / footer sit on `drawMenuPlate` strips — not a floating text stack.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.
 - Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.

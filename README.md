@@ -40,13 +40,12 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
 | Shift + dir | Peek who would notice you on the next tile (no turn spent) |
 | `.` | Wait |
-| `b` | Brace: +2 DEF through the enemy phase; covers your flanks; cancels a charge's bonus (not the rift's pulse) |
-| `f` | Shove an adjacent hostile a tile back — breaks its windup, and spends the ground behind it; a direction follows if two are in reach |
 | `i` | Open field kit |
-| `u` | Use selected item |
+| `u` | Use or equip selected item |
 | `1`–`9` | Select kit slot |
 | `p` | Mission PADD pages |
-| `>` / `=` / Enter / Space | Hatch, beacon, pad, quest console, hail |
+| `l` | Mission log (hidden by default; field chips carry recent beats) |
+| Enter / Space / `>` / `=` | Hatch, beacon, pad, optional site, hail |
 | `?` | Field manual |
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |

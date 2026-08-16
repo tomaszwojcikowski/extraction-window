@@ -64,7 +64,7 @@ flowchart TB
 | `sim/mechanics/` | Multi-step systems (hooks into action/turn) |
 | `ai/` | Headless policy over `GameState` |
 | `game/` | Input, HUD/map/overlays, feedback presenters |
-| `scenes/` | Boot / Title / End + textures/theme/atmosphere |
+| `scenes/` | Boot / Title (aperture + plated strips) / End + textures/theme/atmosphere |
 | `audio/` | Web Audio buses |
 
 ## Mechanic contract
@@ -93,13 +93,16 @@ L4 shell runs **Phaser 4** (`phaser@^4.2.1`). Field light is sim illumination �
 
 | Module | Role |
 |--------|------|
-| `game/input/Keymap.ts` | Pure key → action / chrome commands |
-| `game/input/InputController.ts` | Keydown switchboard (mute / overlays / slots / commit) |
+| `game/GameHost.ts` | Shared HUD insets (`HUD_TOP`, `HUD_BOTTOM_LOG`) |
+| `game/input/Keymap.ts` | Pure key → action / chrome commands (incl. `toggle_log`) |
+| `game/input/InputController.ts` | Keydown switchboard (mute / overlays / log / slots / commit) |
 | `game/presenters/ContextHints.ts` | State → lore hint |
-| `game/presenters/ActionFeedback.ts` | SFX, flashes, move / bump tweens, action lights |
-| `game/views/HudView.ts` | Bars, badges, log, objective |
+| `game/presenters/ActionFeedback.ts` | SFX, flashes, move / bump tweens, action lights, causal floats |
+| `game/presenters/SignalRail.ts` | Docked chip layout when the mission log is closed |
+| `game/views/HudView.ts` | Bars, badges, log (when open), objective |
 | `game/views/MapView.ts` | FOV frame / map chrome |
 | `game/views/overlays/*` | Kit / PADD / Help panels |
+| `scenes/atmosphere.ts` | Field-kit draw primitives (plates, meters, title window, menu chrome) |
 
 **Pull-sync:** after every `applyAction`, views read `GameState`. No shadow rules in the scene. Autopilot-visible UI (`inventoryOpen`, `aimingDart`, `skillPick`, future handshake) stays on `GameState`.
 
