@@ -97,7 +97,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - Drill bay: move → light → hazard → kit → wake → fight → hatch.
-- One-shot coaches (peek teach) that **yield** to tele/vitals/drill priority.
+- One-shot coaches that **yield** to tele/vitals/drill priority.
 - Visible ion tax before abstract Power lectures.
 - Autopilot WR band still validates that teaching didn’t soft-lock the run.
 
