@@ -336,29 +336,22 @@ export class LightView {
   /**
    * Rebuild flood contribution per emitter when the source set changes.
    * Cached across anim frames within a turn so colour stays flood-honest
-   * without re-walking Dijkstra every tick.
+   * without re-walking Dijkstra every tick. Mid-hop the carried lamp is already
+   * in `sources[0]` — flood from that rounded tile so energy matches bloom.
    */
   private ensureSourceEnergy(st: GameState, sources: LightSource[]): void {
-    // During a hop the bloom lamp floats, but flood energy stays on the destination
-    // tile so we do not re-Dijkstra every tween frame.
-    const forFlood =
-      this.moveBlend?.locked
-        ? sources.map((s, i) =>
-            i === 0
-              ? { ...s, x: this.moveBlend!.lampTo.x, y: this.moveBlend!.lampTo.y }
-              : s,
-          )
-        : sources;
-    const key = `${st.turn}:${st.width}x${st.height}:${forFlood
-      .map((s) => `${s.x},${s.y},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`)
+    const key = `${st.turn}:${st.width}x${st.height}:${sources
+      .map(
+        (s) =>
+          `${Math.round(s.x)},${Math.round(s.y)},${s.radius.toFixed(2)},${s.intensity.toFixed(2)}`,
+      )
       .join('|')}`;
-    if (key === this.sourceEnergyKey && this.sourceEnergy.length === forFlood.length) return;
+    if (key === this.sourceEnergyKey && this.sourceEnergy.length === sources.length) return;
     this.sourceEnergyKey = key;
-    this.sourceEnergy = forFlood.map((s) => {
+    this.sourceEnergy = sources.map((s) => {
       const grid = Array.from({ length: st.height }, () =>
         Array.from({ length: st.width }, () => 0),
       );
-      // Dijkstra indexes are integer — round so a carried lamp still floods.
       floodAddLight(
         st.tiles,
         Math.round(s.x),
@@ -512,6 +505,8 @@ export class LightView {
       body?: boolean;
     }>,
     sources: LightSource[],
+    /** First-light reveal radius; null/omit = full FOV only. */
+    sweepRadius: number | null = null,
   ): void {
     const g = this.shadowGfx;
     if (!g) return;
@@ -536,7 +531,7 @@ export class LightView {
       focusY,
     );
     for (const q of quads) {
-      // Sample brightness near the face tip so SHADOW-band stays faint.
+      // Sample near the face tip so SHADOW-band stays faint.
       const sampleX = Math.min(
         st.width - 1,
         Math.max(0, Math.floor((q.x0 + q.x1 + q.x2 + q.x3) / 4)),
@@ -545,12 +540,17 @@ export class LightView {
         st.height - 1,
         Math.max(0, Math.floor((q.y0 + q.y1 + q.y2 + q.y3) / 4)),
       );
+      if (!st.visible[sampleY]?.[sampleX]) continue;
+      if (
+        sweepRadius !== null &&
+        Math.hypot(sampleX - focusX, sampleY - focusY) > sweepRadius
+      ) {
+        continue;
+      }
       const brightness = tileBrightness(st, sampleX, sampleY);
       const inShadowBand = brightness < SHADOW_THRESHOLD;
-      const alpha = Math.min(
-        0.42,
-        q.weight * (inShadowBand ? 0.12 : 0.28) * (0.35 + brightness * 0.9),
-      );
+      // Weight from the casting face only — fill light must not darken the wedge.
+      const alpha = Math.min(0.42, q.weight * (inShadowBand ? 0.1 : 0.26));
       if (alpha < 0.03) continue;
       g.fillStyle(Theme.groundDeep, alpha);
       g.fillPoints(
@@ -570,6 +570,9 @@ export class LightView {
       const ty = Math.round(gy);
       if (tx < 0 || ty < 0 || tx >= st.width || ty >= st.height) continue;
       if (!st.visible[ty]?.[tx]) continue;
+      if (sweepRadius !== null && Math.hypot(gx - focusX, gy - focusY) > sweepRadius) {
+        continue;
+      }
       const brightness = tileBrightness(st, tx, ty);
       // Bodies / kit still plant in dim light; only skip pitch black.
       const minBright = actor.body || actor.item ? 0.03 : 0.06;
@@ -600,7 +603,7 @@ export class LightView {
       const alpha = Math.min(
         actor.body ? 0.58 : actor.item ? 0.52 : 0.5,
         (inShadowBand
-          ? actor.body || actor.item
+          ? actor.body || actor.item || actor.prop
             ? 0.1
             : 0.06
           : 0.12) +
@@ -608,11 +611,11 @@ export class LightView {
       );
 
       const len = Math.hypot(keyDx, keyDy);
-      // Soft-band cast for fauna/kit so ambush rooms still show silhouettes.
+      // Soft-band cast for fauna / kit / furniture so ambush rooms still read.
       const allowCast =
         key > (actor.body || actor.item ? 0.035 : 0.05) &&
         len > 0.0001 &&
-        (!inShadowBand || actor.body || actor.item);
+        (!inShadowBand || actor.body || actor.item || actor.prop);
       if (allowCast) {
         const dirX = keyDx / len;
         const dirY = keyDy / len;
@@ -728,8 +731,16 @@ export class LightView {
 
   /**
    * Bloom sources: sim emitters (lamp/quiet/flare/world) + brief presentation FX.
+   * `bodyAt` supplies mid-hop positions for movers whose bloom should travel.
    */
-  allSources(st: GameState, animFrame: number): LightSource[] {
+  allSources(
+    st: GameState,
+    animFrame: number,
+    bodyAt?: {
+      enemy?: (id: number) => { x: number; y: number } | null;
+      ally?: (id: number) => { x: number; y: number } | null;
+    },
+  ): LightSource[] {
     const pulse = 0.85 + (animFrame % 3) * 0.08;
     const carry = this.lampCarry;
     const sim = collectLightSources(st).map((s, i) => {
@@ -749,11 +760,29 @@ export class LightView {
       return placed;
     });
 
+    // Probe drones: sim coords are the destination — slide bloom with the view.
+    for (const ally of st.allies) {
+      if (!ally.alive || ally.kind !== 'probe_drone') continue;
+      const pos = bodyAt?.ally?.(ally.id) ?? { x: ally.x, y: ally.y };
+      const src = sim.find(
+        (s) =>
+          s.color === LightTemp.pattern &&
+          s.radius === 3.2 &&
+          Math.round(s.x) === ally.x &&
+          Math.round(s.y) === ally.y,
+      );
+      if (src) {
+        src.x = pos.x;
+        src.y = pos.y;
+      }
+    }
+
     for (const en of st.enemies) {
       if (!en.alive || en.tier !== 'boss') continue;
+      const pos = bodyAt?.enemy?.(en.id) ?? { x: en.x, y: en.y };
       sim.push({
-        x: en.x,
-        y: en.y,
+        x: pos.x,
+        y: pos.y,
         radius: 3.2,
         color: Theme.rust,
         intensity: 0.75 * pulse,
@@ -967,7 +996,7 @@ export class LightView {
   applyActorLighting(
     st: GameState,
     playerSprite: Phaser.GameObjects.Image,
-    enemyViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
+    actorViews: Iterable<{ img: Phaser.GameObjects.Image; gx: number; gy: number }>,
     sources: LightSource[],
   ): void {
     this.ensureSourceEnergy(st, sources);
@@ -1005,7 +1034,7 @@ export class LightView {
       else playerSprite.clearTint();
     }
 
-    for (const view of enemyViews) {
+    for (const view of actorViews) {
       if (!view.img.visible) continue;
       view.img.setAlpha(litAlpha(view.gx, view.gy));
       const tint = keyTint(view.gx, view.gy);

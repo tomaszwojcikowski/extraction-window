@@ -12,16 +12,32 @@ export function castReachTiles(
   dirY: number,
   want: number,
 ): number {
+  // March from the cell centre (gx/gy are integer tile coords).
+  return castReachFrom(tiles, gx + 0.5, gy + 0.5, dirX, dirY, want);
+}
+
+/** March from a continuous start point along a unit direction. */
+export function castReachFrom(
+  tiles: Tile[][],
+  startX: number,
+  startY: number,
+  dirX: number,
+  dirY: number,
+  want: number,
+): number {
   const step = 0.22;
   let travelled = 0;
+  let lastClear = 0;
   while (travelled + step <= want) {
     travelled += step;
-    const tx = Math.floor(gx + 0.5 + dirX * travelled);
-    const ty = Math.floor(gy + 0.5 + dirY * travelled);
+    const tx = Math.floor(startX + dirX * travelled);
+    const ty = Math.floor(startY + dirY * travelled);
     const tile = tiles[ty]?.[tx];
     if (!tile || !tile.transparent) {
-      return Math.max(0.12, travelled - step);
+      // Tip must remain in open floor — not inside the blocking cell.
+      return Math.max(0.12, lastClear);
     }
+    lastClear = travelled;
   }
   return want;
 }

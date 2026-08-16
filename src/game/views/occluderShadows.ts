@@ -1,6 +1,6 @@
 import type { Tile } from '../../sim/types';
 import { LIGHT_TEMP } from '../../sim/light';
-import { castReachTiles } from './castShadows';
+import { castReachFrom } from './castShadows';
 
 /**
  * Soft floor umbra from opaque tiles — presentation only.
@@ -81,7 +81,7 @@ export function projectOccluderFace(
   litFaceEnergy: number,
   intensity: number,
 ): OccluderShadowQuad | null {
-  if (litFaceEnergy < 0.04) return null;
+  if (litFaceEnergy < 0.025) return null;
   const farX = ox + nx;
   const farY = oy + ny;
   const far = tiles[farY]?.[farX];
@@ -111,11 +111,10 @@ export function projectOccluderFace(
     bX = ox + 1;
   }
 
-  const want =
-    Math.min(
-      MAX_OCCLUDER_THROW,
-      0.45 + litFaceEnergy * 1.1 + Math.min(0.35, intensity * 0.22),
-    );
+  const want = Math.min(
+    MAX_OCCLUDER_THROW,
+    0.45 + litFaceEnergy * 1.1 + Math.min(0.35, intensity * 0.22),
+  );
   const dirLenA = Math.hypot(aX - (lightX + 0.5), aY - (lightY + 0.5));
   const dirLenB = Math.hypot(bX - (lightX + 0.5), bY - (lightY + 0.5));
   if (dirLenA < 0.08 || dirLenB < 0.08) return null;
@@ -124,13 +123,12 @@ export function projectOccluderFace(
   const dBx = (bX - (lightX + 0.5)) / dirLenB;
   const dBy = (bY - (lightY + 0.5)) / dirLenB;
 
-  // Reach measured from the far floor cell center so a second wall clips the tip.
-  const reach = castReachTiles(tiles, farX, farY, nx, ny, want);
-  if (reach < 0.14) return null;
+  // Clip each projected ray independently — axis probe along the face normal
+  // let diagonal tips leak into adjacent walls.
+  const throwA = castReachFrom(tiles, aX, aY, dAx, dAy, want);
+  const throwB = castReachFrom(tiles, bX, bY, dBx, dBy, want);
+  if (throwA < 0.14 && throwB < 0.14) return null;
 
-  const tipScale = Math.max(0.55, reach / want);
-  const throwA = want * tipScale;
-  const throwB = want * tipScale;
   const cX = aX + dAx * throwA;
   const cY = aY + dAy * throwA;
   const dX = bX + dBx * throwB;
@@ -196,10 +194,13 @@ export function collectOccluderShadows(
           if (out.length >= maxEdges) return out;
           const nearX = ox - f.nx;
           const nearY = oy - f.ny;
+          const farX = ox + f.nx;
+          const farY = oy + f.ny;
           if (nearX < 0 || nearY < 0 || nearX >= w || nearY >= h) continue;
           const nearTile = tiles[nearY]![nearX]!;
           if (!nearTile.transparent) continue;
-          if (!visible[nearY]?.[nearX] && !visible[oy + f.ny]?.[ox + f.nx]) continue;
+          // Landing floor must be in FOV — do not silhouette unexplored cells.
+          if (!visible[farY]?.[farX] && !visible[nearY]?.[nearX]) continue;
 
           const litE = energyAt(li, nearX, nearY);
           const quad = projectOccluderFace(

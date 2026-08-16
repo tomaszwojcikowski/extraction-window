@@ -49,13 +49,15 @@ describe('projectOccluderFace', () => {
     expect(projectOccluderFace(tiles, 3, 1, 1, 0, 1, 1, 0.01, 1)).toBeNull();
   });
 
-  it('clips the tip before a second wall', () => {
+  it('clips each projected ray before a blocking wall', () => {
     const tiles = grid(8, 3, { kind: 'floor', walkable: true, transparent: true });
     tiles[1]![3] = { kind: 'wall', walkable: false, transparent: false };
+    // Full column so both face-corner rays hit opaque before x=5.
+    tiles[0]![5] = { kind: 'wall', walkable: false, transparent: false };
     tiles[1]![5] = { kind: 'wall', walkable: false, transparent: false };
+    tiles[2]![5] = { kind: 'wall', walkable: false, transparent: false };
     const open = projectOccluderFace(tiles, 3, 1, 1, 0, 1, 1, 0.5, 1.2)!;
-    // Far tip should not land past the second wall cell.
-    expect(Math.max(open.x2, open.x3)).toBeLessThan(5.2);
+    expect(Math.max(open.x2, open.x3)).toBeLessThan(5);
   });
 });
 

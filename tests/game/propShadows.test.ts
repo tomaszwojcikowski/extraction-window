@@ -3,32 +3,33 @@ import { propShadowTall, tileCastsPropShadow } from '../../src/game/views/propSh
 import type { TileKind } from '../../src/sim/types';
 
 describe('propShadows', () => {
-  it('marks furniture and POIs as casters, not soft scrub', () => {
+  it('marks upright furniture and POIs as casters, not recessed terrain', () => {
     const yes: TileKind[] = [
       'landmark',
       'quest',
-      'hazard',
-      'vent',
-      'brine_pool',
       'beacon',
       'exit',
       'shuttle',
       'sealed',
       'rubble',
-      'scrub_nest',
     ];
     for (const kind of yes) expect(tileCastsPropShadow(kind)).toBe(true);
     expect(tileCastsPropShadow('floor')).toBe(false);
     expect(tileCastsPropShadow('scrub')).toBe(false);
     expect(tileCastsPropShadow('tripwire')).toBe(false);
     expect(tileCastsPropShadow('wall')).toBe(false);
+    expect(tileCastsPropShadow('hazard')).toBe(false);
+    expect(tileCastsPropShadow('vent')).toBe(false);
+    expect(tileCastsPropShadow('brine_pool')).toBe(false);
+    // Opaque nests use occluder umbra — no second prop cast.
+    expect(tileCastsPropShadow('scrub_nest')).toBe(false);
   });
 
-  it('treats beacons and landmarks as tall casters', () => {
+  it('treats upright fixtures as tall and pads as short', () => {
     expect(propShadowTall('beacon')).toBe(true);
-    expect(propShadowTall('shuttle')).toBe(true);
+    expect(propShadowTall('quest')).toBe(true);
     expect(propShadowTall('landmark')).toBe(true);
-    expect(propShadowTall('hazard')).toBe(false);
+    expect(propShadowTall('shuttle')).toBe(false);
     expect(propShadowTall('rubble')).toBe(false);
   });
 });
