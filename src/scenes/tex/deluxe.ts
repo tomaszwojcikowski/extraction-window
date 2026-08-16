@@ -813,24 +813,43 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
   const pulse = frame % 4;
   switch (kind) {
     case 'scrub':
-    case 'scrub_nest':
+      // Upright stalks only — canopy scrub, not a nest mound.
       g.fillStyle(Theme.groundDeep, 0.75);
       g.fillEllipse(q(7), q(34), q(34), q(7));
       g.fillStyle(Material.foliage, 1);
       for (let i = 0; i < 5; i++) {
         const x = q(9 + i * 7);
-        const h = q(12 + ((i * 5) % 12));
+        const h = q(14 + ((i * 5) % 14));
         g.fillRect(x, q(36) - h, q(3), h);
         g.fillStyle(Theme.safe, 0.85);
-        g.fillTriangle(x - q(3), q(19 + (i % 3) * 4), x + q(2), q(14 + (i % 2) * 5), x + q(5), q(20 + (i % 3) * 4));
+        g.fillTriangle(
+          x - q(3),
+          q(18 + (i % 3) * 4),
+          x + q(2),
+          q(12 + (i % 2) * 5),
+          x + q(5),
+          q(19 + (i % 3) * 4),
+        );
         g.fillStyle(Material.foliage, 1);
       }
-      if (kind === 'scrub_nest') {
-        g.fillStyle(Theme.biolumDeep, 0.95);
-        g.fillEllipse(q(14), q(27), q(21), q(11));
-        g.fillStyle(Theme.biolum, 0.7);
-        g.fillRect(q(21), q(29), q(7), q(2));
-      }
+      break;
+    case 'scrub_nest':
+      // Low bowl with a hollow mouth — silhouette-distinct from upright scrub.
+      g.fillStyle(Theme.groundDeep, 0.8);
+      g.fillEllipse(q(4), q(34), q(40), q(9));
+      g.fillStyle(Material.foliage, 1);
+      g.fillEllipse(q(6), q(28), q(36), q(16));
+      g.fillStyle(Material.nest, 1);
+      g.fillEllipse(q(12), q(24), q(24), q(14));
+      g.fillStyle(Theme.groundDeep, 1);
+      g.fillEllipse(q(16), q(26), q(16), q(9));
+      // Rim thorns so the mouth reads even when colour is ignored.
+      g.fillStyle(Material.foliage, 1);
+      g.fillRect(q(10), q(20), q(3), q(8));
+      g.fillRect(q(35), q(21), q(3), q(7));
+      g.fillRect(q(22), q(17), q(4), q(6));
+      g.fillStyle(Theme.biolum, 0.75);
+      g.fillRect(q(21), q(28), q(6), q(2));
       break;
     case 'rubble':
       g.fillStyle(Theme.groundDeep, 0.8);
@@ -1041,6 +1060,7 @@ function drawSilhouette(
   color: number,
   frame: number,
   bob: number,
+  kind: EnemyKind,
 ): void {
   const rim = mix(color, Theme.groundDeep, 0.62);
   const lit = mix(color, Theme.inkBright, 0.25);
@@ -1048,26 +1068,39 @@ function drawSilhouette(
   switch (shape) {
     case 'scuttler': {
       // Low, wide, many-legged. Occupies only the bottom band — reads as minor.
+      // Extra lateral splay so it never reads as a floating bloom blob.
       const leg = frame === 1 ? 1 : 0;
       g.fillStyle(rim, 1);
-      for (let i = 0; i < 4; i++) {
-        const lx = 11 + i * 8;
-        g.fillRect(q(lx), q(34 + bob), q(3), q(6 - leg));
-        g.fillRect(q(lx - 1), q(38 - leg + bob), q(5), q(2));
+      for (let i = 0; i < 5; i++) {
+        const lx = 8 + i * 8;
+        const out = i === 0 || i === 4 ? 2 : 0;
+        g.fillRect(q(lx), q(33 + bob + out), q(3), q(7 - leg));
+        g.fillRect(q(lx - 2), q(39 - leg + bob + out), q(7), q(2));
       }
-      g.fillEllipse(q(24), q(31 + bob), q(30), q(18));
+      g.fillEllipse(q(24), q(32 + bob), q(34), q(14));
       g.fillStyle(color, 1);
-      g.fillEllipse(q(24), q(30 + bob), q(24), q(12));
+      g.fillEllipse(q(24), q(31 + bob), q(26), q(9));
       g.fillStyle(lit, 1);
-      g.fillRect(q(18), q(26 + bob), q(12), q(2));
-      hostileEyes(g, q, 24, 28 + bob, 4, 4);
+      g.fillRect(q(16), q(28 + bob), q(14), q(2));
+      // Mandible nubs — mite identity at tile scale.
+      g.fillStyle(rim, 1);
+      g.fillRect(q(10), q(30 + bob), q(4), q(3));
+      g.fillRect(q(34), q(30 + bob), q(4), q(3));
+      hostileEyes(g, q, 24, 29 + bob, 5, 3);
       break;
     }
     case 'bloom': {
       // Visibly inflates frame to frame, so the swell timer reads off the body.
+      // Radial spines keep it from collapsing into the scuttler oval.
       const r = 12 + frame * 2;
       g.fillStyle(rim, 1);
       g.fillCircle(q(24), q(26 + bob), q(r + 4));
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2 + frame * 0.15;
+        const sx = 24 + Math.cos(ang) * (r + 2);
+        const sy = 26 + bob + Math.sin(ang) * (r + 2);
+        g.fillRect(q(sx - 1), q(sy - 1), q(3), q(3));
+      }
       g.fillStyle(color, 1);
       g.fillCircle(q(24), q(26 + bob), q(r));
       g.fillStyle(lit, 0.85);
@@ -1082,36 +1115,83 @@ function drawSilhouette(
     }
     case 'darter': {
       // Narrow body, big beating wings — a thing that bites and backs off.
-      const span = frame === 1 ? 15 : 10;
+      // Peer split: wasp tip-sting, mastling bulky thorax, elites keep brand crown.
+      const mastling = kind === 'mastling';
+      const span = mastling ? (frame === 1 ? 18 : 14) : frame === 1 ? 15 : 10;
+      const bodyW = mastling ? 12 : 9;
+      const bodyH = mastling ? 20 : 24;
       g.fillStyle(mix(Theme.arcWhite, color, 0.5), 0.4);
       g.fillTriangle(q(20), q(18 + bob), q(20 - span), q(8 + bob), q(20), q(30 + bob));
       g.fillTriangle(q(28), q(18 + bob), q(28 + span), q(8 + bob), q(28), q(30 + bob));
       g.fillStyle(rim, 1);
-      g.fillEllipse(q(24), q(25 + bob), q(14), q(30));
+      g.fillEllipse(q(24), q(25 + bob), q(mastling ? 18 : 14), q(mastling ? 26 : 30));
       g.fillStyle(color, 1);
-      g.fillEllipse(q(24), q(25 + bob), q(9), q(24));
+      g.fillEllipse(q(24), q(25 + bob), q(bodyW), q(bodyH));
+      if (mastling) {
+        // Thick mid-band — heavier flyer than wasp.
+        g.fillStyle(rim, 1);
+        g.fillRect(q(16), q(24 + bob), q(16), q(4));
+      }
       g.fillStyle(Theme.rust, 1);
-      g.fillTriangle(q(22), q(36 + bob), q(26), q(36 + bob), q(24), q(43 + bob));
-      hostileEyes(g, q, 24, 16 + bob, 2, 4);
+      if (mastling) {
+        g.fillRect(q(21), q(36 + bob), q(6), q(5));
+      } else {
+        g.fillTriangle(q(22), q(36 + bob), q(26), q(36 + bob), q(24), q(43 + bob));
+      }
+      hostileEyes(g, q, 24, mastling ? 14 + bob : 16 + bob, 2, 4);
       break;
     }
     case 'crouched': {
       // Coiled haunches, head down and forward. Reads as waiting, not walking.
+      // Peer split so stalker / skitter / reef_skitter do not share one rodent blob.
+      const reef = kind === 'reef_skitter';
+      const skit = kind === 'skitter';
       g.fillStyle(rim, 1);
-      g.fillEllipse(q(30), q(28 + bob), q(26), q(20));
-      g.fillRect(q(10), q(26 + bob), q(20), q(11));
-      g.fillTriangle(q(4), q(30 + bob), q(14), q(24 + bob), q(14), q(36 + bob));
-      g.fillStyle(color, 1);
-      g.fillEllipse(q(30), q(27 + bob), q(19), q(13));
-      g.fillRect(q(12), q(28 + bob), q(16), q(7));
-      // Braced legs, compressed and ready.
-      g.fillStyle(rim, 1);
-      const crouch = frame === 2 ? 1 : 0;
-      g.fillRect(q(20), q(35 + bob), q(4), q(6 - crouch));
-      g.fillRect(q(34), q(35 + bob), q(4), q(6 - crouch));
-      g.fillStyle(Theme.rust, 1);
-      g.fillRect(q(6), q(29 + bob), q(5), q(3));
-      hostileEyes(g, q, 17, 27 + bob, 2, 3);
+      if (skit) {
+        // Flatter, many-legged crouch — no long snout.
+        g.fillEllipse(q(24), q(30 + bob), q(32), q(16));
+        for (let i = 0; i < 4; i++) {
+          const lx = 10 + i * 9;
+          g.fillRect(q(lx), q(36 + bob), q(3), q(6));
+          g.fillRect(q(lx - 1), q(40 + bob), q(5), q(2));
+        }
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(24), q(29 + bob), q(24), q(10));
+        g.fillStyle(Theme.rust, 1);
+        g.fillRect(q(20), q(28 + bob), q(8), q(3));
+        hostileEyes(g, q, 24, 27 + bob, 4, 3);
+      } else if (reef) {
+        // Wide stance + dorsal crest — shelf fauna, not the plains stalker.
+        g.fillEllipse(q(28), q(30 + bob), q(30), q(18));
+        g.fillTriangle(q(22), q(18 + bob), q(28), q(6 + bob), q(34), q(18 + bob));
+        g.fillRect(q(8), q(28 + bob), q(18), q(10));
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(28), q(29 + bob), q(22), q(12));
+        g.fillRect(q(10), q(30 + bob), q(14), q(6));
+        g.fillStyle(lit, 0.9);
+        g.fillTriangle(q(24), q(16 + bob), q(28), q(8 + bob), q(32), q(16 + bob));
+        g.fillStyle(rim, 1);
+        g.fillRect(q(14), q(36 + bob), q(4), q(6));
+        g.fillRect(q(34), q(36 + bob), q(4), q(6));
+        g.fillStyle(Theme.rust, 1);
+        g.fillRect(q(6), q(31 + bob), q(5), q(3));
+        hostileEyes(g, q, 18, 29 + bob, 2, 3);
+      } else {
+        // Stalker — coiled haunches, head down and forward.
+        g.fillEllipse(q(30), q(28 + bob), q(26), q(20));
+        g.fillRect(q(10), q(26 + bob), q(20), q(11));
+        g.fillTriangle(q(4), q(30 + bob), q(14), q(24 + bob), q(14), q(36 + bob));
+        g.fillStyle(color, 1);
+        g.fillEllipse(q(30), q(27 + bob), q(19), q(13));
+        g.fillRect(q(12), q(28 + bob), q(16), q(7));
+        g.fillStyle(rim, 1);
+        const crouch = frame === 2 ? 1 : 0;
+        g.fillRect(q(20), q(35 + bob), q(4), q(6 - crouch));
+        g.fillRect(q(34), q(35 + bob), q(4), q(6 - crouch));
+        g.fillStyle(Theme.rust, 1);
+        g.fillRect(q(6), q(29 + bob), q(5), q(3));
+        hostileEyes(g, q, 17, 27 + bob, 2, 3);
+      }
       break;
     }
     case 'annelid': {
@@ -1176,25 +1256,45 @@ function drawSilhouette(
     }
     case 'emitter': {
       // Dish and focusing prongs across a lane — it threatens a line, not a tile.
-      g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(12), q(14 + bob), q(24), q(20));
-      g.fillStyle(Theme.panel, 1);
-      g.fillRect(q(14), q(16 + bob), q(20), q(16));
-      // Lane prongs reach out to both sides.
-      g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(2), q(22 + bob), q(11), q(4));
-      g.fillRect(q(35), q(22 + bob), q(11), q(4));
-      g.fillStyle(color, 1);
-      g.fillRect(q(2), q(20 + bob), q(3), q(9));
-      g.fillRect(q(43), q(20 + bob), q(3), q(9));
-      // Charging aperture at the centre.
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillCircle(q(24), q(24 + bob), q(9));
-      g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
-      g.fillCircle(q(24), q(24 + bob), q(4 + frame));
-      // Rotor keeps it visibly airborne.
-      g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(14 - frame), q(8 + bob), q(20 + frame * 2), q(3));
+      const duct = kind === 'duct_drone';
+      if (duct) {
+        // Conduit housing — boxy chassis + side vents, not the open dish drone.
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(8), q(12 + bob), q(32), q(24));
+        g.fillStyle(Theme.panel, 1);
+        g.fillRect(q(11), q(15 + bob), q(26), q(18));
+        g.fillStyle(color, 1);
+        g.fillRect(q(11), q(15 + bob), q(26), q(4));
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(2), q(20 + bob), q(8), q(6));
+        g.fillRect(q(38), q(20 + bob), q(8), q(6));
+        g.fillStyle(Theme.groundDeep, 1);
+        g.fillRect(q(16), q(22 + bob), q(16), q(8));
+        g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
+        g.fillRect(q(20), q(24 + bob), q(8), q(4));
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(12 - frame), q(8 + bob), q(24 + frame * 2), q(3));
+      } else {
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(12), q(14 + bob), q(24), q(20));
+        g.fillStyle(Theme.panel, 1);
+        g.fillRect(q(14), q(16 + bob), q(20), q(16));
+        // Lane prongs reach out to both sides.
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(2), q(22 + bob), q(11), q(4));
+        g.fillRect(q(35), q(22 + bob), q(11), q(4));
+        g.fillStyle(color, 1);
+        g.fillRect(q(2), q(20 + bob), q(3), q(9));
+        g.fillRect(q(43), q(20 + bob), q(3), q(9));
+        // Charging aperture at the centre.
+        g.fillStyle(Theme.groundDeep, 1);
+        g.fillCircle(q(24), q(24 + bob), q(9));
+        g.fillStyle(Theme.arcWhite, 0.5 + frame * 0.2);
+        g.fillCircle(q(24), q(24 + bob), q(4 + frame));
+        // Rotor keeps it visibly airborne.
+        g.fillStyle(Theme.panelEdge, 1);
+        g.fillRect(q(14 - frame), q(8 + bob), q(20 + frame * 2), q(3));
+      }
       break;
     }
     case 'chassis': {
@@ -1288,7 +1388,7 @@ export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number)
   const def = ENEMIES[kind];
   const shape = silhouetteFor(kind);
   const bob = hoverShapes.has(shape) && frame === 1 ? -2 : frame === 2 ? 1 : 0;
-  drawSilhouette(g, q, shape, def.color, frame, bob);
+  drawSilhouette(g, q, shape, def.color, frame, bob, kind);
 
   // Branded field modifier — the crown says "this one drops kit and hits back
   // harder" without disturbing the body plan underneath.
