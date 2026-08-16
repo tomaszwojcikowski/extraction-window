@@ -61,11 +61,6 @@ describe('pickCameraCue', () => {
     expect(cue?.profile).toBe('punch');
   });
 
-  it('can promote notice snap when no louder event', () => {
-    expect(pickCameraCue([], { noticeImpact: true })?.profile).toBe('snap');
-    expect(pickCameraCue(['LOG-HURT'], { noticeImpact: true })?.id).toBe('hurt');
-  });
-
   it('maps flare bloom and extract bloom', () => {
     expect(pickCameraCue(['LOG-USE-FLARE'])?.ignite).toBe('flare');
     expect(pickCameraCue(['LOG-USE-FLARE'])?.profile).toBe('bloom');
@@ -79,9 +74,6 @@ describe('pickCameraCue', () => {
       expect(cue.shakeMs).toBeLessThanOrEqual(200);
       expect(cue.zoomScale).toBeGreaterThan(1);
     }
-    const notice = pickCameraCue([], { noticeImpact: true })!;
-    expect(notice.zoomMs).toBeLessThanOrEqual(200);
-    expect(notice.shakeMs).toBeLessThanOrEqual(200);
   });
 
   it('does not cue on unmapped lore ids', () => {

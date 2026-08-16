@@ -140,10 +140,9 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 - **Mission log is opt-in.** Bottom strip height is `0` until `l` opens `HUD_BOTTOM_LOG`. While closed, recent causal floats dock as plated chips (`SignalRail`) — confirm in the text feed, don’t keep a permanent ticker.
 - **Title is an aperture.** `drawTitleWindow` is a recessed survey glass in the case lid (sight brackets, grit, stepped scan tick); mission ID / begin / footer sit on `drawMenuPlate` strips — not a floating text stack.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.
-- Wake tells cap at `MAX_WAKE_TELLS = 8` ([`WakeTells.ts`](../../src/game/presenters/WakeTells.ts)), nearest-first. Raising the cap requires a readability check, not a taste call.
 - Juice ≤ ~200ms for notice/combat punches (~220ms for floats); climaxes may linger slightly. Empty corridor = zero Impact.
 - HUD stat changes ease meters (~140ms) and stamp readouts (~90ms hard flash + 1px lift) — instrument motion, not soft UI pulses. Log feed does not stamp every turn.
-- Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → one-shot coaches (peek teach).
+- Context hints are a single line and **yield** by priority: vitals/tele urgency → drill teaching → pillar coaches.
 - CSS hex strings (`'#rrggbb'`) are the same rule as `0x` paints — both must come from `Theme` / `ThemeCss`. Enforced by [`palette.test.ts`](../../tests/game/palette.test.ts).
 
 ---
@@ -186,7 +185,6 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 |------|-------|
 | LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
 | Per-sector crack-path art | Done — `drawPressureCrack` / `pressureRevealAt` overlay motifs at Arcing+ |
-| `MAX_WAKE_TELLS` raise | Deferred — needs readability evidence |
 | Breaching climax juice | Partial — hot crack motif + pinpricks at Breaching; full climax still deferred |
 
 ## 9. Gates

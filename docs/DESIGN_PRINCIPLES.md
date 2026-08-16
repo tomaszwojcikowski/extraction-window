@@ -24,10 +24,10 @@ For Meridian Shelf, the aesthetics we care about most:
 | Aesthetic | What it should feel like here |
 |-----------|-------------------------------|
 | **Challenge** | Two clocks (Window + Power) and fauna that punish careless light/wake |
-| **Discovery** | Reading the shelf — wake lines, LIT/SHADOW, sealed routes |
+| **Discovery** | Reading the shelf — LIT/SHADOW, windups, sealed routes |
 | **Tension / drama** | Shear pressure rising; hatch → real drop; uplink hold |
 | **Expression** | Kit loadout, light vs loud fights, skill forks — not towns/meta unlocks |
-| **Submission / flow** | Fluid WASD cadence; opt-in Shift-peek (forced wake-commit is dead — Pass 4) |
+| **Submission / flow** | Fluid WASD cadence |
 
 If a feature doesn’t serve one of these (or a V1 pillar), it’s probably noise.
 
@@ -114,8 +114,8 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - WASD moves immediately; `.` waits.
-- Shift+dir peeks wake/ghost; release clears.
-- Live wake at feet stays; Notice Impact sells *resolve*, not a second confirm.
+- Windup paint on the ground is the planning read — leave the tiles or kill mid-charge.
+- LIT / SHADOW badge + Flare coach light risk without predictive foot lines.
 
 **Anti-pattern:** Reintroducing queue-on-WASD / confirm-on-`.` “for clarity.”
 
@@ -130,7 +130,6 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - Illumination / LIT / SHADOW drive combat hooks; bloom is decoration around that grid.
-- Wake Impact only for fauna the player could already read via live/peek tells.
 - Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use.
 - A rule that quietly changes a number has to show that number moving. Encirclement rides the DEF readout as `DEF 4+1−2` rather than earning a badge, so the penalty is legible where its effect is.
 - Autopilot + playtests are the balance oracle (55–85% WR) — feel changes that break legality are bugs.
@@ -163,7 +162,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Move (which is also how you pick things up), wait, kit/use, interact (Enter / Space / `>`), peek.
+- Move (which is also how you pick things up), wait, kit/use, interact (Enter / Space / `>`).
 - Kit `u` = use *or* equip; interact is contextual (hatch / beacon / pad / hail / sealed pry).
 - Help lists verbs first; “why gather” second.
 - A verb earns its letter by being a decision the existing ones cannot express, and by being wrong to press sometimes. `retreat` was cut for failing the first test — it was a step that cost Power. Dedicated brace/shove hotkeys stay cut until they clear the same bar (windup answers today: leave the paint, kill mid-charge, or baton stun).
@@ -180,7 +179,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Telegraphs for windups; wake lines for notice; Power/Window numbers stay visible.
+- Telegraphs for windups; LIT/SHADOW badge for notice risk; Power/Window numbers stay visible.
 - Ambush-in-shadow is a *known* SHADOW trade, taught in drill + badge.
 - Legal win path stays causal (Key → handshake → Lattice → pad) — feel polish never softens assertLegalWin.
 
@@ -228,8 +227,8 @@ If more than two boxes fail, shrink the proposal.
 | System | Principle weight |
 |--------|------------------|
 | Dual clocks + Shear Pressure | Challenge, progressive disclosure, juice budget |
-| Wake tells + Shift-peek + Notice Impact | Map first, opt-in preview, honest juice |
 | Field light / LIT·SHADOW | Discovery, one name, honest presentation |
+| Windup paint / ThreatView | Map first, fair info |
 | Drill bay + context hints | Teach at need |
 | Kit / EM | Few verbs, fair info |
 | Autopilot + playtest | Measure dynamics |

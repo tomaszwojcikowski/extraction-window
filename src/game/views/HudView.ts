@@ -58,8 +58,6 @@ export type HudRedrawOpts = {
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
   /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
   shear?: ShearPressureSpec;
-  /** Shift-peek active — show wake-peek tip without opening help. */
-  movePreviewActive?: boolean;
 };
 
 type BarLayout = {
@@ -381,7 +379,7 @@ export class HudView {
       this.setReadout(r.logText, '', opts, ThemeCss.ink, 'log');
     }
 
-    const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
+    const hint = resolveHintLine(st);
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));

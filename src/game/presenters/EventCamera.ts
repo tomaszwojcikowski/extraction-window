@@ -189,15 +189,6 @@ const CUES: Record<string, CameraCue> = {
     zoomScale: 1.04,
     zoomMs: 180,
   }),
-  notice: cue('notice', 50, 'snap', {
-    shakeMs: 90,
-    shakeIntensity: 0.003,
-    vignette: 0.12,
-    vignetteMs: 120,
-    nudgePx: 4,
-    zoomScale: 1.05,
-    zoomMs: 160,
-  }),
   hatch: cue('hatch', 58, 'bloom', {
     shakeMs: 0,
     shakeIntensity: 0,
@@ -245,20 +236,13 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
  * Pick at most one camera cue for this turn’s new logs.
  * Returns null when nothing warrants a kick (routine movement / ticks).
  */
-export function pickCameraCue(
-  logs: readonly LoreId[],
-  opts?: { noticeImpact?: boolean },
-): CameraCue | null {
+export function pickCameraCue(logs: readonly LoreId[]): CameraCue | null {
   let best: CameraCue | null = null;
   const seen = new Set(logs);
   for (const [loreId, cueKey] of LOG_TO_CUE) {
     if (!seen.has(loreId)) continue;
     const next = CUES[cueKey]!;
     if (!best || next.priority > best.priority) best = next;
-  }
-  if (opts?.noticeImpact) {
-    const notice = CUES.notice!;
-    if (!best || notice.priority > best.priority) best = notice;
   }
   return best;
 }

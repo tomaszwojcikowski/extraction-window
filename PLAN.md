@@ -63,7 +63,7 @@ and the duct has all seven — the absence is the identity.
 
 ## Mechanics
 
-- Turn-based grid; WASD/arrows move (stepping onto kit takes it); bump = melee; Shift+dir peek; `.` wait; `i` kit; `u` use/equip; `p` PADD; `l` mission log; Enter / Space / `>` interact; Esc close
+- Turn-based grid; WASD/arrows move (stepping onto kit takes it); bump = melee; `.` wait; `i` kit; `u` use/equip; `p` PADD; `l` mission log; Enter / Space / `>` interact; Esc close
 - Combat answers: walk into a hostile to strike; leave painted windup tiles or kill mid-charge; Pulse Baton stuns on hit
 - Positional pressure: stunned / winded hostiles eat the next strike clean; each hostile in contact past the first costs a point of DEF (capped at 2), so doorways and breaking contact matter
 - HP, bus Power (slow drain + hazards), ATK, DEF, personal Shields

@@ -35,18 +35,16 @@ export const LORE = {
     'TRAINING BAY\n' +
     'Reach the east hatch. Window and Power are paused here.\n' +
     '\n' +
-    'WASD — move · Shift+direction — peek who would wake\n' +
-    '. — wait · step on kit to take it\n' +
+    'WASD — move · . — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
     '\n' +
     'Yellow ion tiles drain Power — i→select Sealant Foam→u or take the south detour.\n' +
-    'Lines from your feet = who would wake. Flare lights dark fights.\n' +
+    'LIT is safer to read · SHADOW risks ambush · Flare lights dark fights.\n' +
     '\n' +
     'Press ? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
-    'Shift+direction — peek who would notice you (no turn spent)\n' +
     '. — wait\n' +
     'i — kit · u — use or equip · step onto kit to pick it up\n' +
     'Enter / Space / > — hatch, beacon, pad, optional site, hail\n' +
@@ -62,7 +60,7 @@ export const LORE = {
     'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
     '\n' +
     'LIGHT\n' +
-    'LIT — safe read · SHADOW — ambush risk.\n' +
+    'LIT — safer read · SHADOW — ambush risk. Your lamp and flares change who notices you.\n' +
     'Flare lights a dark fight.\n' +
     '\n' +
     'EXTRACT (pink marker)\n' +
@@ -83,7 +81,7 @@ export const LORE = {
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
   'UI-CONTROLS':
-    'WASD move · Shift peek · . wait · i kit · l log · ? help',
+    'WASD move · . wait · i kit · l log · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',
@@ -141,17 +139,14 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
   'UI-HINT-QUEST': 'Optional site — Enter / Space / >',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
-  'UI-HINT-COMMIT': 'Shift+direction peeks who would wake · release clears · . waits',
-  'UI-HINT-PEEK-TEACH':
-    'Lines from your feet show who would wake — Shift+direction peeks before you step',
-  'UI-TUT-MOVE': 'WASD move · . wait · Shift+direction peeks who would wake',
+  'UI-TUT-MOVE': 'WASD move · . wait · lamp and Flare change who notices you',
   'UI-TUT-LIGHT':
     'LIT safer fights · SHADOW ambush risk — Flare (i → select → u) lights dark fights',
   'UI-TUT-KIT': 'Salvage in kit — i, select Salvage, u to scan (item or backlash)',
   'UI-TUT-HAZARD':
     'Ion tile drains Power — step off, i→select Sealant Foam→u, or take the south detour',
   'UI-TUT-WAKE':
-    'Lines from your feet = who would wake · Shift+direction peeks the next tile',
+    'Fauna notice your lamp and shadow — stay LIT when you can · Flare for dark fights',
   'UI-TUT-FIGHT': 'Walk into them to hit · dark: i, select Plasma Flare, u',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Power then tick)',
@@ -374,13 +369,13 @@ export const LORE = {
   'LOG-DROP':
     'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Power hits 0.',
   'LOG-TUT-WELCOME':
-    'Drill bay — Window and Power paused. Lines from your feet show who would wake; ion tiles drain Power. East hatch starts the real drop.',
+    'Drill bay — Window and Power paused. LIT/SHADOW changes who notices you; ion tiles drain Power. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
     'Lamp stops at walls. Badge: LIT safer · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
     'Ion tile drains Power — Sealant (i → select → u) or take the south detour.',
   'LOG-TUT-WAKE':
-    'Lines from your feet = who would wake. Shift+direction peeks the next tile (no turn).',
+    'Fauna notice your lamp and shadow footprint — Flare lights dark fights.',
   'LOG-TUT-DONE':
     'Window and Power are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',

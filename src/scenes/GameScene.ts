@@ -25,12 +25,7 @@ import {
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
 import { HUD_BOTTOM_LOG, HUD_TOP } from '../game/GameHost';
-import { handleGameKey, type CommitTurnOpts } from '../game/input/InputController';
-import {
-  applyDirectionQueue,
-  previewTile,
-  type MovePreviewQueue,
-} from '../game/input/MovePreviewQueue';
+import { handleGameKey } from '../game/input/InputController';
 import { resolveHintLine } from '../game/presenters/ContextHints';
 import {
   ensureSignalRailTexts,
@@ -51,14 +46,9 @@ import {
   type ActionFloat,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
-import {
-  captureNoticeSnap,
-  noticeImpactIds,
-} from '../game/presenters/NoticeImpact';
 import { flankPenalty } from '../sim/combat';
 import { pickCameraCue, shearBreachCue, type CameraCue } from '../game/presenters/EventCamera';
 import { CameraKick } from '../game/presenters/CameraKick';
-import { markPeekTeachDone } from '../game/presenters/PeekTeach';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
@@ -66,7 +56,6 @@ import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import { computeShearPressure, shearReadoutLabel, type ShearPressureState } from '../game/presenters/ShearPressure';
-import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters/WakeTells';
 import { pressureRevealAt } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
@@ -90,15 +79,10 @@ export class GameScene extends Phaser.Scene {
   private camY = 0;
 
   private playerSprite!: Phaser.GameObjects.Image;
-  /** Semi-transparent silhouette at Shift-peek destination — planning ghost. */
-  private commitGhost!: Phaser.GameObjects.Image;
-  private commitGhostFade: Phaser.Tweens.Tween | null = null;
   private enemyViews = new Map<number, EnemyView>();
   private npcViews = new Map<number, EnemyView>();
   private allyViews = new Map<number, EnemyView>();
   private animating = false;
-  /** Optional Shift-peek — ghost + wake at adjacent tile; WASD still moves immediately. */
-  private movePreviewQueue: MovePreviewQueue | null = null;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
   private arcSweep: ArcSweep | null = null;
@@ -135,7 +119,6 @@ export class GameScene extends Phaser.Scene {
   private chevronGfx!: Phaser.GameObjects.Graphics;
   /** Amber frame / off-screen pip for optional room sites (never the extract marker). */
   private optionalSiteGfx!: Phaser.GameObjects.Graphics;
-  private wakeTellGfx!: Phaser.GameObjects.Graphics;
   private threatGfx!: Phaser.GameObjects.Graphics;
   private shearReadout!: Phaser.GameObjects.Text;
   private shearPlate!: Phaser.GameObjects.Graphics;
@@ -146,11 +129,6 @@ export class GameScene extends Phaser.Scene {
   private readonly lightPreferenceHints = new Set<number>();
   private preferenceHint: { id: 'UI-HINT-PREFER-DARK' | 'UI-HINT-PREFER-LIT'; until: number } | null =
     null;
-  /** Notice Impact — tell flash / ring pop until this time (ms). */
-  private noticeImpactUntil = 0;
-  private noticeImpactIds = new Set<number>();
-  /** Per-enemy latch so chase Impact is one snap, not corridor strobe. */
-  private noticeChaseLatched = new Set<number>();
   /** Event camera kick + punch-in zoom; world layers only (HUD stays 1:1). */
   private readonly camKick = new CameraKick();
   private lastCamOx = Number.NaN;
@@ -197,9 +175,6 @@ export class GameScene extends Phaser.Scene {
     this.allyViews.clear();
     this.lightPreferenceHints.clear();
     this.preferenceHint = null;
-    this.noticeImpactUntil = 0;
-    this.noticeImpactIds.clear();
-    this.noticeChaseLatched.clear();
     this.camKick.reset();
     this.firstLight = null;
     this.firstLightTween = null;
@@ -223,13 +198,6 @@ export class GameScene extends Phaser.Scene {
     this.playerSprite = this.add.image(0, 0, 't_player');
     this.playerSprite.setDisplaySize(TILE_DRAW, TILE_DRAW);
     this.entityLayer.add(this.playerSprite);
-
-    this.commitGhost = this.add.image(0, 0, 't_player');
-    this.commitGhost.setDisplaySize(TILE_DRAW, TILE_DRAW);
-    this.commitGhost.setAlpha(0);
-    this.commitGhost.setVisible(false);
-    this.commitGhost.setDepth(22);
-    this.entityLayer.add(this.commitGhost);
 
     this.buildMapSprites();
 
@@ -334,10 +302,6 @@ export class GameScene extends Phaser.Scene {
     this.optionalSiteGfx = this.add.graphics();
     this.optionalSiteGfx.setDepth(81);
     this.mapLayer.add(this.optionalSiteGfx);
-
-    this.wakeTellGfx = this.add.graphics();
-    this.wakeTellGfx.setDepth(24);
-    this.entityLayer.add(this.wakeTellGfx);
 
     // Ground marking sits over the floor but under items and actors.
     this.threatGfx = this.add.graphics();
@@ -503,7 +467,6 @@ export class GameScene extends Phaser.Scene {
 
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.handleKey(e));
-    this.input.keyboard!.on('keyup', (e: KeyboardEvent) => this.handleKeyUp(e));
     this.syncItems();
     this.syncActors(true);
     this.redrawTilesAndHud();
@@ -538,7 +501,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Hostile pressure — close fauna, alerted sight-lines, or latch chase. */
+  /** Hostile pressure — close fauna or alerted sight-lines. */
   private threatNearby(): boolean {
     const st = this.state;
     const px = st.player.x;
@@ -547,7 +510,6 @@ export class GameScene extends Phaser.Scene {
       if (!e.alive) return false;
       const d = Math.abs(e.x - px) + Math.abs(e.y - py);
       if (d <= 4) return true;
-      if (this.noticeChaseLatched.has(e.id)) return true;
       if (e.alerted && (st.visible[e.y]?.[e.x] ?? false) && d <= 8) return true;
       return false;
     });
@@ -563,13 +525,6 @@ export class GameScene extends Phaser.Scene {
       this.tickAnimatedActors();
       // Pulse vent/hazard/beacon bloom with anim frame
       if (this.state.status === 'playing') this.applyFieldLighting();
-    } else if (
-      this.state.status === 'playing' &&
-      this.noticeImpactUntil > 0 &&
-      this.time.now <= this.noticeImpactUntil + 50
-    ) {
-      // Keep Impact tell flash resolving within the ≤200ms beat.
-      this.applyFieldLighting();
     }
     if (!this.animating) {
       // Snappy 1px plotter redraw, not floaty bob
@@ -603,9 +558,6 @@ export class GameScene extends Phaser.Scene {
 
   private tickAnimatedActors(): void {
     this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
-    if (this.commitGhost.visible) {
-      this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
-    }
     for (const en of this.state.enemies) {
       if (!en.alive) continue;
       const view = this.enemyViews.get(en.id);
@@ -873,7 +825,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Hint line the HUD is currently showing (same resolver as HudView). */
   private hintLine(): LoreId | null {
-    return resolveHintLine(this.state, { movePreviewActive: this.movePreviewQueue !== null });
+    return resolveHintLine(this.state);
   }
 
   /** Field-kit plate behind the context hint — never a toast bubble. */
@@ -903,24 +855,9 @@ export class GameScene extends Phaser.Scene {
       queueAction: (action) => {
         this.queuedAction = action;
       },
-      setWakePeek: (dx, dy) => {
-        this.movePreviewQueue = applyDirectionQueue(this.state, this.movePreviewQueue, dx, dy);
-        if (this.movePreviewQueue) markPeekTeachDone(this.state);
-        this.applyFieldLighting();
-        this.redrawTilesAndHud();
-      },
-      getMovePreview: () => this.movePreviewQueue,
       getQueuedAction: () => this.queuedAction,
       clearQueuedAction: () => {
-        this.clearMovePreview();
-      },
-      dismissPeekTeach: () => {
-        // Only consume the one-shot teach when it is the line actually on screen —
-        // otherwise Escape would burn a tip the player never saw.
-        if (this.hintLine() !== 'UI-HINT-PEEK-TEACH') return false;
-        markPeekTeachDone(this.state);
-        this.redrawTilesAndHud();
-        return true;
+        this.queuedAction = null;
       },
       syncFieldAudio: (force) => this.syncFieldAudio(force),
       showMuteHint: (muted) => {
@@ -961,20 +898,8 @@ export class GameScene extends Phaser.Scene {
         this.hintText.setText(lore('UI-HINT-SKILL'));
         this.syncHintPlate();
       },
-      commitTurnAction: (action, opts) => this.commitTurnAction(action, opts),
+      commitTurnAction: (action) => this.commitTurnAction(action),
     });
-  }
-
-  private handleKeyUp(e: KeyboardEvent): void {
-    if (e.key !== 'Shift' && e.code !== 'ShiftLeft' && e.code !== 'ShiftRight') return;
-    if (!this.movePreviewQueue) return;
-    this.clearMovePreview(true);
-  }
-
-  private clearMovePreview(fade = true): void {
-    this.movePreviewQueue = null;
-    this.hideCommitGhost(fade);
-    this.applyFieldLighting();
   }
 
   private flushQueuedAction(): void {
@@ -984,12 +909,7 @@ export class GameScene extends Phaser.Scene {
     this.commitTurnAction(next);
   }
 
-  private commitTurnAction(action: Action, opts?: CommitTurnOpts): void {
-    const keepPreview = opts?.keepMovePreview ? this.movePreviewQueue : null;
-    if (!keepPreview) {
-      this.movePreviewQueue = null;
-      this.hideCommitGhost(false);
-    }
+  private commitTurnAction(action: Action): void {
     this.queuedAction = null;
     this.releaseFirstLight();
     const prevSector = this.state.sectorIndex;
@@ -1022,7 +942,6 @@ export class GameScene extends Phaser.Scene {
       x: n.x,
       y: n.y,
     }));
-    const prevNotice = captureNoticeSnap(this.state);
 
     applyAction(this.state, action);
 
@@ -1044,9 +963,7 @@ export class GameScene extends Phaser.Scene {
       flash: (color, alpha) => this.flashFx(color, alpha),
       tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
     });
-    const impactIds = noticeImpactIds(this.state, prevNotice, this.noticeChaseLatched);
-    this.presentNoticeImpact(impactIds);
-    this.playEventCamera(fb.newLogs, impactIds.length > 0);
+    this.playEventCamera(fb.newLogs);
     this.queueLightPreferenceHint();
     this.showActionFloats(this.state.log.slice(prevLogLen), {
       vitals: {
@@ -1064,11 +981,6 @@ export class GameScene extends Phaser.Scene {
     if (!fb.mapReloaded) this.redrawHudEager();
 
     if (fb.mapReloaded) {
-      this.movePreviewQueue = null;
-      this.hideCommitGhost(false);
-      this.noticeChaseLatched.clear();
-      this.noticeImpactIds.clear();
-      this.noticeImpactUntil = 0;
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -1088,12 +1000,6 @@ export class GameScene extends Phaser.Scene {
       stormTurns: this.state.stormTurns,
       inCombat: this.threatNearby(),
     });
-
-    // Drop keep-preview if the adjacent tile is no longer walkable after the turn.
-    if (keepPreview && !previewTile(this.state, keepPreview)) {
-      this.movePreviewQueue = null;
-      this.hideCommitGhost(true);
-    }
 
     // Light travels with the hop — capture the old wash, compute destination into
     // caches only (no sprite paint), then lock at t=0 so nothing flashes ahead.
@@ -1803,7 +1709,6 @@ export class GameScene extends Phaser.Scene {
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
-      movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
   }
@@ -1813,46 +1718,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Notice Impact — one ≤~200ms punch when a wake tell becomes real engage.
-   * Sprite juice here; camera kick via playEventCamera(notice).
-   */
-  private presentNoticeImpact(ids: number[]): void {
-    if (ids.length === 0) return;
-    this.noticeImpactIds = new Set(ids);
-    this.noticeImpactUntil = this.time.now + 180;
-    sfx.play('notice');
-
-    for (const id of ids) {
-      const view = this.enemyViews.get(id);
-      if (!view?.img.visible) continue;
-      view.img.setTint(Theme.rust);
-      const baseScaleX = view.img.scaleX;
-      const baseScaleY = view.img.scaleY;
-      this.tweens.add({
-        targets: view.img,
-        scaleX: baseScaleX * 1.18,
-        scaleY: baseScaleY * 1.18,
-        duration: 70,
-        yoyo: true,
-        ease: 'Quad.easeOut',
-        onComplete: () => {
-          if (view.img.active) {
-            view.img.clearTint();
-            view.img.setScale(baseScaleX, baseScaleY);
-          }
-        },
-      });
-    }
-
-    this.applyFieldLighting();
-  }
-
-  /**
    * Event camera — one ranked cue per turn (profiles: punch/snap/pressure/bloom/reward/hush).
    * Cosmetic only; never delays input. World layers zoom; HUD stays 1:1.
    */
-  private playEventCamera(logs: readonly LoreId[], noticeImpact: boolean): void {
-    const cue = pickCameraCue(logs, { noticeImpact });
+  private playEventCamera(logs: readonly LoreId[]): void {
+    const cue = pickCameraCue(logs);
     if (!cue) return;
     this.applyCameraCue(cue);
   }
@@ -1977,41 +1847,6 @@ export class GameScene extends Phaser.Scene {
 
     drawThreatZones(this.threatGfx, st, this.animFrame);
 
-    const preview = this.wakePreviewContext();
-    const liveTells = collectWakeTells(st);
-    const impactActive = this.time.now < this.noticeImpactUntil;
-    const impactIds = impactActive ? this.noticeImpactIds : undefined;
-    const impactPulse = impactActive
-      ? Math.max(0, (this.noticeImpactUntil - this.time.now) / 180)
-      : 0;
-
-    if (preview) {
-      // Dual-read: dim dashed live at feet + solid peek dest tells.
-      drawWakeTells(this.wakeTellGfx, st, liveTells, this.animFrame, {
-        layer: 'liveUnderPeek',
-        originX: st.player.x,
-        originY: st.player.y,
-        impactIds,
-        impactPulse,
-      });
-      drawWakeTells(this.wakeTellGfx, st, preview.tells, this.animFrame, {
-        clear: false,
-        layer: 'peek',
-        originX: preview.originX,
-        originY: preview.originY,
-        previewDest: preview.previewDest,
-        impactIds,
-        impactPulse,
-      });
-      this.showCommitGhost(preview.previewDest);
-    } else {
-      drawWakeTells(this.wakeTellGfx, st, liveTells, this.animFrame, {
-        layer: 'live',
-        impactIds,
-        impactPulse,
-      });
-    }
-
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
         const tile = this.tileSprites[y]?.[x];
@@ -2073,65 +1908,6 @@ export class GameScene extends Phaser.Scene {
         this.crackSprites.delete(id);
       }
     }
-  }
-
-  /** Shift-peek destination — wake footprint before you step. */
-  private wakePreviewContext():
-    | {
-        originX: number;
-        originY: number;
-        previewDest: { x: number; y: number };
-        tells: ReturnType<typeof wakeTellsAt>;
-      }
-    | null {
-    const q = this.movePreviewQueue;
-    if (!q) return null;
-    const dest = previewTile(this.state, q);
-    if (!dest) return null;
-    return {
-      originX: dest.x,
-      originY: dest.y,
-      previewDest: dest,
-      tells: wakeTellsAt(this.state, dest.x, dest.y),
-    };
-  }
-
-  /** Peek ghost — player silhouette at Shift-aimed tile, synced with wake preview. */
-  private showCommitGhost(dest: { x: number; y: number }): void {
-    this.commitGhostFade?.stop();
-    this.commitGhostFade = null;
-    const p = this.worldXY(dest.x, dest.y);
-    this.commitGhost.setVisible(true);
-    this.commitGhost.setTexture(playerTextureKey(this.animFrame % 3));
-    this.commitGhost.setPosition(p.x, p.y);
-    this.commitGhost.setAlpha(0.35);
-  }
-
-  private hideCommitGhost(fadeOut: boolean): void {
-    if (!this.commitGhost.visible || this.commitGhost.alpha <= 0) {
-      this.commitGhost.setVisible(false);
-      this.commitGhost.setAlpha(0);
-      return;
-    }
-
-    if (!fadeOut) {
-      this.commitGhostFade?.stop();
-      this.commitGhostFade = null;
-      this.commitGhost.setVisible(false);
-      this.commitGhost.setAlpha(0);
-      return;
-    }
-
-    this.commitGhostFade?.stop();
-    this.commitGhostFade = this.tweens.add({
-      targets: this.commitGhost,
-      alpha: 0,
-      duration: 150,
-      onComplete: () => {
-        this.commitGhost.setVisible(false);
-        this.commitGhostFade = null;
-      },
-    });
   }
 
   /** Everything solid enough to throw a shadow this frame. */
@@ -2221,7 +1997,6 @@ export class GameScene extends Phaser.Scene {
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
-      movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
     this.layoutBottomChrome();

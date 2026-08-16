@@ -90,7 +90,7 @@ export const tutorialMechanic: Mechanic = {
       );
       if (wakeActive && !state.scriptedFired.tut_wake) {
         once(state, 'tut_wake');
-        // Map wake lines already speak — hint only, no duplicate log.
+        // Fauna notice is sim-side — hint only, no duplicate log.
         return 'UI-TUT-WAKE';
       }
 

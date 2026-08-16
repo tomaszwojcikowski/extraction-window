@@ -38,7 +38,6 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | Key | Action |
 |-----|--------|
 | WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
-| Shift + dir | Peek who would notice you on the next tile (no turn spent) |
 | `.` | Wait |
 | `i` | Open field kit |
 | `u` | Use or equip selected item |
