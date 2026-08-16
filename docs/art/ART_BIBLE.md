@@ -151,8 +151,10 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 ## 6. Motion
 
 - Turn-based cadence stays legible: no motion that outlives the turn it explains.
-- Tile steps slide (~150ms). The surveyor takes a short hop so a one-tile move
+- Tile steps slide (~130ms). The surveyor takes a short hop so a one-tile move
   reads as a step; hostiles and escorts stay flat so packs stay readable.
+  Player and other movers tween in **parallel** (not stacked phases).
+  Mid-hop lamp wash only tints cells that change; bloom/shadows step ~8×/hop.
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward / hush ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).

@@ -14,8 +14,10 @@ import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/
 import { TILE_DRAW } from '../../scenes/textures';
 import { castReachTiles } from './castShadows';
 import { marchPoolRays, marchPoolRaysAt, type PoolRay } from './poolReach';
+import { moveBlendDirtyCells } from './moveBlendDirty';
 
 export type LightSource = FieldLightSource & { color: number };
+export { moveBlendDirtyCells } from './moveBlendDirty';
 
 const MAX_SOURCES = 12;
 
@@ -157,6 +159,8 @@ export class LightView {
     lampTo: { x: number; y: number };
     t: number;
     locked: boolean;
+    /** Cells whose wash changes across the hop — skip the rest each frame. */
+    dirty: { x: number; y: number }[];
   } | null = null;
 
   constructor(
@@ -221,6 +225,7 @@ export class LightView {
       lampTo: { x: to.x, y: to.y },
       t: 0,
       locked: false,
+      dirty: [],
     };
     // Carry stays null until lock — destination lighting must use sim lamp coords.
     this.lampCarry = null;
@@ -235,6 +240,7 @@ export class LightView {
     if (!blend || blend.locked) return;
     blend.toAlpha = cloneGrid(this.alphaGrid);
     blend.toTint = cloneGrid(this.tintGrid);
+    blend.dirty = moveBlendDirtyCells(blend.fromAlpha, blend.toAlpha, blend.fromTint, blend.toTint);
     blend.locked = true;
     this.setMoveLightProgress(0, tileSprites);
   }
@@ -272,23 +278,18 @@ export class LightView {
       x: blend.lampFrom.x + (blend.lampTo.x - blend.lampFrom.x) * u,
       y: blend.lampFrom.y + (blend.lampTo.y - blend.lampFrom.y) * u,
     };
-    const h = Math.min(tileSprites.length, blend.fromAlpha.length, blend.toAlpha.length);
-    for (let y = 0; y < h; y++) {
-      const row = tileSprites[y];
-      const fa = blend.fromAlpha[y];
-      const ta = blend.toAlpha[y];
-      const ft = blend.fromTint[y];
-      const tt = blend.toTint[y];
-      if (!row || !fa || !ta || !ft || !tt) continue;
-      const w = Math.min(row.length, fa.length, ta.length);
-      for (let x = 0; x < w; x++) {
-        const img = row[x];
-        if (!img) continue;
-        const a0 = fa[x] ?? 1;
-        const a1 = ta[x] ?? 1;
-        img.setAlpha(a0 + (a1 - a0) * u);
-        img.setTint(lerpTint(ft[x] ?? 0xffffff, tt[x] ?? 0xffffff, u));
-      }
+    const dirty = blend.dirty;
+    if (dirty.length === 0) return;
+    for (let i = 0; i < dirty.length; i++) {
+      const { x, y } = dirty[i]!;
+      const img = tileSprites[y]?.[x];
+      if (!img) continue;
+      const a0 = blend.fromAlpha[y]?.[x] ?? 1;
+      const a1 = blend.toAlpha[y]?.[x] ?? 1;
+      const t0 = blend.fromTint[y]?.[x] ?? 0xffffff;
+      const t1 = blend.toTint[y]?.[x] ?? 0xffffff;
+      img.setAlpha(a0 + (a1 - a0) * u);
+      img.setTint(lerpTint(t0, t1, u));
     }
   }
 

@@ -153,6 +153,12 @@ export class GameScene extends Phaser.Scene {
   private noticeChaseLatched = new Set<number>();
   /** Event camera kick + punch-in zoom; world layers only (HUD stays 1:1). */
   private readonly camKick = new CameraKick();
+  private lastCamOx = Number.NaN;
+  private lastCamOy = Number.NaN;
+  private lastCamZoom = Number.NaN;
+  private lastGoalSyncAt = 0;
+  /** Mid-hop bloom/shadow refresh step — wash updates every frame; FX ~8×/hop. */
+  private moveLightFxStep = -1;
 
   private invBg!: Phaser.GameObjects.Rectangle;
   private invPanel!: Phaser.GameObjects.Graphics;
@@ -1099,6 +1105,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.applyFieldLighting();
     if (fb.playerMoved) {
+      this.moveLightFxStep = -1;
       this.lightView.lockMoveBlend(this.tileSprites);
       this.lightView.paintMoveTextures(this.state, this.tileSprites, (kind, x, y) =>
         this.tileKey(kind, x, y),
@@ -1168,17 +1175,20 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  /** Lamp bloom + tile wash follow the surveyor hop. */
+  /** Lamp wash follows every hop frame; bloom/shadows step ~8× so the CPU stays free. */
   private tickMoveLight(t: number): void {
     if (!this.lightView.hasMoveBlend()) return;
     this.lightView.setMoveLightProgress(t, this.tileSprites);
+    const step = t >= 1 ? 8 : Math.floor(t * 8);
+    if (step === this.moveLightFxStep) return;
+    this.moveLightFxStep = step;
     this.refreshMoveLightFx();
   }
 
   private refreshMoveLightFx(): void {
     const st = this.state;
     const sources = this.lightView.allSources(st, this.animFrame);
-    this.drawFieldMotes();
+    // Skip motes mid-hop — static grit under a moving wash reads as noise.
     this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
     this.lightView.drawContactShadows(st, this.shadowCasters(), sources);
     this.lightView.applyActorLighting(st, this.playerSprite, this.enemyViews.values(), sources);
@@ -1429,8 +1439,8 @@ export class GameScene extends Phaser.Scene {
       this.camX = targetX;
       this.camY = targetY;
     } else {
-      this.camX += (targetX - this.camX) * 0.2;
-      this.camY += (targetY - this.camY) * 0.2;
+      this.camX += (targetX - this.camX) * 0.28;
+      this.camY += (targetY - this.camY) * 0.28;
     }
     const nudge = this.camKick.offset(this.time.now);
     // World-layer zoom toward the player (not Phaser camera — HUD stays unzoomed).
@@ -1439,18 +1449,29 @@ export class GameScene extends Phaser.Scene {
     const fy = this.playerSprite.y;
     const ox = -this.camX + nudge.x + fx * (1 - zoom);
     const oy = -this.camY + TOP + nudge.y + fy * (1 - zoom);
-    for (const layer of [
-      this.mapLayer,
-      this.shadowLayer,
-      this.lightLayer,
-      this.itemLayer,
-      this.entityLayer,
-    ]) {
-      layer.setScale(zoom);
-      layer.setPosition(ox, oy);
+    const camMoved =
+      snap ||
+      Math.abs(ox - this.lastCamOx) > 0.2 ||
+      Math.abs(oy - this.lastCamOy) > 0.2 ||
+      Math.abs(zoom - this.lastCamZoom) > 0.0005;
+    if (camMoved) {
+      this.lastCamOx = ox;
+      this.lastCamOy = oy;
+      this.lastCamZoom = zoom;
+      for (const layer of [
+        this.mapLayer,
+        this.shadowLayer,
+        this.lightLayer,
+        this.itemLayer,
+        this.entityLayer,
+      ]) {
+        layer.setScale(zoom);
+        layer.setPosition(ox, oy);
+      }
     }
-    // Keep chevron fresh as camera drifts
-    if (!snap) {
+    // Chevron redraw is cheap-ish but not free — keep it off the hot idle path.
+    if (snap || this.time.now - this.lastGoalSyncAt >= 48) {
+      this.lastGoalSyncAt = this.time.now;
       this.syncGoalVisuals(describeObjective(this.state).pos);
       this.syncOptionalSiteVisuals();
     }
