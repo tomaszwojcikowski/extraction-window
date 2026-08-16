@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { FONT_DATA, ThemeCss } from '../../scenes/theme';
+import { FONT_DATA, Theme, ThemeCss } from '../../scenes/theme';
 import { drawStencilBadge } from '../../scenes/atmosphere';
 import type { ActionFloat } from './ActionFeedback';
 
@@ -60,7 +60,7 @@ function parseCssColor(css: string): number {
   if (css.startsWith('#') && css.length === 7) {
     return parseInt(css.slice(1), 16);
   }
-  return 0x9a8f7a;
+  return Theme.panelEdge;
 }
 
 export function pushSignalRail(
