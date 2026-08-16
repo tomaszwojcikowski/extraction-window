@@ -307,7 +307,7 @@ export class HudView {
       const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.flag;
       this.setReadout(
         r.questText,
-        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} · ${questLine.favor}  ${questLine.index}/${questLine.total}`,
+        `${lore('UI-QUEST-TRACK')}: ${lore(questLine.prompt)} · ${lore('UI-QUEST-REWARD')} ${questLine.favor} · ${questLine.index}/${questLine.total}`,
         opts,
         questColor,
         'quest',

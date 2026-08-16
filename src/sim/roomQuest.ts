@@ -152,7 +152,7 @@ function applyPaddModifier(state: GameState, page: LoreId): void {
       break;
     case 'CODEX-TRENCH':
       state.stormTurns += 15;
-      pushLog(state, 'LOG-PADD-MOD', '+15 window');
+      pushLog(state, 'LOG-PADD-MOD', '+15 Window');
       break;
     case 'CODEX-FISSURE':
       state.player.def += 1;

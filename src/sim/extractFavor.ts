@@ -9,9 +9,9 @@ const FAVOR_BY_QUEST = {
 } as const satisfies Record<NonNullable<GameState['roomQuest']>['kind'], ExtractFavorKind>;
 
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
-  storm_shelter: '+15 WINDOW',
-  hazard_pass: 'HAZARD PASS',
-  pattern_fail_safe: 'PATTERN BUFFER',
+  storm_shelter: '+15 Window (extract)',
+  hazard_pass: 'Skip 1 hazard',
+  pattern_fail_safe: 'Block 1 desync',
 };
 
 export function favorForQuest(state: GameState): ExtractFavorKind {
@@ -42,5 +42,5 @@ export function consumeExtractFavor(state: GameState, kind: ExtractFavorKind): b
 export function applyStormShelterOnSectorEntry(state: GameState): void {
   if (!consumeExtractFavor(state, 'storm_shelter')) return;
   state.stormTurns += 15;
-  pushLog(state, 'LOG-FAVOR-SHELTER', '+15 window');
+  pushLog(state, 'LOG-FAVOR-SHELTER');
 }

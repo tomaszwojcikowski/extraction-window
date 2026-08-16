@@ -67,7 +67,7 @@ export const LORE = {
     '\n' +
     'EXTRACT (required order)\n' +
     '1 Splice Key · 2 beacon handshake · 3 Nav Lattice · 4 drop skiff pad\n' +
-    'Optional procedures refund Window. Kit (Field Hypo / Power Cell / Shield Charge) keeps you alive.\n' +
+    'Optional procedures earn extract rewards (+Window, hazard skip, or desync block). Kit (Field Hypo / Power Cell / Shield Charge) keeps you alive.\n' +
     'On the skiff: > start · . hold · Power Cell skips a hold · Flare blocks the wave.\n' +
     '\n' +
     'HATCHES\n' +
@@ -78,7 +78,7 @@ export const LORE = {
     'HP · Shield · Power · Window · XP\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Procedures earn extract rewards.',
   'UI-CONTROLS':
     'WASD move · Shift peek · . wait · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
@@ -136,7 +136,7 @@ export const LORE = {
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
-  'UI-HINT-QUEST': 'Optional procedure here — press Enter / Space / >',
+  'UI-HINT-QUEST': 'Procedure site — Enter / Space / >',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
   'UI-HINT-COMMIT': 'Shift+direction peeks who would wake · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
@@ -154,16 +154,17 @@ export const LORE = {
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Power then tick)',
   'UI-TUT-EXIT':
     'On hatch — step on it or press Enter / Space to start the drop (Window and Power go live)',
-  'UI-QUEST-TRACK': 'OPTIONAL',
-  'UI-RQ-SALVAGE': 'Salvage console — press Enter / Space / >',
-  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press Enter / Space / >',
-  'UI-RQ-VENT-A': 'Vent — use Sealant Foam here',
-  'UI-RQ-VENT-B': 'Seal console — press Enter / Space / > to finish',
+  'UI-QUEST-TRACK': 'PROCEDURE',
+  'UI-QUEST-REWARD': 'reward',
+  'UI-RQ-SALVAGE': 'Salvage console — Enter / Space / >',
+  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then Enter / Space / >',
+  'UI-RQ-VENT-A': 'Vent — Sealant Foam here (i → select → u)',
+  'UI-RQ-VENT-B': 'Seal console — Enter / Space / > to finish',
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
   'UI-PAGES-HINT': 'p or Esc — close',
   'UI-PAGES-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Procedures earn extract rewards.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective · proficiency',
   'UI-QUEST-KEY': 'SPLICE KEY',
@@ -277,7 +278,7 @@ export const LORE = {
   'CODEX-TECH':
     'Field tech: Halcyon probe reboot successful — short combat assist only.',
   'CODEX-SURVEY':
-    'Survey contact: bring a Nav Ping — optional favor for Window refund.',
+    'Survey contact: bring a Nav Ping — unlocks an optional procedure.',
   // Items
   'ITEM-RELAY-KEY': 'Splice Key',
   'ITEM-RELAY-KEY-DESC': 'Opens the Emergency Beacon handshake — required for inland path.',
@@ -390,13 +391,13 @@ export const LORE = {
   'LOG-NPC-HOLO': 'Archive dump — Window refund.',
   'LOG-NPC-ENSIGN': 'Ensign transfers kit scrap and escort protocol.',
   'LOG-NPC-TECH': 'Tech reboots a Halcyon probe for temporary assist.',
-  'LOG-NPC-SURVEY': 'Survey contact shares bearing notes — optional favor open.',
+  'LOG-NPC-SURVEY': 'Survey contact shares bearing notes — optional procedure open.',
   'LOG-NPC-BLOCK': 'Contact occupies that tile — hail with Enter / Space / > or step around.',
   'LOG-AGENDA-WANT-MED': 'Ensign needs a Field Hypo spare — hail again when you have one.',
   'LOG-AGENDA-WANT-SEALANT': 'Tech wants Sealant Foam or a Filter — hail again when ready.',
   'LOG-AGENDA-WANT-SURVEY': 'Contact wants a Nav Ping — hail again when you have one.',
   'LOG-AGENDA-NONE': 'Contact has nothing further.',
-  'LOG-AGENDA-DONE': 'Favor repaid — Window refund.',
+  'LOG-AGENDA-DONE': 'Contact repaid — Window refund.',
   'LOG-ALLY-UP': 'Ally online.',
   'LOG-ALLY-HIT': 'Ally strikes',
   'LOG-ALLY-KILL': 'Ally downs hostile',
@@ -512,11 +513,11 @@ export const LORE = {
   'LOG-EXIT-BLOCKED': 'Sector hatch will not open yet.',
   'LOG-HAZARD': 'Ion hazard — Power drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
-  'LOG-FAVOR-GRANT': 'Extract favor secured.',
-  'LOG-FAVOR-CONSUME': 'Extract favor spent.',
-  'LOG-FAVOR-SHELTER': 'Favor: +15 Window on the final sector.',
-  'LOG-FAVOR-HAZARD': 'Favor: hazard underfoot ignored this step.',
-  'LOG-FAVOR-PATTERN': 'Favor: pattern buffer caught a desync spike.',
+  'LOG-FAVOR-GRANT': 'Procedure reward secured.',
+  'LOG-FAVOR-CONSUME': 'Procedure reward spent.',
+  'LOG-FAVOR-SHELTER': '+15 Window applied on the final sector.',
+  'LOG-FAVOR-HAZARD': 'Hazard step skipped — reward spent.',
+  'LOG-FAVOR-PATTERN': 'Desync blocked — reward spent.',
   'LOG-UPLINK-START': 'Nav Lattice uplink started — hold the ridge pad.',
   'LOG-UPLINK-HOLD': 'Uplink hold maintained.',
   'LOG-UPLINK-TICK': 'Uplink signal climbing.',
@@ -529,16 +530,16 @@ export const LORE = {
   'LOG-STORM-WARN': 'Window low — extract soon.',
   'LOG-WINDUP-KILL': 'Windup interrupted — salvage bonus.',
   'LOG-USE-MAPPER': 'Nav ping — hatch bearing locked.',
-  'LOG-RQ-SALVAGE': 'Survey salvage complete — kit and PADD page recovered.',
-  'LOG-RQ-PURGE': 'Room purge complete — hostiles cleared; crate unlocked.',
-  'LOG-RQ-PURGE-WAKE': 'Room purge — hostiles spawning.',
-  'LOG-RQ-STORM': 'Survey procedure refunded Window.',
-  'LOG-RQ-CHARGE': 'Anomaly charge — temporary combat/filter systems online.',
+  'LOG-RQ-SALVAGE': 'Salvage procedure complete — kit and PADD page recovered.',
+  'LOG-RQ-PURGE': 'Purge procedure complete — hostiles cleared; crate unlocked.',
+  'LOG-RQ-PURGE-WAKE': 'Purge procedure — hostiles spawning.',
+  'LOG-RQ-STORM': 'Procedure refunded Window.',
+  'LOG-RQ-CHARGE': 'Procedure charge — temporary combat/filter systems online.',
   'LOG-CODEX': 'PADD page filed.',
-  'LOG-RQ-NEED': 'Anomaly still active — complete the survey procedure.',
-  'LOG-RQ-STEP': 'Survey procedure step advanced.',
+  'LOG-RQ-NEED': 'Procedure still open — finish the remaining steps.',
+  'LOG-RQ-STEP': 'Procedure step advanced.',
   'LOG-RQ-VENT': 'Vent seal complete — warren pressure dropping.',
-  'LOG-RQ-VENT-SEALED': 'Vent cluster sealed — proceed to seal console.',
+  'LOG-RQ-VENT-SEALED': 'Vent sealed — proceed to the seal console.',
   'LOG-HS-START': 'Beacon handshake started — hold position for sync.',
   'LOG-HS-TICK': 'Beacon handshake syncing.',
   'LOG-HS-INTERRUPT': 'Handshake interrupted — left the beacon pad.',
