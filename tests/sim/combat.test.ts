@@ -103,6 +103,23 @@ describe('playerAttack / enemyAttack', () => {
     expect(foe.statuses.stun).toBe(2);
   });
 
+  it('first melee from a hostile bites once, then settles', () => {
+    const st = combatArena();
+    st.player.hp = 100;
+    st.player.maxHp = 100;
+    st.player.armor = 0;
+    st.player.def = 0;
+    const foe = makeEnemy({ kind: 'mite', atk: 3, firstContactBite: true });
+    enemyAttack(st, foe, 0);
+    const first = 100 - st.player.hp;
+    expect(foe.firstContactBite).toBe(false);
+    expect(first).toBe(5); // 3 + 2 bite
+
+    st.player.hp = 100;
+    enemyAttack(st, foe, 0);
+    expect(100 - st.player.hp).toBe(3);
+  });
+
   it('drain fauna siphons bus and logs source', () => {
     const st = combatArena();
     st.player.hp = 20;

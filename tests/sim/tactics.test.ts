@@ -3,6 +3,7 @@ import { applyAction } from '../../src/sim/actions';
 import { hasBeamLine, moveEnemies, triggerOverwatch } from '../../src/sim/ai';
 import { leaveContamination, tickContamination } from '../../src/sim/contamination';
 import { useSelected } from '../../src/sim/inventory';
+import { rebuildIllumination } from '../../src/sim/light';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
 
 function floor(state: ReturnType<typeof combatArena>, x: number, y: number): void {
@@ -14,6 +15,9 @@ describe('Iteration 2 tactical threats', () => {
     const st = combatArena();
     st.player.x = 5;
     st.player.y = 5;
+    // Lit-prefer drones need work light to hold a long beam line.
+    st.player.probeTurns = 20;
+    rebuildIllumination(st);
     const drone = makeEnemy({ kind: 'drone', x: 8, y: 5 });
     st.enemies = [drone];
     floor(st, 6, 5);

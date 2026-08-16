@@ -126,6 +126,11 @@ export interface Enemy {
   statuses: StatusMap;
   /** AI memory */
   alerted: boolean;
+  /**
+   * One-shot bite on the first melee this hostile lands. Waking fauna is the
+   * expensive beat; subsequent chips settle to normal ATK.
+   */
+  firstContactBite: boolean;
   swellTurns: number;
   homeX: number;
   homeY: number;

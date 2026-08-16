@@ -87,8 +87,8 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
 
     st.player.probeTurns = 20;
     rebuildIllumination(st);
-    expect(effectiveAggro(st, darkHunter)).toBe(ENEMIES.stalker.aggroRange - 2);
-    expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 2);
+    expect(effectiveAggro(st, darkHunter)).toBe(ENEMIES.stalker.aggroRange - 3);
+    expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 3);
     expect(effectiveAggro(st, neutral)).toBe(ENEMIES.crawler.aggroRange);
   });
 
@@ -106,7 +106,7 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
       alerted: false,
     });
     st.enemies = [mite];
-    // Base mite aggro 2; lit → −2 (clamped to 1), so dist 2 should not engage melee path
+    // Base mite aggro 2; lit → −3 (clamped to 1), so dist 2 should not engage melee path
     const dist = 2;
     expect(ENEMIES.mite.lightPrefer).toBe('dark');
     expect(dist).toBeGreaterThan(Math.max(1, ENEMIES.mite.aggroRange - 2));

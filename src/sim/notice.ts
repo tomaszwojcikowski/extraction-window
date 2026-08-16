@@ -34,11 +34,11 @@ export function effectiveAggroAt(
     const lit = isLit(state, px, py);
     const dark = inShadow(state, px, py);
     if (def.lightPrefer === 'dark') {
-      if (lit) r = Math.max(1, r - 2);
-      else if (dark) r += 1;
+      if (lit) r = Math.max(1, r - 3);
+      else if (dark) r += 2;
     } else if (def.lightPrefer === 'lit') {
-      if (lit) r += 2;
-      else if (dark) r = Math.max(1, r - 1);
+      if (lit) r += 3;
+      else if (dark) r = Math.max(1, r - 2);
     }
     if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
   }

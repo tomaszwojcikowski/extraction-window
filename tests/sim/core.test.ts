@@ -254,6 +254,7 @@ describe('turn economy', () => {
       beamCooldown: 0,
       swellTurns: 0,
       alerted: true,
+      firstContactBite: true,
       skirmishRetreat: false,
       homeX: st.player.x,
       homeY: st.player.y,
