@@ -46,7 +46,7 @@ describe('Iteration 2 tactical threats', () => {
     expect(st.contamination).toHaveLength(1);
     tickContamination(st);
     expect(st.contamination).toHaveLength(0);
-    expect(lastLog(st, 'LOG-CONTAMINATION')?.detail).toBe('tile tax -3E');
+    expect(lastLog(st, 'LOG-CONTAMINATION')?.detail).toBe('tile tax -3 Power');
   });
 
   it('sentinel overwatch triggers first and flare cancellation clears it', () => {

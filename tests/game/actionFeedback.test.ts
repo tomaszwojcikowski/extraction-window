@@ -15,12 +15,12 @@ describe('ActionFeedback', () => {
     expect(
       actionFloatLabels([
         { loreId: 'LOG-ARMOR-ABSORB', detail: 'Rift Mite -2' },
-        { loreId: 'LOG-DRAIN', detail: 'Duct Drone -2E' },
+        { loreId: 'LOG-DRAIN', detail: 'Duct Drone -2 Power' },
         { loreId: 'LOG-PUNISH' },
       ]),
     ).toEqual([
       { label: 'SHIELD Rift Mite -2', color: ThemeCss.inkBright },
-      { label: 'POWER Duct Drone -2E', color: ThemeCss.arc },
+      { label: 'POWER Duct Drone -2 Power', color: ThemeCss.arc },
       { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag },
     ]);
   });
@@ -33,7 +33,7 @@ describe('ActionFeedback', () => {
 
   it('includes hatch feedback', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-SEALED-PRY' }])).toEqual([
-      { label: 'HATCH OPEN', color: ThemeCss.safe },
+      { label: 'SEALED OPEN', color: ThemeCss.safe },
     ]);
   });
 

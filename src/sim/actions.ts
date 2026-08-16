@@ -186,7 +186,10 @@ export function applyAction(state: GameState, action: Action): GameState {
 
     case 'close_ui':
       state.ui.inventoryOpen = false;
-      state.ui.aimingDart = false;
+      if (state.ui.aimingDart) {
+        state.ui.aimingDart = false;
+        pushLog(state, 'LOG-AIM-CANCEL');
+      }
       return state;
 
     case 'toggle_inventory':
@@ -211,7 +214,8 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'wait':
       if (state.ui.aimingDart) {
         state.ui.aimingDart = false;
-        pushLog(state, 'LOG-AIM-MISS');
+        pushLog(state, 'LOG-AIM-CANCEL');
+        return state;
       }
       // Already on the drill hatch — waiting also commits the drop (recover stuck players).
       if (state.tutorialActive && onExitTile(state)) {

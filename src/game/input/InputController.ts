@@ -137,8 +137,14 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   const action = actionFromKey(e);
   if (!action) return;
 
-  // Escape: clear wake peek first; dismiss peek teach; otherwise open help when kit is closed
+  // Escape: clear dart aim; clear wake peek; dismiss peek teach; otherwise open help when kit is closed
   if (action.type === 'close_ui' && !state.ui.inventoryOpen) {
+    if (state.ui.aimingDart) {
+      applyAction(state, { type: 'close_ui' });
+      host.afterUiChrome();
+      sfx.play('ui');
+      return;
+    }
     if (host.getMovePreview()) {
       host.clearQueuedAction();
       sfx.play('ui');

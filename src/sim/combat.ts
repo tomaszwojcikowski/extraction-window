@@ -173,7 +173,7 @@ export function enemyAttack(
 
   if (ENEMIES[enemy.kind].behavior === 'drain') {
     state.player.energy -= 2;
-    pushLog(state, 'LOG-DRAIN', `${name} -2E`);
+    pushLog(state, 'LOG-DRAIN', `${name} -2 Power`);
   }
   if (
     enemy.kind === 'stalker' ||

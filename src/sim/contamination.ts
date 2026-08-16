@@ -22,7 +22,7 @@ export function tickContamination(state: GameState): void {
     )
   ) {
     state.player.energy -= CONTAMINATION_ENERGY_COST;
-    pushLog(state, 'LOG-CONTAMINATION', `tile tax -${CONTAMINATION_ENERGY_COST}E`);
+    pushLog(state, 'LOG-CONTAMINATION', `tile tax -${CONTAMINATION_ENERGY_COST} Power`);
   }
   state.contamination = state.contamination
     .map((tile) => ({ ...tile, turns: tile.turns - 1 }))

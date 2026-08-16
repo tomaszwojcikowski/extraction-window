@@ -14,6 +14,7 @@ import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
+import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 6;
@@ -197,8 +198,10 @@ export class HudView {
     const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
     const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
     const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
-    const mapper = st.player.mapperTurns > 0 ? `Nav Ping ${st.player.mapperTurns}` : '';
-    const desync = st.patternDesync > 0 ? `Desync ${st.patternDesync}` : '';
+    const desync =
+      st.patternDesync > 0
+        ? `Desync ${st.patternDesync} · Power Cell`
+        : '';
     const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
       ? lore('UI-ALLY-DRONE')
       : st.allies.some(
@@ -209,9 +212,7 @@ export class HudView {
           )
         ? lore('UI-ALLY-ESCORT')
         : '';
-    const sysBits = [probe, stim, filter, mapper, desync, allyRole].filter(
-      Boolean,
-    );
+    const sysBits = [probe, stim, filter, desync, allyRole].filter(Boolean);
     const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
     const statuses = statusHud(st.player.statuses);
     const statusLine = statuses ? ` · ${statuses}` : '';
@@ -224,7 +225,10 @@ export class HudView {
     // rides the existing DEF readout rather than earning a badge of its own.
     const flanked = flankPenalty(st);
     const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
-    const emPart = shearPrimary ? '' : ` · ${lore('UI-EM')} ${st.emStress}`;
+    let emPart = '';
+    if (st.emStress >= EM_HIGH) emPart = ` · EM CRIT ${st.emStress}`;
+    else if (st.emStress >= EM_WARN) emPart = ` · EM WARN ${st.emStress}`;
+    else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${st.emStress}`;
     const meta = `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
@@ -246,8 +250,17 @@ export class HudView {
     if (stanceBadge) badgeSpecs.push(stanceBadge);
     if (st.ionFrontTurns > 0) {
       badgeSpecs.push({
-        label: lore(st.ionFrontTurns <= 1 ? 'UI-FRONT-CLEARING' : 'UI-ION-FRONT'),
+        label:
+          st.ionFrontTurns <= 1
+            ? lore('UI-FRONT-CLEARING')
+            : `${lore('UI-ION-FRONT')} ${st.ionFrontTurns}`,
         fill: st.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
+      });
+    }
+    if (st.player.mapperTurns > 0) {
+      badgeSpecs.push({
+        label: `${lore('UI-MAPPER')} ${st.player.mapperTurns}`,
+        fill: Theme.tape,
       });
     }
     if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.tape });
@@ -307,24 +320,36 @@ export class HudView {
 
     const stormHot = st.stormTurns <= 80;
     const urgencyParts: string[] = [];
-    // Window critical + SHEAR center would triple-signal — Shear owns Charged+.
-    if (stormHot && !shearPrimary) {
-      urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
-    }
-    if (st.skillPick) {
+    const skillLock = Boolean(st.skillPick);
+    // Skill pick owns the line — Window/EM wait until the fork is chosen.
+    if (skillLock) {
       urgencyParts.push(
-        st.skillPick
+        st.skillPick!
           .map(
             (id, i) =>
               `${i + 1} ${lore(SKILLS[id]!.loreName)} — ${lore(SKILLS[id]!.loreDesc)}`,
           )
           .join(' · '),
       );
+    } else {
+      if (stormHot && !shearPrimary) {
+        urgencyParts.push(`${lore('HAZ-STORM')}  (${st.stormTurns})`);
+      }
+      if (st.emStress >= EM_HIGH) {
+        urgencyParts.push(`EM CRIT ${st.emStress}`);
+      } else if (st.emStress >= EM_WARN) {
+        urgencyParts.push(`EM WARN ${st.emStress}`);
+      }
     }
-    if (!shearPrimary && st.emStress >= 35) urgencyParts.push(`${lore('UI-EM')} ${st.emStress}`);
 
     const hasUrgency = urgencyParts.length > 0;
-    const urgencyColor = stormHot && !shearPrimary ? ThemeCss.rust : ThemeCss.inkDim;
+    const urgencyColor = skillLock
+      ? ThemeCss.flag
+      : stormHot && !shearPrimary
+        ? ThemeCss.rust
+        : st.emStress >= EM_HIGH
+          ? ThemeCss.rust
+          : ThemeCss.inkDim;
     this.setReadout(
       r.urgencyText,
       hasUrgency ? urgencyParts.join(' · ') : '',

@@ -141,7 +141,7 @@ function tryBeamPattern(state: GameState, enemy: Enemy): boolean {
     if (hasBeamLine(state, enemy)) {
       applyPlayerDamage(state, 2, 'ion', { source: lore(ENEMIES[enemy.kind].loreName) });
       state.player.energy -= 4;
-      pushLog(state, 'LOG-BEAM-FIRE', `${lore(ENEMIES[enemy.kind].loreName)} -4E`);
+      pushLog(state, 'LOG-BEAM-FIRE', `${lore(ENEMIES[enemy.kind].loreName)} -4 Power`);
     } else {
       pushLog(state, 'LOG-BEAM-BLOCKED');
     }
@@ -375,7 +375,7 @@ function tryBossPattern(state: GameState, enemy: Enemy): void {
       // FOV drain pulse
       state.player.energy -= 2;
       addStatus(state.player, 'expose', 1);
-      pushLog(state, 'LOG-DRAIN', `${lore(ENEMIES[enemy.kind].loreName)} -2E`);
+      pushLog(state, 'LOG-DRAIN', `${lore(ENEMIES[enemy.kind].loreName)} -2 Power`);
       if (dist === 1) tryMelee(state, enemy, 1);
       else stepToward(state, enemy, state.player.x, state.player.y);
       return;

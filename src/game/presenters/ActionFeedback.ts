@@ -214,6 +214,39 @@ export function collectActionFloatLabels(
           color: ThemeCss.inkBright,
         };
         break;
+      case 'LOG-USE-FLARE':
+        next = {
+          label: log.detail ? `FLARE · ${log.detail}` : 'FLARE · LIGHT',
+          color: ThemeCss.tape,
+        };
+        break;
+      case 'LOG-USE-FILTER':
+        next = { label: 'FILTER ONLINE', color: ThemeCss.arc };
+        break;
+      case 'LOG-USE-DART':
+        next = { label: 'DART · EXPOSE', color: ThemeCss.flag };
+        break;
+      case 'LOG-SALVAGE-ID':
+        next = {
+          label: log.detail ? `SCANNED · ${log.detail}` : 'SCANNED',
+          color: ThemeCss.safe,
+        };
+        break;
+      case 'LOG-SALVAGE-BAD':
+        next = { label: 'SALVAGE BACKLASH', color: ThemeCss.rust };
+        break;
+      case 'LOG-AIM-CANCEL':
+        next = { label: 'AIM CANCELLED', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-TELE-REACH':
+        next = { label: 'REACH INCOMING', color: ThemeCss.rust };
+        break;
+      case 'LOG-TELE-ZONE':
+        next = { label: 'PULSE RING', color: ThemeCss.scanWash };
+        break;
+      case 'LOG-TELE-SWELL':
+        next = { label: 'SWELL · BURST SOON', color: ThemeCss.arc };
+        break;
       case 'LOG-ARMOR-RESEAT':
         next = {
           label:
@@ -268,7 +301,7 @@ export function collectActionFloatLabels(
         break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
-        next = { label: 'HATCH OPEN', color: ThemeCss.safe };
+        next = { label: 'SEALED OPEN', color: ThemeCss.safe };
         break;
       case 'LOG-SEALED-CACHE':
         next = {

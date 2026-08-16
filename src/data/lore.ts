@@ -7,7 +7,8 @@ export const LORE = {
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
   'UI-BRIEF': 'Nav Lattice → drop skiff · Window and Power both kill you',
-  'UI-BRIEF-TUT': 'Drill first — then Splice Key → beacon → Nav Lattice → skiff',
+  'UI-BRIEF-TUT':
+    'Drill first — Window and Power both kill you · then Key → beacon → Lattice → skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
@@ -34,12 +35,12 @@ export const LORE = {
     'TRAINING BAY\n' +
     'Reach the east hatch. Window and Power are paused here.\n' +
     '\n' +
-    'WASD — move · Shift+direction — peek who notices you\n' +
+    'WASD — move · Shift+direction — peek who would wake\n' +
     '. — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
     '\n' +
-    'Yellow ion tiles drain Power — Sealant (u) or take the south detour.\n' +
-    'Lines from your feet = who notices you. Flare lights dark fights.\n' +
+    'Yellow ion tiles drain Power — i→select Sealant Foam→u or take the south detour.\n' +
+    'Lines from your feet = who would wake. Flare lights dark fights.\n' +
     '\n' +
     'Press ? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
@@ -87,17 +88,20 @@ export const LORE = {
   'UI-HINT-EXIT-NEED-CORE': 'Hatch locked — get the Nav Lattice first',
   'UI-HINT-EXIT-NEED-BEACON': 'Hatch locked — finish the beacon (Enter / Space / >) first',
   'UI-HINT-BEACON': 'Beacon — press Enter / Space / > to start the handshake',
-  'UI-HINT-HANDSHAKE': 'Handshake running — stay on the beacon',
+  'UI-HINT-HANDSHAKE': 'Handshake live — . to wait · stay on the beacon (2 turns)',
   'UI-HINT-SHUTTLE': 'Drop skiff — press Enter / Space / > while carrying the Nav Lattice',
   'UI-HINT-UPLINK-HOLD': 'Uplink live — . to hold · Power Cell skips · Flare blocks the wave',
   'UI-HINT-DESYNC': 'Pattern desync — use a Power Cell before the skiff will lock',
   'UI-HINT-ITEM': 'Kit on this tile — step onto it to pick it up',
-  'UI-HINT-AIM': 'Aim dart — press a direction toward a lit target within 3',
+  'UI-HINT-ITEM-FULL': 'Kit full — free a slot (use an item), then step here again',
+  'UI-HINT-AIM':
+    'Aim dart — direction fires (lit, range 3) · . cancels · miss spends the dart',
   'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-ENERGY': 'Power low — open kit (i), select Power Cell, press u',
   'UI-HINT-USE-ARMOR': 'Shield low — open kit (i), select Shield Charge, press u',
   'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Field Hypo, press u',
-  'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
+  'UI-HINT-USE-SEALANT':
+    'Hazard underfoot — open kit (i), select Sealant Foam, press u',
   'UI-HINT-SEALED':
     'Sealed hatch (optional) — need Sealant Foam or equip Pulse Baton',
   'UI-HINT-SEALED-SEALANT':
@@ -106,9 +110,10 @@ export const LORE = {
     'Sealed hatch — press Enter / Space / > to pry open (Pulse Baton equipped)',
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare softens the next pulse',
-  'UI-HINT-FLARE': 'In the dark near hostiles — Flare lights the fight',
+  'UI-HINT-FLARE':
+    'Dark fight — open kit (i), select Plasma Flare, press u',
   'UI-HINT-LIGHT':
-    'LIT safe · SHADOW ambush risk — Flare lights a dark fight',
+    'SHADOW — ambush risk · LIT safer · Flare (i → select → u) lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
     'Window = turns left · Power = kit charge — either hitting 0 ends the run',
@@ -119,7 +124,13 @@ export const LORE = {
   'UI-HINT-SKILL':
     'Choose a field skill — press 1 or 2 (effects above; move locked until then)',
   'UI-HINT-TELE': 'Windup painted — leave those tiles or kill it',
-  'UI-HINT-TELE-REACH': 'Windup next to you — kill it or step clear if you can',
+  'UI-HINT-TELE-REACH': 'Two-tile windup — kill it or step fully clear of the painted tiles',
+  'UI-HINT-TELE-OVERWATCH':
+    'Overwatch locked — do not step adjacent; Flare cancels or kill it',
+  'UI-HINT-TELE-BEAM': 'Beam charging — break line of sight or kill it',
+  'UI-HINT-TELE-ZONE': 'Pulse charging — leave the painted ring or kill it',
+  'UI-HINT-BEACON-NEED-KEY':
+    'Beacon sealed — carry the Splice Key, then Enter / Space / >',
   'UI-HINT-BRAND': 'Branded elite — optional; Flare, Probe, or Filter match its brand',
   'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
@@ -127,18 +138,18 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
   'UI-HINT-QUEST': 'Optional procedure here — press Enter / Space / >',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
-  'UI-HINT-COMMIT': 'Shift+direction peeks notice · release clears · . waits',
+  'UI-HINT-COMMIT': 'Shift+direction peeks who would wake · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
-    'Lines from your feet show who notices you — Shift+direction peeks before you step',
-  'UI-TUT-MOVE': 'WASD to move · Shift+direction peeks notice · . waits',
+    'Lines from your feet show who would wake — Shift+direction peeks before you step',
+  'UI-TUT-MOVE': 'WASD move · . wait · Shift+direction peeks who would wake',
   'UI-TUT-LIGHT':
-    'LIT is a safe read · SHADOW invites ambush — Flare lights dark fights',
-  'UI-TUT-KIT': 'i opens kit · u uses item — scan salvage · Flare = light',
+    'LIT safer fights · SHADOW ambush risk — Flare (i → select → u) lights dark fights',
+  'UI-TUT-KIT': 'Salvage in kit — i, select Salvage, u to scan (item or backlash)',
   'UI-TUT-HAZARD':
-    'Ion tile drains Power — step off, Sealant (u), or take the south detour',
+    'Ion tile drains Power — step off, i→select Sealant Foam→u, or take the south detour',
   'UI-TUT-WAKE':
-    'Lines from your feet = who notices you · Shift+direction peeks the next tile',
-  'UI-TUT-FIGHT': 'Walk into them to hit · Flare if dark',
+    'Lines from your feet = who would wake · Shift+direction peeks the next tile',
+  'UI-TUT-FIGHT': 'Walk into them to hit · dark: i, select Plasma Flare, u',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Power then tick)',
   'UI-TUT-EXIT':
@@ -276,7 +287,7 @@ export const LORE = {
   'ITEM-MED-DESC': 'Restore +22 HP and clear bleed.',
   'ITEM-ENERGY': 'Power Cell',
   'ITEM-ENERGY-DESC':
-    '+32 Power. Also clears pattern desync and skips one skiff uplink hold.',
+    'Refills Power bar +32. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
   'ITEM-PROBE-DESC': '+2 ATK and +4 vision for 25 turns.',
   'ITEM-STIM': 'Combat Stim',
@@ -298,7 +309,8 @@ export const LORE = {
   'ITEM-VEST': 'Ablative Vest',
   'ITEM-VEST-DESC': 'Equip for +4 max Shield and +1 DEF. Use again to stow.',
   'ITEM-DART': 'Plasma Microdart',
-  'ITEM-DART-DESC': 'u then a direction: hit a lit target within 3 — damage and expose.',
+  'ITEM-DART-DESC':
+    'u then a direction: hit a lit target within 3 — damage and expose. Miss spends it; . cancels.',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC':
     'Clears ion/vent/brine underfoot, flushes EM, or opens an adjacent sealed hatch (u).',
@@ -306,8 +318,7 @@ export const LORE = {
   'ITEM-MAPPER-DESC': 'Marks the sector hatch for 40 turns (even through fog).',
   'ITEM-SALVAGE': 'Salvage',
   'ITEM-SALVAGE-DESC':
-    'Step onto it to pick up, then u in the kit to scan. May give a useful item — or backlash.',
-
+    'u to scan — may become a kit item, or EM backlash and wake.',
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
   'ENEMY-SPORE': 'Wash Spore',
@@ -357,13 +368,13 @@ export const LORE = {
   'LOG-DROP':
     'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Power hits 0.',
   'LOG-TUT-WELCOME':
-    'Drill bay — Window and Power paused. Lines from your feet show notice; ion tiles drain Power. East hatch starts the real drop.',
+    'Drill bay — Window and Power paused. Lines from your feet show who would wake; ion tiles drain Power. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
-    'Lamp stops at walls. Badge: LIT safe · SHADOW ambush risk.',
+    'Lamp stops at walls. Badge: LIT safer · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
-    'Ion tile drains Power — Sealant (u) or take the south detour.',
+    'Ion tile drains Power — Sealant (i → select → u) or take the south detour.',
   'LOG-TUT-WAKE':
-    'Lines from your feet = who notices you. Shift+direction peeks the next tile (no turn).',
+    'Lines from your feet = who would wake. Shift+direction peeks the next tile (no turn).',
   'LOG-TUT-DONE':
     'Window and Power are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',
@@ -402,7 +413,7 @@ export const LORE = {
   'LOG-BOSS-DOWN': 'Campaign apex neutralized — kit and Window refunded.',
   'LOG-ELITE-DOWN': 'Elite down — salvage and Window refund.',
   'LOG-USE-MED': 'Field hypo administered.',
-  'LOG-USE-ENERGY': 'Power cell slotted into the kit.',
+  'LOG-USE-ENERGY': 'Power Cell slotted — Power restored.',
   'LOG-USE-PROBE': 'Field array pulse active — ATK up.',
   'LOG-USE-STIM': 'Combat stim active — ATK surge.',
   'LOG-USE-PLATE': 'Shield charge bonded — pool repaired.',
@@ -420,7 +431,7 @@ export const LORE = {
   'LOG-SEALED-NEED-TOOL':
     'Sealed hatch — Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.',
   'LOG-INTERACT-MISS':
-    'Not on a hatch, beacon, or pad — stand on it, then Enter / Space / >.',
+    'Not on a sector hatch, beacon, or pad — stand on it, then Enter / Space / >. Sealed hatches open from beside.',
   'LOG-SEALED-OPEN': 'Sealant Foam opens the sealed hatch — path clear.',
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache — +6 Window.',
@@ -430,6 +441,7 @@ export const LORE = {
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
   'LOG-AIM-MISS': 'Microdart spent — no valid visible target in range.',
+  'LOG-AIM-CANCEL': 'Dart aim cancelled.',
   'LOG-USE-FAIL': 'No usable item selected.',
   'LOG-USE-EMPTY': 'Field kit empty — nothing to use.',
   'LOG-USE-QUEST': 'Objective item — not consumable (carry to beacon / drop skiff).',
@@ -530,10 +542,10 @@ export const LORE = {
   'LOG-HS-START': 'Beacon handshake started — hold position for sync.',
   'LOG-HS-TICK': 'Beacon handshake syncing.',
   'LOG-HS-INTERRUPT': 'Handshake interrupted — left the beacon pad.',
-  'LOG-PB-DESYNC': 'Nav Lattice desynced — use a Power Cell before the skiff will lock.',
+  'LOG-PB-STRESS': 'Pattern buffer stressed — keep a Power Cell ready before the skiff.',
   'LOG-PB-SYNC': 'Pattern buffer restabilized.',
   'LOG-PB-REJECT': 'Skiff refuses lock — pattern still desynced (need Power Cell).',
-  'LOG-PB-STRESS': 'Pattern buffer under Window stress.',
+  'LOG-PB-DESYNC': 'Nav Lattice desynced — use a Power Cell before the skiff will lock.',
   'LOG-EVT-AFTERGLOW':
     'Drop afterglow — EM spike. Sealant Foam helps clean residue.',
   'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse Power; watch the pattern buffer.',

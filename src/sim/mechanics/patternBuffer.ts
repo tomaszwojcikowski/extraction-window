@@ -77,11 +77,7 @@ export const patternBufferMechanic: Mechanic = {
 
   contextHint(state: GameState): LoreId | null {
     if (state.patternDesync <= 0) return null;
-    const tile = state.tiles[state.player.y]![state.player.x]!;
-    if (tile.kind === 'shuttle') return 'UI-HINT-DESYNC';
-    // Thin pillar coaching when the buffer is climbing and sealant is available
-    if (state.patternDesync >= 2 && hasItem(state, 'energy')) return 'UI-HINT-DESYNC';
-    return null;
+    return 'UI-HINT-DESYNC';
   },
 
   autopilotHint(state: GameState): Action | null {

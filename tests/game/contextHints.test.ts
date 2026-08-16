@@ -77,7 +77,7 @@ describe('contextHint coaching', () => {
     st.enemies = [sentinel];
     st.visible[sentinel.y]![sentinel.x] = true;
 
-    expect(contextHint(st)).toBe('UI-HINT-TELE');
+    expect(contextHint(st)).toBe('UI-HINT-TELE-OVERWATCH');
   });
 
   it('teaches dual clocks once after the drill bay', () => {
@@ -179,7 +179,7 @@ describe('hint line resolver', () => {
     sentinel.intent = 'overwatch';
     st.enemies.push(sentinel);
     st.visible[sentinel.y]![sentinel.x] = true;
-    expect(resolveHintLine(st)).toBe('UI-HINT-TELE');
+    expect(resolveHintLine(st)).toBe('UI-HINT-TELE-OVERWATCH');
   });
 });
 

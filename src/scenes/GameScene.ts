@@ -1334,14 +1334,14 @@ export class GameScene extends Phaser.Scene {
       enemy.intent === 'beam'
         ? 'BEAM'
         : enemy.intent === 'overwatch'
-          ? 'OW'
+          ? 'HOLD'
           : enemy.intent === 'pounce'
-            ? 'P!'
+            ? 'LUNGE'
             : enemy.intent === 'reach'
               ? 'REACH'
               : enemy.intent === 'zone'
                 ? 'PULSE'
-                : 'CHARGE';
+                : 'WINDUP';
     const color =
       enemy.intent === 'beam'
         ? ThemeCss.arcWhite
@@ -1352,7 +1352,7 @@ export class GameScene extends Phaser.Scene {
             : ThemeCss.rust;
     view.label.setText(marker);
     view.label.setColor(color);
-    view.label.setFontSize(marker.length > 2 ? 8 : 10);
+    view.label.setFontSize(marker.length > 4 ? 8 : 10);
   }
 
   private updateCamera(snap: boolean): void {

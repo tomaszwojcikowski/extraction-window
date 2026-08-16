@@ -112,7 +112,7 @@ describe('playerAttack / enemyAttack', () => {
     const foe = makeEnemy({ kind: 'leech', atk: 3 });
     enemyAttack(st, foe, 0);
     expect(st.player.energy).toBe(38);
-    expect(lastLog(st, 'LOG-DRAIN')?.detail).toContain('-2E');
+    expect(lastLog(st, 'LOG-DRAIN')?.detail).toContain('-2 Power');
   });
 
   it('stalker applies bleed; rift applies expose', () => {

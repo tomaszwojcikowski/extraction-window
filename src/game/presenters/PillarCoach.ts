@@ -1,5 +1,6 @@
 import type { LoreId } from '../../data/lore';
 import { flankPenalty } from '../../sim/combat';
+import { inShadow } from '../../sim/light';
 import type { GameState } from '../../sim/types';
 
 function once(state: GameState, id: string): boolean {
@@ -10,7 +11,7 @@ function once(state: GameState, id: string): boolean {
 
 /**
  * One-shot pillar coaching for the early shelf — dual clocks, extract spine,
- * flank. Call only when the hint line is free of combat / tile urgency
+ * flank, light. Call only when the hint line is free of combat / tile urgency
  * (DESIGN_PRINCIPLES §4: teach at the moment of need).
  *
  * Clocks / extract fire only after the drill bay (`tut_welcome`) so harness
@@ -38,6 +39,11 @@ export function pillarCoachHint(st: GameState): LoreId | null {
     once(st, 'teach_extract')
   ) {
     return 'UI-HINT-EXTRACT';
+  }
+
+  // Shadow badge alone is easy to miss — teach ambush once on first dark tile.
+  if (inShadow(st, st.player.x, st.player.y) && once(st, 'teach_light')) {
+    return 'UI-HINT-LIGHT';
   }
 
   return null;

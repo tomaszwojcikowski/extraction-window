@@ -1,5 +1,5 @@
 import type { LoreId } from '../../data/lore';
-import { ITEMS } from '../../data/items';
+import { ITEMS, INVENTORY_SLOTS } from '../../data/items';
 import { ENEMIES } from '../../data/enemies';
 import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
@@ -18,7 +18,7 @@ export function contextHint(st: GameState): LoreId | null {
   // The first-run drill deliberately teaches its bespoke stalker response.
   if (st.tutorialActive && fromMechanic) return fromMechanic;
 
-  // Everything winding up has to be outrun or killed.
+  // Everything winding up has to be outrun or killed — coach by intent.
   const armed = st.enemies.filter(
     (e) => e.alive && (st.visible[e.y]?.[e.x] ?? false) && e.windup > 0,
   );
@@ -26,6 +26,13 @@ export function contextHint(st: GameState): LoreId | null {
     const inReach = armed.some(
       (e) => Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
     );
+    if (inReach && armed.some((e) => e.intent === 'reach' || e.intent === 'pounce')) {
+      return 'UI-HINT-TELE-REACH';
+    }
+    if (armed.some((e) => e.intent === 'overwatch')) return 'UI-HINT-TELE-OVERWATCH';
+    if (armed.some((e) => e.intent === 'beam')) return 'UI-HINT-TELE-BEAM';
+    if (armed.some((e) => e.intent === 'zone')) return 'UI-HINT-TELE-ZONE';
+    if (armed.some((e) => e.intent === 'reach')) return 'UI-HINT-TELE-REACH';
     return inReach ? 'UI-HINT-TELE-REACH' : 'UI-HINT-TELE';
   }
 
@@ -57,11 +64,17 @@ export function contextHint(st: GameState): LoreId | null {
     }
     return 'UI-HINT-EXIT';
   }
-  if (tile.kind === 'beacon') return 'UI-HINT-BEACON';
+  if (tile.kind === 'beacon') {
+    if (!st.objectives.beaconOpen && !hasItem(st, 'relay_key')) {
+      return 'UI-HINT-BEACON-NEED-KEY';
+    }
+    return 'UI-HINT-BEACON';
+  }
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
   if (tile.kind === 'quest') return 'UI-HINT-QUEST';
-  if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) return 'UI-HINT-ITEM';
-
+  if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
+    return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
+  }
   // Situation coaching — only when the kit actually has the tool
   if (
     (tile.kind === 'hazard' || tile.kind === 'vent' || tile.kind === 'brine_pool') &&
