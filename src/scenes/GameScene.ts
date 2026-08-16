@@ -772,10 +772,8 @@ export class GameScene extends Phaser.Scene {
     const f = this.animFrame;
     const animated = (base: string): string => (f === 0 ? base : `${base}_${f}`);
     switch (kind) {
-      case 'wall': {
-        const v = (x * 3 + y * 7 + this.state.seed) % 4;
-        return wallTextureKey(this.state.sectorId, v);
-      }
+      case 'wall':
+        return wallTextureKey(this.state.sectorId, this.wallVariantAt(x, y));
       case 'hazard':
         return animated('t_hazard');
       case 'brine_pool':
@@ -809,6 +807,25 @@ export class GameScene extends Phaser.Scene {
       default:
         return floorTextureKey(this.state.sectorId, 0);
     }
+  }
+
+  /**
+   * Wall texture role from open neighbors so corridors read as mass, not wallpaper.
+   * 0 continuous run · 1 left-exposed · 2 right-exposed · 3 corner/pillar
+   */
+  private wallVariantAt(x: number, y: number): number {
+    const solid = (tx: number, ty: number): boolean =>
+      this.state.tiles[ty]?.[tx]?.kind === 'wall';
+    const openL = !solid(x - 1, y);
+    const openR = !solid(x + 1, y);
+    const openU = !solid(x, y - 1);
+    const openD = !solid(x, y + 1);
+    if ((openL && openR) || (openU && openD) || ((openL || openR) && (openU || openD))) {
+      return 3;
+    }
+    if (openL) return 1;
+    if (openR) return 2;
+    return 0;
   }
 
   /** Hint line the HUD is currently showing (same resolver as HudView). */

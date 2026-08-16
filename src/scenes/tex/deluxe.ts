@@ -664,7 +664,11 @@ const CRACK_PATH: Record<SectorId, (p: CrackPaint) => void> = {
   },
 };
 
-/** High-contrast, beveled cliff / bulkhead / conduit families — layered like floors. */
+/**
+ * Wall mass language: crown (top lip) + face + plinth (ground contact).
+ * Variants encode edge role for neighbor-aware picking at runtime:
+ *   0 continuous run · 1 left-exposed · 2 right-exposed · 3 corner/pillar
+ */
 export function drawDeluxeWall(
   g: G,
   T: number,
@@ -676,66 +680,111 @@ export function drawDeluxeWall(
   const tint = BIOME_FLOOR_TINT[sector];
   const accent = floorAccent(sector);
   const v = ((variant % 4) + 4) % 4;
+  const leftOpen = v === 1 || v === 3;
+  const rightOpen = v === 2 || v === 3;
   const face =
     style === 'cliff'
       ? mix(Material.rock, tint, 0.18)
       : style === 'bulkhead'
         ? mix(Material.deck, tint, 0.14)
         : mix(Material.conduit, tint, 0.16);
+  const crownLit =
+    style === 'conduit' ? mix(Theme.biolumDeep, accent, 0.3) : mix(Theme.inkMute, Theme.inkBright, 0.25);
 
   g.clear();
+  // Void behind the mass.
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, T, T);
+
+  // Face slab — inset where an open side exposes the wall thickness.
+  const insetL = leftOpen ? q(4) : q(1);
+  const insetR = rightOpen ? q(4) : q(1);
   g.fillStyle(face, 1);
-  g.fillRect(q(1), q(1), T - q(2), T - q(2));
+  g.fillRect(insetL, q(1), T - insetL - insetR, T - q(2));
 
-  // Inner slab — slightly cooler so bevels read.
-  g.fillStyle(mix(face, Material.recess, 0.12), 1);
-  g.fillRect(q(3), q(3), T - q(6), T - q(7));
+  // Recessed thickness on open flanks — reads as depth, not a flat stamp.
+  if (leftOpen) {
+    g.fillStyle(Material.recess, 1);
+    g.fillRect(q(1), q(1), q(3), T - q(2));
+    g.fillStyle(mix(face, Theme.groundDeep, 0.35), 1);
+    g.fillRect(q(3), q(2), q(2), T - q(4));
+  }
+  if (rightOpen) {
+    g.fillStyle(Material.recess, 1);
+    g.fillRect(T - q(4), q(1), q(3), T - q(2));
+    g.fillStyle(mix(face, Theme.groundDeep, 0.35), 1);
+    g.fillRect(T - q(5), q(2), q(2), T - q(4));
+  }
 
-  // Deterministic grit so adjacent variants don't stamp identical.
-  for (let i = 0; i < 22; i++) {
-    const x = q(4 + ((i * 11 + v * 9) % 38));
-    const y = q(5 + ((i * 17 + v * 5) % 36));
-    g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.26 : 0.14);
+  // Inner face — cooler so crown/plinth separate.
+  g.fillStyle(mix(face, Material.recess, 0.14), 1);
+  g.fillRect(insetL + q(2), q(8), T - insetL - insetR - q(4), T - q(18));
+
+  // CROWN — bright top lip suggesting wall height above the tile.
+  g.fillStyle(crownLit, 0.95);
+  g.fillRect(insetL, q(1), T - insetL - insetR, q(4));
+  g.fillStyle(Theme.inkBright, 0.35);
+  g.fillRect(insetL + q(1), q(2), T - insetL - insetR - q(2), q(1));
+  g.fillStyle(Theme.groundDeep, 0.55);
+  g.fillRect(insetL, q(5), T - insetL - insetR, q(2));
+  // Crown overhang ticks on corners/pillars.
+  if (v === 3) {
+    g.fillStyle(crownLit, 0.8);
+    g.fillRect(q(2), q(1), q(4), q(3));
+    g.fillRect(T - q(6), q(1), q(4), q(3));
+  }
+
+  // Face grit (kept out of crown and plinth bands).
+  for (let i = 0; i < 18; i++) {
+    const x = q(6 + ((i * 11 + v * 9) % 34));
+    const y = q(10 + ((i * 17 + v * 5) % 22));
+    if (x < insetL + q(2) || x > T - insetR - q(3)) continue;
+    g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.28 : 0.14);
     g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
   }
-  // Scuff pits along the lower third — field wear, not UI noise.
-  g.fillStyle(Material.recess, 0.55);
-  for (let i = 0; i < 4; i++) {
-    g.fillRect(q(8 + i * 9 + v), q(34 + (i % 2)), q(3), q(2));
-  }
-
-  // Bright top/left bevel, deep bottom/right — machined lip.
-  g.fillStyle(style === 'conduit' ? mix(Theme.biolumDeep, accent, 0.25) : Theme.inkMute, 0.88);
-  g.fillRect(q(2), q(2), T - q(4), q(3));
-  g.fillRect(q(2), q(5), q(3), T - q(9));
-  g.fillStyle(Theme.groundDeep, 0.92);
-  g.fillRect(q(4), T - q(6), T - q(8), q(4));
-  g.fillRect(T - q(6), q(5), q(4), T - q(11));
 
   if (style === 'cliff') {
-    paintCliffFace(g, q, T, v, accent);
+    paintCliffFace(g, q, T, v, accent, insetL, insetR);
   } else if (style === 'bulkhead') {
-    paintBulkheadFace(g, q, T, v, accent);
+    paintBulkheadFace(g, q, T, v, accent, insetL, insetR);
   } else {
-    paintConduitFace(g, q, T, v, accent);
+    paintConduitFace(g, q, T, v, accent, insetL, insetR);
   }
 
-  // Corner fasteners — same on every family so walls read as built mass.
-  g.fillStyle(Theme.panelEdge, 0.9);
-  for (const [bx, by] of [
-    [6, 6],
-    [T - 10, 6],
-    [6, T - 12],
-    [T - 10, T - 12],
-  ] as const) {
-    const ox = q(bx + (v % 2));
-    const oy = q(by + ((v >> 1) % 2));
-    g.fillRect(ox, oy, q(2), q(2));
-    g.fillStyle(Theme.inkBright, 0.35);
-    g.fillRect(ox, oy, q(1), q(1));
-    g.fillStyle(Theme.panelEdge, 0.9);
+  // PLINTH — thick ground-contact mass; walls sit on the floor, not float.
+  g.fillStyle(Theme.groundDeep, 0.95);
+  g.fillRect(insetL, T - q(9), T - insetL - insetR, q(8));
+  g.fillStyle(mix(face, Theme.groundDeep, 0.45), 1);
+  g.fillRect(insetL, T - q(9), T - insetL - insetR, q(3));
+  g.fillStyle(Material.recess, 0.85);
+  g.fillRect(insetL, T - q(6), T - insetL - insetR, q(2));
+  // Contact shadow under the plinth.
+  g.fillStyle(0x000000, 0.55);
+  g.fillRect(Math.max(0, insetL - q(1)), T - q(2), T - insetL - insetR + q(2), q(2));
+
+  // Vertical edge bevels on continuous runs.
+  if (!leftOpen) {
+    g.fillStyle(Theme.inkMute, 0.4);
+    g.fillRect(q(2), q(6), q(2), T - q(15));
+  }
+  if (!rightOpen) {
+    g.fillStyle(Theme.groundDeep, 0.65);
+    g.fillRect(T - q(4), q(6), q(2), T - q(15));
+  }
+
+  // Fasteners on crown and plinth — built mass, not stickers mid-face.
+  g.fillStyle(Theme.panelEdge, 0.95);
+  const bolts: Array<[number, number]> = [
+    [insetL + q(3), q(3)],
+    [T - insetR - q(5), q(3)],
+    [insetL + q(3), T - q(8)],
+    [T - insetR - q(5), T - q(8)],
+  ];
+  for (const [bx, by] of bolts) {
+    g.fillRect(bx, by, q(2), q(2));
+    g.fillStyle(Theme.inkBright, 0.4);
+    g.fillRect(bx, by, q(1), q(1));
+    g.fillStyle(Theme.panelEdge, 0.95);
   }
 
   WALL_ACCENT[sector]({ g, q, T, variant: v, accent, tint, style });
@@ -813,16 +862,28 @@ type WallPaint = {
   style: WallStyle;
 };
 
-function paintCliffFace(g: G, q: Q, T: number, v: number, accent: number): void {
-  // Stratified shelves — offset so variants tile differently along a run.
-  for (let i = 0; i < 5; i++) {
-    const y = q(8 + i * 7 + ((v + i) % 2));
-    const x = q(6 + ((i * 9 + v * 5) % 16));
-    const w = q(22 - (i % 3) * 4 - (v % 2));
+function paintCliffFace(
+  g: G,
+  q: Q,
+  T: number,
+  v: number,
+  accent: number,
+  insetL: number,
+  insetR: number,
+): void {
+  const x0 = insetL + q(3);
+  const x1 = T - insetR - q(3);
+  // Stratified shelves — keep inside face band (below crown, above plinth).
+  for (let i = 0; i < 4; i++) {
+    const y = q(10 + i * 6 + ((v + i) % 2));
+    if (y > T - q(14)) continue;
+    const x = x0 + q((i * 9 + v * 5) % 10);
+    const w = Math.min(q(18 - (i % 3) * 3), x1 - x);
+    if (w < q(4)) continue;
     g.fillStyle(Material.recess, 0.95);
     g.fillRect(x, y, w, q(3));
     g.fillStyle(Theme.inkMute, 0.55);
-    g.fillRect(x, y, q(7 + (v % 3)), q(1));
+    g.fillRect(x, y, q(6 + (v % 3)), q(1));
     g.fillStyle(mix(Material.rock, Theme.groundDeep, 0.3), 0.5);
     g.fillRect(x, y + q(2), w, q(1));
     if (i % 2 === v % 2) {
@@ -830,74 +891,90 @@ function paintCliffFace(g: G, q: Q, T: number, v: number, accent: number): void 
       g.fillRect(x + q(2), y + q(1), q(4), q(1));
     }
   }
-  // Vertical joint crack with a darker throat.
-  const jx = q(14 + v * 5);
+  const jx = Math.min(Math.max(x0 + q(6 + v * 3), x0), x1 - q(2));
   g.fillStyle(Material.recess, 0.85);
-  g.fillRect(jx, q(8), q(2), T - q(16));
+  g.fillRect(jx, q(10), q(2), T - q(24));
   g.fillStyle(Theme.groundDeep, 0.7);
-  g.fillRect(jx, q(8), q(1), T - q(16));
+  g.fillRect(jx, q(10), q(1), T - q(24));
 }
 
-function paintBulkheadFace(g: G, q: Q, T: number, v: number, accent: number): void {
-  const inset = q(7 + (v % 2));
+function paintBulkheadFace(
+  g: G,
+  q: Q,
+  T: number,
+  v: number,
+  accent: number,
+  insetL: number,
+  insetR: number,
+): void {
+  const left = insetL + q(4);
+  const right = insetR + q(4);
+  const top = q(9);
+  const bot = q(12);
   g.fillStyle(Theme.panel, 1);
-  g.fillRect(inset, inset, T - inset * 2, T - inset * 2 - q(2));
+  g.fillRect(left, top, T - left - right, T - top - bot);
   g.lineStyle(q(2), Theme.panelEdge, 0.95);
-  g.strokeRect(inset + q(1), inset + q(1), T - inset * 2 - q(2), T - inset * 2 - q(4));
+  g.strokeRect(left + q(1), top + q(1), T - left - right - q(2), T - top - bot - q(2));
 
-  // Panel seams — cross or grid by variant.
   g.fillStyle(Theme.groundDeep, 1);
   if (v === 0 || v === 2) {
-    g.fillRect(q(22 + (v === 2 ? 3 : 0)), inset + q(2), q(3), T - inset * 2 - q(6));
+    const cx = Math.floor((left + T - right) / 2) - q(1);
+    g.fillRect(cx + (v === 2 ? q(2) : 0), top + q(2), q(3), T - top - bot - q(4));
   }
   if (v === 1 || v === 2 || v === 3) {
-    g.fillRect(inset + q(2), q(20 + (v === 3 ? 4 : 0)), T - inset * 2 - q(4), q(3));
+    g.fillRect(left + q(2), q(20 + (v === 3 ? 3 : 0)), T - left - right - q(4), q(3));
   }
   if (v === 3) {
-    g.fillRect(q(18), inset + q(2), q(2), T - inset * 2 - q(6));
+    g.fillRect(left + q(8), top + q(2), q(2), T - top - bot - q(4));
   }
 
-  // Stencil / caution tape / stress mark.
   g.fillStyle(v === 1 ? Theme.tape : v === 3 ? accent : Theme.inkDim, 0.85);
-  g.fillRect(inset + q(3), inset + q(3), q(8), q(2));
-  g.fillRect(T - inset - q(11), T - inset - q(8), q(8), q(2));
+  g.fillRect(left + q(2), top + q(3), q(8), q(2));
+  g.fillRect(T - right - q(10), T - bot - q(6), q(8), q(2));
 
-  // Rivet row along the top seam.
   g.fillStyle(Theme.panelEdge, 0.75);
   for (let i = 0; i < 4; i++) {
-    g.fillRect(inset + q(5 + i * 8 + (v % 2)), inset + q(5), q(2), q(2));
+    g.fillRect(left + q(4 + i * 7 + (v % 2)), top + q(4), q(2), q(2));
   }
 }
 
-function paintConduitFace(g: G, q: Q, T: number, v: number, accent: number): void {
+function paintConduitFace(
+  g: G,
+  q: Q,
+  T: number,
+  v: number,
+  accent: number,
+  insetL: number,
+  insetR: number,
+): void {
+  const left = insetL + q(3);
+  const right = insetR + q(3);
   g.fillStyle(Theme.panel, 1);
-  g.fillRect(q(7), q(7), T - q(14), T - q(16));
+  g.fillRect(left, q(9), T - left - right, T - q(22));
 
-  // Pipe runs — shift spacing with variant; middle run always wetter.
   for (let i = 0; i < 3; i++) {
-    const y = q(10 + i * 9 + (v % 3) - (v === 3 ? 1 : 0));
+    const y = q(11 + i * 7 + (v % 3) - (v === 3 ? 1 : 0));
+    if (y > T - q(16)) continue;
     const wet = i === 1 || (v === 2 && i === 0);
     g.fillStyle(wet ? mix(Theme.biolumDeep, accent, 0.3) : Theme.panelEdge, 0.95);
-    g.fillRect(q(6), y, T - q(12), q(5));
+    g.fillRect(left, y, T - left - right, q(4));
     g.fillStyle(Theme.groundDeep, 0.55);
-    g.fillRect(q(6), y + q(4), T - q(12), q(1));
+    g.fillRect(left, y + q(3), T - left - right, q(1));
     g.fillStyle(Theme.inkBright, wet ? 0.55 : 0.35);
-    g.fillRect(q(10 + i * 7 + v * 2), y + q(1), q(3), q(2));
-    // Clamp collar.
+    g.fillRect(left + q(4 + i * 6 + v * 2), y + q(1), q(3), q(2));
     g.fillStyle(Theme.panelEdge, 0.9);
-    g.fillRect(q(8 + ((i + v) % 3) * 10), y - q(1), q(4), q(7));
+    g.fillRect(left + q(2 + ((i + v) % 3) * 8), y - q(1), q(4), q(6));
     if (wet) {
-      // Condensation drip under the wet run.
       g.fillStyle(Theme.biolumDeep, 0.45);
-      g.fillRect(q(14 + v * 3), y + q(5), q(1), q(4));
-      g.fillRect(q(30 - v * 2), y + q(5), q(1), q(3));
+      g.fillRect(left + q(8 + v * 2), y + q(4), q(1), q(3));
+      g.fillRect(T - right - q(10 + v), y + q(4), q(1), q(2));
     }
   }
 
-  // Vertical riser on odd variants.
   if (v % 2 === 1) {
     g.fillStyle(mix(Theme.biolumDeep, Material.conduit, 0.4), 0.85);
-    g.fillRect(q(28 + (v === 3 ? -4 : 0)), q(9), q(4), T - q(20));
+    const rx = Math.min(T - right - q(6), left + q(16 + (v === 3 ? -2 : 0)));
+    g.fillRect(rx, q(10), q(3), T - q(24));
   }
 }
 
