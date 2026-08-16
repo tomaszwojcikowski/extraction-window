@@ -149,6 +149,37 @@ export function collectActionFloatLabels(
       case 'LOG-SEALED-PRY':
         next = { label: 'HATCH OPEN', color: ThemeCss.safe };
         break;
+      case 'LOG-SEALED-CACHE':
+        next = {
+          label: log.detail ? `CACHE ${log.detail}` : '+6 WINDOW',
+          color: ThemeCss.safe,
+        };
+        break;
+      case 'LOG-SEALED-BLOCK':
+      case 'LOG-SEALED-NEED-TOOL':
+        next = { label: 'SEALED · SEALANT OR BATON', color: ThemeCss.tape };
+        break;
+      case 'LOG-MOVE-BLOCKED':
+        next = { label: 'BLOCKED', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-EXIT-BLOCKED':
+        next = { label: 'CANNOT OPEN', color: ThemeCss.tape };
+        break;
+      case 'LOG-INTERACT-MISS':
+        next = { label: 'STAND ON HATCH', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-USE-EMPTY':
+        next = { label: 'KIT EMPTY', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-USE-FAIL':
+        next = { label: 'SELECT AN ITEM', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-JAM-BLOCK':
+        next = { label: 'JAMMED · PULSE', color: ThemeCss.rust };
+        break;
+      case 'LOG-SHOVE-EMPTY':
+        next = { label: 'NO SHOVE TARGET', color: ThemeCss.inkDim };
+        break;
       case 'LOG-EXIT-NEED-KEY':
       case 'LOG-NEED-KEY':
         next = { label: 'NEED SPLICE KEY', color: ThemeCss.tape };
@@ -437,11 +468,18 @@ export function playActionSfx(
   if (
     has('LOG-MOVE-BLOCKED') ||
     has('LOG-EXIT-BLOCKED') ||
+    has('LOG-INTERACT-MISS') ||
+    has('LOG-SEALED-BLOCK') ||
+    has('LOG-SEALED-NEED-TOOL') ||
     has('LOG-EXIT-NEED-KEY') ||
     has('LOG-EXIT-NEED-CORE') ||
     has('LOG-EXIT-NEED-BEACON') ||
     has('LOG-NEED-KEY') ||
-    has('LOG-NEED-CORE')
+    has('LOG-NEED-CORE') ||
+    has('LOG-USE-EMPTY') ||
+    has('LOG-USE-FAIL') ||
+    has('LOG-JAM-BLOCK') ||
+    has('LOG-SHOVE-EMPTY')
   ) {
     sfx.play('blocked');
     return;

@@ -20,6 +20,11 @@ function adjacentSealed(state: GameState): Pos | null {
   return null;
 }
 
+/** True when a sealed hatch is within one cardinal step. */
+export function isAdjacentSealed(state: GameState): boolean {
+  return adjacentSealed(state) !== null;
+}
+
 /** Open a sealed hatch tile to floor. */
 export function openSealedTile(state: GameState, x: number, y: number, how: 'sealant' | 'pry'): void {
   state.tiles[y]![x] = { ...FLOOR };

@@ -34,7 +34,7 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).toBe('UI-HINT-USE-MED');
   });
 
-  it('hints patch when bleeding with patch in kit', () => {
+  it('hints Field Hypo when bleeding', () => {
     const st = createGame(42);
     st.player.statuses = { bleed: 2 };
     st.items = st.items.filter((i) => !(i.x === st.player.x && i.y === st.player.y));
@@ -214,6 +214,23 @@ describe('sealed hatch coaching', () => {
     st.inventory = [];
     st.player.equip.tool = null;
     expect(contextHint(st)).toBe('UI-HINT-SEALED');
+  });
+
+  it('logs sealed guidance when bumping a sealed hatch', () => {
+    const st = createGame(42);
+    placeAdjacentSealed(st);
+    const sx = Math.min(st.width - 2, st.player.x + 1);
+    applyAction(st, { type: 'move', dx: sx - st.player.x, dy: 0 });
+    expect(st.log.some((l) => l.loreId === 'LOG-SEALED-BLOCK')).toBe(true);
+  });
+
+  it('logs sealed tool need when pressing > without baton', () => {
+    const st = createGame(42);
+    placeAdjacentSealed(st);
+    st.inventory = [];
+    st.player.equip.tool = null;
+    applyAction(st, { type: 'exit' });
+    expect(st.log.some((l) => l.loreId === 'LOG-SEALED-NEED-TOOL')).toBe(true);
   });
 });
 

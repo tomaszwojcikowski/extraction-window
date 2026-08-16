@@ -8,6 +8,7 @@ import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
+import { isAdjacentSealed } from './mechanics/sealedHatch';
 import { livingAllyAt } from './allyAi';
 import { enemyAt, npcAt } from './spatial';
 import { triggerOverwatch, triggerOverwatchOnAttack } from './ai';
@@ -49,7 +50,10 @@ function tryMove(state: GameState, dx: number, dy: number): void {
   }
   const tile = state.tiles[ny]![nx]!;
   if (!tile.walkable) {
-    pushLog(state, 'LOG-MOVE-BLOCKED');
+    pushLog(
+      state,
+      tile.kind === 'sealed' ? 'LOG-SEALED-BLOCK' : 'LOG-MOVE-BLOCKED',
+    );
     return;
   }
 
@@ -155,7 +159,12 @@ function tryExit(state: GameState): void {
     return;
   }
 
-  pushLog(state, 'LOG-EXIT-BLOCKED');
+  if (isAdjacentSealed(state)) {
+    pushLog(state, 'LOG-SEALED-NEED-TOOL');
+    return;
+  }
+
+  pushLog(state, 'LOG-INTERACT-MISS');
 }
 
 export function applyAction(state: GameState, action: Action): GameState {

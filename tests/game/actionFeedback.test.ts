@@ -53,6 +53,18 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats blocked and sealed guidance', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-SEALED-BLOCK' }])).toEqual([
+      { label: 'SEALED · SEALANT OR BATON', color: ThemeCss.tape },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-EMPTY' }])).toEqual([
+      { label: 'KIT EMPTY', color: ThemeCss.inkDim },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-INTERACT-MISS' }])).toEqual([
+      { label: 'STAND ON HATCH', color: ThemeCss.inkDim },
+    ]);
+  });
+
   it('floats handshake and uplink progress', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-HS-TICK', detail: '1/2' }])).toEqual([
       { label: 'HANDSHAKE 1/2', color: ThemeCss.safe },

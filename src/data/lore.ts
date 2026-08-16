@@ -6,8 +6,8 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Get the Lattice · extract on the skiff · Window and Bus both kill you',
-  'UI-BRIEF-TUT': 'Drill first — then race Window and Bus to the skiff',
+  'UI-BRIEF': 'Nav Lattice → drop skiff · Window and Bus both kill you',
+  'UI-BRIEF-TUT': 'Drill first — then Splice Key → beacon → Nav Lattice → skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
@@ -69,7 +69,7 @@ export const LORE = {
     '\n' +
     'EXTRACT (required order)\n' +
     '1 Splice Key · 2 beacon handshake · 3 Nav Lattice · 4 drop skiff pad\n' +
-    'Optional procedures refund Window. Kit (med / Bus / Shield) keeps you alive.\n' +
+    'Optional procedures refund Window. Kit (Field Hypo / Power Cell / Shield Charge) keeps you alive.\n' +
     'On the skiff: > start · . hold · Power Cell skips a hold · Flare blocks the wave.\n' +
     '\n' +
     'HATCHES\n' +
@@ -85,7 +85,7 @@ export const LORE = {
     'WASD move · Shift peek · . wait · b brace · f shove · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
-  'UI-HINT-EXIT': 'On hatch — Enter to go to the next sector',
+  'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',
   'UI-HINT-EXIT-NEED-KEY': 'Hatch locked — get the Splice Key in this wreck first',
   'UI-HINT-EXIT-NEED-CORE': 'Hatch locked — get the Nav Lattice first',
   'UI-HINT-EXIT-NEED-BEACON': 'Hatch locked — finish the beacon (>) first',
@@ -98,8 +98,8 @@ export const LORE = {
   'UI-HINT-AIM': 'Aim dart — press a direction toward a lit target within 3',
   'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-ENERGY': 'Bus low — open kit (i), select Power Cell, press u',
-  'UI-HINT-USE-ARMOR': 'Shield low — use a Shield Charge (u)',
-  'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Medpatch, press u',
+  'UI-HINT-USE-ARMOR': 'Shield low — open kit (i), select Shield Charge, press u',
+  'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
   'UI-HINT-SEALED':
     'Sealed hatch (optional) — need Sealant Foam or equip Pulse Baton',
@@ -142,8 +142,8 @@ export const LORE = {
     'Lines from your feet = who notices you · Shift+direction peeks the next tile',
   'UI-TUT-FIGHT': 'Walk into them to hit · b brace · f shove if adjacent · Flare if dark',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, brace, shove if adjacent, or go south',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — then Window and Bus start ticking',
-  'UI-TUT-EXIT': 'On hatch — Enter to start the drop (Window and Bus go live)',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Window and Bus then tick)',
+  'UI-TUT-EXIT': 'On hatch — step on it or press Enter to start the drop (Window and Bus go live)',
   'UI-QUEST-TRACK': 'OPTIONAL',
   'UI-RQ-SALVAGE': 'Salvage console — press >',
   'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press >',
@@ -157,7 +157,7 @@ export const LORE = {
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective · proficiency',
   'UI-QUEST-KEY': 'SPLICE KEY',
-  'UI-QUEST-CORE': 'LATTICE',
+  'UI-QUEST-CORE': 'NAV LATTICE',
   'UI-RELAY-OPEN': 'BEACON OPEN',
   'UI-HANDSHAKE': 'HANDSHAKE',
   'UI-UPLINK': 'UPLINK',
@@ -274,16 +274,16 @@ export const LORE = {
   'ITEM-NAV-CORE': 'Nav Lattice',
   'ITEM-NAV-CORE-DESC': 'Locks the drop skiff for extract — required to win.',
   'ITEM-MED': 'Field Hypo',
-  'ITEM-MED-DESC': 'Restore +18 HP.',
+  'ITEM-MED-DESC': 'Restore +22 HP and clear bleed.',
   'ITEM-ENERGY': 'Power Cell',
   'ITEM-ENERGY-DESC':
-    '+20 Bus. Also clears pattern desync and skips one skiff uplink hold.',
+    '+32 Bus. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
   'ITEM-PROBE-DESC': '+3 ATK and +3 vision for a short time.',
   'ITEM-STIM': 'Combat Stim',
   'ITEM-STIM-DESC': '+3 ATK for 15 turns.',
   'ITEM-PLATE': 'Shield Charge',
-  'ITEM-PLATE-DESC': 'Repair +10 Shield.',
+  'ITEM-PLATE-DESC': 'Repair +12 Shield.',
   'ITEM-FLARE': 'Plasma Flare',
   'ITEM-FLARE-DESC':
     'Lights nearby tiles for 4 turns; damages and stuns adjacent foes; cancels overwatch; blocks the skiff pressure wave.',
@@ -367,7 +367,7 @@ export const LORE = {
     'Lines from your feet = who notices you. Shift+direction peeks the next tile (no turn).',
   'LOG-TUT-DONE':
     'Window and Bus are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
-  'LOG-MOVE-BLOCKED': 'Path obstructed.',
+  'LOG-MOVE-BLOCKED': 'Cannot walk there.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',
   'LOG-KILL': 'Hostile down',
@@ -416,6 +416,12 @@ export const LORE = {
   'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-SEALANT': 'Sealant foam set — vent/hazard neutralized.',
+  'LOG-SEALED-BLOCK':
+    'Sealed hatch — optional. Sealant Foam (u) or equip Pulse Baton then >.',
+  'LOG-SEALED-NEED-TOOL':
+    'Sealed hatch — Sealant Foam (i then u) or equip Pulse Baton then >.',
+  'LOG-INTERACT-MISS':
+    'Not on a hatch, beacon, or pad — stand on it, then Enter / >.',
   'LOG-SEALED-OPEN': 'Sealant Foam opens the sealed hatch — path clear.',
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache — +6 Window.',
@@ -456,8 +462,8 @@ export const LORE = {
   'LOG-STATUS-BLEED': 'Bleed tick',
   'LOG-STATUS-ION': 'Plasma burn',
   'LOG-STATUS-BLIND': 'Optics washed — vision narrowed.',
-  'LOG-STATUS-JAM': 'Kit jammed — Probe / Sealant blocked.',
-  'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Probe or Sealant.',
+  'LOG-STATUS-JAM': 'Kit jammed — Field Array Pulse blocked.',
+  'LOG-JAM-BLOCK': 'Systems jammed — cannot apply Field Array Pulse.',
   'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-BRAND-SIGHT': 'Branded hostile identified.',
@@ -499,7 +505,7 @@ export const LORE = {
   'LOG-SEC-APPROACH':
     'Skiff Approach. Storm shear over the final choke — Drop Skiff Ridge ahead.',
   'LOG-SEC-RIDGE': 'Drop Skiff Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
-  'LOG-EXIT-BLOCKED': 'Hatch will not open yet.',
+  'LOG-EXIT-BLOCKED': 'Sector hatch will not open yet.',
   'LOG-HAZARD': 'Ion hazard — bus drain.',
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-FAVOR-GRANT': 'Extract favor secured.',
