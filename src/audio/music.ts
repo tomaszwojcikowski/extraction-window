@@ -177,40 +177,88 @@ class MusicEngine {
       return;
     }
 
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = this.mood === 'critical' ? 'triangle' : 'sine';
-    osc.frequency.value = freq;
     const peak =
       this.mood === 'critical'
-        ? 0.12
+        ? 0.11
         : this.mood === 'storm'
-          ? 0.1
+          ? 0.095
           : this.mood === 'end_win' || this.mood === 'end_lose'
-            ? 0.11
-            : 0.09;
-    const dur = this.mood === 'critical' ? 0.24 : 0.36;
+            ? 0.105
+            : 0.085;
+    const dur = this.mood === 'critical' ? 0.26 : this.mood === 'storm' ? 0.32 : 0.4;
+    this.note(ctx, t0, {
+      freq,
+      type: this.mood === 'critical' || this.mood === 'storm' ? 'triangle' : 'sine',
+      peak,
+      dur,
+      filterHz: this.mood === 'critical' ? 2200 : this.mood === 'storm' ? 1800 : 2400,
+      fifth: this.mood === 'field' || this.mood === 'title' || this.mood === 'end_win',
+    });
+  }
+
+  private note(
+    ctx: AudioContext,
+    t0: number,
+    opts: {
+      freq: number;
+      type: OscillatorType;
+      peak: number;
+      dur: number;
+      filterHz: number;
+      fifth?: boolean;
+    },
+  ): void {
+    if (!this.fadeGain) return;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = opts.filterHz;
+    filter.Q.value = 0.8;
+    filter.connect(this.fadeGain);
+
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = opts.type;
+    osc.frequency.value = opts.freq;
     g.gain.setValueAtTime(0.0001, t0);
-    g.gain.exponentialRampToValueAtTime(peak, t0 + 0.025);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    g.gain.exponentialRampToValueAtTime(opts.peak, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur);
     osc.connect(g);
-    g.connect(this.fadeGain);
+    g.connect(filter);
     osc.start(t0);
-    osc.stop(t0 + dur + 0.02);
+    osc.stop(t0 + opts.dur + 0.03);
+
+    if (opts.fifth) {
+      const h = ctx.createOscillator();
+      const hg = ctx.createGain();
+      h.type = 'sine';
+      h.frequency.value = opts.freq * 1.5;
+      hg.gain.setValueAtTime(0.0001, t0);
+      hg.gain.exponentialRampToValueAtTime(opts.peak * 0.32, t0 + 0.04);
+      hg.gain.exponentialRampToValueAtTime(0.0001, t0 + opts.dur * 0.9);
+      h.connect(hg);
+      hg.connect(filter);
+      h.start(t0);
+      h.stop(t0 + opts.dur + 0.03);
+    }
   }
 
   /** Danger bed — dual scrape + low pulse so combat reads over biome drones. */
   private tickCombat(ctx: AudioContext, t0: number, freq: number): void {
     if (!this.fadeGain) return;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1600;
+    filter.connect(this.fadeGain);
+
     const lead = ctx.createOscillator();
     const leadG = ctx.createGain();
     lead.type = this.step % 2 === 0 ? 'sawtooth' : 'triangle';
     lead.frequency.value = freq;
     leadG.gain.setValueAtTime(0.0001, t0);
-    leadG.gain.exponentialRampToValueAtTime(0.16, t0 + 0.02);
+    leadG.gain.exponentialRampToValueAtTime(0.14, t0 + 0.02);
     leadG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
     lead.connect(leadG);
-    leadG.connect(this.fadeGain);
+    leadG.connect(filter);
     lead.start(t0);
     lead.stop(t0 + 0.2);
 
@@ -219,10 +267,10 @@ class MusicEngine {
     fifth.type = 'triangle';
     fifth.frequency.value = freq * 1.5;
     fifthG.gain.setValueAtTime(0.0001, t0);
-    fifthG.gain.exponentialRampToValueAtTime(0.07, t0 + 0.03);
+    fifthG.gain.exponentialRampToValueAtTime(0.06, t0 + 0.03);
     fifthG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
     fifth.connect(fifthG);
-    fifthG.connect(this.fadeGain);
+    fifthG.connect(filter);
     fifth.start(t0);
     fifth.stop(t0 + 0.18);
 
@@ -234,7 +282,7 @@ class MusicEngine {
       thud.frequency.setValueAtTime(55, t0);
       thud.frequency.exponentialRampToValueAtTime(38, t0 + 0.12);
       thudG.gain.setValueAtTime(0.0001, t0);
-      thudG.gain.exponentialRampToValueAtTime(0.2, t0 + 0.01);
+      thudG.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
       thudG.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
       thud.connect(thudG);
       thudG.connect(this.fadeGain);
