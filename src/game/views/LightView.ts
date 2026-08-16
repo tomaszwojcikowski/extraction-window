@@ -973,15 +973,19 @@ export class LightView {
     this.ensureSourceEnergy(st, sources);
 
     const litAlpha = (x: number, y: number): number => {
-      if (!st.visible[y]?.[x]) return 0;
-      return 0.58 + 0.42 * tileBrightness(st, x, y);
+      const tx = Math.round(x);
+      const ty = Math.round(y);
+      if (!st.visible[ty]?.[tx]) return 0;
+      return 0.58 + 0.42 * tileBrightness(st, tx, ty);
     };
 
     const keyTint = (x: number, y: number): number | null => {
+      const tx = Math.round(x);
+      const ty = Math.round(y);
       let pull = 0;
       let acc = 0xffffff;
       for (let i = 0; i < sources.length; i++) {
-        const E = this.energyAt(i, x, y);
+        const E = this.energyAt(i, tx, ty);
         if (E <= 0.008) continue;
         pull += E;
         acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.7));
@@ -990,13 +994,13 @@ export class LightView {
       return multiplyTint(0xffffff, acc, Math.min(0.36, pull * 0.32));
     };
 
-    playerSprite.setAlpha(litAlpha(st.player.x, st.player.y));
+    // Mid-hop: sample from the carried lamp so alpha matches wash/tint, not dest tile.
+    const playerLight = this.lampCarry ?? { x: st.player.x, y: st.player.y };
+    playerSprite.setAlpha(litAlpha(playerLight.x, playerLight.y));
     if (st.patternDesync > 0) {
       playerSprite.setTint(LightTemp.pattern);
     } else {
-      const sampleX = this.lampCarry?.x ?? st.player.x;
-      const sampleY = this.lampCarry?.y ?? st.player.y;
-      const tint = keyTint(Math.round(sampleX), Math.round(sampleY));
+      const tint = keyTint(playerLight.x, playerLight.y);
       if (tint !== null) playerSprite.setTint(tint);
       else playerSprite.clearTint();
     }
