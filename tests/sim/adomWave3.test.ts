@@ -85,7 +85,7 @@ describe('room quests', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
 
-    expect(roomQuestHudLine(st)).toMatchObject({ favor: 'SHELTER', index: 1, total: 1 });
+    expect(roomQuestHudLine(st)).toMatchObject({ favor: '+15 WINDOW', index: 1, total: 1 });
   });
 });
 

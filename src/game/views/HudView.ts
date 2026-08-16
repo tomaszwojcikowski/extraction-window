@@ -260,9 +260,9 @@ export class HudView {
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
     if (st.extractFavor) {
       const label = {
-        storm_shelter: 'SHELTER',
-        hazard_pass: 'SAFE STEP',
-        pattern_fail_safe: 'BUFFER',
+        storm_shelter: '+15 WINDOW',
+        hazard_pass: 'HAZARD PASS',
+        pattern_fail_safe: 'PATTERN BUFFER',
       }[st.extractFavor.kind];
       badgeSpecs.push({ label, fill: Theme.safe });
     }

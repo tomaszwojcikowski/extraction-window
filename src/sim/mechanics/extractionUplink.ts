@@ -30,7 +30,7 @@ function completeUplink(state: GameState): void {
 }
 
 /**
- * Called by inventory before the item's ordinary effect. Coolant skips a hold;
+ * Called by inventory before the item's ordinary effect. Power Cell skips a hold;
  * flare makes the deterministic pressure wave harmless.
  */
 export function tryUseUplinkAid(state: GameState, kind: 'energy' | 'flare'): boolean {

@@ -1,6 +1,6 @@
 # Extraction Window
 
-Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before the **shear window** and **bus** clocks kill you.
+Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before **Window** (turns) or **Bus** (kit power) hits zero.
 
 Prior team’s field array never shut down cleanly; residual scan pressure keeps the ecology hot. Your field lamp, flares, and quiet stance are how you work the Shelf.
 
@@ -38,7 +38,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | Key | Action |
 |-----|--------|
 | WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
-| Shift + dir | Peek the wake footprint of the next tile (no turn spent) |
+| Shift + dir | Peek who would notice you on the next tile (no turn spent) |
 | `.` | Wait |
 | `b` | Brace: +2 DEF through the enemy phase; covers your flanks; cancels a charge's bonus (not the rift's pulse) |
 | `f` | Shove an adjacent hostile a tile back — breaks its windup, and spends the ground behind it; a direction follows if two are in reach |

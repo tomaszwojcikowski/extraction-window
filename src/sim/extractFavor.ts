@@ -9,9 +9,9 @@ const FAVOR_BY_QUEST = {
 } as const satisfies Record<NonNullable<GameState['roomQuest']>['kind'], ExtractFavorKind>;
 
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
-  storm_shelter: 'SHELTER',
-  hazard_pass: 'SAFE STEP',
-  pattern_fail_safe: 'BUFFER',
+  storm_shelter: '+15 WINDOW',
+  hazard_pass: 'HAZARD PASS',
+  pattern_fail_safe: 'PATTERN BUFFER',
 };
 
 export function favorForQuest(state: GameState): ExtractFavorKind {

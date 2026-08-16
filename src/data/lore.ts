@@ -6,8 +6,8 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Key → beacon → Lattice → skiff · race Window and Bus',
-  'UI-BRIEF-TUT': 'Training bay first — then race Window and Bus to extract',
+  'UI-BRIEF': 'Get the Lattice · extract on the skiff · Window and Bus both kill you',
+  'UI-BRIEF-TUT': 'Drill first — then race Window and Bus to the skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
@@ -32,130 +32,125 @@ export const LORE = {
   'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
     'TRAINING BAY\n' +
-    'Reach the east hatch. Window and Bus are paused until you leave.\n' +
+    'Reach the east hatch. Window and Bus are paused here.\n' +
     '\n' +
-    'WASD move · Shift+dir peek wake · . wait\n' +
-    'b brace · f shove · Step on kit to take it · i kit · u use\n' +
+    'WASD — move · Shift+direction — peek who notices you\n' +
+    '. — wait · b — brace · f — shove · step on kit to take it\n' +
+    'i — open kit · u — use selected item\n' +
     '\n' +
-    'Ion tiles tax Bus — Sealant (u) or south alcove.\n' +
-    'Wake lines = who notices you. Flare lights dark fights.\n' +
+    'Yellow ion tiles drain Bus — Sealant (u) or take the south detour.\n' +
+    'Lines from your feet = who notices you. Flare lights dark fights.\n' +
     '\n' +
-    '? after the hatch for the full manual.\n',
+    'Press ? after the hatch for the full manual.\n',
   'UI-HELP-BODY':
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
-    'Shift+dir — peek wake (release to clear)\n' +
+    'Shift+direction — peek who would notice you (no turn spent)\n' +
     '. — wait · b — brace · f — shove (then a direction)\n' +
-    'i — kit · u — use / equip (step on kit to take it)\n' +
-    'Enter / Space / > — hatch, beacon, pad, scan, hail\n' +
-    'p — PADD notes · 1/2 — pick skill · ? — help · m — mute\n' +
-    'Esc — close peek / kit / PADD / help\n' +
+    'i — kit · u — use or equip · step onto kit to pick it up\n' +
+    'Enter / Space / > — hatch, beacon, pad, procedure, hail\n' +
+    'p — PADD · 1/2 — pick skill · ? — help · m — mute · Esc — close\n' +
     '\n' +
-    'CLOCKS\n' +
-    'Window — turns until the shear closes (race the extract).\n' +
-    'Bus — kit power; hazards, EM, and drip drain it. Empty Bus = lose.\n' +
+    'TWO CLOCKS (both can kill you)\n' +
+    'Window — turns left before the extract closes.\n' +
+    'Bus — kit power. Hazards, EM, and drip drain it. Empty Bus = lose.\n' +
     '\n' +
     'COMBAT\n' +
-    'Walk into a hostile to strike it.\n' +
-    'A windup paints the ground it threatens. Winding up at range —\n' +
-    'brace, or leave the painted tiles. Winding up next to you —\n' +
-    'f shoves it and breaks the set.\n' +
-    'A shove deals nothing on open floor, so pick your ground: cover\n' +
-    'behind it turns the push into a slam, caustic footing does worse,\n' +
-    'and a second hostile stacked behind takes both of them down.\n' +
-    'Anything off its footing eats the next strike clean.\n' +
-    'Every hostile in contact past the first pries a point off DEF —\n' +
-    'fight in a doorway, or brace to cover your sides.\n' +
+    'Walk into a hostile to hit it.\n' +
+    'Windup paints the tiles it will strike next turn.\n' +
+    'At range: b brace, leave those tiles, or kill it.\n' +
+    'Adjacent windup: f shove breaks the windup.\n' +
+    'Shove into a wall = slam; into hazard = burn; into another foe = both fall.\n' +
+    'Two+ hostiles touching you peel DEF — brace or fight in a doorway.\n' +
     '\n' +
     'LIGHT\n' +
-    'LIT clear · SHADOW ambush · QUIET dims the lamp (Scrambler item).\n' +
-    'Flare lights a fight. Quiet shrinks fauna interest and FOV.\n' +
+    'LIT — safe read · SHADOW — ambush risk · QUIET — Scrambler dims your lamp.\n' +
+    'Quiet: fauna notices you less; FOV shrinks. Flare lights a dark fight.\n' +
     '\n' +
-    'EXTRACT\n' +
-    'Splice Key → beacon handshake → Nav Lattice → drop skiff pad.\n' +
-    'Kit keeps you alive (med / Bus / Shield). Procedures are optional.\n' +
-    'Drop skiff: > start uplink · . hold · Coolant skips · Flare repels.\n' +
+    'EXTRACT (required order)\n' +
+    '1 Splice Key · 2 beacon handshake · 3 Nav Lattice · 4 drop skiff pad\n' +
+    'Optional procedures refund Window. Kit (med / Bus / Shield) keeps you alive.\n' +
+    'On the skiff: > start · . hold · Power Cell skips a hold · Flare blocks the wave.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Bus · Window · XP\n' +
-    'ATK / DEF · EM contamination (Coolant / Sealant)\n' +
-    'KEY / Lattice badges · Quiet stance timer',
+    'EM high — Sealant flushes residue; Scrambler for Quiet',
   'UI-KIT-PURPOSE':
-    'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
   'UI-CONTROLS':
     'WASD move · Shift peek · . wait · b brace · f shove · i kit · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
-  'UI-HINT-EXIT': 'On hatch — Enter to advance',
-  'UI-HINT-EXIT-NEED-KEY': 'Hatch sealed — find the Splice Key in this wreck first',
-  'UI-HINT-EXIT-NEED-CORE': 'Hatch sealed — recover the Nav Lattice first',
-  'UI-HINT-EXIT-NEED-BEACON': 'Hatch sealed — authorize the beacon (>) first',
-  'UI-HINT-BEACON': 'Beacon — press > to start handshake',
-  'UI-HINT-HANDSHAKE': 'Handshake syncing — hold on the beacon',
-  'UI-HINT-SHUTTLE': 'Drop skiff — press > with Nav Lattice',
-  'UI-HINT-UPLINK-HOLD': 'Uplink live — . hold · Coolant skips · Flare repels',
-  'UI-HINT-DESYNC': 'Pattern desync — use Bus Coolant before skiff lock',
-  'UI-HINT-ITEM': 'Salvage here — step onto it to take',
-  'UI-HINT-AIM': 'Aim dart — direction to a lit target within 3',
-  'UI-HINT-USE-MED': 'HP critical — kit (i) · Field Hypo (u)',
-  'UI-HINT-USE-ENERGY': 'Bus low — kit (i) · Power Cell / Coolant (u)',
-  'UI-HINT-USE-ARMOR': 'Shield thin — Shield Charge (u)',
-  'UI-HINT-USE-PATCH': 'Bleeding — kit (i) · Medpatch (u)',
-  'UI-HINT-USE-SEALANT': 'Hazard here — Sealant Foam (u)',
-  'UI-HINT-SEALED': 'Sealed hatch — Sealant or baton pry (>)',
-  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry with baton (>)',
+  'UI-HINT-EXIT': 'On hatch — Enter to go to the next sector',
+  'UI-HINT-EXIT-NEED-KEY': 'Hatch locked — get the Splice Key in this wreck first',
+  'UI-HINT-EXIT-NEED-CORE': 'Hatch locked — get the Nav Lattice first',
+  'UI-HINT-EXIT-NEED-BEACON': 'Hatch locked — finish the beacon (>) first',
+  'UI-HINT-BEACON': 'Beacon — press > to start the handshake',
+  'UI-HINT-HANDSHAKE': 'Handshake running — stay on the beacon',
+  'UI-HINT-SHUTTLE': 'Drop skiff — press > while carrying the Nav Lattice',
+  'UI-HINT-UPLINK-HOLD': 'Uplink live — . to hold · Power Cell skips · Flare blocks the wave',
+  'UI-HINT-DESYNC': 'Pattern desync — use a Power Cell before the skiff will lock',
+  'UI-HINT-ITEM': 'Kit on this tile — step onto it to pick it up',
+  'UI-HINT-AIM': 'Aim dart — press a direction toward a lit target within 3',
+  'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
+  'UI-HINT-USE-ENERGY': 'Bus low — open kit (i), select Power Cell, press u',
+  'UI-HINT-USE-ARMOR': 'Shield low — use a Shield Charge (u)',
+  'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Medpatch, press u',
+  'UI-HINT-USE-SEALANT': 'Hazard underfoot — use Sealant Foam (u)',
+  'UI-HINT-SEALED': 'Sealed hatch — Sealant Foam or baton pry (>)',
+  'UI-HINT-PRY-SEALED': 'Sealed hatch — pry open with baton (>)',
   'UI-HINT-QUIET':
-    'Quiet — lamp dims; fauna less interested; adjacent pounces may skip telegraph',
+    'Quiet on — lamp dim, fauna less interested; FOV smaller (Scrambler)',
   'UI-HINT-QUIET-EM':
-    'EM high — Scrambler (u) for Quiet (cuts aggro; FOV shrinks)',
+    'EM high — use Scrambler (u) for Quiet to cut aggro (FOV shrinks)',
   'UI-HINT-ION-FRONT':
-    'Ion front — Filter, Flare, or Scrambler dampens the next pulse',
-  'UI-HINT-FLARE': 'Dark near hostiles — Flare lights the fight',
+    'Ion front — Filter, Flare, or Scrambler softens the next pulse',
+  'UI-HINT-FLARE': 'In the dark near hostiles — Flare lights the fight',
   'UI-HINT-LIGHT':
-    'LIT clear · SHADOW ambush band · QUIET dims the lamp (Scrambler)',
-  'UI-HINT-EQUIP': 'Gear in kit — i, select, u to equip',
+    'LIT safe · SHADOW ambush risk · QUIET = Scrambler dims lamp',
+  'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
-    'Two clocks: Window is turns left · Bus is kit power — either empty loses',
+    'Window = turns left · Bus = kit power — either hitting 0 ends the run',
   'UI-HINT-EXTRACT':
-    'Extract: Splice Key → beacon → Nav Lattice → drop skiff',
+    'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':
-    'Flanked — extra contacts peel DEF; brace or fight in a doorway',
-  'UI-HINT-SKILL': 'Field skill — press 1 or 2 (move locked)',
-  'UI-HINT-TELE': 'Hostile winding up — b brace · clear the painted ground · or kill it',
-  'UI-HINT-TELE-REACH': 'Winding up in reach — f shove breaks its set',
-  'UI-HINT-SHOVE-DIR': 'Shove which way? — press a direction',
-  'UI-HINT-BRAND': 'Branded elite — optional reward; route around or answer with Flare / Quiet / Filter',
-  'UI-HINT-ALLY-DRONE': 'Drone lamp — can interrupt one overwatch every few turns',
-  'UI-HINT-ALLY-ESCORT': 'Escort cover while adjacent — +1 DEF',
-  'UI-HINT-PREFER-DARK': 'Fauna likes shadow — stay LIT',
-  'UI-HINT-PREFER-LIT': 'Hunter likes light — break line or find shadow',
-  'UI-HINT-QUEST': 'Survey procedure here — press >',
-  'UI-HINT-NPC': 'Field contact — press > to hail',
-  'UI-HINT-COMMIT': 'Shift+dir peeks wake · release clears · . waits',
+    'Two+ hostiles touching you — DEF drops; brace or fight in a doorway',
+  'UI-HINT-SKILL': 'Choose a field skill — press 1 or 2 (move locked until then)',
+  'UI-HINT-TELE': 'Windup painted — b brace, leave those tiles, or kill it',
+  'UI-HINT-TELE-REACH': 'Windup next to you — f shove breaks it',
+  'UI-HINT-SHOVE-DIR': 'Choose shove direction — press a direction key',
+  'UI-HINT-BRAND': 'Branded elite — optional; Flare, Quiet, or Filter match its brand',
+  'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
+  'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
+  'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
+  'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
+  'UI-HINT-QUEST': 'Optional procedure here — press >',
+  'UI-HINT-NPC': 'Field contact — press > to talk',
+  'UI-HINT-COMMIT': 'Shift+direction peeks notice · release clears · . waits',
   'UI-HINT-PEEK-TEACH':
-    'Wake lines at your feet — Shift+dir peeks before you step',
-  'UI-TUT-MOVE': 'WASD move · Shift+dir peek wake · . wait',
+    'Lines from your feet show who notices you — Shift+direction peeks before you step',
+  'UI-TUT-MOVE': 'WASD to move · Shift+direction peeks notice · . waits',
   'UI-TUT-LIGHT':
-    'Your lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dim',
-  'UI-TUT-KIT': 'i kit · u use — ID salvage · Scrambler = Quiet · Flare lights fights',
+    'Lamp stops at walls — LIT safe · SHADOW ambush · QUIET dims (Scrambler)',
+  'UI-TUT-KIT': 'i opens kit · u uses item — scan salvage · Scrambler = Quiet · Flare = light',
   'UI-TUT-HAZARD':
-    'Ion hazard taxes Bus — cross, Sealant (u), or south alcove',
+    'Ion tile drains Bus — step off, Sealant (u), or take the south detour',
   'UI-TUT-WAKE':
-    'Lines from your feet = who notices you · Shift+dir peeks next tile',
-  'UI-TUT-FIGHT': 'Bump to fight · b brace · f shove if adjacent · flare if dark',
-  'UI-TUT-STALKER': 'Stalker winding up — flare, brace, shove if in reach, or slip south',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends training — Window and Bus start after',
-  'UI-TUT-EXIT': 'On hatch — Enter to begin · Window and Bus go live',
+    'Lines from your feet = who notices you · Shift+direction peeks the next tile',
+  'UI-TUT-FIGHT': 'Walk into them to hit · b brace · f shove if adjacent · Flare if dark',
+  'UI-TUT-STALKER': 'Hunter winding up — Flare, brace, shove if adjacent, or go south',
+  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — then Window and Bus start ticking',
+  'UI-TUT-EXIT': 'On hatch — Enter to start the drop (Window and Bus go live)',
   'UI-QUEST-TRACK': 'QUEST',
   'UI-RQ-SALVAGE': 'Salvage console — press >',
-  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then >',
-  'UI-RQ-VENT-A': 'Vent cluster — use Sealant Foam here',
-  'UI-RQ-VENT-B': 'Seal console — press > to lock the warren',
+  'UI-RQ-PURGE': 'Purge nest — clear hostiles, then press >',
+  'UI-RQ-VENT-A': 'Vent — use Sealant Foam here',
+  'UI-RQ-VENT-B': 'Seal console — press > to finish',
   'UI-PAGES': 'Mission PADD',
-  'UI-PAGES-EMPTY': 'No PADD pages recovered this survey mission.',
-  'UI-PAGES-HINT': 'p or esc — close',
+  'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
+  'UI-PAGES-HINT': 'p or Esc — close',
   'UI-PAGES-PURPOSE':
-    'Kit = survive. Key + Lattice = extract. Procedures = Window + XP.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Procedures buy Window.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective / proficiency',
   'UI-QUEST-KEY': 'KEY',
@@ -174,16 +169,16 @@ export const LORE = {
   'UI-WIN': 'EXTRACTION COMPLETE',
   'UI-WIN-BODY': 'Nav lock restored. Halcyon confirms drop skiff pickup.',
   'UI-LOSE-HP': 'SURVEY OFFICER DOWN',
-  'UI-LOSE-HP-BODY': 'Vital signs lost. Hostile contact fatal.',
+  'UI-LOSE-HP-BODY': 'HP reached 0 — fatal contact.',
   'UI-LOSE-ENERGY': 'BUS FAILURE',
-  'UI-LOSE-ENERGY-BODY': 'Bus depleted under ion stress.',
+  'UI-LOSE-ENERGY-BODY': 'Bus hit 0 — kit power gone.',
   'UI-LOSE-STORM': 'WINDOW COLLAPSED',
-  'UI-LOSE-STORM-BODY': 'Window sealed the ridge pad. Halcyon cannot lock.',
+  'UI-LOSE-STORM-BODY': 'Window hit 0 — the extract closed.',
   'UI-LOSE-STUCK': 'MISSION ABORT',
-  'UI-LOSE-STUCK-BODY': 'No viable extraction path remaining.',
+  'UI-LOSE-STUCK-BODY': 'No viable path left to extract.',
   'UI-RETRY': 'ENTER — new survey team · ESC — title',
   'UI-EMPTY-INV': 'Field kit empty',
-  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · esc close',
+  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · Esc close',
 
   // Mission
   'LOC-VIRE7': 'Meridian Shelf',
@@ -196,9 +191,9 @@ export const LORE = {
   'OBJ-LOCAL-BEACON': '→ Beacon console',
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
-  'OBJ-LOCAL-ROOM': '→ Survey anomaly',
-  'OBJ-TUT-HATCH': '→ Drill hatch (wake · Bus hazard · kit · brace)',
-  'OBJ-TUT-BRIEF': 'Training bay — Window and Bus paused until you leave',
+  'OBJ-LOCAL-ROOM': '→ Optional procedure',
+  'OBJ-TUT-HATCH': '→ East hatch (learn notice, Bus hazard, kit)',
+  'OBJ-TUT-BRIEF': 'Training — Window and Bus paused until you leave',
   'HAZ-STORM': 'Window critical',
   'UI-CODEX': 'PADD',
 
@@ -235,7 +230,7 @@ export const LORE = {
   'CODEX-DUCT':
     'Conduit memo: abandoned bus junctions still vent; duct drones patrol seal points.',
   'CODEX-APPROACH':
-    'Approach brief: Window pressure desyncs nav pattern buffers — Coolant before skiff lock.',
+    'Approach brief: Window pressure desyncs the Lattice — Power Cell before skiff lock.',
   'CODEX-GENERIC': 'PADD fragment recovered — Halcyon survey hand, incomplete.',
   // Fact-bound pages — each may only claim what src/data/codex.ts requires of it.
   'CODEX-FACT-NEST-SWARM':
@@ -268,44 +263,46 @@ export const LORE = {
     'Survey contact: bring a Nav Ping — optional favor for Window refund.',
   // Items
   'ITEM-RELAY-KEY': 'Splice Key',
-  'ITEM-RELAY-KEY-DESC': 'Emergency Beacon inland authorization crystal.',
+  'ITEM-RELAY-KEY-DESC': 'Opens the Emergency Beacon handshake — required for inland path.',
   'ITEM-NAV-CORE': 'Nav Lattice',
-  'ITEM-NAV-CORE-DESC': 'Spare drop-skiff navigational lattice — extraction lock.',
+  'ITEM-NAV-CORE-DESC': 'Locks the drop skiff for extract — required to win.',
   'ITEM-MED': 'Field Hypo',
-  'ITEM-MED-DESC': 'Primary heal — restore +18 HP. Use when vitals drop.',
+  'ITEM-MED-DESC': 'Restore +18 HP.',
   'ITEM-ENERGY': 'Power Cell',
-  'ITEM-ENERGY-DESC': 'Standard Bus recharge — +20 Bus.',
+  'ITEM-ENERGY-DESC':
+    '+20 Bus. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
-  'ITEM-PROBE-DESC': 'Temporary attack boost and wider sensor range (+3).',
+  'ITEM-PROBE-DESC': '+3 ATK and +3 vision for a short time.',
   'ITEM-STIM': 'Combat Stim',
-  'ITEM-STIM-DESC': 'Short ATK surge (+3 ATK, 15 turns).',
+  'ITEM-STIM-DESC': '+3 ATK for 15 turns.',
   'ITEM-PLATE': 'Shield Charge',
-  'ITEM-PLATE-DESC': 'Repair personal Shield pool (+10 Shield).',
+  'ITEM-PLATE-DESC': 'Repair +10 Shield.',
   'ITEM-FLARE': 'Plasma Flare',
   'ITEM-FLARE-DESC':
-    '4-turn light; burst damage + stun adjacent hostiles; cancels sentinel overwatch and repels the skiff uplink wave.',
+    'Lights nearby tiles for 4 turns; damages and stuns adjacent foes; cancels overwatch; blocks the skiff pressure wave.',
   'ITEM-FILTER': 'Plasma Filter',
-  'ITEM-FILTER-DESC': 'Halves environmental Bus drain and plasma hits (50 turns).',
+  'ITEM-FILTER-DESC': 'Halves Bus drain from hazards and plasma hits (50 turns).',
   'ITEM-BLADE': 'Combat Knife',
-  'ITEM-BLADE-DESC': 'Tool: +1 ATK while worn. Use again to stow.',
+  'ITEM-BLADE-DESC': 'Equip for +1 ATK. Use again to stow.',
   'ITEM-BATON': 'Pulse Baton',
-  'ITEM-BATON-DESC': 'Tool: +1 ATK; melee stuns 1 turn. Use again to stow.',
+  'ITEM-BATON-DESC': 'Equip for +1 ATK; melee stuns 1 turn. Use again to stow.',
   'ITEM-HARNESS': 'EVA Harness',
-  'ITEM-HARNESS-DESC': 'Suit: +6 max Shield and refill. Use again to stow.',
+  'ITEM-HARNESS-DESC': 'Equip for +6 max Shield (refills). Use again to stow.',
   'ITEM-VEST': 'Ablative Vest',
-  'ITEM-VEST-DESC': 'Suit: +4 max Shield, +1 DEF while worn. Use again to stow.',
+  'ITEM-VEST-DESC': 'Equip for +4 max Shield and +1 DEF. Use again to stow.',
   'ITEM-DART': 'Plasma Microdart',
-  'ITEM-DART-DESC': 'Aim (u then a direction): hit a visible target within 3 tiles — expose + damage.',
+  'ITEM-DART-DESC': 'u then a direction: hit a lit target within 3 — damage and expose.',
   'ITEM-JAMMER': 'EM Scrambler',
   'ITEM-JAMMER-DESC':
-    'Quiet stance — FOV shrinks, fauna interest drops; at EM-HIGH suppresses aggro bump; mites/wasps silence (12 turns).',
+    'Starts Quiet for 12 turns: fauna notices you less, FOV shrinks, lamp dims. At high EM, also blocks the aggro spike.',
   'ITEM-SEALANT': 'Sealant Foam',
-  'ITEM-SEALANT-DESC': 'Neutralize hazard/vent underfoot for this sector visit.',
+  'ITEM-SEALANT-DESC':
+    'Clears hazard/vent underfoot, or flushes EM if used on clean ground.',
   'ITEM-MAPPER': 'Nav Ping',
-  'ITEM-MAPPER-DESC': 'Sensor ping — chevron to sector hatch for 40 turns (even unexplored).',
+  'ITEM-MAPPER-DESC': 'Marks the sector hatch for 40 turns (even through fog).',
   'ITEM-SALVAGE': 'Unknown Salvage',
   'ITEM-SALVAGE-DESC':
-    'Unidentified crate — step onto it to take, then use (u) in the kit to array-scan. May backlash.',
+    'Step onto it to pick up, then u in the kit to scan. May give a useful item — or backlash.',
 
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
@@ -348,23 +345,23 @@ export const LORE = {
   'ENEMY-SENTINEL-NOTE': 'Arms overwatch on the tiles beside it — do not step in while it is locked.',
   'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and Window refund on kill.',
   'ENEMY-BOSS-NOTE': 'Campaign apex — optional detour, rich storm/XP/kit payoff.',
-  'BRAND-FLAREBOUND': 'FLAREBOUND — plasma flares hit harder and stun longer; recover a Flare Prism on kill.',
-  'BRAND-WARDED': 'WARDED — ion lattice softens its own ion strikes; recover Ward Weave on kill.',
-  'BRAND-SHADOWBOUND': 'SHADOWBOUND — gains +1 aggro against targets in shadow; recover a Shadow Lens on kill.',
+  'BRAND-FLAREBOUND': 'FLAREBOUND — Flares hit harder and stun longer; drops a Flare on kill.',
+  'BRAND-WARDED': 'WARDED — its ion hits are softer; drops a Shield Charge on kill.',
+  'BRAND-SHADOWBOUND': 'SHADOWBOUND — +1 notice against you in shadow; drops a Probe on kill.',
 
   // Logs
   'LOG-DROP':
-    'Survey team on Meridian Shelf. Long-range field array silent. Residual scan pressure agitating local ecology — hostiles probable.',
+    'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Bus hits 0.',
   'LOG-TUT-WELCOME':
-    'Training bay — Window and Bus paused. Wake lines show notice; ion tiles tax Bus. East hatch starts the real drop.',
+    'Drill bay — Window and Bus paused. Lines from your feet show notice; ion tiles drain Bus. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
-    'Lamp stops at walls. Badge: LIT clear · SHADOW ambush · QUIET dims lamp (Scrambler).',
+    'Lamp stops at walls. Badge: LIT safe · SHADOW ambush · QUIET dims lamp (Scrambler).',
   'LOG-TUT-HAZARD':
-    'Ion hazard drains Bus — seal with Sealant (u) or take the south alcove.',
+    'Ion tile drains Bus — Sealant (u) or take the south detour.',
   'LOG-TUT-WAKE':
-    'Wake lines = fauna interest. Shift+dir peeks the next tile without moving.',
+    'Lines from your feet = who notices you. Shift+direction peeks the next tile (no turn).',
   'LOG-TUT-DONE':
-    'Window and Bus are live. Extract: Splice Key → beacon → Nav Lattice → drop skiff.',
+    'Window and Bus are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Path obstructed.',
   'LOG-WAIT': 'Holding position. Bus ticks.',
   'LOG-HIT': 'You strike',
@@ -503,19 +500,19 @@ export const LORE = {
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-FAVOR-GRANT': 'Extract favor secured.',
   'LOG-FAVOR-CONSUME': 'Extract favor spent.',
-  'LOG-FAVOR-SHELTER': 'Storm shelter unfolded — final window widened.',
-  'LOG-FAVOR-HAZARD': 'Safe-step favor absorbed the terrain hazard.',
-  'LOG-FAVOR-PATTERN': 'Pattern-buffer fail-safe caught the shear spike.',
+  'LOG-FAVOR-SHELTER': 'Favor: +15 Window on the final sector.',
+  'LOG-FAVOR-HAZARD': 'Favor: hazard underfoot ignored this step.',
+  'LOG-FAVOR-PATTERN': 'Favor: pattern buffer caught a desync spike.',
   'LOG-UPLINK-START': 'Nav Lattice uplink started — hold the ridge pad.',
   'LOG-UPLINK-HOLD': 'Uplink hold maintained.',
   'LOG-UPLINK-TICK': 'Uplink signal climbing.',
-  'LOG-UPLINK-WAVE-IN': 'Pressure wave inbound next hold — flare to repel or coolant to accelerate.',
+  'LOG-UPLINK-WAVE-IN': 'Pressure wave next hold — Flare to block or Power Cell to skip ahead.',
   'LOG-UPLINK-WAVE-HIT': 'Pressure wave hits the pad.',
-  'LOG-UPLINK-WAVE-REPEL': 'Flare bloom repels the pressure wave.',
-  'LOG-UPLINK-COOLANT': 'Coolant overclocks the uplink.',
-  'LOG-UPLINK-FLARE': 'Flare primed for the incoming pressure wave.',
+  'LOG-UPLINK-WAVE-REPEL': 'Flare blocks the pressure wave.',
+  'LOG-UPLINK-COOLANT': 'Power Cell skips an uplink hold.',
+  'LOG-UPLINK-FLARE': 'Flare ready for the incoming pressure wave.',
   'LOG-UPLINK-INTERRUPT': 'Uplink interrupted — left the ridge pad.',
-  'LOG-STORM-WARN': 'Window low.',
+  'LOG-STORM-WARN': 'Window low — extract soon.',
   'LOG-WINDUP-KILL': 'Windup interrupted — salvage bonus.',
   'LOG-USE-MAPPER': 'Nav ping — hatch bearing locked.',
   'LOG-RQ-SALVAGE': 'Survey salvage complete — kit and PADD page recovered.',
@@ -531,16 +528,16 @@ export const LORE = {
   'LOG-HS-START': 'Beacon handshake started — hold position for sync.',
   'LOG-HS-TICK': 'Beacon handshake syncing.',
   'LOG-HS-INTERRUPT': 'Handshake interrupted — left the beacon pad.',
-  'LOG-PB-DESYNC': 'Nav Lattice pattern buffer desynced — coolant required before skiff lock.',
+  'LOG-PB-DESYNC': 'Nav Lattice desynced — use a Power Cell before the skiff will lock.',
   'LOG-PB-SYNC': 'Pattern buffer restabilized.',
-  'LOG-PB-REJECT': 'Drop skiff rejects lock — pattern buffer still desynced.',
+  'LOG-PB-REJECT': 'Skiff refuses lock — pattern still desynced (need Power Cell).',
   'LOG-PB-STRESS': 'Pattern buffer under Window stress.',
   'LOG-QUIET-ON':
-    'Quiet stance online — sensors narrowed; soft shadow can hide adjacent pounces.',
-  'LOG-QUIET-OFF': 'Quiet stance offline — sensors and fauna interest return.',
-  'LOG-QUIET-EM': 'Quiet stance holding — EM-HIGH aggro bump suppressed while FOV stays tight.',
+    'Quiet on — fauna notices you less; FOV shrinks; lamp dims.',
+  'LOG-QUIET-OFF': 'Quiet off — normal notice and FOV.',
+  'LOG-QUIET-EM': 'Quiet holding — high-EM aggro spike suppressed.',
   'LOG-EVT-AFTERGLOW':
-    'Drop afterglow — residual EM spike. Coolant / Sealant flush; Scrambler for Quiet.',
+    'Drop afterglow — EM spike. Sealant helps clean residue; Scrambler starts Quiet.',
   'LOG-EVT-APPROACH': 'Pad approach — Window shear will pulse the Bus; watch the pattern buffer.',
   'LOG-EVT-SHEAR': 'Window shear pulse — Bus tax under pad approach pressure.',
   'LOG-ION-FRONT': 'Ion front forming — taxes EM and Bus; lit fauna track harder.',
