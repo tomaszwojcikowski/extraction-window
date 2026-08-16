@@ -21,12 +21,33 @@ export type ActionFloat = {
   color: string;
 };
 
+/** Signed vitals deltas for kit / hurt floats when log detail is narrative. */
+export type ActionFloatVitals = {
+  hpDelta?: number;
+  energyDelta?: number;
+  armorDelta?: number;
+};
+
+/** Announce when encirclement appears or clears — DEF readout alone is easy to miss. */
+export function flankEdgeFloat(before: number, after: number): ActionFloat | null {
+  if (before === after) return null;
+  if (after > before) {
+    return { label: `FLANK −${after} DEF`, color: ThemeCss.rust };
+  }
+  return { label: 'FLANK CLEAR', color: ThemeCss.safe };
+}
+
+function signedDelta(n: number): string {
+  return n > 0 ? `+${n}` : `${n}`;
+}
+
 /**
  * Select short, causal labels for recent events. The log remains the complete
  * history; these are deliberately transient presentation cues.
  */
-export function actionFloatLabels(
+export function collectActionFloatLabels(
   logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+  vitals?: ActionFloatVitals,
 ): ActionFloat[] {
   const labels: ActionFloat[] = [];
   for (const log of logs) {
@@ -37,6 +58,67 @@ export function actionFloatLabels(
         break;
       case 'LOG-DRAIN':
         next = { label: `BUS ${log.detail ?? 'DRAIN'}`, color: ThemeCss.arc };
+        break;
+      case 'LOG-HURT':
+      case 'LOG-STATUS-BLEED':
+        next = {
+          label:
+            vitals?.hpDelta !== undefined && vitals.hpDelta < 0
+              ? `HP ${signedDelta(vitals.hpDelta)}`
+              : 'HP HIT',
+          color: ThemeCss.rust,
+        };
+        break;
+      case 'LOG-USE-MED':
+        next = {
+          label:
+            vitals?.hpDelta !== undefined && vitals.hpDelta > 0
+              ? `HP ${signedDelta(vitals.hpDelta)}`
+              : 'HYPO · HP',
+          color: ThemeCss.safe,
+        };
+        break;
+      case 'LOG-USE-ENERGY':
+        next = {
+          label:
+            vitals?.energyDelta !== undefined && vitals.energyDelta > 0
+              ? `BUS ${signedDelta(vitals.energyDelta)}`
+              : 'BUS CELL',
+          color: ThemeCss.tape,
+        };
+        break;
+      case 'LOG-USE-PLATE':
+        next = {
+          label:
+            vitals?.armorDelta !== undefined && vitals.armorDelta > 0
+              ? `SHIELD ${signedDelta(vitals.armorDelta)}`
+              : 'SHIELD CHARGE',
+          color: ThemeCss.inkBright,
+        };
+        break;
+      case 'LOG-HS-START':
+      case 'LOG-HS-TICK':
+        next = {
+          label: log.detail ? `HANDSHAKE ${log.detail}` : 'HANDSHAKE',
+          color: ThemeCss.safe,
+        };
+        break;
+      case 'LOG-HS-INTERRUPT':
+        next = { label: 'HANDSHAKE BROKEN', color: ThemeCss.rust };
+        break;
+      case 'LOG-UPLINK-START':
+      case 'LOG-UPLINK-TICK':
+      case 'LOG-UPLINK-HOLD':
+        next = {
+          label: log.detail ? `UPLINK ${log.detail}` : 'UPLINK',
+          color: ThemeCss.arc,
+        };
+        break;
+      case 'LOG-UPLINK-INTERRUPT':
+        next = { label: 'UPLINK BROKEN', color: ThemeCss.rust };
+        break;
+      case 'LOG-EXTRACT':
+        next = { label: 'EXTRACT LOCK', color: ThemeCss.safe };
         break;
       case 'LOG-QUIET-OFF':
         next = { label: 'QUIET OFF', color: ThemeCss.inkDim };
@@ -83,6 +165,31 @@ export function actionFloatLabels(
         break;
     }
     if (next) labels.push(next);
+  }
+  return labels;
+}
+
+/** Cap at two floats — last events win so the newest consequence stays visible. */
+export function actionFloatLabels(
+  logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+  vitals?: ActionFloatVitals,
+): ActionFloat[] {
+  return collectActionFloatLabels(logs, vitals).slice(-2);
+}
+
+/** Log floats plus flank edge, still capped at two. */
+export function causalActionFloats(
+  logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+  opts?: {
+    vitals?: ActionFloatVitals;
+    flankBefore?: number;
+    flankAfter?: number;
+  },
+): ActionFloat[] {
+  const labels = collectActionFloatLabels(logs, opts?.vitals);
+  if (opts?.flankBefore !== undefined && opts.flankAfter !== undefined) {
+    const flank = flankEdgeFloat(opts.flankBefore, opts.flankAfter);
+    if (flank) labels.push(flank);
   }
   return labels.slice(-2);
 }
@@ -797,4 +904,15 @@ export function tintVisibleEnemies(
       if (view.img.active) view.img.clearTint();
     });
   }
+}
+
+/** Brief rust tint when the surveyor takes HP — mirrors enemy hit juice. */
+export function tintPlayerHurt(
+  time: Phaser.Time.Clock,
+  playerSprite: Phaser.GameObjects.Image,
+): void {
+  playerSprite.setTint(Theme.rust);
+  time.delayedCall(80, () => {
+    if (playerSprite.active) playerSprite.clearTint();
+  });
 }

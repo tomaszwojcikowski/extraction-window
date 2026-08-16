@@ -36,11 +36,12 @@ import { tileCastsPropShadow, propShadowTall } from '../game/views/propShadows';
 import {
   bumpAttack,
   bumpMeleeAttackers,
-  actionFloatLabels,
+  causalActionFloats,
   flashHit,
   flashScreen,
   playMoveAnims,
   presentActionFeedback,
+  tintPlayerHurt,
   tintVisibleEnemies,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
@@ -48,6 +49,7 @@ import {
   captureNoticeSnap,
   noticeImpactIds,
 } from '../game/presenters/NoticeImpact';
+import { flankPenalty } from '../sim/combat';
 import { pickCameraCue, type CameraCue } from '../game/presenters/EventCamera';
 import { CameraKick } from '../game/presenters/CameraKick';
 import { markPeekTeachDone } from '../game/presenters/PeekTeach';
@@ -927,6 +929,9 @@ export class GameScene extends Phaser.Scene {
     const prevMapWidth = this.state.width;
     const prevMapHeight = this.state.height;
     const prevHp = this.state.player.hp;
+    const prevEnergy = this.state.player.energy;
+    const prevArmor = this.state.player.armor;
+    const prevFlank = flankPenalty(this.state);
     const prevLogLen = this.state.log.length;
     const prevAlive = this.state.enemies.filter((en) => en.alive).length;
     const fromPlayer = { x: this.state.player.x, y: this.state.player.y };
@@ -975,7 +980,20 @@ export class GameScene extends Phaser.Scene {
     this.presentNoticeImpact(impactIds);
     this.playEventCamera(fb.newLogs, impactIds.length > 0);
     this.queueLightPreferenceHint();
-    this.showActionFloats(this.state.log.slice(prevLogLen));
+    this.showActionFloats(this.state.log.slice(prevLogLen), {
+      vitals: {
+        hpDelta: this.state.player.hp - prevHp,
+        energyDelta: this.state.player.energy - prevEnergy,
+        armorDelta: this.state.player.armor - prevArmor,
+      },
+      flankBefore: prevFlank,
+      flankAfter: flankPenalty(this.state),
+    });
+    if (this.state.player.hp < prevHp) {
+      tintPlayerHurt(this.time, this.playerSprite);
+    }
+    // Meter stamps fire with floats — don't wait for the move tween to finish.
+    if (!fb.mapReloaded) this.redrawHudEager();
 
     if (fb.mapReloaded) {
       this.movePreviewQueue = null;
@@ -1506,8 +1524,15 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  private showActionFloats(logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>): void {
-    const labels = actionFloatLabels(logs);
+  private showActionFloats(
+    logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+    opts?: {
+      vitals?: { hpDelta?: number; energyDelta?: number; armorDelta?: number };
+      flankBefore?: number;
+      flankAfter?: number;
+    },
+  ): void {
+    const labels = causalActionFloats(logs, opts);
     const base = this.worldXY(this.state.player.x, this.state.player.y);
     labels.forEach((label, index) => {
       const text = this.add
@@ -1519,18 +1544,39 @@ export class GameScene extends Phaser.Scene {
           strokeThickness: 2,
         })
         .setOrigin(0.5)
-        .setDepth(30);
+        .setDepth(30)
+        .setScale(1.08);
       this.entityLayer.add(text);
       this.entityLayer.bringToTop(text);
       this.tweens.add({
         targets: text,
-        y: text.y - 10,
+        y: text.y - 12,
         alpha: 0,
-        duration: 220,
+        scale: 1,
+        duration: 280,
         ease: 'Quad.easeOut',
         onComplete: () => text.destroy(),
       });
     });
+  }
+
+  /** HUD meters/stamps only — same frame as floats; full redraw still runs after hop. */
+  private redrawHudEager(): void {
+    const st = this.state;
+    const shear = computeShearPressure(st);
+    this.syncShearPresentation(shear);
+    const pulseBox = { current: this.windowPulseTween };
+    this.hud.redraw(st, {
+      screenW: this.scale.width,
+      screenH: this.scale.height,
+      helpOpen: this.helpOpen,
+      pagesOpen: this.pagesOpen,
+      tweens: this.tweens,
+      windowPulseTween: pulseBox,
+      shear,
+      movePreviewActive: this.movePreviewQueue !== null,
+    });
+    this.windowPulseTween = pulseBox.current;
   }
 
   private flashFx(color: number, alpha: number): void {

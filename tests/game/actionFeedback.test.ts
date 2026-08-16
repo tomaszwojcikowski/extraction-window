@@ -3,7 +3,9 @@ import { createGame } from '../../src/sim';
 import { ThemeCss } from '../../src/scenes/theme';
 import {
   actionFloatLabels,
+  causalActionFloats,
   combatFeedbackTiles,
+  flankEdgeFloat,
   playActionSfx,
   type EnemySnap,
 } from '../../src/game/presenters/ActionFeedback';
@@ -37,6 +39,54 @@ describe('ActionFeedback', () => {
   it('includes hatch feedback', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-SEALED-PRY' }])).toEqual([
       { label: 'HATCH OPEN', color: ThemeCss.safe },
+    ]);
+  });
+
+  it('floats HP hurt and kit vitals with signed deltas', () => {
+    expect(
+      actionFloatLabels([{ loreId: 'LOG-HURT', detail: 'mite · -4 · 48/52 hp' }], {
+        hpDelta: -4,
+      }),
+    ).toEqual([{ label: 'HP -4', color: ThemeCss.rust }]);
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-MED' }], { hpDelta: 22 })).toEqual([
+      { label: 'HP +22', color: ThemeCss.safe },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-ENERGY' }], { energyDelta: 32 })).toEqual([
+      { label: 'BUS +32', color: ThemeCss.tape },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-PLATE' }], { armorDelta: 12 })).toEqual([
+      { label: 'SHIELD +12', color: ThemeCss.inkBright },
+    ]);
+  });
+
+  it('floats handshake and uplink progress', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-HS-TICK', detail: '1/2' }])).toEqual([
+      { label: 'HANDSHAKE 1/2', color: ThemeCss.safe },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-UPLINK-TICK', detail: '2/3' }])).toEqual([
+      { label: 'UPLINK 2/3', color: ThemeCss.arc },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-UPLINK-INTERRUPT' }])).toEqual([
+      { label: 'UPLINK BROKEN', color: ThemeCss.rust },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-EXTRACT' }])).toEqual([
+      { label: 'EXTRACT LOCK', color: ThemeCss.safe },
+    ]);
+  });
+
+  it('announces flank edge separately from log floats', () => {
+    expect(flankEdgeFloat(0, 2)).toEqual({ label: 'FLANK −2 DEF', color: ThemeCss.rust });
+    expect(flankEdgeFloat(2, 0)).toEqual({ label: 'FLANK CLEAR', color: ThemeCss.safe });
+    expect(flankEdgeFloat(1, 1)).toBeNull();
+    expect(
+      causalActionFloats([{ loreId: 'LOG-USE-MED' }], {
+        vitals: { hpDelta: 10 },
+        flankBefore: 0,
+        flankAfter: 1,
+      }),
+    ).toEqual([
+      { label: 'HP +10', color: ThemeCss.safe },
+      { label: 'FLANK −1 DEF', color: ThemeCss.rust },
     ]);
   });
 

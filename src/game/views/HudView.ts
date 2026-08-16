@@ -436,7 +436,11 @@ export class HudView {
 
     this.lastBarValue[index] = value;
     val.setColor(printColor);
-    if (valueChanged) this.stampReadout(val, opts, printColor);
+    if (valueChanged) {
+      // Stamp caption + value so the named clock (HP/Bus/Window) owns the beat.
+      this.stampReadout(cap, opts, captionCss);
+      this.stampReadout(val, opts, printColor);
+    }
 
     this.drawBar(x, y, w, h, this.displayRatio[index]!, fill, low);
   }
