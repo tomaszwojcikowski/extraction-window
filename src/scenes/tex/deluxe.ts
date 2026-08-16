@@ -813,15 +813,22 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
   const pulse = frame % 4;
   switch (kind) {
     case 'scrub':
-      // Upright stalks only — canopy scrub, not a nest mound.
+      // Upright stalks with grit litter — material thicket, not a green UI blot.
       g.fillStyle(Theme.groundDeep, 0.75);
       g.fillEllipse(q(7), q(34), q(34), q(7));
+      // Litter grit under the stems.
+      g.fillStyle(mix(Material.foliage, Material.debris, 0.45), 0.9);
+      for (let i = 0; i < 8; i++) {
+        g.fillRect(q(8 + ((i * 11) % 32)), q(32 + (i % 3)), q(2), q(2));
+      }
       g.fillStyle(Material.foliage, 1);
       for (let i = 0; i < 5; i++) {
         const x = q(9 + i * 7);
         const h = q(14 + ((i * 5) % 14));
         g.fillRect(x, q(36) - h, q(3), h);
-        g.fillStyle(Theme.safe, 0.85);
+        g.fillStyle(mix(Material.foliage, Theme.groundDeep, 0.35), 1);
+        g.fillRect(x, q(36) - h, q(1), h);
+        g.fillStyle(Theme.safe, 0.7);
         g.fillTriangle(
           x - q(3),
           q(18 + (i % 3) * 4),
@@ -834,57 +841,96 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       }
       break;
     case 'scrub_nest':
-      // Low bowl with a hollow mouth — silhouette-distinct from upright scrub.
-      g.fillStyle(Theme.groundDeep, 0.8);
+      // Dried kill-bowl: nested materials, rim grit, hollow mouth.
+      g.fillStyle(Theme.groundDeep, 0.85);
       g.fillEllipse(q(4), q(34), q(40), q(9));
-      g.fillStyle(Material.foliage, 1);
+      g.fillStyle(mix(Material.foliage, Material.debris, 0.3), 1);
       g.fillEllipse(q(6), q(28), q(36), q(16));
+      // Woven rim edge.
+      g.fillStyle(Material.foliage, 1);
+      g.fillEllipse(q(8), q(22), q(32), q(8));
       g.fillStyle(Material.nest, 1);
       g.fillEllipse(q(12), q(24), q(24), q(14));
+      g.fillStyle(mix(Material.nest, Theme.groundDeep, 0.4), 1);
+      g.fillEllipse(q(15), q(26), q(18), q(10));
       g.fillStyle(Theme.groundDeep, 1);
-      g.fillEllipse(q(16), q(26), q(16), q(9));
-      // Rim thorns so the mouth reads even when colour is ignored.
+      g.fillEllipse(q(17), q(27), q(14), q(7));
+      // Bone grit in the hollow — not a UI glow pip.
+      g.fillStyle(mix(Material.debris, Theme.inkMute, 0.5), 0.95);
+      g.fillRect(q(20), q(28), q(3), q(2));
+      g.fillRect(q(26), q(29), q(2), q(2));
       g.fillStyle(Material.foliage, 1);
       g.fillRect(q(10), q(20), q(3), q(8));
       g.fillRect(q(35), q(21), q(3), q(7));
       g.fillRect(q(22), q(17), q(4), q(6));
-      g.fillStyle(Theme.biolum, 0.75);
-      g.fillRect(q(21), q(28), q(6), q(2));
       break;
     case 'rubble':
-      g.fillStyle(Theme.groundDeep, 0.8);
+      // Broken plate + masonry chips with hard edges and grit scatter.
+      g.fillStyle(Theme.groundDeep, 0.85);
       g.fillEllipse(q(5), q(35), q(39), q(7));
       g.fillStyle(Material.debris, 1);
       g.fillTriangle(q(5), q(35), q(15), q(21), q(23), q(35));
       g.fillTriangle(q(17), q(35), q(30), q(14), q(42), q(35));
+      g.fillStyle(Material.rock, 1);
+      g.fillRect(q(11), q(24), q(8), q(7));
+      g.fillRect(q(28), q(20), q(10), q(6));
+      g.fillStyle(mix(Material.debris, Theme.inkBright, 0.15), 0.9);
+      g.fillRect(q(11), q(24), q(8), q(1));
+      g.fillRect(q(28), q(20), q(10), q(1));
       g.fillStyle(Theme.inkMute, 0.85);
       g.fillTriangle(q(9), q(31), q(15), q(23), q(19), q(32));
       g.fillTriangle(q(24), q(31), q(30), q(17), q(35), q(31));
+      // Grit scatter.
+      g.fillStyle(mix(Material.debris, Theme.groundDeep, 0.3), 1);
+      for (let i = 0; i < 6; i++) {
+        g.fillRect(q(7 + i * 6), q(33 + (i % 2)), q(2), q(2));
+      }
       break;
     case 'vent':
+      // Recessed conduit grate — metal lip, dark throat, biolum seep between slats.
+      g.fillStyle(Material.conduit, 1);
+      g.fillRect(q(3), q(4), q(42), q(40));
       g.fillStyle(Theme.panelEdge, 1);
-      g.fillRect(q(4), q(5), q(40), q(38));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillRect(q(8), q(9), q(32), q(30));
-      for (let y = 11 + pulse; y < 38; y += 7) {
-        g.fillStyle(Theme.biolumDeep, 0.75);
-        g.fillRect(q(10), q(y), q(28), q(3));
-        g.fillStyle(Theme.biolum, 0.55);
-        g.fillRect(q(12 + pulse), q(y), q(12), q(1));
+      g.fillRect(q(3), q(4), q(42), q(2));
+      g.fillRect(q(3), q(42), q(42), q(2));
+      g.fillStyle(Material.recess, 1);
+      g.fillRect(q(7), q(8), q(34), q(32));
+      // Bolt corners.
+      g.fillStyle(Theme.panelEdge, 1);
+      g.fillRect(q(5), q(6), q(3), q(3));
+      g.fillRect(q(40), q(6), q(3), q(3));
+      g.fillRect(q(5), q(39), q(3), q(3));
+      g.fillRect(q(40), q(39), q(3), q(3));
+      for (let y = 10 + pulse; y < 38; y += 6) {
+        g.fillStyle(mix(Material.conduit, Theme.panelEdge, 0.4), 1);
+        g.fillRect(q(9), q(y), q(30), q(2));
+        g.fillStyle(Theme.biolumDeep, 0.7);
+        g.fillRect(q(10), q(y + 2), q(28), q(2));
+        g.fillStyle(Theme.biolum, 0.45);
+        g.fillRect(q(12 + pulse), q(y + 2), q(10), q(1));
       }
       break;
     case 'hazard':
-      g.fillStyle(Material.nest, 1);
+      // Corroded deck stain + blistered plate — material burn, not a warning glyph.
+      g.fillStyle(mix(Material.deck, Theme.rust, 0.35), 1);
       g.fillRect(q(2), q(2), q(44), q(44));
-      g.lineStyle(q(2), Theme.rust, 0.95);
+      g.fillStyle(Material.recess, 0.9);
+      g.fillEllipse(q(8), q(10), q(32), q(28));
+      // Blistered raised flakes.
+      g.fillStyle(mix(Theme.rust, Material.debris, 0.4), 1);
+      g.fillTriangle(q(10), q(30), q(18), q(12 + pulse), q(26), q(32));
+      g.fillTriangle(q(22), q(34), q(32), q(14 + pulse), q(40), q(30));
+      g.fillStyle(mix(Theme.rust, Theme.groundDeep, 0.25), 1);
+      g.fillRect(q(14), q(22 + pulse), q(6), q(4));
+      g.fillRect(q(28), q(18 + pulse), q(5), q(5));
+      // Edge scorch ring — silhouette before colour.
+      g.lineStyle(q(2), mix(Theme.rust, Theme.groundDeep, 0.35), 0.95);
       g.strokeRect(q(4), q(4), q(40), q(40));
-      g.fillStyle(Theme.arc, 0.9);
-      g.fillTriangle(q(24), q(7 + pulse), q(7), q(38), q(41), q(38));
-      g.fillStyle(Theme.groundDeep, 1);
-      g.fillTriangle(q(24), q(13 + pulse), q(14), q(34), q(34), q(34));
-      g.fillStyle(Theme.inkBright, 1);
-      g.fillRect(q(22), q(19 + pulse), q(4), q(9));
-      g.fillRect(q(22), q(31 + pulse / 2), q(4), q(4));
+      // Sparse grit, not an exclamation mark.
+      g.fillStyle(Theme.arc, 0.55);
+      for (let i = 0; i < 5; i++) {
+        g.fillRect(q(12 + i * 6), q(36 - ((i + pulse) % 3)), q(2), q(2));
+      }
       break;
     case 'brine_pool':
       g.fillStyle(Material.brine, 0.95);
