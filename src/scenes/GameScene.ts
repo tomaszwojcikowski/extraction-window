@@ -10,7 +10,6 @@ import {
 } from './textures';
 import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
-import { ALLIES } from '../data/npcs';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
 import { tileBrightness } from '../sim/light';
@@ -1194,7 +1193,8 @@ export class GameScene extends Phaser.Scene {
         // baked per kind, so a scaled-up spawn still looks like what it is.
         const bulk = en.tier === 'boss' ? 6 : en.tier === 'elite' ? 3 : 0;
         img.setDisplaySize(TILE_DRAW - 2 + bulk, TILE_DRAW - 2 + bulk);
-        const label = this.add.text(0, 0, ENEMIES[en.kind].glyph, {
+        // Silhouette only while idle — windup markers replace text in updateEnemyIntentLabel.
+        const label = this.add.text(0, 0, '', {
           fontFamily: FONT_DATA,
           fontSize: '11px',
           color: ThemeCss.inkBright,
@@ -1202,6 +1202,7 @@ export class GameScene extends Phaser.Scene {
           strokeThickness: 3,
         });
         label.setOrigin(0.5, 1);
+        label.setVisible(false);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: en.x, gy: en.y };
@@ -1276,11 +1277,11 @@ export class GameScene extends Phaser.Scene {
       allyIds.add(a.id);
       const visible = st.visible[a.y]?.[a.x] ?? false;
       let view = this.allyViews.get(a.id);
-      const def = ALLIES[a.kind];
       if (!view) {
         const img = this.add.image(0, 0, allyTextureKey(a.kind));
         img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
-        const label = this.add.text(0, 0, def.glyph, {
+        // Silhouette only — no letter glyphs over field allies.
+        const label = this.add.text(0, 0, '', {
           fontFamily: FONT_DATA,
           fontSize: '11px',
           color: ThemeCss.biolum,
@@ -1288,6 +1289,7 @@ export class GameScene extends Phaser.Scene {
           strokeThickness: 3,
         });
         label.setOrigin(0.5, 1);
+        label.setVisible(false);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: a.x, gy: a.y };
@@ -1296,7 +1298,7 @@ export class GameScene extends Phaser.Scene {
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
       }
       view.img.setVisible(visible);
-      view.label.setVisible(visible);
+      view.label.setVisible(false);
       view.img.setTexture(allyTextureKey(a.kind));
       if (snapPositions) {
         this.snapImg(view.img, a.x, a.y);
@@ -1324,9 +1326,9 @@ export class GameScene extends Phaser.Scene {
     enemy: GameState['enemies'][number],
   ): void {
     if (enemy.windup <= 0) {
-      view.label.setText(ENEMIES[enemy.kind].glyph);
-      view.label.setColor(ThemeCss.inkBright);
-      view.label.setFontSize(11);
+      // Trust silhouette — no idle letter glyphs.
+      view.label.setText('');
+      view.label.setVisible(false);
       return;
     }
     // Marker names the windup type so the player can choose leave vs fight.
@@ -1353,6 +1355,7 @@ export class GameScene extends Phaser.Scene {
     view.label.setText(marker);
     view.label.setColor(color);
     view.label.setFontSize(marker.length > 4 ? 8 : 10);
+    view.label.setVisible(view.img.visible);
   }
 
   private updateCamera(snap: boolean): void {
