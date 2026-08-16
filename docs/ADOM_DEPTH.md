@@ -199,3 +199,55 @@ Human starts (`GameScene`) run a short **drill bay** tutorial (`tutorialActive`,
 Removed the EM Scrambler / Quiet stance system end-to-end (item, `jammerTurns`, FOV/lamp dim, mite silence, EM-HIGH suppress, ion Quiet shield, QUIET badge). Field light remains LIT/SHADOW + flare. Autopilot persona id `quiet` kept as a conservative flare-hoard profile only.
 
 Finding #1 (Quiet as mandatory tax) is closed by deletion rather than retune — expect WR to need a follow-up measure.
+
+---
+
+## Wave 8 — Clocks you can read (done)
+
+The Wave 7 follow-up measure, plus what it turned up. Three parts: fix the gate that
+missed it, make the Window honest, retune what the measurement blamed.
+
+### The gate was not measuring
+
+`test:balance` ran 30 hand-picked seeds — about ±18 points — and reported green at a
+true **52.6% ±4.4** (500 fresh seeds), below the 55% floor. Wave 5 predicted exactly this
+("the 30-seed gate is a regression check, not a measurement"); it took a pillar-level cut
+to expose it. The gate now runs **300 generated seeds** (`GATE_SEEDS`), deliberately
+offset from `scripts/probe-wr.ts` so that probe stays a held-out measurement.
+
+### The Window was lying
+
+Window burn was never 1 unit per turn: `tickEnvironment` taxed it from sector 8 and again
+from 11, so a vault turn cost **2.5**. The HUD went on printing raw units. Reading
+"240 left" in the vault meant **96 turns**, and the low-Window warning fired 80 turns out
+on the flats but 32 turns out deep in the spine, where notice is worth most.
+
+Drain now resolves in one place (`src/sim/window.ts`). The readout counts turns and names
+the rate (`Window x2.5`), warnings fire on turns remaining, and crossing into a taxed
+sector says so at the hatch (`LOG-WINDOW-TAX`).
+
+### Peak tax moved off the vault
+
+New probe (`scripts/probe-loss.ts`) charges every turn to the sector it was spent in.
+The vault was the most expensive sector in **17 of 44** Window losses at a median 55 turns
+against a winner's 29 — and the vault is where the Nav Lattice is. The spine was charging
+its steepest clock rate for doing the one thing it requires. Heavy tax now starts at the
+fissure (12), so urgency lands on the run home.
+
+**Result:** **59.2% ±4.3** over 500 fresh seeds, back in band. Storm losses 81 → 42.
+
+### Open, and now visible
+
+- **hp owns 75% of deaths** (154/204). It was 63% before this wave, but only because a
+  misplaced Window tax was killing people — the hp *count* barely moved (148 → 154). The
+  Wave 4 death-mix finding was never fixed, only masked. This is the Wave 9 target, and
+  the honest fix is restoring a defensive *choice* to replace what Quiet provided, not a
+  flat buff: +3 base plating measured inside noise.
+- **The Bus clock is structurally dead** (8/500 losses). Every energy change in the
+  codebase is a tax applied *to* the player; no action spends Bus by choice. It is a slow
+  damage type wearing a clock's name.
+- **The autopilot never reads `stormTurns`.** It cannot rush a closing Window, so it
+  over-reports storm deaths relative to a human who can. Treat any Window retune measured
+  on the oracle as a lower bound and pair it with human play.
+
+**Exit gate:** unit + cohere + smoke + 300-seed band gate green; no new always-on chrome.
