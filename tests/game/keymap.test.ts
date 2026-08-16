@@ -13,10 +13,12 @@ function key(k: string, opts: Partial<KeyboardEvent> = {}): KeyboardEvent {
 }
 
 describe('Keymap', () => {
-  it('maps chrome mute / help / pages', () => {
+  it('maps chrome mute / help / pages / log', () => {
     expect(chromeFromKey(key('m'))).toEqual({ kind: 'mute' });
     expect(chromeFromKey(key('?'))).toEqual({ kind: 'toggle_help' });
     expect(chromeFromKey(key('p'))).toEqual({ kind: 'toggle_pages' });
+    expect(chromeFromKey(key('l'))).toEqual({ kind: 'toggle_log' });
+    expect(chromeFromKey(key('L'))).toEqual({ kind: 'toggle_log' });
     expect(chromeFromKey(key('x'))).toBeNull();
   });
 

@@ -294,6 +294,7 @@ export function drawHudStripChrome(
   const corrosion = opts.corrosion ?? 0;
   const accent = opts.accent ?? Theme.tape;
   g.clear();
+  if (height <= 0) return;
 
   drawPlate(g, 0, y, width, height, { fill: Theme.groundDeep, alpha: 0.98, bevel: 0 });
   // Instrument face sits slightly proud of the case.

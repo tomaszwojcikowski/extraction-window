@@ -24,7 +24,7 @@ import {
 } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
-import { HUD_BOTTOM, HUD_TOP } from '../game/GameHost';
+import { HUD_BOTTOM_LOG, HUD_TOP } from '../game/GameHost';
 import { handleGameKey, type CommitTurnOpts } from '../game/input/InputController';
 import {
   applyDirectionQueue,
@@ -32,6 +32,11 @@ import {
   type MovePreviewQueue,
 } from '../game/input/MovePreviewQueue';
 import { resolveHintLine } from '../game/presenters/ContextHints';
+import {
+  ensureSignalRailTexts,
+  layoutSignalRail,
+  pushSignalRail,
+} from '../game/presenters/SignalRail';
 import { tileCastsPropShadow, propShadowTall } from '../game/views/propShadows';
 import {
   bumpAttack,
@@ -43,6 +48,7 @@ import {
   presentActionFeedback,
   tintPlayerHurt,
   tintVisibleEnemies,
+  type ActionFloat,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
 import {
@@ -64,7 +70,6 @@ import { collectWakeTells, drawWakeTells, wakeTellsAt } from '../game/presenters
 import { pressureRevealAt } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
-const BOTTOM = HUD_BOTTOM;
 const BAR_SLOTS = HUD_BAR_SLOTS;
 const BADGE_SLOTS = HUD_BADGE_SLOTS;
 /** Causal float linger — long enough to read mid-move; still clears before the next beat feels sticky. */
@@ -162,6 +167,11 @@ export class GameScene extends Phaser.Scene {
   private helpPanel!: Phaser.GameObjects.Graphics;
   private helpText!: Phaser.GameObjects.Text;
   private helpOpen = false;
+  /** Mission log strip — hidden by default; `l` toggles. */
+  private logOpen = false;
+  private signalRailGfx!: Phaser.GameObjects.Graphics;
+  private signalRailTexts: Phaser.GameObjects.Text[] = [];
+  private recentSignals: ActionFloat[] = [];
 
   private flash!: Phaser.GameObjects.Rectangle;
 
@@ -173,6 +183,8 @@ export class GameScene extends Phaser.Scene {
     this.state = createGame(data.seed ?? 42, { skipTutorial: false });
     this.helpOpen = false;
     this.pagesOpen = false;
+    this.logOpen = false;
+    this.recentSignals = [];
     this.animating = false;
     this.enemyViews.clear();
     this.npcViews.clear();
@@ -370,18 +382,22 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.logText = this.add
-      .text(12, this.scale.height - BOTTOM + 10, '', {
+      .text(12, this.scale.height - this.bottomInset() + 10, '', {
         fontFamily: FONT_DATA,
         fontSize: '13px',
         color: ThemeCss.ink,
         wordWrap: { width: this.scale.width - 24 },
       })
       .setScrollFactor(0)
-      .setDepth(92);
+      .setDepth(92)
+      .setVisible(false);
+
+    this.signalRailGfx = this.add.graphics().setScrollFactor(0).setDepth(93);
+    this.signalRailTexts = ensureSignalRailTexts(this);
 
     this.hintGfx = this.add.graphics().setScrollFactor(0).setDepth(92.5).setVisible(false);
     this.hintText = this.add
-      .text(14, this.scale.height - BOTTOM - 16, '', {
+      .text(14, this.scale.height - this.bottomInset() - 16, '', {
         fontFamily: FONT_DATA,
         fontSize: '13px',
         color: ThemeCss.inkBright,
@@ -602,6 +618,11 @@ export class GameScene extends Phaser.Scene {
     img.setPosition(p.x, p.y);
   }
 
+  /** Collapsed default: full viewport. Open mission log (`l`) reserves the strip. */
+  private bottomInset(): number {
+    return this.logOpen ? HUD_BOTTOM_LOG : 0;
+  }
+
   private drawChrome(shear = computeShearPressure(this.state)): void {
     const w = this.scale.width;
     const h = this.scale.height;
@@ -615,9 +636,11 @@ export class GameScene extends Phaser.Scene {
       drainingLeg: shear.drainingLeg,
       animFrame: this.animFrame,
     });
+    const bottom = this.bottomInset();
+    this.bottomPanel.setVisible(this.logOpen);
     drawHudStripChrome(this.bottomPanel, {
-      y: h - BOTTOM,
-      height: BOTTOM,
+      y: h - bottom,
+      height: bottom,
       width: w,
       side: 'bottom',
       corrosion: shear.value,
@@ -922,6 +945,7 @@ export class GameScene extends Phaser.Scene {
       },
       toggleHelp: (force) => this.toggleHelp(force),
       togglePages: (force) => this.togglePages(force),
+      toggleLog: (force) => this.toggleLog(force),
       afterUiChrome: (opts) => {
         this.redrawTilesAndHud();
         if (opts?.syncItems) this.syncItems();
@@ -1397,7 +1421,8 @@ export class GameScene extends Phaser.Scene {
 
   private updateCamera(snap: boolean): void {
     const viewW = this.scale.width;
-    const viewH = this.scale.height - TOP - BOTTOM;
+    const bottom = this.bottomInset();
+    const viewH = this.scale.height - TOP - bottom;
     const targetX = this.playerSprite.x - viewW / 2;
     const targetY = this.playerSprite.y - viewH / 2;
     if (snap) {
@@ -1474,13 +1499,14 @@ export class GameScene extends Phaser.Scene {
     const left = pad;
     const right = this.scale.width - pad;
     const top = TOP + pad;
-    const bottom = this.scale.height - BOTTOM - pad;
+    const bottomInset = this.bottomInset();
+    const bottom = this.scale.height - bottomInset - pad;
     const onScreen =
       screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
     if (onScreen) return;
 
     const cx = this.scale.width / 2;
-    const cy = TOP + (this.scale.height - TOP - BOTTOM) / 2;
+    const cy = TOP + (this.scale.height - TOP - bottomInset) / 2;
     const dx = screenX - cx;
     const dy = screenY - cy;
     const len = Math.hypot(dx, dy) || 1;
@@ -1595,13 +1621,14 @@ export class GameScene extends Phaser.Scene {
     const left = pad;
     const right = this.scale.width - pad;
     const top = TOP + pad;
-    const bottom = this.scale.height - BOTTOM - pad;
+    const bottomInset = this.bottomInset();
+    const bottom = this.scale.height - bottomInset - pad;
     const onScreen =
       screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
     if (onScreen) return;
 
     const scx = this.scale.width / 2;
-    const scy = TOP + (this.scale.height - TOP - BOTTOM) / 2;
+    const scy = TOP + (this.scale.height - TOP - bottomInset) / 2;
     const dx = screenX - scx;
     const dy = screenY - scy;
     const len = Math.hypot(dx, dy) || 1;
@@ -1654,6 +1681,32 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private toggleLog(force?: boolean): void {
+    this.logOpen = force ?? !this.logOpen;
+    this.logText.setVisible(this.logOpen);
+    this.layoutBottomChrome();
+    this.redrawTilesAndHud();
+  }
+
+  /** Reposition hint / log / signal rail after inset changes. */
+  private layoutBottomChrome(): void {
+    const h = this.scale.height;
+    const bottom = this.bottomInset();
+    this.logText.setPosition(12, h - bottom + 10);
+    const railH = this.syncSignalRail();
+    this.hintText.setPosition(14, h - bottom - 16 - railH);
+    this.syncHintPlate();
+  }
+
+  /** Dock recent causal chips when the text log is closed. Returns stack height. */
+  private syncSignalRail(): number {
+    return layoutSignalRail(this.signalRailGfx, this.signalRailTexts, this.recentSignals, {
+      screenH: this.scale.height,
+      bottomInset: this.bottomInset(),
+      visible: !this.logOpen,
+    });
+  }
+
   private flashHit(): void {
     flashHit(this.tweens, this.flash);
   }
@@ -1684,6 +1737,8 @@ export class GameScene extends Phaser.Scene {
     },
   ): void {
     const labels = causalActionFloats(logs, opts);
+    this.recentSignals = pushSignalRail(this.recentSignals, labels);
+    this.layoutBottomChrome();
     const base = this.worldXY(this.state.player.x, this.state.player.y);
     labels.forEach((label, index) => {
       const text = this.add
@@ -1723,6 +1778,7 @@ export class GameScene extends Phaser.Scene {
       screenH: this.scale.height,
       helpOpen: this.helpOpen,
       pagesOpen: this.pagesOpen,
+      logOpen: this.logOpen,
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
@@ -2128,7 +2184,7 @@ export class GameScene extends Phaser.Scene {
     const st = this.state;
     this.applyFieldLighting();
 
-    drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, BOTTOM);
+    drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, this.bottomInset());
 
     const shear = computeShearPressure(st);
     this.drawChrome(shear);
@@ -2140,12 +2196,14 @@ export class GameScene extends Phaser.Scene {
       screenH: this.scale.height,
       helpOpen: this.helpOpen,
       pagesOpen: this.pagesOpen,
+      logOpen: this.logOpen,
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
       movePreviewActive: this.movePreviewQueue !== null,
     });
     this.windowPulseTween = pulseBox.current;
+    this.layoutBottomChrome();
     // Preference tip fills an empty hint line only — never stomps tele/vitals/context.
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
       if (!this.hintText.visible) {

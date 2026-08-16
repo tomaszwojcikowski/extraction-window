@@ -39,6 +39,7 @@ export type InputHost = {
   startEndScene(): void;
   toggleHelp(force?: boolean): void;
   togglePages(force?: boolean): void;
+  toggleLog(force?: boolean): void;
   /** After kit/chrome UI actions — redraw HUD (and items when needed). */
   afterUiChrome(opts?: { syncItems?: boolean }): void;
   showSkillHint(): void;
@@ -92,6 +93,12 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
     if (host.isHelpOpen()) host.toggleHelp(false);
     host.clearQueuedAction();
     host.togglePages();
+    sfx.play('ui');
+    return;
+  }
+  if (chrome?.kind === 'toggle_log') {
+    host.clearQueuedAction();
+    host.toggleLog();
     sfx.play('ui');
     return;
   }

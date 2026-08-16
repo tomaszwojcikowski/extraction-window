@@ -50,6 +50,8 @@ export type HudRedrawOpts = {
   screenH: number;
   helpOpen: boolean;
   pagesOpen: boolean;
+  /** Mission log strip open (`l`) — when false, log text stays empty; chips carry the beat. */
+  logOpen?: boolean;
   /** Scene tweens for meter needles + readout ticks. */
   tweens: Phaser.Tweens.TweenManager;
   /** Mutable holder so the scene can stop/replace the pulse tween. */
@@ -363,17 +365,21 @@ export class HudView {
       'milestone',
     );
 
-    const logs = st.log.slice(-5).map((l) => {
-      const base = lore(l.loreId);
-      return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
-    });
-    this.setReadout(
-      r.logText,
-      `${lore('UI-LOG')}  /  ? help\n${logs.join('\n')}`,
-      opts,
-      ThemeCss.ink,
-      'log',
-    );
+    if (opts.logOpen) {
+      const logs = st.log.slice(-5).map((l) => {
+        const base = lore(l.loreId);
+        return l.detail ? `- ${base} (${l.detail})` : `- ${base}`;
+      });
+      this.setReadout(
+        r.logText,
+        `${lore('UI-LOG')}  /  l close · ? help\n${logs.join('\n')}`,
+        opts,
+        ThemeCss.ink,
+        'log',
+      );
+    } else {
+      this.setReadout(r.logText, '', opts, ThemeCss.ink, 'log');
+    }
 
     const hint = resolveHintLine(st, { movePreviewActive: opts.movePreviewActive });
     if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
