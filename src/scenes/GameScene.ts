@@ -67,6 +67,8 @@ const TOP = HUD_TOP;
 const BOTTOM = HUD_BOTTOM;
 const BAR_SLOTS = HUD_BAR_SLOTS;
 const BADGE_SLOTS = HUD_BADGE_SLOTS;
+/** Causal float linger — readable without eating the next turn's juice. */
+const ACTION_FLOAT_MS = 720;
 
 export class GameScene extends Phaser.Scene {
   private state!: GameState;
@@ -1531,25 +1533,26 @@ export class GameScene extends Phaser.Scene {
     const base = this.worldXY(this.state.player.x, this.state.player.y);
     labels.forEach((label, index) => {
       const text = this.add
-        .text(base.x, base.y - 14 - index * 12, label.label, {
+        .text(base.x, base.y - 16 - index * 14, label.label, {
           fontFamily: FONT_DATA,
-          fontSize: '10px',
+          fontSize: '11px',
           color: label.color,
           stroke: ThemeCss.groundDeep,
-          strokeThickness: 2,
+          strokeThickness: 3,
         })
         .setOrigin(0.5)
         .setDepth(30)
-        .setScale(1.08);
+        .setScale(1.06);
       this.entityLayer.add(text);
       this.entityLayer.bringToTop(text);
+      // Hold readable, then fade — Cubic.easeIn keeps alpha high early.
       this.tweens.add({
         targets: text,
-        y: text.y - 12,
+        y: text.y - 22,
         alpha: 0,
         scale: 1,
-        duration: 280,
-        ease: 'Quad.easeOut',
+        duration: ACTION_FLOAT_MS,
+        ease: 'Cubic.easeIn',
         onComplete: () => text.destroy(),
       });
     });
