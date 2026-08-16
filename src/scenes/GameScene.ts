@@ -32,7 +32,7 @@ import {
   layoutSignalRail,
   pushSignalRail,
 } from '../game/presenters/SignalRail';
-import { tileCastsPropShadow, propShadowTall } from '../game/views/propShadows';
+import { tileCastsPropShadow } from '../game/views/propShadows';
 import {
   bumpAttack,
   bumpMeleeAttackers,
@@ -1981,12 +1981,10 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Everything solid enough to throw a shadow this frame. */
+  /** Bodies and ground kit — contact plants only; walls use occluder umbra. */
   private *shadowCasters(): Generator<{
     gx: number;
     gy: number;
-    tall?: boolean;
-    prop?: boolean;
     item?: boolean;
     body?: boolean;
   }> {
@@ -1999,19 +1997,13 @@ export class GameScene extends Phaser.Scene {
       gy: carry?.y ?? st.player.y,
       body: true,
     };
-    // Prefer view positions so mid-hop fauna umbra travels with the sprite.
     for (const en of st.enemies) {
       if (!en.alive) continue;
       const view = this.enemyViews.get(en.id);
       const gx = view?.gx ?? en.x;
       const gy = view?.gy ?? en.y;
       if (!visAt(gx, gy) && !visAt(en.x, en.y)) continue;
-      yield {
-        gx,
-        gy,
-        tall: en.tier !== 'normal',
-        body: true,
-      };
+      yield { gx, gy, body: true };
     }
     for (const a of st.allies) {
       if (!a.alive) continue;
@@ -2029,23 +2021,13 @@ export class GameScene extends Phaser.Scene {
       yield { gx, gy, body: true };
     }
 
-    for (let y = 0; y < st.height; y++) {
-      for (let x = 0; x < st.width; x++) {
-        if (!st.visible[y]?.[x]) continue;
-        const tile = st.tiles[y]![x]!;
-        // Opaque mass already throws occluder umbra — skip a second prop cast.
-        if (!tile.transparent) continue;
-        if (!tileCastsPropShadow(tile.kind)) continue;
-        yield { gx: x, gy: y, tall: propShadowTall(tile.kind), prop: true };
-      }
-    }
     const seenItems = new Set<string>();
     for (const it of st.items) {
       if (!st.visible[it.y]?.[it.x]) continue;
       const key = `${it.x},${it.y}`;
       if (seenItems.has(key)) continue;
       seenItems.add(key);
-      yield { gx: it.x, gy: it.y, item: true, prop: true };
+      yield { gx: it.x, gy: it.y, item: true };
     }
   }
 

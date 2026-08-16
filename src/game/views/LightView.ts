@@ -12,7 +12,6 @@ import {
 import { EM_HIGH } from '../../sim/emStress';
 import { BIOME_AMBIENT, BIOME_FLOOR_TINT, LightTemp, Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
-import { castReachTiles } from './castShadows';
 import {
   collectOccluderShadows,
   lightCastsOccluderShadow,
@@ -25,10 +24,10 @@ export { moveBlendDirtyCells } from './moveBlendDirty';
 
 const MAX_SOURCES = 12;
 
-/** Additive washes per pool — uneven shells so spill feathers, not onion rings. */
-const POOL_SCALES = [1.22, 0.88, 0.55, 0.32] as const;
-/** Relative alpha per wash (outer → body) — muted so pools aren't chalky. */
-const POOL_ALPHA = [0.1, 0.16, 0.26, 0.38] as const;
+/** Additive washes per pool — two soft shells, not onion rings. */
+const POOL_SCALES = [1.05, 0.58] as const;
+/** Relative alpha per wash (outer → body). */
+const POOL_ALPHA = [0.14, 0.28] as const;
 
 function poolSeed(x: number, y: number, radius: number): number {
   return ((Math.floor(x * 17) ^ Math.floor(y * 31) ^ Math.floor(radius * 10)) >>> 0) || 1;
@@ -432,15 +431,10 @@ export class LightView {
       const personal =
         s.color === LightTemp.lamp ||
         isSconce;
-      // Only chemical / pad floods earn a white-hot tip — pattern/fauna stay murky.
-      const hotCore =
-        s.color === LightTemp.flare ||
-        s.color === LightTemp.beacon ||
-        s.color === LightTemp.shuttle;
       const gain = Math.min(1.35, Math.sqrt(Math.max(0.05, s.intensity))) * biomeGain;
       const aCore = personal
         ? Math.min(isSconce ? 0.14 : 0.18, 0.04 + s.intensity * 0.09) * biomeGain
-        : Math.min(0.32, 0.07 + s.intensity * 0.16) * biomeGain;
+        : Math.min(0.28, 0.07 + s.intensity * 0.14) * biomeGain;
 
       if (tiles) {
         // Always march from the continuous centre so a carried lamp doesn't quantize.
@@ -451,7 +445,7 @@ export class LightView {
         for (let k = 0; k < POOL_SCALES.length; k++) {
           const scale = POOL_SCALES[k]!;
           const shellAlpha = aCore * POOL_ALPHA[k]! * (0.45 + 0.55 * atten);
-          this.lightsGfx.fillStyle(s.color, Math.min(0.32, shellAlpha));
+          this.lightsGfx.fillStyle(s.color, Math.min(0.28, shellAlpha));
           this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale, seed + k * 19), true);
         }
       } else {
@@ -461,47 +455,29 @@ export class LightView {
         this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.3);
       }
 
-      if (isSconce) {
-        // Fixture spill — short bright tongue from the mount, still ray-clipped.
-        const core = Math.max(3, TILE_DRAW * 0.16 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.38);
-        this.lightsGfx.fillCircle(wx, wy, core);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.18);
-        this.lightsGfx.fillCircle(wx, wy, core * 1.7);
-      } else if (personal) {
-        const core = Math.max(4, TILE_DRAW * 0.16 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.28);
-        this.lightsGfx.fillCircle(wx, wy, core);
-      } else if (hotCore) {
-        const core = Math.max(5, TILE_DRAW * 0.26 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.36);
-        this.lightsGfx.fillCircle(wx, wy, core);
-        this.lightsGfx.fillStyle(blendTowardWhite(s.color, 0.35), Math.min(0.42, aCore * 0.85));
-        this.lightsGfx.fillCircle(wx, wy, core * 0.42);
-      } else {
-        // Landmark / fauna / marker: one murky body, no nested white spark.
-        const core = Math.max(4, TILE_DRAW * 0.2 * gain);
-        this.lightsGfx.fillStyle(s.color, aCore * 0.3);
-        this.lightsGfx.fillCircle(wx, wy, core);
-      }
+      // One soft core — no nested white spark competing with tile wash.
+      const core = Math.max(
+        personal ? 4 : 5,
+        TILE_DRAW * (isSconce ? 0.16 : personal ? 0.16 : 0.2) * gain,
+      );
+      this.lightsGfx.fillStyle(s.color, aCore * (isSconce ? 0.32 : personal ? 0.26 : 0.28));
+      this.lightsGfx.fillCircle(wx, wy, core);
     }
   }
 
   /**
-   * Dynamic floor umbra: opaque tiles cast soft wedges from flood-lit faces,
-   * and actors stretch a key-light silhouette. Both follow lampCarry mid-hop.
-   * Contact under feet is a single faint plant — not a drop-shadow filter.
+   * One shadow language: wall/occluder floor umbra from flood-lit faces, plus a
+   * single contact plant under bodies and kit. No actor cast wedges — those
+   * fought the occluders and read as a second lighting system.
    */
   drawDynamicShadows(
     st: GameState,
     actors: Iterable<{
       gx: number;
       gy: number;
-      tall?: boolean;
-      prop?: boolean;
-      /** Ground kit — short solid plant + cast. */
+      /** Ground kit — short contact plant. */
       item?: boolean;
-      /** Fauna / peers — body-scale umbra. */
+      /** Fauna / peers — body plant. */
       body?: boolean;
     }>,
     sources: LightSource[],
@@ -531,7 +507,6 @@ export class LightView {
       focusY,
     );
     for (const q of quads) {
-      // Sample near the face tip so SHADOW-band stays faint.
       const sampleX = Math.min(
         st.width - 1,
         Math.max(0, Math.floor((q.x0 + q.x1 + q.x2 + q.x3) / 4)),
@@ -549,7 +524,6 @@ export class LightView {
       }
       const brightness = tileBrightness(st, sampleX, sampleY);
       const inShadowBand = brightness < SHADOW_THRESHOLD;
-      // Weight from the casting face only — fill light must not darken the wedge.
       const alpha = Math.min(0.42, q.weight * (inShadowBand ? 0.1 : 0.26));
       if (alpha < 0.03) continue;
       g.fillStyle(Theme.groundDeep, alpha);
@@ -565,6 +539,7 @@ export class LightView {
     }
 
     for (const actor of actors) {
+      if (!actor.body && !actor.item) continue;
       const { gx, gy } = actor;
       const tx = Math.round(gx);
       const ty = Math.round(gy);
@@ -574,97 +549,19 @@ export class LightView {
         continue;
       }
       const brightness = tileBrightness(st, tx, ty);
-      // Bodies / kit still plant in dim light; only skip pitch black.
-      const minBright = actor.body || actor.item ? 0.03 : 0.06;
-      if (brightness < minBright) continue;
+      if (brightness < 0.03) continue;
 
-      let key = 0;
-      let keyDx = 0;
-      let keyDy = 0;
-      for (let i = 0; i < sources.length; i++) {
-        const s = sources[i]!;
-        const dist = Math.hypot(gx - s.x, gy - s.y);
-        // Own-tile lamp (or a prop sitting on its emitter): plant only.
-        if (dist < 0.75) continue;
-        const E = this.energyAt(i, tx, ty);
-        if (E <= 0.004) continue;
-        // Dominant key light only — summing opposite sconces cancelled the cast.
-        if (E > key) {
-          key = E;
-          keyDx = gx - s.x;
-          keyDy = gy - s.y;
-        }
-      }
-      const footBias = actor.item ? 0.18 : actor.prop ? 0.22 : 0.28;
+      const footBias = actor.item ? 0.18 : 0.28;
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
       const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * footBias;
       const inShadowBand = brightness < SHADOW_THRESHOLD;
-      // Bodies keep a readable cast in soft shadow; furniture stays fainter there.
       const alpha = Math.min(
-        actor.body ? 0.58 : actor.item ? 0.52 : 0.5,
-        (inShadowBand
-          ? actor.body || actor.item || actor.prop
-            ? 0.1
-            : 0.06
-          : 0.12) +
-          brightness * (inShadowBand ? (actor.body ? 0.28 : 0.18) : 0.38),
+        actor.body ? 0.5 : 0.42,
+        (inShadowBand ? 0.08 : 0.1) + brightness * (inShadowBand ? 0.2 : 0.32),
       );
-
-      const len = Math.hypot(keyDx, keyDy);
-      // Soft-band cast for fauna / kit / furniture so ambush rooms still read.
-      const allowCast =
-        key > (actor.body || actor.item ? 0.035 : 0.05) &&
-        len > 0.0001 &&
-        (!inShadowBand || actor.body || actor.item || actor.prop);
-      if (allowCast) {
-        const dirX = keyDx / len;
-        const dirY = keyDy / len;
-        const tallScale = actor.tall ? 1.55 : actor.body ? 1.15 : 1;
-        const propScale = actor.item ? 0.92 : actor.prop ? 0.78 : 1;
-        const wantTiles =
-          (0.55 + Math.min(1.05, key * 0.85)) * tallScale * propScale *
-          (actor.body ? 1.12 : 1);
-        const reach = castReachTiles(st.tiles, tx, ty, dirX, dirY, wantTiles);
-        if (reach > 0.12) {
-          const throwLen = reach * TILE_DRAW;
-          const px = -dirY;
-          const py = dirX;
-          const halfNear =
-            TILE_DRAW *
-            (actor.item ? 0.12 : actor.prop ? 0.14 : actor.body ? 0.2 : 0.18);
-          const halfFar = TILE_DRAW * Math.max(0.04, 0.08 * (reach / wantTiles));
-          const fx = wx + dirX * throwLen;
-          const fy = wy + dirY * throwLen * (actor.body ? 0.78 : 0.72);
-          const castAlpha = inShadowBand ? alpha * 0.7 : alpha;
-          // Soft penumbra skirt, then denser umbra core.
-          g.fillStyle(Theme.groundDeep, castAlpha * 0.45);
-          g.fillPoints(
-            [
-              new Phaser.Math.Vector2(wx + px * halfNear * 1.35, wy + py * halfNear * 1.35),
-              new Phaser.Math.Vector2(wx - px * halfNear * 1.2, wy - py * halfNear * 1.2),
-              new Phaser.Math.Vector2(fx - px * halfFar * 1.6, fy - py * halfFar * 1.6),
-              new Phaser.Math.Vector2(fx + px * halfFar * 1.75, fy + py * halfFar * 1.75),
-            ],
-            true,
-          );
-          g.fillStyle(Theme.groundDeep, castAlpha * 0.88);
-          g.fillPoints(
-            [
-              new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
-              new Phaser.Math.Vector2(wx - px * halfNear * 0.85, wy - py * halfNear * 0.85),
-              new Phaser.Math.Vector2(fx - px * halfFar, fy - py * halfFar),
-              new Phaser.Math.Vector2(fx + px * halfFar * 1.1, fy + py * halfFar * 1.1),
-            ],
-            true,
-          );
-        }
-      }
-      // Single plant — feet / kit read as planted without a filter drop-shadow.
-      const contactW =
-        TILE_DRAW * (actor.item ? 0.28 : actor.prop ? 0.32 : actor.body ? 0.4 : 0.36);
-      const contactH =
-        TILE_DRAW * (actor.item ? 0.11 : actor.prop ? 0.12 : actor.body ? 0.16 : 0.14);
-      g.fillStyle(Theme.groundDeep, alpha * (actor.body || actor.item ? 0.7 : 0.55));
+      const contactW = TILE_DRAW * (actor.item ? 0.28 : 0.36);
+      const contactH = TILE_DRAW * (actor.item ? 0.11 : 0.14);
+      g.fillStyle(Theme.groundDeep, alpha * 0.65);
       g.fillEllipse(wx, wy, contactW, contactH);
     }
   }
@@ -675,8 +572,6 @@ export class LightView {
     actors: Iterable<{
       gx: number;
       gy: number;
-      tall?: boolean;
-      prop?: boolean;
       item?: boolean;
       body?: boolean;
     }>,
