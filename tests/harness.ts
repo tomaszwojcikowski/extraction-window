@@ -19,6 +19,18 @@ export const FULL_SEEDS = [
   9999, 12345, 22222, 31415, 44444, 54321, 65535, 77777, 88888, 99999, 123456, 654321,
 ] as const;
 
+/**
+ * Band-gate seed set.
+ *
+ * `FULL_SEEDS` is 30 hand-picked numbers, which is ±18 points of sampling error
+ * — wide enough that the suite reported green at a true 52.6% win rate. These
+ * are generated instead of chosen so no seed can be quietly swapped for a
+ * friendlier one, and there are enough of them to resolve the 55–85% band.
+ * The offset is deliberately different from `scripts/probe-wr.ts` so that probe
+ * stays a held-out measurement rather than a second look at the same runs.
+ */
+export const GATE_SEEDS = Array.from({ length: 300 }, (_, i) => 50_000 + i * 13);
+
 /** Target autopilot win-rate band (PLAN.md). */
 export const WIN_RATE_MIN = 0.55;
 export const WIN_RATE_MAX = 0.85;
