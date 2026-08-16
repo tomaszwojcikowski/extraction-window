@@ -1911,22 +1911,52 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Everything solid enough to throw a shadow this frame. */
-  private *shadowCasters(): Generator<{ gx: number; gy: number; tall?: boolean; prop?: boolean }> {
+  private *shadowCasters(): Generator<{
+    gx: number;
+    gy: number;
+    tall?: boolean;
+    prop?: boolean;
+    item?: boolean;
+    body?: boolean;
+  }> {
     const st = this.state;
     const carry = this.lightView.lampCarryAt();
     yield {
       gx: carry?.x ?? st.player.x,
       gy: carry?.y ?? st.player.y,
+      body: true,
     };
+    // Prefer view positions so mid-hop fauna umbra travels with the sprite.
     for (const en of st.enemies) {
       if (!en.alive) continue;
-      yield { gx: en.x, gy: en.y, tall: en.tier !== 'normal' };
+      if (!st.visible[en.y]?.[en.x]) continue;
+      const view = this.enemyViews.get(en.id);
+      yield {
+        gx: view?.gx ?? en.x,
+        gy: view?.gy ?? en.y,
+        tall: en.tier !== 'normal',
+        body: true,
+      };
     }
     for (const a of st.allies) {
       if (!a.alive) continue;
-      yield { gx: a.x, gy: a.y };
+      if (!st.visible[a.y]?.[a.x]) continue;
+      const view = this.allyViews.get(a.id);
+      yield {
+        gx: view?.gx ?? a.x,
+        gy: view?.gy ?? a.y,
+        body: true,
+      };
     }
-    for (const n of st.npcs) yield { gx: n.x, gy: n.y };
+    for (const n of st.npcs) {
+      if (!st.visible[n.y]?.[n.x]) continue;
+      const view = this.npcViews.get(n.id);
+      yield {
+        gx: view?.gx ?? n.x,
+        gy: view?.gy ?? n.y,
+        body: true,
+      };
+    }
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
@@ -1938,7 +1968,7 @@ export class GameScene extends Phaser.Scene {
     }
     for (const it of st.items) {
       if (!st.visible[it.y]?.[it.x]) continue;
-      yield { gx: it.x, gy: it.y, prop: true };
+      yield { gx: it.x, gy: it.y, item: true, prop: true };
     }
   }
 

@@ -493,7 +493,16 @@ export class LightView {
    */
   drawDynamicShadows(
     st: GameState,
-    actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
+    actors: Iterable<{
+      gx: number;
+      gy: number;
+      tall?: boolean;
+      prop?: boolean;
+      /** Ground kit — short solid plant + cast. */
+      item?: boolean;
+      /** Fauna / peers — body-scale umbra. */
+      body?: boolean;
+    }>,
     sources: LightSource[],
   ): void {
     const g = this.shadowGfx;
@@ -551,9 +560,12 @@ export class LightView {
       const { gx, gy } = actor;
       const tx = Math.round(gx);
       const ty = Math.round(gy);
+      if (tx < 0 || ty < 0 || tx >= st.width || ty >= st.height) continue;
       if (!st.visible[ty]?.[tx]) continue;
       const brightness = tileBrightness(st, tx, ty);
-      if (brightness < 0.06) continue;
+      // Bodies / kit still plant in dim light; only skip pitch black.
+      const minBright = actor.body || actor.item ? 0.03 : 0.06;
+      if (brightness < minBright) continue;
 
       let vx = 0;
       let vy = 0;
@@ -562,6 +574,7 @@ export class LightView {
         const s = sources[i]!;
         const dist = Math.hypot(gx - s.x, gy - s.y);
         // Own-tile lamp (or a prop sitting on its emitter): plant only.
+        // Bodies still take other emitters; kit on a marker keeps plant + far lamp cast.
         if (dist < 0.75) continue;
         const E = this.energyAt(i, tx, ty);
         if (E <= 0.004) continue;
@@ -569,33 +582,49 @@ export class LightView {
         vy += ((gy - s.y) / dist) * E;
         key = Math.max(key, E);
       }
+      const footBias = actor.item ? 0.18 : actor.prop ? 0.22 : 0.28;
       const wx = gx * TILE_DRAW + TILE_DRAW / 2;
-      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * (actor.prop ? 0.22 : 0.28);
+      const wy = gy * TILE_DRAW + TILE_DRAW / 2 + TILE_DRAW * footBias;
       const inShadowBand = brightness < SHADOW_THRESHOLD;
+      // Bodies keep a readable cast in soft shadow; furniture stays fainter there.
       const alpha = Math.min(
-        0.5,
-        (inShadowBand ? 0.06 : 0.12) + brightness * (inShadowBand ? 0.18 : 0.38),
+        actor.body ? 0.58 : actor.item ? 0.52 : 0.5,
+        (inShadowBand
+          ? actor.body || actor.item
+            ? 0.1
+            : 0.06
+          : 0.12) +
+          brightness * (inShadowBand ? (actor.body ? 0.28 : 0.18) : 0.38),
       );
 
       const len = Math.hypot(vx, vy);
-      if (key > 0.05 && len > 0.0001 && !inShadowBand) {
+      // Soft-band cast for fauna/kit so ambush rooms still show silhouettes.
+      const allowCast =
+        key > (actor.body || actor.item ? 0.035 : 0.05) &&
+        len > 0.0001 &&
+        (!inShadowBand || actor.body || actor.item);
+      if (allowCast) {
         const dirX = vx / len;
         const dirY = vy / len;
-        const tallScale = actor.tall ? 1.45 : 1;
-        const propScale = actor.prop ? 0.78 : 1;
+        const tallScale = actor.tall ? 1.55 : actor.body ? 1.15 : 1;
+        const propScale = actor.item ? 0.92 : actor.prop ? 0.78 : 1;
         const wantTiles =
-          (0.55 + Math.min(1.05, key * 0.85)) * tallScale * propScale;
+          (0.55 + Math.min(1.05, key * 0.85)) * tallScale * propScale *
+          (actor.body ? 1.12 : 1);
         const reach = castReachTiles(st.tiles, tx, ty, dirX, dirY, wantTiles);
         if (reach > 0.12) {
           const throwLen = reach * TILE_DRAW;
           const px = -dirY;
           const py = dirX;
-          const halfNear = TILE_DRAW * (actor.prop ? 0.14 : 0.18);
+          const halfNear =
+            TILE_DRAW *
+            (actor.item ? 0.12 : actor.prop ? 0.14 : actor.body ? 0.2 : 0.18);
           const halfFar = TILE_DRAW * Math.max(0.04, 0.08 * (reach / wantTiles));
           const fx = wx + dirX * throwLen;
-          const fy = wy + dirY * throwLen * 0.72;
+          const fy = wy + dirY * throwLen * (actor.body ? 0.78 : 0.72);
+          const castAlpha = inShadowBand ? alpha * 0.7 : alpha;
           // Soft penumbra skirt, then denser umbra core.
-          g.fillStyle(Theme.groundDeep, alpha * 0.45);
+          g.fillStyle(Theme.groundDeep, castAlpha * 0.45);
           g.fillPoints(
             [
               new Phaser.Math.Vector2(wx + px * halfNear * 1.35, wy + py * halfNear * 1.35),
@@ -605,7 +634,7 @@ export class LightView {
             ],
             true,
           );
-          g.fillStyle(Theme.groundDeep, alpha * 0.88);
+          g.fillStyle(Theme.groundDeep, castAlpha * 0.88);
           g.fillPoints(
             [
               new Phaser.Math.Vector2(wx + px * halfNear, wy + py * halfNear),
@@ -617,10 +646,12 @@ export class LightView {
           );
         }
       }
-      // Single plant — feet read as planted without a filter drop-shadow.
-      const contactW = TILE_DRAW * (actor.prop ? 0.32 : 0.36);
-      const contactH = TILE_DRAW * (actor.prop ? 0.12 : 0.14);
-      g.fillStyle(Theme.groundDeep, alpha * 0.55);
+      // Single plant — feet / kit read as planted without a filter drop-shadow.
+      const contactW =
+        TILE_DRAW * (actor.item ? 0.28 : actor.prop ? 0.32 : actor.body ? 0.4 : 0.36);
+      const contactH =
+        TILE_DRAW * (actor.item ? 0.11 : actor.prop ? 0.12 : actor.body ? 0.16 : 0.14);
+      g.fillStyle(Theme.groundDeep, alpha * (actor.body || actor.item ? 0.7 : 0.55));
       g.fillEllipse(wx, wy, contactW, contactH);
     }
   }
@@ -628,7 +659,14 @@ export class LightView {
   /** @deprecated Use drawDynamicShadows — kept as alias for any external callers. */
   drawContactShadows(
     st: GameState,
-    actors: Iterable<{ gx: number; gy: number; tall?: boolean; prop?: boolean }>,
+    actors: Iterable<{
+      gx: number;
+      gy: number;
+      tall?: boolean;
+      prop?: boolean;
+      item?: boolean;
+      body?: boolean;
+    }>,
     sources: LightSource[],
   ): void {
     this.drawDynamicShadows(st, actors, sources);
