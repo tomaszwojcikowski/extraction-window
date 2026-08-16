@@ -12,6 +12,7 @@ import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, f
 import { ENEMIES } from '../data/enemies';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
+import { activeQuestStep } from '../sim/roomQuest';
 import { tileBrightness } from '../sim/light';
 import {
   addCameraAtmosphere,
@@ -127,6 +128,8 @@ export class GameScene extends Phaser.Scene {
   private windowPulseTween: Phaser.Tweens.Tween | null = null;
   private hud!: HudView;
   private chevronGfx!: Phaser.GameObjects.Graphics;
+  /** Amber frame / off-screen pip for optional room sites (never the extract marker). */
+  private optionalSiteGfx!: Phaser.GameObjects.Graphics;
   private wakeTellGfx!: Phaser.GameObjects.Graphics;
   private threatGfx!: Phaser.GameObjects.Graphics;
   private shearReadout!: Phaser.GameObjects.Text;
@@ -309,6 +312,10 @@ export class GameScene extends Phaser.Scene {
       .setDepth(92);
 
     this.chevronGfx = this.add.graphics().setScrollFactor(0).setDepth(94);
+
+    this.optionalSiteGfx = this.add.graphics();
+    this.optionalSiteGfx.setDepth(81);
+    this.mapLayer.add(this.optionalSiteGfx);
 
     this.wakeTellGfx = this.add.graphics();
     this.wakeTellGfx.setDepth(24);
@@ -743,6 +750,13 @@ export class GameScene extends Phaser.Scene {
     }
     this.placeSconceOverlays();
     this.snapImg(this.playerSprite, this.state.player.x, this.state.player.y);
+    // mapLayer.removeAll destroys overlays — remount graphics that live on the map.
+    this.threatGfx = this.add.graphics();
+    this.threatGfx.setDepth(80);
+    this.mapLayer.add(this.threatGfx);
+    this.optionalSiteGfx = this.add.graphics();
+    this.optionalSiteGfx.setDepth(81);
+    this.mapLayer.add(this.optionalSiteGfx);
     this.rebuildAtmosphere();
   }
 
@@ -1412,16 +1426,13 @@ export class GameScene extends Phaser.Scene {
     }
     // Keep chevron fresh as camera drifts
     if (!snap) {
-      const goal = describeObjective(this.state);
-      this.syncGoalVisuals(goal.pos, goal.optionalGoal);
+      this.syncGoalVisuals(describeObjective(this.state).pos);
+      this.syncOptionalSiteVisuals();
     }
   }
 
-  /** Pulse explored/visible goal tile; edge chevron when known but off-screen. */
-  private syncGoalVisuals(
-    pos: { x: number; y: number } | null,
-    optionalGoal = false,
-  ): void {
+  /** Pulse explored/visible extract goal; edge chevron when known but off-screen. */
+  private syncGoalVisuals(pos: { x: number; y: number } | null): void {
     this.chevronGfx.clear();
     const st = this.state;
     if (!pos) {
@@ -1444,9 +1455,7 @@ export class GameScene extends Phaser.Scene {
     const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
     const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
     this.goalMarker.setPosition(wx, wy);
-    // Pink = required extract spine; amber = optional site (never required).
-    const mark = optionalGoal ? Theme.tape : Theme.flag;
-    this.goalMarker.setTint(mark);
+    this.goalMarker.setTint(Theme.flag);
     if (!this.goalPulseTween) {
       this.goalMarker.setAlpha(0.75);
       this.goalPulseTween = this.tweens.add({
@@ -1484,7 +1493,7 @@ export class GameScene extends Phaser.Scene {
     const ex = cx + ux * edgeDist;
     const ey = cy + uy * edgeDist;
 
-    this.chevronGfx.fillStyle(mark, 0.95);
+    this.chevronGfx.fillStyle(Theme.flag, 0.95);
     this.chevronGfx.lineStyle(1, Theme.inkBright, 1);
     const s = 10;
     const px = -uy;
@@ -1497,6 +1506,117 @@ export class GameScene extends Phaser.Scene {
       ex - ux * s * 0.4 - px * s * 0.7,
       ey - uy * s * 0.4 - py * s * 0.7,
     );
+  }
+
+  /**
+   * Optional site language: amber tile frame + off-screen square pip.
+   * Standing on it draws a small interact caret — no essay HUD line.
+   */
+  private syncOptionalSiteVisuals(): void {
+    this.optionalSiteGfx.clear();
+    // Screen-space optional pip reuses chevronGfx after extract triangle may have drawn.
+    const st = this.state;
+    const rq = st.roomQuest;
+    if (!rq || rq.done) return;
+    const step = activeQuestStep(rq);
+    if (!step) return;
+
+    const explored = st.explored[step.pos.y]?.[step.pos.x] === true;
+    const visible = st.visible[step.pos.y]?.[step.pos.x] === true;
+    const mapperReveal = st.player.mapperTurns > 0;
+    if (!explored && !visible && !mapperReveal) return;
+
+    const onPlayer = st.player.x === step.pos.x && st.player.y === step.pos.y;
+    const wx = step.pos.x * TILE_DRAW;
+    const wy = step.pos.y * TILE_DRAW;
+    const flash = st.ui.questFlash > 0;
+    const a = flash ? 0.95 : onPlayer ? 0.9 : 0.7;
+
+    // Dashed amber frame in world space (mapLayer).
+    this.optionalSiteGfx.lineStyle(2, Theme.tape, a);
+    const inset = 3;
+    const x0 = wx + inset;
+    const y0 = wy + inset;
+    const x1 = wx + TILE_DRAW - inset;
+    const y1 = wy + TILE_DRAW - inset;
+    const dash = 5;
+    const gap = 3;
+    const strokeDashed = (ax: number, ay: number, bx: number, by: number) => {
+      const dx = bx - ax;
+      const dy = by - ay;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      let d = 0;
+      while (d < len) {
+        const seg = Math.min(dash, len - d);
+        this.optionalSiteGfx.lineBetween(
+          ax + ux * d,
+          ay + uy * d,
+          ax + ux * (d + seg),
+          ay + uy * (d + seg),
+        );
+        d += dash + gap;
+      }
+    };
+    strokeDashed(x0, y0, x1, y0);
+    strokeDashed(x1, y0, x1, y1);
+    strokeDashed(x1, y1, x0, y1);
+    strokeDashed(x0, y1, x0, y0);
+
+    // Corner bolts — furniture tell vs extract diamond.
+    this.optionalSiteGfx.fillStyle(Theme.tape, a);
+    for (const [cx, cy] of [
+      [x0, y0],
+      [x1 - 3, y0],
+      [x0, y1 - 3],
+      [x1 - 3, y1 - 3],
+    ] as const) {
+      this.optionalSiteGfx.fillRect(cx, cy, 3, 3);
+    }
+
+    if (onPlayer) {
+      // Interact caret above the console.
+      const cx = wx + TILE_DRAW / 2;
+      const cy = wy + 6;
+      this.optionalSiteGfx.fillStyle(Theme.inkBright, 0.95);
+      this.optionalSiteGfx.fillTriangle(cx, cy - 5, cx - 5, cy + 3, cx + 5, cy + 3);
+      this.optionalSiteGfx.fillStyle(Theme.tape, 0.9);
+      this.optionalSiteGfx.fillRect(cx - 1.5, cy + 4, 3, 5);
+    }
+
+    // Tint the console tile amber so it reads before the frame.
+    const tile = this.tileSprites[step.pos.y]?.[step.pos.x];
+    if (tile && visible) tile.setTint(Theme.tape);
+
+    const screenX = wx + TILE_DRAW / 2 - this.camX;
+    const screenY = wy + TILE_DRAW / 2 - this.camY + TOP;
+    const pad = 18;
+    const left = pad;
+    const right = this.scale.width - pad;
+    const top = TOP + pad;
+    const bottom = this.scale.height - BOTTOM - pad;
+    const onScreen =
+      screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
+    if (onScreen) return;
+
+    const scx = this.scale.width / 2;
+    const scy = TOP + (this.scale.height - TOP - BOTTOM) / 2;
+    const dx = screenX - scx;
+    const dy = screenY - scy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const edgeDistX = ux > 0 ? (right - scx) / ux : ux < 0 ? (left - scx) / ux : Infinity;
+    const edgeDistY = uy > 0 ? (bottom - scy) / uy : uy < 0 ? (top - scy) / uy : Infinity;
+    const edgeDist = Math.min(Math.abs(edgeDistX), Math.abs(edgeDistY));
+    const ex = scx + ux * edgeDist;
+    const ey = scy + uy * edgeDist;
+    // Square pip — distinct from pink extract triangle.
+    this.chevronGfx.lineStyle(2, Theme.tape, 0.95);
+    this.chevronGfx.strokeRect(ex - 5, ey - 5, 10, 10);
+    this.chevronGfx.fillStyle(Theme.tape, 0.35);
+    this.chevronGfx.fillRect(ex - 3, ey - 3, 6, 6);
   }
 
   private toggleHelp(force?: boolean): void {
@@ -2038,6 +2158,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const goal = describeObjective(st);
-    this.syncGoalVisuals(goal.pos, goal.optionalGoal);
+    this.syncGoalVisuals(goal.pos);
+    this.syncOptionalSiteVisuals();
   }
 }

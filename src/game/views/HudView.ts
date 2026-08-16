@@ -10,7 +10,6 @@ import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
 import { drawKitOverlay } from './overlays/KitOverlay';
-import { roomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
 import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
@@ -268,8 +267,14 @@ export class HudView {
       badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
     }
     if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
+    // Compact OPT badge — world amber frame carries the rest (no essay line).
     if (st.roomQuest && !st.roomQuest.done) {
-      badgeSpecs.push({ label: lore('UI-QUEST-BADGE'), fill: Theme.tape });
+      const n = st.roomQuest.steps.length;
+      const i = st.roomQuest.stepIndex + 1;
+      badgeSpecs.push({
+        label: n > 1 ? `OPT ${i}/${n}` : 'OPT',
+        fill: Theme.tape,
+      });
     }
     if (st.extractFavor) {
       badgeSpecs.push({ label: FAVOR_LABEL[st.extractFavor.kind], fill: Theme.safe });
@@ -304,24 +309,10 @@ export class HudView {
       'objCampaign',
     );
 
-    const questLine = roomQuestHudLine(st);
-    if (questLine) {
-      r.questText.setVisible(true);
-      const questColor = st.ui.questFlash > 0 ? ThemeCss.inkBright : ThemeCss.tape;
-      const stepTag =
-        questLine.total > 1 ? ` ${questLine.index}/${questLine.total}` : '';
-      this.setReadout(
-        r.questText,
-        `${lore('UI-QUEST-TRACK')}${stepTag}: ${lore(questLine.prompt)} · ${lore('UI-QUEST-PAYS')} ${questLine.favor}`,
-        opts,
-        questColor,
-        'quest',
-      );
-    } else {
-      r.questText.setVisible(false);
-      r.questText.setText('');
-      this.lastQuest = '';
-    }
+    // Optional site copy lives on the world frame + OPT badge, not a third HUD essay.
+    r.questText.setVisible(false);
+    r.questText.setText('');
+    this.lastQuest = '';
 
     const stormHot = st.stormTurns <= 80;
     const urgencyParts: string[] = [];

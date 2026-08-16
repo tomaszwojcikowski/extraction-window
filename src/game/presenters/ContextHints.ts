@@ -71,17 +71,7 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-BEACON';
   }
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
-  if (tile.kind === 'quest') {
-    const rq = st.roomQuest;
-    if (rq && !rq.done) {
-      if (rq.kind === 'salvage') return 'UI-HINT-QUEST-SALVAGE';
-      if (rq.kind === 'purge') return 'UI-HINT-QUEST-PURGE';
-      if (rq.kind === 'vent_seal') {
-        return rq.stepIndex === 0 ? 'UI-HINT-QUEST-VENT-A' : 'UI-HINT-QUEST-VENT-B';
-      }
-    }
-    return 'UI-HINT-QUEST';
-  }
+  if (tile.kind === 'quest') return 'UI-HINT-QUEST';
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
     return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
   }
