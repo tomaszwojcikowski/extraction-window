@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  enemyAtkDepth,
   enemyCountBonus,
   enemyDepth,
   scaleEnemyCombat,
@@ -15,6 +16,16 @@ describe('progress difficulty', () => {
     expect(enemyDepth(14, 1)).toBeCloseTo(sectorDepth(14), 5);
     expect(enemyDepth(14, 8)).toBeGreaterThan(enemyDepth(14, 1));
     expect(enemyDepth(0, 8)).toBeGreaterThan(enemyDepth(0, 1));
+  });
+
+  it('ATK depth outruns HP depth mid-spine so fauna is a wake tax, not a sponge', () => {
+    expect(enemyAtkDepth(0, 1)).toBe(1);
+    expect(enemyAtkDepth(8, 4)).toBeGreaterThan(enemyDepth(8, 4));
+    expect(enemyAtkDepth(14, 8)).toBeGreaterThan(enemyDepth(14, 8));
+    const mite = ENEMIES.mite;
+    const mid = scaleEnemyCombat(mite, 8, 4, 'normal');
+    // Clear base player DEF (2) so plating is what gets chewed, not a 1-dmg floor.
+    expect(mid.atk).toBeGreaterThan(2);
   });
 
   it('pack bonus steps at max level', () => {
