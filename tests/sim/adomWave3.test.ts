@@ -40,7 +40,7 @@ describe('ADOM Wave 3 — ion fronts', () => {
     rebuildIllumination(st);
     const wasp = makeEnemy({ kind: 'wasp', x: st.player.x + 3, y: st.player.y });
 
-    expect(effectiveAggro(st, wasp)).toBe(9);
+    expect(effectiveAggro(st, wasp)).toBe(10);
   });
 });
 

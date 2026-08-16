@@ -88,7 +88,7 @@ describe('ADOM Wave 2 — lightPrefer aggro', () => {
     st.player.probeTurns = 20;
     rebuildIllumination(st);
     expect(effectiveAggro(st, darkHunter)).toBe(ENEMIES.stalker.aggroRange - 2);
-    expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 2);
+    expect(effectiveAggro(st, litHunter)).toBe(ENEMIES.wasp.aggroRange + 3);
     expect(effectiveAggro(st, neutral)).toBe(ENEMIES.crawler.aggroRange);
   });
 

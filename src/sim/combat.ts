@@ -38,8 +38,9 @@ export function armorDefBonus(state: GameState): number {
  * peels a point of defence off, which is what makes the shape of a room worth
  * anything: a doorway lets one of them reach you, open floor lets four.
  * Capped so a swarm is a reason to change ground rather than an instant death.
+ * Peak peel is three so an open-floor pack reads harsher than a doorway duel.
  */
-const MAX_FLANK_PENALTY = 2;
+const MAX_FLANK_PENALTY = 3;
 
 export function flankPenalty(state: GameState): number {
   const inContact = state.enemies.filter(

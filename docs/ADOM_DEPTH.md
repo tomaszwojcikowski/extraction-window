@@ -240,9 +240,8 @@ fissure (12), so urgency lands on the run home.
 
 - **hp owns 75% of deaths** (154/204). It was 63% before this wave, but only because a
   misplaced Window tax was killing people — the hp *count* barely moved (148 → 154). The
-  Wave 4 death-mix finding was never fixed, only masked. This is the Wave 9 target, and
-  the honest fix is restoring a defensive *choice* to replace what Quiet provided, not a
-  flat buff: +3 base plating measured inside noise.
+  Wave 4 death-mix finding was never fixed, only masked. Flat plating buffs measured inside
+  noise; Wave 9 sharpens the fauna tax instead of adding a Quiet replacement.
 - **The Bus clock is structurally dead** (8/500 losses). Every energy change in the
   codebase is a tax applied *to* the player; no action spends Bus by choice. It is a slow
   damage type wearing a clock's name.
@@ -251,3 +250,40 @@ fissure (12), so urgency lands on the run home.
   on the oracle as a lower bound and pair it with human play.
 
 **Exit gate:** unit + cohere + smoke + 300-seed band gate green; no new always-on chrome.
+
+---
+
+## Wave 9 — Sharpen the fauna tax (done)
+
+Combat is not the skill pillar (clocks + light are), but the extract spine still forces
+bump fights. Pre-wave fauna was soft behind plating (`difficulty.ts` was explicitly
+“HP more than ATK”), so engages felt like sponge work rather than a consequence of bad
+light or open ground.
+
+### What shipped
+
+| Lever | Change |
+|-------|--------|
+| ATK depth | Steeper than HP (`0.04`/sector + `0.012`/level vs HP `0.035` + `0.01`) so mid/late hits clear DEF and chew plating; HP held soft so fights stay short |
+| Flank peel | Cap `2` → `3` — open-floor packs read harsher than a doorway duel |
+| lightPrefer | Preferred-light side amplified (+1); wrong-light penalties left as they were so lit-prefer fauna still hold range in the dark |
+
+### Measured out
+
+A one-shot **first-contact +2 ATK** on every hostile’s first melee, stacked with the full
+ATK curve and full lightPrefer amplify, dropped the held-out probe to **49–51%**. Dialed
+out rather than kept as a permanent difficulty layer.
+
+### Result
+
+**57.8% ±4.3** over 500 fresh seeds (Wave 8 baseline 59.2%). Lose mix `hp=161 storm=43
+energy=7` — hp still dominates (~76% of losses), which matches “combat is a path tax,
+not a solved channel.” 300-seed band gate green; smoke green.
+
+### Still open
+
+- Bus still has no player spend (Wave 8 finding).
+- Autopilot still ignores `stormTurns`.
+- No Quiet replacement — intentional: deepen the wake tax, don’t re-add a mandatory stance.
+
+**Exit gate:** unit + cohere + smoke + 300-seed band gate green; no new combat verbs.

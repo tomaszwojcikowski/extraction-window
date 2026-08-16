@@ -42,12 +42,14 @@ describe('being surrounded pries defence open', () => {
     expect(flankPenalty(st)).toBe(1);
     surround(st, 3);
     expect(flankPenalty(st)).toBe(2);
+    surround(st, 4);
+    expect(flankPenalty(st)).toBe(3);
   });
 
   it('caps so a swarm is a reason to move, not an instant death', () => {
     const st = openFloor();
     surround(st, 4);
-    expect(flankPenalty(st)).toBe(2);
+    expect(flankPenalty(st)).toBe(3);
   });
 
   it('ignores hostiles that are near but not in contact', () => {
