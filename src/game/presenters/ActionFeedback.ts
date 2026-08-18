@@ -141,6 +141,9 @@ export function collectActionFloatLabels(
           color: ThemeCss.arc,
         };
         break;
+      case 'LOG-SHADOW-BITE':
+        next = { label: 'SHADOW +1', color: ThemeCss.rust };
+        break;
       case 'LOG-HURT':
         next = {
           label:

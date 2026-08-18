@@ -58,10 +58,11 @@ export const LORE = {
     'Walk into a hostile to hit it.\n' +
     'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
     'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
+    'Painted side tiles show where a second hunter will touch you.\n' +
     '\n' +
     'LIGHT\n' +
     'LIT — safer read · SHADOW — ambush risk. Your lamp and flares change who notices you.\n' +
-    'Flare lights a dark fight.\n' +
+    'Dark-prefer fauna bite harder in SHADOW — step to LIT. Flare lights a dark fight.\n' +
     '\n' +
     'EXTRACT (pink marker)\n' +
     '1 Splice Key · 2 beacon · 3 Nav Lattice · 4 drop skiff\n' +
@@ -122,6 +123,8 @@ export const LORE = {
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':
     'Two+ hostiles touching you — DEF drops; fight in a doorway or break contact',
+  'UI-HINT-FLANK-COMING':
+    'Second hunter circling — doorway or break contact before they touch both sides',
   'UI-HINT-SKILL':
     'Choose a field skill — press 1 or 2 (effects above; move locked until then)',
   'UI-HINT-TELE': 'Windup painted — leave those tiles or kill it',
@@ -383,6 +386,7 @@ export const LORE = {
   'LOG-HIT': 'You strike',
   'LOG-KILL': 'Hostile down',
   'LOG-HURT': 'You take a hit',
+  'LOG-SHADOW-BITE': 'Harder bite in SHADOW — step to LIT',
   'LOG-ARMOR-ABSORB': 'Shield absorbs',
   'LOG-ARMOR-RESEAT': 'Plating re-seated in the hatch — shield restored.',
   'LOG-PICKUP': 'Stowed in field kit.',

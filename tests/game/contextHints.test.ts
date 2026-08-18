@@ -122,7 +122,7 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).not.toBe('UI-HINT-EXTRACT');
   });
 
-  it('teaches flank when two hostiles are in contact', () => {
+  it('keeps the flank hint live while two hostiles are in contact', () => {
     const st = createGame(42);
     st.tutorialActive = false;
     st.items = [];
@@ -136,7 +136,60 @@ describe('contextHint coaching', () => {
     st.visible[b.y]![b.x] = true;
 
     expect(contextHint(st)).toBe('UI-HINT-FLANK');
-    expect(contextHint(st)).not.toBe('UI-HINT-FLANK');
+    expect(contextHint(st)).toBe('UI-HINT-FLANK');
+  });
+
+  it('warns before a second hunter seats, and yields to a live windup', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
+    st.player.equip = { tool: null, armor: null };
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    for (let y = st.player.y - 3; y <= st.player.y + 3; y++) {
+      for (let x = st.player.x - 3; x <= st.player.x + 3; x++) {
+        if (st.tiles[y]?.[x]) {
+          st.tiles[y]![x] = { kind: 'floor', walkable: true, transparent: true };
+          st.visible[y]![x] = true;
+        }
+      }
+    }
+    const east = makeEnemy({ id: 1, kind: 'crawler', x: st.player.x + 3, y: st.player.y, alerted: true });
+    const south = makeEnemy({
+      id: 2,
+      kind: 'crawler',
+      x: st.player.x,
+      y: st.player.y + 3,
+      alerted: true,
+    });
+    st.enemies = [east, south];
+    expect(contextHint(st)).toBe('UI-HINT-FLANK-COMING');
+
+    east.windup = 1;
+    east.intent = 'overwatch';
+    expect(contextHint(st)).toBe('UI-HINT-TELE-OVERWATCH');
+  });
+
+  it('tells you to step to LIT when a dark-prefer is biting in SHADOW', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
+    st.player.equip = { tool: null, armor: null };
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.illumination[st.player.y]![st.player.x] = 0.2;
+    const mite = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
+    st.enemies = [mite];
+    st.visible[mite.y]![mite.x] = true;
+    expect(contextHint(st)).toBe('UI-HINT-PREFER-DARK');
   });
 });
 

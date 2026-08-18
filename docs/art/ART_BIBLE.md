@@ -126,8 +126,9 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 - **An armed windup paints the tiles it threatens.**
   [`ThreatView.ts`](../../src/game/views/ThreatView.ts) hatches the ground using
   `enemyThreatTiles` from the sim, so the overlay cannot drift from what actually
-  resolves. Colour encodes the answer, not the attacker: rust = eat the charge
-  or kill mid-windup, sallow = leave the ring, hazard tape = held shot,
+  resolves. Incoming pack seats use `incomingFlankSeats` / `flankBoxTiles` from
+  the same AI pick. Colour encodes the answer, not the attacker: rust = eat the charge,
+  kill mid-windup, or step to a doorway before a second hunter seats; sallow = leave the ring; hazard tape = held shot;
   arc-white = beam lane.
 
 ---

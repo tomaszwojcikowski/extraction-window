@@ -1,6 +1,9 @@
 import type { LoreId } from '../../data/lore';
+import { ENEMIES } from '../../data/enemies';
 import { ITEMS, INVENTORY_SLOTS } from '../../data/items';
 import type { GameState } from '../../sim';
+import { incomingFlankSeats } from '../../sim/ai';
+import { flankPenalty } from '../../sim/combat';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
@@ -35,6 +38,25 @@ export function contextHint(st: GameState): LoreId | null {
   }
 
   if (fromMechanic) return fromMechanic;
+
+  // Pack pressure — persist while the spatial question is live.
+  // Windup and site mechanics still win; hatch/kit tips yield.
+  if (flankPenalty(st) > 0) return 'UI-HINT-FLANK';
+  if (incomingFlankSeats(st).length > 0) return 'UI-HINT-FLANK-COMING';
+
+  // Dark-prefer bite is paying out — step to LIT.
+  if (
+    inShadow(st, st.player.x, st.player.y) &&
+    st.enemies.some(
+      (e) =>
+        e.alive &&
+        ENEMIES[e.kind].lightPrefer === 'dark' &&
+        (st.visible[e.y]?.[e.x] ?? false) &&
+        Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
+    )
+  ) {
+    return 'UI-HINT-PREFER-DARK';
+  }
 
   if (st.allies.some((a) => a.alive && a.kind === 'probe_drone')) return 'UI-HINT-ALLY-DRONE';
   if (

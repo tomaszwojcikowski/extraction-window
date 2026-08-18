@@ -130,8 +130,8 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - Illumination / LIT / SHADOW drive combat hooks; bloom is decoration around that grid.
-- Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use.
-- A rule that quietly changes a number has to show that number moving. Encirclement rides the DEF readout as `DEF 4+1−2` rather than earning a badge, so the penalty is legible where its effect is.
+- Threat overlays draw the same tiles the sim will resolve against — `ThreatView` renders `enemyThreatTiles`, so the hatching cannot promise or hide a tile the attack does not use. Incoming flank seats come from `incomingFlankSeats` / `chosenFlankSeat` (the same pick the AI steps toward).
+- A rule that quietly changes a number has to show that number moving. Encirclement rides the DEF readout as `DEF 4+1−2` rather than earning a badge, so the penalty is legible where its effect is. The map still paints the seats so the player can step to a doorway *before* peel lands.
 - Autopilot + playtests are the balance oracle (55–85% WR) — feel changes that break legality are bugs.
 
 **Anti-pattern:** PointLight (or any FX) that reads as light through walls while help says “pool stops at walls.”

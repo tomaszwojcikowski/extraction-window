@@ -140,6 +140,12 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats SHADOW +1 when a dark-prefer bonus pays out', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-SHADOW-BITE' }])).toEqual([
+      { label: 'SHADOW +1', color: ThemeCss.rust },
+    ]);
+  });
+
   it('detects hit and spore tiles from enemy snaps', () => {
     const st = createGame(42);
     const target = st.enemies.find((e) => e.alive);

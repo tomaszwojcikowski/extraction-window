@@ -177,11 +177,13 @@ export function enemyAttack(
     lastWindow -
     flankPenalty(state) -
     (hasStatus(state.player, 'expose') ? 2 : 0);
-  const atk = enemy.atk + (opts?.bonusAtk ?? 0) + lightPreferAtkBonus(state, enemy);
+  const prefer = lightPreferAtkBonus(state, enemy);
+  const atk = enemy.atk + (opts?.bonusAtk ?? 0) + prefer;
   const rawDamage = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
   const dmg = dtype === 'ion' ? Math.max(1, rawDamage - brandIonAttackPenalty(enemy)) : rawDamage;
   const name = lore(ENEMIES[enemy.kind].loreName);
+  if (prefer > 0) pushLog(state, 'LOG-SHADOW-BITE');
   const result = applyPlayerDamage(state, dmg, dtype, { source: name });
 
   if (ENEMIES[enemy.kind].behavior === 'drain') {

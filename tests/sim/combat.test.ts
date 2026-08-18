@@ -140,6 +140,18 @@ describe('playerAttack / enemyAttack', () => {
     };
     expect(hit(0.2)).toBeGreaterThan(hit(0.9));
   });
+
+  it('logs SHADOW bite only when the dark-prefer bonus pays out', () => {
+    const bite = (hdr: number): boolean => {
+      const st = combatArena();
+      st.player.armor = 0;
+      st.illumination[st.player.y]![st.player.x] = hdr;
+      enemyAttack(st, makeEnemy({ kind: 'mite', atk: 5 }), 0);
+      return st.log.some((l) => l.loreId === 'LOG-SHADOW-BITE');
+    };
+    expect(bite(0.2)).toBe(true);
+    expect(bite(0.9)).toBe(false);
+  });
 });
 
 describe('killEnemy / markEnemyDead', () => {

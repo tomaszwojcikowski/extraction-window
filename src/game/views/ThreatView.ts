@@ -1,19 +1,21 @@
 import Phaser from 'phaser';
-import { enemyThreatTiles } from '../../sim/ai';
+import { enemyThreatTiles, flankBoxTiles, incomingFlankSeats } from '../../sim/ai';
 import { Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import type { Enemy, GameState } from '../../sim/types';
 
 /**
- * Ground marking for armed telegraphs.
+ * Ground marking for armed telegraphs and pack seats.
  *
  * A windup used to be readable only as a text marker over the sprite, which
  * told the player something was coming but not where it would land. Painting
  * the threatened tiles turns the telegraph into the spatial question it is:
  * stand here and you are hit, step there and you are not.
  *
- * The marking lives exactly as long as the windup, so it never outlives the
- * turn it explains.
+ * Flank seats use the same honesty: incoming empty tiles are where a second
+ * hunter will touch you; boxed tiles are the peel already paying out.
+ * Windup hatch lives as long as the windup; flank marks live as long as the
+ * surround.
  */
 
 type ThreatStyle = { color: number; alpha: number };
@@ -52,7 +54,8 @@ function hatchTile(
 }
 
 /**
- * Paint threatened ground for every visible enemy holding a windup.
+ * Paint threatened ground for every visible enemy holding a windup,
+ * plus the contact seats a pack is actually taking.
  * `pulse` (0..1) drives a slow breathe so the marking reads as live pressure.
  */
 export function drawThreatZones(
@@ -63,6 +66,8 @@ export function drawThreatZones(
 ): void {
   g.clear();
   const pulse = 0.72 + (animFrame % 4) * 0.09;
+
+  drawFlankGround(g, st, pulse, tileDraw);
 
   for (const en of st.enemies) {
     if (!en.alive || en.windup <= 0 || !en.intent) continue;
@@ -88,5 +93,53 @@ export function drawThreatZones(
         g.strokeRect(left + 2, top + 2, tileDraw - 4, tileDraw - 4);
       }
     }
+  }
+}
+
+function strokeTile(
+  g: Phaser.GameObjects.Graphics,
+  x: number,
+  y: number,
+  tileDraw: number,
+  color: number,
+  alpha: number,
+  width: number,
+): void {
+  const left = x * tileDraw;
+  const top = y * tileDraw;
+  g.lineStyle(width, color, alpha);
+  g.strokeRect(left + 2, top + 2, tileDraw - 4, tileDraw - 4);
+}
+
+/**
+ * Incoming seats are the surround question (step to a doorway before they
+ * touch both sides). Boxed tiles are the peel that is already paying out.
+ * Windup hatch draws on top and wins any overlap.
+ */
+function drawFlankGround(
+  g: Phaser.GameObjects.Graphics,
+  st: GameState,
+  pulse: number,
+  tileDraw: number,
+): void {
+  const incoming = incomingFlankSeats(st);
+  const boxed = flankBoxTiles(st);
+
+  for (const t of incoming) {
+    const left = t.x * tileDraw;
+    const top = t.y * tileDraw;
+    g.fillStyle(Theme.rust, 0.12 * pulse);
+    g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
+    hatchTile(g, left + 1, top + 1, tileDraw - 2, Theme.rust, 0.2 * pulse);
+    strokeTile(g, t.x, t.y, tileDraw, Theme.rust, 0.7 * pulse, 1);
+  }
+
+  for (const t of boxed) {
+    if (!(st.visible[t.y]?.[t.x] ?? false)) continue;
+    strokeTile(g, t.x, t.y, tileDraw, Theme.rust, 0.9 * pulse, 2);
+  }
+
+  if (boxed.length > 0) {
+    strokeTile(g, st.player.x, st.player.y, tileDraw, Theme.rust, 0.95 * pulse, 2);
   }
 }

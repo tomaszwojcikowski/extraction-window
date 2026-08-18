@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enemyAttack, flankPenalty } from '../../src/sim/combat';
-import { moveEnemies } from '../../src/sim/ai';
+import { flankBoxTiles, incomingFlankSeats, moveEnemies } from '../../src/sim/ai';
 import type { GameState } from '../../src/sim/types';
 import { combatArena, makeEnemy } from './fixtures';
 
@@ -113,5 +113,45 @@ describe('packs take empty contact seats', () => {
     );
     expect(adj).toHaveLength(2);
     expect(flankPenalty(st)).toBe(1);
+  });
+});
+
+function revealAround(st: GameState): void {
+  for (let y = 2; y <= 8; y++) {
+    for (let x = 2; x <= 9; x++) {
+      if (st.visible[y]) st.visible[y]![x] = true;
+    }
+  }
+}
+
+describe('pack seats are a spatial question', () => {
+  it('does not paint a 1v1 approach', () => {
+    const st = openFloor();
+    revealAround(st);
+    st.enemies = [makeEnemy({ id: 1, kind: 'crawler', x: 8, y: 5, alerted: true })];
+    expect(incomingFlankSeats(st)).toHaveLength(0);
+    expect(flankBoxTiles(st)).toHaveLength(0);
+  });
+
+  it('paints two distinct seats when hunters approach from two sides', () => {
+    const st = openFloor();
+    revealAround(st);
+    st.enemies = [
+      makeEnemy({ id: 1, kind: 'crawler', x: 8, y: 5, alerted: true }),
+      makeEnemy({ id: 2, kind: 'crawler', x: 5, y: 8, alerted: true }),
+    ];
+    const seats = incomingFlankSeats(st);
+    expect(seats.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(seats.map((s) => `${s.x},${s.y}`)).size).toBe(seats.length);
+    expect(seats.every((s) => Math.abs(s.x - st.player.x) + Math.abs(s.y - st.player.y) === 1)).toBe(
+      true,
+    );
+  });
+
+  it('boxes occupied contact tiles once peel is live', () => {
+    const st = openFloor();
+    surround(st, 2);
+    expect(flankBoxTiles(st)).toHaveLength(2);
+    expect(incomingFlankSeats(st)).toHaveLength(0);
   });
 });

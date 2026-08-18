@@ -69,26 +69,14 @@ function emptyContactSeat(state: GameState, enemy: Enemy, x: number, y: number):
 }
 
 /**
- * Close on an empty contact seat instead of queuing behind the first mite.
- * Packs already peel DEF; they have to actually stand on two sides for that
- * rule to fire. Skip seats a closer hunter will claim this approach.
- * Third-and-later hunters cannot step onto empty contact tiles.
+ * Empty contact tile this hunter would occupy — same pick the AI steps toward.
+ * Null when already touching, queued as third+, or no reachable seat.
  */
-function stepToFlank(state: GameState, enemy: Enemy): boolean {
-  if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) {
-    return false;
-  }
-  if (packCloserCount(state, enemy) >= MAX_PACK_CONTACT) {
-    return stepToward(state, enemy, state.player.x, state.player.y, (x, y) =>
-      emptyContactSeat(state, enemy, x, y),
-    );
-  }
-  const seats = contactSeats(state);
-  const empty = seats.filter((s) => !tileBlocked(state, s.x, s.y, enemy.id));
-  if (empty.length === 0) {
-    return stepToward(state, enemy, state.player.x, state.player.y);
-  }
-
+export function chosenFlankSeat(state: GameState, enemy: Enemy): Pos | null {
+  if (!enemy.alive) return null;
+  if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) return null;
+  if (packCloserCount(state, enemy) >= MAX_PACK_CONTACT) return null;
+  const empty = contactSeats(state).filter((s) => !tileBlocked(state, s.x, s.y, enemy.id));
   let best: Pos | null = null;
   let bestLen = Number.POSITIVE_INFINITY;
   for (const seat of empty) {
@@ -109,10 +97,71 @@ function stepToFlank(state: GameState, enemy: Enemy): boolean {
       best = seat;
     }
   }
-  if (!best) {
+  return best;
+}
+
+function contactHostiles(state: GameState): Enemy[] {
+  return state.enemies.filter(
+    (enemy) =>
+      enemy.alive &&
+      manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1,
+  );
+}
+
+/**
+ * Occupied contact tiles while peel is live — the box the player can see.
+ */
+export function flankBoxTiles(state: GameState): Pos[] {
+  const touching = contactHostiles(state);
+  if (touching.length < 2) return [];
+  return touching.map((enemy) => ({ x: enemy.x, y: enemy.y }));
+}
+
+/**
+ * Empty seats a visible hunter is circling toward, only when a pack is
+ * actually about to peel: someone already in contact, or two distinct seats.
+ * 1v1 approach stays unpainted so the overlay is the surround question.
+ */
+export function incomingFlankSeats(state: GameState): Pos[] {
+  const occupied = contactHostiles(state).length;
+  const seats: Pos[] = [];
+  const seen = new Set<string>();
+  for (const enemy of state.enemies) {
+    if (!enemy.alive) continue;
+    if (!(state.visible[enemy.y]?.[enemy.x] ?? false)) continue;
+    const seat = chosenFlankSeat(state, enemy);
+    if (!seat) continue;
+    if (!(state.visible[seat.y]?.[seat.x] ?? false)) continue;
+    const key = `${seat.x},${seat.y}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    seats.push(seat);
+  }
+  if (occupied >= 1) return seats;
+  if (seats.length >= 2) return seats;
+  return [];
+}
+
+/**
+ * Close on an empty contact seat instead of queuing behind the first mite.
+ * Packs already peel DEF; they have to actually stand on two sides for that
+ * rule to fire. Skip seats a closer hunter will claim this approach.
+ * Third-and-later hunters cannot step onto empty contact tiles.
+ */
+function stepToFlank(state: GameState, enemy: Enemy): boolean {
+  if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) {
+    return false;
+  }
+  if (packCloserCount(state, enemy) >= MAX_PACK_CONTACT) {
+    return stepToward(state, enemy, state.player.x, state.player.y, (x, y) =>
+      emptyContactSeat(state, enemy, x, y),
+    );
+  }
+  const seat = chosenFlankSeat(state, enemy);
+  if (!seat) {
     return stepToward(state, enemy, state.player.x, state.player.y);
   }
-  return stepToward(state, enemy, best.x, best.y);
+  return stepToward(state, enemy, seat.x, seat.y);
 }
 
 function stepToward(

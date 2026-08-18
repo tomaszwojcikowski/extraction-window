@@ -301,6 +301,7 @@ in the bump.
 | Pack seats | Hunters close on distinct contact tiles instead of stacking behind the first body. Cap **two** seats — a third queues. Four simultaneous bites dropped the 300-seed gate to 51%. |
 | lightPrefer ATK | Dark-prefer +1 in SHADOW. Lit-prefer stays an aggro-range cue (true-LIT +1 was a flat wasp buff on the lamp tile). |
 | Brand hint | One-shot coach — stop hogging the hint line whenever an elite is visible |
+| Read | Incoming flank seats paint on the ground from `chosenFlankSeat`. Hint stays while boxed. SHADOW +1 float when dark-prefer bonus pays out. |
 
 Still out: first-contact ATK, Quiet, brace/shove.
 
