@@ -2,6 +2,7 @@ import { hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { purgeEmStress } from '../emStress';
 import { consumeExtractFavor } from '../extractFavor';
+import { spendWindow } from '../window';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
@@ -36,7 +37,9 @@ export const patternBufferMechanic: Mechanic = {
     if (!onShuttle) return false;
     if (!hasItem(state, 'nav_core')) return false;
     if (state.patternDesync <= 0) return false;
+    spendWindow(state, 8);
     pushLog(state, 'LOG-PB-REJECT');
+    pushLog(state, 'LOG-PAY-PRICE');
     return true;
   },
 

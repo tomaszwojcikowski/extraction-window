@@ -32,7 +32,7 @@ export {
 } from './light';
 export { refreshVision } from './vision';
 export { windowDrainRate, windowTurnsLeft } from './window';
-export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
+export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
 export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack, lightPreferAtkBonus, flankPenalty } from './combat';

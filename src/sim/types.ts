@@ -109,7 +109,8 @@ export type StatusId =
   | 'expose'
   | 'blind'
   | 'jam'
-  | 'marked';
+  | 'marked'
+  | 'downed';
 
 export type StatusMap = Partial<Record<StatusId, number>>;
 
@@ -308,6 +309,8 @@ export interface GameState {
   codexLog: LoreId[];
   /** EM contamination 0–100 (ADOM corruption-lite). */
   emStress: number;
+  /** Turns before EM keep-calm can jam again. */
+  keepCalmCooldown: number;
   /** Unknown salvage resolved into a known kit item this run. */
   salvageIdentified: number;
   /** Unknown salvage that bit back instead of resolving. */

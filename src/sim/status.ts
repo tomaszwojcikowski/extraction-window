@@ -1,6 +1,7 @@
 import type { StatusId, StatusMap, GameState, Enemy } from './types';
 import { killEnemy } from './death';
-import { formatCombatDetail, pushLog } from './log';
+import { pushLog } from './log';
+import { applyPlayerDamage } from './playerDamage';
 
 export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: number): void {
   const cur = target.statuses[id] ?? 0;
@@ -34,11 +35,12 @@ export function tickPlayerStatusEffects(state: GameState): void {
   const p = state.player;
   // Drill bay: keep teaching calm — statuses may exist after the stalker, but don't bleed out.
   if (!state.tutorialActive) {
-    if (hasStatus(p, 'bleed')) {
-      const dmg = playerBleedDamage(state);
-      p.hp -= dmg;
-      const rem = Math.max(0, p.hp);
-      pushLog(state, 'LOG-STATUS-BLEED', formatCombatDetail('bleed', dmg, rem, p.maxHp));
+    if (hasStatus(p, 'bleed') && !hasStatus(p, 'downed')) {
+      applyPlayerDamage(state, playerBleedDamage(state), 'kinetic', {
+        source: 'bleed',
+        pierceArmor: true,
+        logId: 'LOG-STATUS-BLEED',
+      });
     }
     if (hasStatus(p, 'ion_burn')) {
       const drain = p.filterTurns > 0 ? 1 : 3;
@@ -78,6 +80,7 @@ export function statusHud(statuses: StatusMap): string {
   if ((statuses.marked ?? 0) > 0) parts.push(`Marked ${statuses.marked}`);
   if ((statuses.ion_burn ?? 0) > 0) parts.push(`P-Burn ${statuses.ion_burn}`);
   if ((statuses.expose ?? 0) > 0) parts.push(`Exposed ${statuses.expose}`);
+  if ((statuses.downed ?? 0) > 0) parts.push(`Downed ${statuses.downed}`);
   return parts.join(' · ');
 }
 

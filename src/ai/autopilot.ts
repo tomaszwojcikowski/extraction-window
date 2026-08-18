@@ -178,6 +178,13 @@ export function chooseAction(
   }
 
   // Heal / recharge — how late the persona leaves it is its main survival lever
+  if (state.player.statuses.downed) {
+    const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
+    if (medIdx >= 0) {
+      state.ui.selectedSlot = medIdx;
+      return { type: 'use' };
+    }
+  }
   if (state.player.hp <= state.player.maxHp * persona.healAt) {
     const medIdx = state.inventory.findIndex((s) => s.kind === 'med');
     if (medIdx >= 0) {

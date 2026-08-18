@@ -33,7 +33,7 @@ describe('tickPlayerStatusEffects', () => {
     tickPlayerStatusEffects(st);
     expect(st.player.hp).toBe(8);
     expect(st.player.armor).toBe(8);
-    expect(lastLog(st, 'LOG-STATUS-BLEED')?.detail).toBe('bleed · -2 · 8/20 hp');
+    expect(lastLog(st, 'LOG-STATUS-BLEED')?.detail).toBe('bleed · -2 · kinetic · 8/20 hp');
     expect(st.player.statuses.bleed).toBe(1);
   });
 
@@ -45,7 +45,7 @@ describe('tickPlayerStatusEffects', () => {
     addStatus(st.player, 'bleed', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.hp).toBe(9);
-    expect(lastLog(st, 'LOG-STATUS-BLEED')?.detail).toBe('bleed · -1 · 9/20 hp');
+    expect(lastLog(st, 'LOG-STATUS-BLEED')?.detail).toBe('bleed · -1 · kinetic · 9/20 hp');
   });
 
   it('ion burn drains bus; filter softens', () => {

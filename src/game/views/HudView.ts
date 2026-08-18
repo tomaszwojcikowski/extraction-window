@@ -4,13 +4,15 @@ import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import {
   describeObjective,
+  extractTrack,
   stickyMilestone,
   windowDrainRate,
   windowTurnsLeft,
   type GameState,
 } from '../../sim';
-import { statusHud } from '../../sim/status';
+import { statusHud, hasStatus } from '../../sim/status';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
+import { encumbered, fieldPosition, playerReadyStance } from '../../sim/stance';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
@@ -224,24 +226,42 @@ export class HudView {
           )
         ? lore('UI-ALLY-ESCORT')
         : '';
-    const sysBits = [probe, stim, filter, desync, allyRole].filter(Boolean);
+    const ready = playerReadyStance(st);
+    const stanceChip =
+      ready === 'enhanced'
+        ? lore('UI-STANCE-ENHANCED')
+        : ready === 'impaired'
+          ? lore('UI-STANCE-IMPAIRED')
+          : '';
+    const kitChip = encumbered(st) ? lore('UI-ENCUMBERED') : '';
+    const fritzChip =
+      st.keepCalmCooldown > 0 ? `${lore('UI-FRITZ')} ${st.keepCalmCooldown}` : '';
+    const sysBits = [probe, stim, filter, desync, allyRole, stanceChip, kitChip, fritzChip].filter(
+      Boolean,
+    );
     const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
     const statuses = statusHud(st.player.statuses);
     const statusLine = statuses ? ` · ${statuses}` : '';
-    const atkBonus =
-      toolAtkBonus(st) +
-      (st.player.probeTurns > 0 ? 2 : 0) +
-      (st.player.stimTurns > 0 ? 3 : 0);
+    const atkBonus = toolAtkBonus(st);
     const defBonus = armorDefBonus(st);
     // Surrounded is a rule the player has to be able to see paying out, so it
     // rides the existing DEF readout rather than earning a badge of its own.
     const flanked = flankPenalty(st);
     const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
+    const pos = fieldPosition(flanked, hasStatus(st.player, 'expose'));
+    const posWord =
+      pos === 'desperate'
+        ? lore('UI-POS-DESPERATE')
+        : pos === 'risky'
+          ? lore('UI-POS-RISKY')
+          : lore('UI-POS-CONTROLLED');
+    const boxes = extractTrack(st);
+    const extractBoxes = `${lore('UI-EXTRACT')} ${boxes.key ? '▮' : '▯'}${boxes.handshake ? '▮' : '▯'}${boxes.lattice ? '▮' : '▯'}${boxes.pad ? '▮' : '▯'}`;
     let emPart = '';
     if (st.emStress >= EM_HIGH) emPart = ` · EM CRIT ${st.emStress}`;
     else if (st.emStress >= EM_WARN) emPart = ` · EM WARN ${st.emStress}`;
     else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${st.emStress}`;
-    const meta = `${lore('UI-LEVEL')} ${st.level}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
+    const meta = `${lore('UI-LEVEL')} ${st.level}  ${posWord}  ${extractBoxes}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
     const sector = getSector(st.sectorIndex);

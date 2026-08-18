@@ -137,3 +137,18 @@ export function loreOrderLegal(events: LoreId[]): boolean {
   }
   return true;
 }
+
+/** Starforged-style extract boxes — live flags, not a new win condition. */
+export function extractTrack(state: GameState): {
+  key: boolean;
+  handshake: boolean;
+  lattice: boolean;
+  pad: boolean;
+} {
+  return {
+    key: state.objectives.hasRelayKey || state.objectives.usedRelayKey,
+    handshake: state.objectives.beaconOpen,
+    lattice: state.objectives.hasNavCore,
+    pad: state.status === 'won',
+  };
+}

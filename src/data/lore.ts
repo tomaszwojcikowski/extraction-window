@@ -27,6 +27,14 @@ export const LORE = {
   'UI-TUT-SECTOR': 'DRILL',
   'UI-ATK': 'ATK',
   'UI-DEF': 'DEF',
+  'UI-POS-CONTROLLED': 'Controlled',
+  'UI-POS-RISKY': 'Risky',
+  'UI-POS-DESPERATE': 'Desperate',
+  'UI-EXTRACT': 'Extract',
+  'UI-STANCE-ENHANCED': 'Enhanced',
+  'UI-STANCE-IMPAIRED': 'Impaired',
+  'UI-ENCUMBERED': 'Kit full',
+  'UI-FRITZ': 'Fritz',
   'UI-INV': 'Field kit',
   'UI-LOG': 'Log',
   'UI-OBJECTIVE': 'Objective',
@@ -55,9 +63,11 @@ export const LORE = {
     'Power — kit charge. Hazards, EM, and drip drain it. Empty Power = lose.\n' +
     '\n' +
     'COMBAT\n' +
-    'Walk into a hostile to hit it.\n' +
+    'Walk into a hostile to hit it. Normal hits are atk minus def.\n' +
+    'Impaired (d4) if jammed, blind, or the kit is full. Enhanced (d12) vs a stunned or exposed foe, on stim, or overcharge.\n' +
     'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
     'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
+    'Overflow past 0 HP: save or downed. Med stabilizes. Extra hits while downed shorten the clock.\n' +
     'Painted side tiles show where a second hunter will touch you.\n' +
     '\n' +
     'LIGHT\n' +
@@ -77,6 +87,8 @@ export const LORE = {
     '\n' +
     'HUD\n' +
     'HP · Shield · Power · Window · XP\n' +
+    'Position (Controlled / Risky / Desperate) names peel — it already taxes DEF.\n' +
+    'Four extract boxes track Key → handshake → Lattice → pad.\n' +
     'l — mission log (hidden by default; field chips carry the beat)\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
@@ -288,14 +300,14 @@ export const LORE = {
   'ITEM-NAV-CORE': 'Nav Lattice',
   'ITEM-NAV-CORE-DESC': 'Locks the drop skiff for extract — required to win.',
   'ITEM-MED': 'Field Hypo',
-  'ITEM-MED-DESC': 'Restore +22 HP and clear bleed.',
+  'ITEM-MED-DESC': 'Restore +22 HP and clear bleed. Stabilizes downed (HP 8).',
   'ITEM-ENERGY': 'Power Cell',
   'ITEM-ENERGY-DESC':
     'Refills Power bar +32. Also clears pattern desync and skips one skiff uplink hold.',
   'ITEM-PROBE': 'Field Array Pulse',
-  'ITEM-PROBE-DESC': '+2 ATK and +4 vision for 25 turns.',
+  'ITEM-PROBE-DESC': '+4 vision for 25 turns. Lamp only — not a damage bonus.',
   'ITEM-STIM': 'Combat Stim',
-  'ITEM-STIM-DESC': '+3 ATK for 15 turns.',
+  'ITEM-STIM-DESC': 'Strikes are Enhanced for 15 turns.',
   'ITEM-PLATE': 'Shield Charge',
   'ITEM-PLATE-DESC': 'Repair +12 Shield.',
   'ITEM-FLARE': 'Plasma Flare',
@@ -420,7 +432,7 @@ export const LORE = {
   'LOG-USE-MED': 'Field hypo administered.',
   'LOG-USE-ENERGY': 'Power Cell slotted — Power restored.',
   'LOG-USE-PROBE': 'Field array pulse active — ATK up.',
-  'LOG-USE-STIM': 'Combat stim active — ATK surge.',
+  'LOG-USE-STIM': 'Combat stim active — strikes Enhanced.',
   'LOG-USE-PLATE': 'Shield charge bonded — pool repaired.',
   'LOG-USE-FLARE': 'Plasma flare discharged — adjacent hostiles stunned.',
   'LOG-USE-FILTER': 'Plasma filter online — drain and plasma hits reduced.',
@@ -465,6 +477,15 @@ export const LORE = {
   'LOG-TELE-OVERWATCH': 'Sentinel overwatch locked — do not enter adjacent tiles.',
   'LOG-OVERWATCH-FIRE': 'Sentinel overwatch strikes first.',
   'LOG-PUNISH': 'It has lost its footing — the strike goes in clean.',
+  'LOG-ENHANCED': 'Strike lands Enhanced.',
+  'LOG-IMPAIRED': 'Strike lands Impaired.',
+  'LOG-CRIT-SAVE': 'Overflow — you stay on your feet, seams open.',
+  'LOG-DOWNED': 'Overflow — you are downed. Med before the clock runs out.',
+  'LOG-DOWNED-TICK': 'Hit while downed — the clock shortens.',
+  'LOG-DOWNED-ACT': 'Downed — cannot strike. Med, move, or wait.',
+  'LOG-STABILIZE': 'Med holds you together. You are on your feet.',
+  'LOG-KEEP-CALM-FAIL': 'EM fritz — kit jammed.',
+  'LOG-PAY-PRICE': 'The extract takes a price.',
   'LOG-CONTAMINATION': 'Spore contamination tile tax drains Power.',
   'LOG-AMBUSH': 'Hunter breaks cover.',
   'LOG-AMBUSH-DARK': 'Hunter strikes from the dark — no telegraph.',
@@ -582,7 +603,7 @@ export const LORE = {
   'SKILL-SCAVENGER-NAME': 'Scavenger Eye',
   'SKILL-SCAVENGER-DESC': '+15% salvage drops; safer salvage scans.',
   'SKILL-OVERCHARGE-NAME': 'Overcharge Strike',
-  'SKILL-OVERCHARGE-DESC': '+1 melee damage while vitals ≤ 50%.',
+  'SKILL-OVERCHARGE-DESC': 'While vitals ≤ 50%, strikes are Enhanced.',
   'SKILL-ION-SKIN-NAME': 'Plasma Skin',
   'SKILL-ION-SKIN-DESC': 'Active filter also halves kinetic hits.',
   'SKILL-DEEP-RESERVE-NAME': 'Deep Reserve',

@@ -114,6 +114,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     codexPages: 0,
     codexLog: [],
     emStress: 0,
+    keepCalmCooldown: 0,
     salvageIdentified: 0,
     salvageBacklash: 0,
     handshake: null,

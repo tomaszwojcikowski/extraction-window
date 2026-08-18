@@ -83,6 +83,9 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 | Window | Storm / shear storm (Shear = pressure *presentation*) |
 | Shield | Armor / SHD |
 | Nav Lattice / Splice Key | CORE / KEY only as short badges |
+| Controlled / Risky / Desperate | Position word for peel + expose (HUD only — peel already taxes DEF) |
+| Impaired / Enhanced / Normal | Stance dice. Normal stays atk−def. Do not stack stim/probe onto ATK |
+| Downed | Overflow save past 0 HP — not a second vitals bar |
 
 **Anti-pattern:** Help says “energy,” bar says “POWER,” log says “life-support.”
 
@@ -219,6 +222,25 @@ Before implementing a UI/feel/systems change:
 - [ ] What **playtest / unit** proves we didn’t break clocks, legality, or WR band?
 
 If more than two boxes fail, shrink the proposal.
+
+---
+
+## Hybrid field rules (canon)
+
+Borrow the closest open procedure per job. Do not import a library. Do not take Cairn’s pack-highest-die, Starforged Strike/Clash, Mothership AP/wounds/panic tables, or Year Zero.
+
+| Job | Follow | In this game |
+|-----|--------|----------------|
+| Hit | Cairn auto-hit + **our** formula | Bump auto-hits. **Normal** stays `max(1, atk − def + variance)`. |
+| Stance | Cairn | Impaired = d4. Enhanced = d12. Helpless foe wins over Impaired. |
+| Pack / doorway | **Ours** | `flankPenalty` (−1 def per extra contact, cap 3). Not “keep the highest die.” |
+| Position word | Blades | `controlled` / `risky` / `desperate` from peel + expose. **HUD only** — peel already taxes def. |
+| Downed | Cairn critical | Overflow past 0 HP: save or `downed`. Med (bandages) stabilizes. Untreated → HP lose. Enemies still die at 0. |
+| Kit | Cairn / Knave | 16 slots stay. **Full kit** (16/16) makes outgoing attacks Impaired. |
+| Extract | Starforged | Same four gates. Interrupt / reject / desperate pickup **Pays the Price** (Window, EM, or pattern desync). |
+| Stress | Mothership *feeling* | EM_HIGH can fail a keep-calm check → `jam`. No panic table, no AP rewrite. |
+
+**Do not double-dip:** flanked peels def; position is the name for that. Encumbered Impaired is a different fact (kit). Keep-calm jam is a different fact (EM).
 
 ---
 

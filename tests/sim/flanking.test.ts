@@ -75,6 +75,7 @@ describe('being surrounded pries defence open', () => {
       const st = openFloor();
       st.player.hp = 100;
       st.player.maxHp = 100;
+      st.illumination[st.player.y]![st.player.x] = 0.9;
       surround(st, count);
       enemyAttack(st, st.enemies[0]!, 0);
       return 100 - st.player.hp;

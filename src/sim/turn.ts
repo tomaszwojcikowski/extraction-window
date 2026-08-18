@@ -61,7 +61,7 @@ function trySpawnNestMite(state: GameState): void {
 
 export function checkLose(state: GameState): void {
   if (state.status !== 'playing') return;
-  if (state.player.hp <= 0) {
+  if (state.player.hp <= 0 && !state.player.statuses.downed) {
     state.status = 'lost';
     state.loseReason = 'hp';
     return;
@@ -144,6 +144,7 @@ function tickEnvironment(state: GameState): void {
     if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
     if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
     if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
+    if (state.keepCalmCooldown > 0) state.keepCalmCooldown -= 1;
     tickContamination(state);
     tickPlayerStatusEffects(state);
     mechanicsOnEndTurn(state);
@@ -172,6 +173,7 @@ function tickEnvironment(state: GameState): void {
   if (state.player.stimTurns > 0) state.player.stimTurns -= 1;
   if (state.player.filterTurns > 0) state.player.filterTurns -= 1;
   if (state.player.mapperTurns > 0) state.player.mapperTurns -= 1;
+  if (state.keepCalmCooldown > 0) state.keepCalmCooldown -= 1;
 
   tickPlayerStatusEffects(state);
   mechanicsOnEndTurn(state);

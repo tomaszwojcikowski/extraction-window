@@ -37,7 +37,7 @@ Fixed order: Relay Scar Flats → Shearwash Basin → Shear Canopy → **Crystal
 - Emergency Beacon: multi-turn splice handshake (hold pad) to open inland path
 - Contingency Cache always has Nav Lattice (reachable); pattern buffer may desync under vents/EM
 - Sector 15 (Drop Skiff Ridge): win if carrying synced Nav Lattice before shear window hits 0
-- Lose: HP≤0, bus≤0, or window expires
+- Lose: HP≤0 after the downed clock (or skip the save), bus≤0, or window expires
 - Storm budget starts at **700** turns (late sectors tax extra from duct/vault); autopilot win-rate target **55–85%**
 
 Partly procedural per seed: layouts, room roles, multiroom quests, branches, enemy packs, loot, exact objective tiles. Same seed = same world. Biome generation flags differentiate flood lakes, canopy/reef scrub, rubble mazes, vent corridors, vault choke rooms.

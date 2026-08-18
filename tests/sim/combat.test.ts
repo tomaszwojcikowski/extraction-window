@@ -8,7 +8,7 @@ import {
   playerAttack,
 } from '../../src/sim/combat';
 import { killEnemy, markEnemyDead } from '../../src/sim/death';
-import { combatArena, lastLog, makeEnemy } from './fixtures';
+import { combatArena, lastLog, makeEnemy, fixedRng } from './fixtures';
 
 describe('formatCombatDetail', () => {
   it('joins subject, damage, optional type, and rem/max hp', () => {
@@ -127,7 +127,7 @@ describe('playerAttack / enemyAttack', () => {
     expect(st.player.statuses.expose).toBe(4);
   });
 
-  it('dark-prefer fauna bite harder in SHADOW than on a true LIT tile', () => {
+  it('dark-prefer fauna bite Enhanced in SHADOW and stay Normal on LIT', () => {
     const hit = (hdr: number): number => {
       const st = combatArena();
       st.player.hp = 100;
@@ -135,6 +135,7 @@ describe('playerAttack / enemyAttack', () => {
       st.player.def = 0;
       st.player.armor = 0;
       st.illumination[st.player.y]![st.player.x] = hdr;
+      st.rng = fixedRng([0.99]);
       enemyAttack(st, makeEnemy({ kind: 'mite', atk: 5 }), 0);
       return 100 - st.player.hp;
     };

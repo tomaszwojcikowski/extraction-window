@@ -2,11 +2,12 @@ import { ENEMIES } from '../data/enemies';
 import { ALLIES } from '../data/npcs';
 import { lore } from '../data/lore';
 import { bfsPath } from './fov';
-import { meleeDamage } from './combat';
+import { resolveHit } from './stance';
 import { markEnemyDead } from './death';
 import { formatCombatDetail, pushLog } from './log';
 import { randInt } from './rng';
 import { allyAt, enemyAt, manhattan, npcAt } from './spatial';
+import { hasStatus } from './status';
 import type { Ally, Enemy, GameState, Pos } from './types';
 
 function blockedForAlly(state: GameState, x: number, y: number, selfId: number): boolean {
@@ -32,7 +33,9 @@ function nearestEnemy(state: GameState, ally: Ally, aggro: number): Enemy | null
 }
 
 function allyMelee(state: GameState, ally: Ally, enemy: Enemy): void {
-  const dmg = meleeDamage(ally.atk, enemy.def, randInt(state.rng, -1, 0));
+  const helpless = hasStatus(enemy, 'stun') || hasStatus(enemy, 'expose');
+  const stance = helpless ? 'enhanced' : 'normal';
+  const dmg = resolveHit(ally.atk, enemy.def, randInt(state.rng, -1, 0), stance, state.rng);
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
   const allyName = lore(ALLIES[ally.kind].loreName);
@@ -169,7 +172,7 @@ export function tryEnemyMeleePreferPlayer(
   for (const p of dirs) {
     const ally = allyAt(state, p.x, p.y);
     if (!ally) continue;
-    const dmg = meleeDamage(enemy.atk, ally.def, randInt(state.rng, -1, 1));
+    const dmg = resolveHit(enemy.atk, ally.def, randInt(state.rng, -1, 1), 'normal', state.rng);
     applyAllyDamage(state, ally, dmg, { source: lore(ENEMIES[enemy.kind].loreName) });
     return true;
   }

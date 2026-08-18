@@ -9,7 +9,7 @@ import {
 import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import type { SectorId } from '../data/encounters';
-import { playerAttack } from './combat';
+import { flankPenalty, playerAttack } from './combat';
 import { killEnemy } from './death';
 import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
@@ -23,6 +23,7 @@ import { flareDamageForEnemy } from './brands';
 import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 import { cancelOverwatch } from './ai';
+import { fieldPosition } from './stance';
 
 const PLATE_REPAIR = 12;
 
@@ -202,6 +203,14 @@ export function useSelected(state: GameState): boolean {
   switch (kind) {
     // Med is the whole answer to damage: it heals and it stops the bleeding.
     case 'med':
+      if (hasStatus(state.player, 'downed')) {
+        delete state.player.statuses.downed;
+        state.player.hp = 8;
+        delete state.player.statuses.bleed;
+        removeOne(state, kind);
+        pushLog(state, 'LOG-STABILIZE');
+        break;
+      }
       state.player.hp = Math.min(state.player.maxHp, state.player.hp + 22);
       delete state.player.statuses.bleed;
       removeOne(state, kind);
@@ -339,6 +348,10 @@ export function useSelected(state: GameState): boolean {
 /** Fire dart in a direction (Chebyshev range ≤3, needs FOV + lit target). */
 export function fireDart(state: GameState, dx: number, dy: number): void {
   state.ui.aimingDart = false;
+  if (hasStatus(state.player, 'downed')) {
+    pushLog(state, 'LOG-DOWNED-ACT');
+    return;
+  }
   if (!hasItem(state, 'dart')) {
     pushLog(state, 'LOG-USE-FAIL');
     return;
@@ -364,8 +377,8 @@ export function fireDart(state: GameState, dx: number, dy: number): void {
         break;
       }
       removeOne(state, 'dart');
-      addStatus(en, 'expose', 4);
       playerAttack(state, en, randInt(state.rng, 0, 1));
+      if (en.alive) addStatus(en, 'expose', 4);
       pushLog(state, 'LOG-USE-DART');
       hit = true;
       break;
@@ -399,11 +412,19 @@ export function tryPickup(state: GameState): boolean {
     pushLog(state, 'LOG-GOT-KEY');
     recordLoreEvent(state, 'LOG-GOT-KEY');
     gainXp(state, XP_QUEST_ITEM, 'key');
+    if (fieldPosition(flankPenalty(state), hasStatus(state.player, 'expose')) === 'desperate') {
+      addEmStress(state, 10, 'desperate pickup');
+      pushLog(state, 'LOG-PAY-PRICE');
+    }
   }
   if (item.kind === 'nav_core') {
     pushLog(state, 'LOG-GOT-CORE');
     recordLoreEvent(state, 'LOG-GOT-CORE');
     gainXp(state, XP_QUEST_ITEM, 'core');
+    if (fieldPosition(flankPenalty(state), hasStatus(state.player, 'expose')) === 'desperate') {
+      addEmStress(state, 10, 'desperate pickup');
+      pushLog(state, 'LOG-PAY-PRICE');
+    }
   }
   syncObjectiveFlags(state);
   return true;

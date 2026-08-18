@@ -3,7 +3,7 @@ import { playerAttack } from './combat';
 import { pushLog, recordLoreEvent } from './log';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { finishTutorial } from './state';
-import { addStatus } from './status';
+import { hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
@@ -30,6 +30,11 @@ function completeTutorialExit(state: GameState): void {
 
 function tryMove(state: GameState, dx: number, dy: number): void {
   if (state.ui.aimingDart) {
+    if (hasStatus(state.player, 'downed')) {
+      state.ui.aimingDart = false;
+      pushLog(state, 'LOG-DOWNED-ACT');
+      return;
+    }
     fireDart(state, dx, dy);
     endPlayerTurn(state);
     return;
@@ -52,6 +57,10 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 
   const foe = enemyAt(state, nx, ny);
   if (foe) {
+    if (hasStatus(state.player, 'downed')) {
+      pushLog(state, 'LOG-DOWNED-ACT');
+      return;
+    }
     triggerOverwatchOnAttack(state, foe);
     playerAttack(state, foe, randInt(state.rng, -1, 1));
     endPlayerTurn(state);
@@ -207,6 +216,11 @@ export function applyAction(state: GameState, action: Action): GameState {
     }
 
     case 'aim':
+      if (hasStatus(state.player, 'downed')) {
+        state.ui.aimingDart = false;
+        pushLog(state, 'LOG-DOWNED-ACT');
+        return state;
+      }
       fireDart(state, action.dx, action.dy);
       endPlayerTurn(state);
       return state;
