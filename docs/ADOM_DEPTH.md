@@ -287,3 +287,26 @@ not a solved channel.” 300-seed band gate green; smoke green.
 - No Quiet replacement — intentional: deepen the wake tax, don’t re-add a mandatory stance.
 
 **Exit gate:** unit + cohere + smoke + 300-seed band gate green; no new combat verbs.
+
+---
+
+## Wave 10 — Deepen existing combat
+
+No new verbs. Packs queued on one approach tile so flank peel almost never fired;
+preferred-light +1 lived only on aggro range. This wave makes those rules happen
+in the bump.
+
+| Lever | Change |
+|-------|--------|
+| Pack seats | Hunters close on distinct contact tiles instead of stacking behind the first body. Cap **two** seats — a third queues. Four simultaneous bites dropped the 300-seed gate to 51%. |
+| lightPrefer ATK | Dark-prefer +1 in SHADOW. Lit-prefer stays an aggro-range cue (true-LIT +1 was a flat wasp buff on the lamp tile). |
+| Brand hint | One-shot coach — stop hogging the hint line whenever an elite is visible |
+
+Still out: first-contact ATK, Quiet, brace/shove.
+
+### Result
+
+**58.3% ±5.6** over the 300-seed band gate (175/300). Lose mix `hp=95 storm=27 energy=3`
+— hp still ~76% of losses. Smoke 6/8; full playtest 23/30 (77%). Unit 316.
+
+**Exit gate:** unit + smoke + playtest + 300-seed band gate green; no new combat verbs.

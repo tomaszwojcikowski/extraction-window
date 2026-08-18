@@ -1,4 +1,5 @@
 import type { LoreId } from '../../data/lore';
+import { ENEMIES } from '../../data/enemies';
 import { flankPenalty } from '../../sim/combat';
 import { inShadow } from '../../sim/light';
 import type { GameState } from '../../sim/types';
@@ -22,6 +23,13 @@ export function pillarCoachHint(st: GameState): LoreId | null {
 
   if (flankPenalty(st) > 0 && once(st, 'teach_flank')) {
     return 'UI-HINT-FLANK';
+  }
+
+  const brandedVisible = st.enemies.some(
+    (e) => e.alive && ENEMIES[e.kind].brand && (st.visible[e.y]?.[e.x] ?? false),
+  );
+  if (brandedVisible && once(st, 'teach_brand')) {
+    return 'UI-HINT-BRAND';
   }
 
   if (!st.scriptedFired.tut_welcome) return null;

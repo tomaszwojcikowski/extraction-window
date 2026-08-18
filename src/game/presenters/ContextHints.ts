@@ -1,6 +1,5 @@
 import type { LoreId } from '../../data/lore';
 import { ITEMS, INVENTORY_SLOTS } from '../../data/items';
-import { ENEMIES } from '../../data/enemies';
 import type { GameState } from '../../sim';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
@@ -37,10 +36,6 @@ export function contextHint(st: GameState): LoreId | null {
 
   if (fromMechanic) return fromMechanic;
 
-  const brandedVisible = st.enemies.some(
-    (e) => e.alive && ENEMIES[e.kind].brand && (st.visible[e.y]?.[e.x] ?? false),
-  );
-  if (brandedVisible) return 'UI-HINT-BRAND';
   if (st.allies.some((a) => a.alive && a.kind === 'probe_drone')) return 'UI-HINT-ALLY-DRONE';
   if (
     st.allies.some(

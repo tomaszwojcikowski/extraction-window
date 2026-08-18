@@ -22,22 +22,117 @@ function tileBlocked(state: GameState, x: number, y: number, skipEnemyId?: numbe
   return false;
 }
 
+function contactSeats(state: GameState): Pos[] {
+  const px = state.player.x;
+  const py = state.player.y;
+  const seats: Pos[] = [
+    { x: px + 1, y: py },
+    { x: px - 1, y: py },
+    { x: px, y: py + 1 },
+    { x: px, y: py - 1 },
+  ];
+  return seats.filter((p) => {
+    if (p.x < 0 || p.y < 0 || p.x >= state.width || p.y >= state.height) return false;
+    const tile = state.tiles[p.y]?.[p.x];
+    return !!tile?.walkable;
+  });
+}
+
+function seatPathLen(state: GameState, enemy: Enemy, seat: Pos): number {
+  if (enemy.x === seat.x && enemy.y === seat.y) return 0;
+  const path = bfsPath(
+    state.tiles,
+    { x: enemy.x, y: enemy.y },
+    seat,
+    (x, y) => tileBlocked(state, x, y, enemy.id),
+  );
+  return path ? path.length : Number.POSITIVE_INFINITY;
+}
+
+/** Two distinct seats is a peel. Four simultaneous bites collapsed the win-rate band. */
+const MAX_PACK_CONTACT = 2;
+
+/** Living hunters closer to the player (manhattan, then id) within the pack radius. */
+function packCloserCount(state: GameState, enemy: Enemy): number {
+  const d = manhattan(enemy.x, enemy.y, state.player.x, state.player.y);
+  return state.enemies.filter((other) => {
+    if (!other.alive || other.id === enemy.id) return false;
+    const od = manhattan(other.x, other.y, state.player.x, state.player.y);
+    if (od > 8) return false;
+    return od < d || (od === d && other.id < enemy.id);
+  }).length;
+}
+
+function emptyContactSeat(state: GameState, enemy: Enemy, x: number, y: number): boolean {
+  if (manhattan(x, y, state.player.x, state.player.y) !== 1) return false;
+  return !enemyAt(state, x, y, enemy.id);
+}
+
+/**
+ * Close on an empty contact seat instead of queuing behind the first mite.
+ * Packs already peel DEF; they have to actually stand on two sides for that
+ * rule to fire. Skip seats a closer hunter will claim this approach.
+ * Third-and-later hunters cannot step onto empty contact tiles.
+ */
+function stepToFlank(state: GameState, enemy: Enemy): boolean {
+  if (manhattan(enemy.x, enemy.y, state.player.x, state.player.y) === 1) {
+    return false;
+  }
+  if (packCloserCount(state, enemy) >= MAX_PACK_CONTACT) {
+    return stepToward(state, enemy, state.player.x, state.player.y, (x, y) =>
+      emptyContactSeat(state, enemy, x, y),
+    );
+  }
+  const seats = contactSeats(state);
+  const empty = seats.filter((s) => !tileBlocked(state, s.x, s.y, enemy.id));
+  if (empty.length === 0) {
+    return stepToward(state, enemy, state.player.x, state.player.y);
+  }
+
+  let best: Pos | null = null;
+  let bestLen = Number.POSITIVE_INFINITY;
+  for (const seat of empty) {
+    const mine = seatPathLen(state, enemy, seat);
+    if (mine === Number.POSITIVE_INFINITY || mine > 8) continue;
+    let claimed = false;
+    for (const other of state.enemies) {
+      if (!other.alive || other.id === enemy.id) continue;
+      if (manhattan(other.x, other.y, state.player.x, state.player.y) > 8) continue;
+      if (seatPathLen(state, other, seat) < mine) {
+        claimed = true;
+        break;
+      }
+    }
+    if (claimed) continue;
+    if (mine < bestLen) {
+      bestLen = mine;
+      best = seat;
+    }
+  }
+  if (!best) {
+    return stepToward(state, enemy, state.player.x, state.player.y);
+  }
+  return stepToward(state, enemy, best.x, best.y);
+}
+
 function stepToward(
   state: GameState,
   enemy: Enemy,
   tx: number,
   ty: number,
+  extraBlock?: (x: number, y: number) => boolean,
 ): boolean {
   const path = bfsPath(
     state.tiles,
     { x: enemy.x, y: enemy.y },
     { x: tx, y: ty },
-    (x, y) => tileBlocked(state, x, y, enemy.id),
+    (x, y) => tileBlocked(state, x, y, enemy.id) || extraBlock?.(x, y) === true,
   );
   if (!path || path.length === 0) return false;
   const step = path[0]!;
   if (step.x === state.player.x && step.y === state.player.y) return false;
   if (tileBlocked(state, step.x, step.y, enemy.id)) return false;
+  if (extraBlock?.(step.x, step.y)) return false;
   enemy.x = step.x;
   enemy.y = step.y;
   return true;
@@ -341,11 +436,11 @@ function tryPouncePattern(state: GameState, enemy: Enemy, defAggro: number): voi
   }
   if (style === 'zone') {
     // Walks to the edge of its own pulse and holds there.
-    stepToward(state, enemy, state.player.x, state.player.y);
+    stepToFlank(state, enemy);
     return;
   }
   if (!tryMelee(state, enemy)) {
-    stepToward(state, enemy, state.player.x, state.player.y);
+    stepToFlank(state, enemy);
   }
 }
 
@@ -436,7 +531,7 @@ export function moveEnemies(state: GameState): void {
     switch (def.behavior) {
       case 'wander': {
         if (dist <= aggro) {
-          if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
+          if (!tryMelee(state, enemy)) stepToFlank(state, enemy);
         } else {
           randomStep(state, enemy);
         }
@@ -477,7 +572,7 @@ export function moveEnemies(state: GameState): void {
         } else if (tryMelee(state, enemy)) {
           enemy.skirmishRetreat = true;
         } else {
-          stepToward(state, enemy, state.player.x, state.player.y);
+          stepToFlank(state, enemy);
         }
         break;
       }
@@ -503,7 +598,7 @@ export function moveEnemies(state: GameState): void {
       }
       case 'drain': {
         if (dist > aggro) break;
-        if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
+        if (!tryMelee(state, enemy)) stepToFlank(state, enemy);
         break;
       }
       case 'guard': {
@@ -511,7 +606,7 @@ export function moveEnemies(state: GameState): void {
           state.lootTakenThisSector || dist <= 2 || (enemy.alerted && dist <= aggro);
         if (engage) {
           enemy.alerted = true;
-          if (!tryMelee(state, enemy)) stepToward(state, enemy, state.player.x, state.player.y);
+          if (!tryMelee(state, enemy)) stepToFlank(state, enemy);
         } else {
           const hd = manhattan(enemy.x, enemy.y, enemy.homeX, enemy.homeY);
           if (hd > 3) stepToward(state, enemy, enemy.homeX, enemy.homeY);
@@ -538,7 +633,7 @@ export function moveEnemies(state: GameState): void {
         }
         if (dist <= aggro) {
           if (dist === 1) tryMelee(state, enemy);
-          else if (dist <= 3) stepToward(state, enemy, state.player.x, state.player.y);
+          else if (dist <= 3) stepToFlank(state, enemy);
         } else {
           const hd = manhattan(enemy.x, enemy.y, enemy.homeX, enemy.homeY);
           if (hd > 0) stepToward(state, enemy, enemy.homeX, enemy.homeY);

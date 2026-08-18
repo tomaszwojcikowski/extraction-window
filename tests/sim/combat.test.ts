@@ -126,6 +126,20 @@ describe('playerAttack / enemyAttack', () => {
     enemyAttack(st, makeEnemy({ kind: 'rift', atk: 1 }), 0);
     expect(st.player.statuses.expose).toBe(4);
   });
+
+  it('dark-prefer fauna bite harder in SHADOW than on a true LIT tile', () => {
+    const hit = (hdr: number): number => {
+      const st = combatArena();
+      st.player.hp = 100;
+      st.player.maxHp = 100;
+      st.player.def = 0;
+      st.player.armor = 0;
+      st.illumination[st.player.y]![st.player.x] = hdr;
+      enemyAttack(st, makeEnemy({ kind: 'mite', atk: 5 }), 0);
+      return 100 - st.player.hp;
+    };
+    expect(hit(0.2)).toBeGreaterThan(hit(0.9));
+  });
 });
 
 describe('killEnemy / markEnemyDead', () => {

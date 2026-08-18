@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { enemyAttack, flankPenalty } from '../../src/sim/combat';
+import { moveEnemies } from '../../src/sim/ai';
 import type { GameState } from '../../src/sim/types';
 import { combatArena, makeEnemy } from './fixtures';
 
@@ -80,5 +81,37 @@ describe('being surrounded pries defence open', () => {
     };
 
     expect(damageFrom(3)).toBeGreaterThan(damageFrom(1));
+  });
+});
+
+describe('packs take empty contact seats', () => {
+  it('two hunters from a line occupy different adjacent tiles', () => {
+    const st = openFloor();
+    st.enemies = [
+      makeEnemy({ id: 1, kind: 'crawler', x: 8, y: 5, alerted: true }),
+      makeEnemy({ id: 2, kind: 'crawler', x: 9, y: 5, alerted: true }),
+    ];
+    for (let i = 0; i < 10; i++) moveEnemies(st);
+    const adj = st.enemies.filter(
+      (e) => e.alive && Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
+    );
+    expect(adj).toHaveLength(2);
+    expect(new Set(adj.map((e) => `${e.x},${e.y}`)).size).toBe(2);
+    expect(flankPenalty(st)).toBe(1);
+  });
+
+  it('a third hunter queues instead of filling every side', () => {
+    const st = openFloor();
+    st.enemies = [
+      makeEnemy({ id: 1, kind: 'crawler', x: 8, y: 5, alerted: true }),
+      makeEnemy({ id: 2, kind: 'crawler', x: 5, y: 8, alerted: true }),
+      makeEnemy({ id: 3, kind: 'crawler', x: 5, y: 2, alerted: true }),
+    ];
+    for (let i = 0; i < 10; i++) moveEnemies(st);
+    const adj = st.enemies.filter(
+      (e) => e.alive && Math.abs(e.x - st.player.x) + Math.abs(e.y - st.player.y) === 1,
+    );
+    expect(adj).toHaveLength(2);
+    expect(flankPenalty(st)).toBe(1);
   });
 });

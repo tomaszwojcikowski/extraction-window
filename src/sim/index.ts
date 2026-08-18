@@ -35,7 +35,7 @@ export { windowDrainRate, windowTurnsLeft } from './window';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
-export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack } from './combat';
+export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack, lightPreferAtkBonus, flankPenalty } from './combat';
 export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';
 export { manhattan, enemyAt, allyAt, npcAt } from './spatial';

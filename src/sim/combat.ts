@@ -9,6 +9,7 @@ import {
 } from '../data/items';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
+import { inShadow } from './light';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { hasSkill } from './progression';
 import { brandIonAttackPenalty } from './brands';
@@ -41,6 +42,17 @@ export function armorDefBonus(state: GameState): number {
  * Peak peel is three so an open-floor pack reads harsher than a doorway duel.
  */
 const MAX_FLANK_PENALTY = 3;
+
+/**
+ * Preferred-light bite — Wave 9 named this +1; it only lived on aggro range.
+ * Dark-prefer fauna get it in SHADOW. Lit-prefer stays an aggro cue: wiring
+ * +1 ATK on true LIT is a flat wasp buff (the surveyor is usually on their lamp).
+ */
+export function lightPreferAtkBonus(state: GameState, enemy: Enemy): number {
+  const prefer = ENEMIES[enemy.kind].lightPrefer;
+  if (prefer !== 'dark') return 0;
+  return inShadow(state, state.player.x, state.player.y) ? 1 : 0;
+}
 
 export function flankPenalty(state: GameState): number {
   const inContact = state.enemies.filter(
@@ -165,7 +177,7 @@ export function enemyAttack(
     lastWindow -
     flankPenalty(state) -
     (hasStatus(state.player, 'expose') ? 2 : 0);
-  const atk = enemy.atk + (opts?.bonusAtk ?? 0);
+  const atk = enemy.atk + (opts?.bonusAtk ?? 0) + lightPreferAtkBonus(state, enemy);
   const rawDamage = meleeDamage(atk, Math.max(0, def), variance);
   const dtype = ENEMIES[enemy.kind].damageType;
   const dmg = dtype === 'ion' ? Math.max(1, rawDamage - brandIonAttackPenalty(enemy)) : rawDamage;
