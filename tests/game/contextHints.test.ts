@@ -13,6 +13,13 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).toBe('UI-HINT-SKILL');
   });
 
+  it('coaches med while downed before hatch or kit tips', () => {
+    const st = createGame(42);
+    st.player.statuses = { downed: 3 };
+    st.player.hp = 0;
+    expect(contextHint(st)).toBe('UI-HINT-DOWNED');
+  });
+
   it('skips med tip when kit has no field hypo', () => {
     const st = createGame(42);
     st.player.hp = 5;

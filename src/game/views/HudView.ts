@@ -4,28 +4,24 @@ import { getSector } from '../../data/encounters';
 import { SKILLS } from '../../data/progression';
 import {
   describeObjective,
-  extractTrack,
   stickyMilestone,
   windowDrainRate,
   windowTurnsLeft,
   type GameState,
 } from '../../sim';
-import { statusHud, hasStatus } from '../../sim/status';
-import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
-import { encumbered, fieldPosition, playerReadyStance } from '../../sim/stance';
 import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
+import { fieldHudChips, formatHudMeta } from '../presenters/FieldHud';
+import { lightBadgeSpec } from '../presenters/HudBadges';
 import { drawKitOverlay } from './overlays/KitOverlay';
-import { FAVOR_LABEL } from '../../sim/extractFavor';
 import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
-import { stanceBadgeLabel } from '../presenters/HudBadges';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 
 export const HUD_BAR_SLOTS = 5;
-export const HUD_BADGE_SLOTS = 6;
+export const HUD_BADGE_SLOTS = 8;
 
 /** Instrument needle travel — short enough to stay inside the juice budget. */
 const METER_MS = 140;
@@ -81,10 +77,7 @@ type BarLayout = {
 
 /** The light badge must mirror the shadow predicate used by ambush AI. */
 export function stanceBadgeSpec(st: GameState): { label: string; fill: number } | null {
-  const label = stanceBadgeLabel(st);
-  if (label === 'SHADOW') return { label, fill: Theme.flag };
-  if (label === 'LIT') return { label, fill: Theme.tape };
-  return null;
+  return lightBadgeSpec(st);
 }
 
 /**
@@ -209,59 +202,7 @@ export class HudView {
       opts,
     );
 
-    const probe = st.player.probeTurns > 0 ? `Probe ${st.player.probeTurns}` : '';
-    const stim = st.player.stimTurns > 0 ? `Stim ${st.player.stimTurns}` : '';
-    const filter = st.player.filterTurns > 0 ? `Filter ${st.player.filterTurns}` : '';
-    const desync =
-      st.patternDesync > 0
-        ? `Desync ${st.patternDesync} · Power Cell`
-        : '';
-    const allyRole = st.allies.some((a) => a.alive && a.kind === 'probe_drone')
-      ? lore('UI-ALLY-DRONE')
-      : st.allies.some(
-            (a) =>
-              a.alive &&
-              a.kind === 'away_escort' &&
-              Math.abs(a.x - st.player.x) + Math.abs(a.y - st.player.y) === 1,
-          )
-        ? lore('UI-ALLY-ESCORT')
-        : '';
-    const ready = playerReadyStance(st);
-    const stanceChip =
-      ready === 'enhanced'
-        ? lore('UI-STANCE-ENHANCED')
-        : ready === 'impaired'
-          ? lore('UI-STANCE-IMPAIRED')
-          : '';
-    const kitChip = encumbered(st) ? lore('UI-ENCUMBERED') : '';
-    const fritzChip =
-      st.keepCalmCooldown > 0 ? `${lore('UI-FRITZ')} ${st.keepCalmCooldown}` : '';
-    const sysBits = [probe, stim, filter, desync, allyRole, stanceChip, kitChip, fritzChip].filter(
-      Boolean,
-    );
-    const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
-    const statuses = statusHud(st.player.statuses);
-    const statusLine = statuses ? ` · ${statuses}` : '';
-    const atkBonus = toolAtkBonus(st);
-    const defBonus = armorDefBonus(st);
-    // Surrounded is a rule the player has to be able to see paying out, so it
-    // rides the existing DEF readout rather than earning a badge of its own.
-    const flanked = flankPenalty(st);
-    const defPart = `${st.player.def}${defBonus ? `+${defBonus}` : ''}${flanked ? `−${flanked}` : ''}`;
-    const pos = fieldPosition(flanked, hasStatus(st.player, 'expose'));
-    const posWord =
-      pos === 'desperate'
-        ? lore('UI-POS-DESPERATE')
-        : pos === 'risky'
-          ? lore('UI-POS-RISKY')
-          : lore('UI-POS-CONTROLLED');
-    const boxes = extractTrack(st);
-    const extractBoxes = `${lore('UI-EXTRACT')} ${boxes.key ? '▮' : '▯'}${boxes.handshake ? '▮' : '▯'}${boxes.lattice ? '▮' : '▯'}${boxes.pad ? '▮' : '▯'}`;
-    let emPart = '';
-    if (st.emStress >= EM_HIGH) emPart = ` · EM CRIT ${st.emStress}`;
-    else if (st.emStress >= EM_WARN) emPart = ` · EM WARN ${st.emStress}`;
-    else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${st.emStress}`;
-    const meta = `${lore('UI-LEVEL')} ${st.level}  ${posWord}  ${extractBoxes}  ${lore('UI-ATK')} ${st.player.atk}${atkBonus ? `+${atkBonus}` : ''}  ${lore('UI-DEF')} ${defPart}${emPart}${systems}${statusLine}`;
+    const meta = formatHudMeta(st, { shearPrimary });
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
     const sector = getSector(st.sectorIndex);
@@ -276,60 +217,7 @@ export class HudView {
     }
     this.setReadout(r.sectorText, sectorLine, opts, ThemeCss.inkDim, 'sector');
 
-    const badgeSpecs: { label: string; fill: number }[] = [];
-    // Shear state lives on the center readout only (Charged+) — no badge duplicate.
-    const stanceBadge = stanceBadgeSpec(st);
-    if (stanceBadge) badgeSpecs.push(stanceBadge);
-    if (st.ionFrontTurns > 0) {
-      badgeSpecs.push({
-        label:
-          st.ionFrontTurns <= 1
-            ? lore('UI-FRONT-CLEARING')
-            : `${lore('UI-ION-FRONT')} ${st.ionFrontTurns}`,
-        fill: st.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
-      });
-    }
-    if (st.player.mapperTurns > 0) {
-      badgeSpecs.push({
-        label: `${lore('UI-MAPPER')} ${st.player.mapperTurns}`,
-        fill: Theme.tape,
-      });
-    }
-    if (st.objectives.hasRelayKey) badgeSpecs.push({ label: lore('UI-QUEST-KEY'), fill: Theme.tape });
-    if (st.objectives.usedRelayKey && !st.objectives.hasRelayKey) {
-      badgeSpecs.push({ label: lore('UI-RELAY-OPEN'), fill: Theme.safe });
-    }
-    if (st.objectives.hasNavCore) badgeSpecs.push({ label: lore('UI-QUEST-CORE'), fill: Theme.flag });
-    // Compact OPT badge — amber world frame + quest line carry the verb.
-    if (st.roomQuest && !st.roomQuest.done) {
-      const n = st.roomQuest.steps.length;
-      const i = st.roomQuest.stepIndex + 1;
-      badgeSpecs.push({
-        label: n > 1 ? `${lore('UI-QUEST-BADGE')} ${i}/${n}` : lore('UI-QUEST-BADGE'),
-        fill: Theme.tape,
-      });
-    }
-    if (st.extractFavor) {
-      badgeSpecs.push({ label: FAVOR_LABEL[st.extractFavor.kind], fill: Theme.safe });
-    }
-    if (st.handshake?.active) {
-      badgeSpecs.push({
-        label: `${lore('UI-HANDSHAKE')} ${st.handshake.progress}/2`,
-        fill: Theme.safe,
-      });
-    }
-    if (st.uplink?.active) {
-      badgeSpecs.push({
-        label: `${lore('UI-UPLINK')} ${st.uplink.progress}/3`,
-        fill: Theme.arc,
-      });
-      if (st.uplink.progress === 1 && !st.uplink.repelled) {
-        badgeSpecs.push({ label: lore('UI-WAVE-NEXT'), fill: Theme.rust });
-      }
-    }
-    if (st.codexPages > 0) {
-      badgeSpecs.push({ label: `${lore('UI-CODEX')} ${st.codexPages}`, fill: Theme.inkMute });
-    }
+    const badgeSpecs = fieldHudChips(st).slice(0, HUD_BADGE_SLOTS);
     this.drawQuestBadges(badgeSpecs, opts.screenW, opts);
 
     const desc = describeObjective(st);

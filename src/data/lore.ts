@@ -35,6 +35,7 @@ export const LORE = {
   'UI-STANCE-IMPAIRED': 'Impaired',
   'UI-ENCUMBERED': 'Kit full',
   'UI-FRITZ': 'Fritz',
+  'UI-DOWNED': 'Downed',
   'UI-INV': 'Field kit',
   'UI-LOG': 'Log',
   'UI-OBJECTIVE': 'Objective',
@@ -87,8 +88,9 @@ export const LORE = {
     '\n' +
     'HUD\n' +
     'HP · Shield · Power · Window · XP\n' +
-    'Position (Controlled / Risky / Desperate) names peel — it already taxes DEF.\n' +
-    'Four extract boxes track Key → handshake → Lattice → pad.\n' +
+    'Risky / Desperate names peel on the meta line — peel already taxes DEF.\n' +
+    'Extract boxes (# filled) sit on the chip rail: Key → handshake → Lattice → pad.\n' +
+    'Enhanced / Impaired / Downed / Kit full / Fritz are chips, not ATK soup.\n' +
     'l — mission log (hidden by default; field chips carry the beat)\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
@@ -131,6 +133,8 @@ export const LORE = {
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
     'Window = turns left · Power = kit charge — either hitting 0 ends the run',
+  'UI-HINT-DOWNED':
+    'Downed — u Field Hypo to stabilize, or step off the pack',
   'UI-HINT-EXTRACT':
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
   'UI-HINT-FLANK':

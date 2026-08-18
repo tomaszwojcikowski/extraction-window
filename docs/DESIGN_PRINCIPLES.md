@@ -60,7 +60,9 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 **Apply here**
 
 - Bars: HP · Shield · Power · Window · XP.
-- Meta line: combat/EM + *active* timers/statuses — not permanent equip dump.
+- Meta line: combat/EM + *active* timers/statuses — not permanent equip dump. Position word only when Risky or Desperate (Controlled is silence). ATK number hides when the Enhanced/Impaired chip owns the bump.
+- Extract boxes live on the chip rail (Key → handshake → Lattice → pad), not in the meta soup. They replace KEY / CORE / BEACON OPEN badges.
+- Downed, Kit full, and Fritz are chips. Peel already taxes DEF — do not badge peel.
 - Shear Calm: don’t triple-signal (center + badge + bar). Escalate chrome when Charged+.
 - Mission log strip is **collapsed by default** (`l` toggles). Causal floats + a short signal-rail of plated chips carry the beat; the text feed confirms when you open it.
 - Drill `?` = short page; full manual after the hatch.

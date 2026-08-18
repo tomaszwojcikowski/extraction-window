@@ -8,6 +8,7 @@ import {
   encumbered,
   fieldPosition,
   playerAttackStance,
+  playerHudStance,
   playerReadyStance,
   resolveHit,
 } from '../../src/sim/stance';
@@ -69,6 +70,20 @@ describe('player stances', () => {
     const st = combatArena();
     expect(st.inventory.length).toBeLessThan(INVENTORY_SLOTS);
     expect(encumbered(st)).toBe(false);
+  });
+
+  it('HUD stance is Enhanced when an adjacent foe is helpless', () => {
+    const st = combatArena();
+    st.player.statuses = { jam: 2 };
+    expect(playerHudStance(st)).toBe('impaired');
+    const foe = makeEnemy({
+      kind: 'mite',
+      x: st.player.x + 1,
+      y: st.player.y,
+    });
+    addStatus(foe, 'stun', 2);
+    st.enemies = [foe];
+    expect(playerHudStance(st)).toBe('enhanced');
   });
 });
 

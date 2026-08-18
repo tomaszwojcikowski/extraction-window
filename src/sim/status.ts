@@ -80,7 +80,6 @@ export function statusHud(statuses: StatusMap): string {
   if ((statuses.marked ?? 0) > 0) parts.push(`Marked ${statuses.marked}`);
   if ((statuses.ion_burn ?? 0) > 0) parts.push(`P-Burn ${statuses.ion_burn}`);
   if ((statuses.expose ?? 0) > 0) parts.push(`Exposed ${statuses.expose}`);
-  if ((statuses.downed ?? 0) > 0) parts.push(`Downed ${statuses.downed}`);
   return parts.join(' · ');
 }
 

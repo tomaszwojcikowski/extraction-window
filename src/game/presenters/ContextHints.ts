@@ -39,6 +39,8 @@ export function contextHint(st: GameState): LoreId | null {
 
   if (fromMechanic) return fromMechanic;
 
+  if ((st.player.statuses.downed ?? 0) > 0) return 'UI-HINT-DOWNED';
+
   // Pack pressure — persist while the spatial question is live.
   // Windup and site mechanics still win; hatch/kit tips yield.
   if (flankPenalty(st) > 0) return 'UI-HINT-FLANK';

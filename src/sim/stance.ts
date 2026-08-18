@@ -66,6 +66,22 @@ export function playerReadyStance(state: GameState): CombatStance {
 }
 
 /**
+ * Stance for the bump you would actually take: a helpless neighbour wins,
+ * otherwise the ready stance (stim / jam / full kit).
+ */
+export function playerHudStance(state: GameState): CombatStance {
+  let best = playerReadyStance(state);
+  for (const en of state.enemies) {
+    if (!en.alive) continue;
+    if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) !== 1) continue;
+    const s = playerAttackStance(state, en);
+    if (s === 'enhanced') return 'enhanced';
+    if (s === 'impaired') best = 'impaired';
+  }
+  return best;
+}
+
+/**
  * Normal keeps atk−def+variance. Impaired is a d4 (weapon ignored).
  * Enhanced is a d12 minus armour/def, capped at 12.
  */
