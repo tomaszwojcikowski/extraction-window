@@ -12,6 +12,13 @@ describe('KitFeedback', () => {
     expect(kitUseFeedback(st)).toBe(lore('LOG-USE-FAIL'));
   });
 
+  it('ignores stale failures after a later log line', () => {
+    const st = combatArena();
+    pushLog(st, 'LOG-USE-FAIL');
+    pushLog(st, 'LOG-WAIT');
+    expect(kitUseFeedback(st)).toBeNull();
+  });
+
   it('detects a fresh failure after u', () => {
     const st = combatArena();
     const before = st.log.length;

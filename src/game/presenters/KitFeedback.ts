@@ -14,13 +14,9 @@ export const KIT_USE_FAIL_LORE: ReadonlySet<LoreId> = new Set([
 
 /** Most recent kit-use failure message for the overlay footer, if any. */
 export function kitUseFeedback(st: GameState): string | null {
-  for (let i = st.log.length - 1; i >= 0; i--) {
-    const entry = st.log[i]!;
-    if (KIT_USE_FAIL_LORE.has(entry.loreId)) {
-      return lore(entry.loreId);
-    }
-  }
-  return null;
+  const last = st.log[st.log.length - 1];
+  if (!last || !KIT_USE_FAIL_LORE.has(last.loreId)) return null;
+  return lore(last.loreId);
 }
 
 /** True when the latest log line after `u` is a kit failure tell. */
