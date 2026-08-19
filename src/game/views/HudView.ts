@@ -29,6 +29,10 @@ const METER_MS = 140;
 /** Readout stamp flash when a printed value changes. */
 const TICK_MS = 90;
 
+function tintToCss(color: number): string {
+  return `#${color.toString(16).padStart(6, '0')}`;
+}
+
 export type HudViewRefs = {
   barsGfx: Phaser.GameObjects.Graphics;
   badgeGfx: Phaser.GameObjects.Graphics;
@@ -64,6 +68,8 @@ export type HudRedrawOpts = {
   windowPulseTween: { current: Phaser.Tweens.Tween | null };
   /** Diegetic Shear Pressure dial — demotes raw window/bus bars when set. */
   shear?: ShearPressureSpec;
+  /** Subtle per-biome field accent used by the sector readout. */
+  biomeAccent?: number;
 };
 
 type BarLayout = {
@@ -216,7 +222,7 @@ export class HudView {
       ).join(' ');
       sectorLine = `${lore('UI-SECTOR')} ${st.sectorIndex + 1}/${CAMPAIGN_LENGTH}  ${lore(sector.loreName)}\n${ticks}   ${lore('UI-SEED')} ${st.seed}`;
     }
-    this.setReadout(r.sectorText, sectorLine, opts, ThemeCss.inkDim, 'sector');
+    this.setReadout(r.sectorText, sectorLine, opts, tintToCss(opts.biomeAccent ?? Theme.inkDim), 'sector');
 
     const badgeSpecs = fieldHudChips(st).slice(0, HUD_BADGE_SLOTS);
     this.drawQuestBadges(badgeSpecs, opts.screenW, opts);

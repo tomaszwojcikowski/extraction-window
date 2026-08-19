@@ -10,7 +10,16 @@ import {
   floorScatter,
   wallWearAt,
 } from './textures';
-import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './theme';
+import {
+  BIOME_FLOOR_TINT,
+  FONT_DATA,
+  FONT_DISPLAY,
+  LightTemp,
+  Theme,
+  ThemeCss,
+  crackTextureKey,
+  floorTextureKey,
+} from './theme';
 import { ENEMIES } from '../data/enemies';
 import { lore, type LoreId } from '../data/lore';
 import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
@@ -604,6 +613,7 @@ export class GameScene extends Phaser.Scene {
   private drawChrome(shear = computeShearPressure(this.state)): void {
     const w = this.scale.width;
     const h = this.scale.height;
+    const biomeAccent = BIOME_FLOOR_TINT[this.state.sectorId];
     drawHudStripChrome(this.topPanel, {
       y: 0,
       height: TOP,
@@ -611,6 +621,7 @@ export class GameScene extends Phaser.Scene {
       side: 'top',
       corrosion: shear.value,
       accent: shear.accent,
+      biomeAccent,
       drainingLeg: shear.drainingLeg,
       animFrame: this.animFrame,
     });
@@ -623,6 +634,7 @@ export class GameScene extends Phaser.Scene {
       side: 'bottom',
       corrosion: shear.value,
       accent: shear.accent,
+      biomeAccent,
     });
   }
 
@@ -1891,6 +1903,7 @@ export class GameScene extends Phaser.Scene {
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
+      biomeAccent: BIOME_FLOOR_TINT[st.sectorId],
     });
     this.windowPulseTween = pulseBox.current;
   }

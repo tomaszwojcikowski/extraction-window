@@ -405,6 +405,7 @@ export function drawHudStripChrome(
     side: 'top' | 'bottom';
     corrosion?: number;
     accent?: number;
+    biomeAccent?: number;
     /** Which clock leg drives shear — pulsing sub-glyphs on the top strip tape. */
     drainingLeg?: ShearLegGlyph;
     animFrame?: number;
@@ -413,6 +414,7 @@ export function drawHudStripChrome(
   const { y, height, width, side } = opts;
   const corrosion = opts.corrosion ?? 0;
   const accent = opts.accent ?? Theme.tape;
+  const biomeAccent = opts.biomeAccent ?? Theme.panelEdge;
   g.clear();
   if (height <= 0) return;
 
@@ -428,6 +430,8 @@ export function drawHudStripChrome(
     g.fillRect(0, y + height - 2, width, 1);
     g.fillStyle(Theme.groundDeep, 1);
     g.fillRect(0, y + height - 1, width, 1);
+    g.fillStyle(biomeAccent, 0.45);
+    g.fillRect(14, y + height - 8, 42, 2);
     drawStencilTicks(g, 12, y + height - 8, width - 150, false, Theme.inkMute);
     drawTapeStrip(g, width - 128, y + 4, 116, 6, accent, 0.55);
     if (corrosion >= 0.25 && opts.drainingLeg) {
