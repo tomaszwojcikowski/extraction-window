@@ -50,6 +50,7 @@ import {
   flashScreen,
   playCombatContactJuice,
   playMoveAnims,
+  phaserBeamTargetTile,
   playPhaserBeam,
   playActorDeath,
   playPlayerDeath,
@@ -100,6 +101,8 @@ export class GameScene extends Phaser.Scene {
   private entityLayer!: Phaser.GameObjects.Container;
   private lightView!: LightView;
   private tileSprites: Phaser.GameObjects.Image[][] = [];
+  /** Wall-fixture overlay sprites; synced against FOW separately from tile art. */
+  private sconceOverlays: Array<{ img: Phaser.GameObjects.Image; x: number; y: number }> = [];
   /** Shear crack overlays on optional-path tiles — sparse, recycled. */
   private crackSprites = new Map<string, Phaser.GameObjects.Image>();
   private camX = 0;
@@ -828,6 +831,7 @@ export class GameScene extends Phaser.Scene {
   private placeSconceOverlays(): void {
     const st = this.state;
     const key = sconceTextureKey(st.sectorId);
+    this.sconceOverlays = [];
     for (const src of st.lightSources) {
       if (src.fixture !== 'sconce') continue;
       const mx = src.mountX ?? src.x;
@@ -843,6 +847,29 @@ export class GameScene extends Phaser.Scene {
       img.setDisplaySize(TILE_DRAW, TILE_DRAW);
       img.setDepth(2);
       this.mapLayer.add(img);
+      this.sconceOverlays.push({ img, x: mx, y: my });
+    }
+    this.syncSconceOverlays();
+  }
+
+  /** Sconces obey FOW like wall art: hidden in shroud, dim in remembered cells. */
+  private syncSconceOverlays(): void {
+    const st = this.state;
+    for (const sconce of this.sconceOverlays) {
+      const explored = st.explored[sconce.y]?.[sconce.x] ?? false;
+      const visible = st.visible[sconce.y]?.[sconce.x] ?? false;
+      if (!explored) {
+        sconce.img.setVisible(false);
+        continue;
+      }
+      sconce.img.setVisible(true);
+      if (visible) {
+        sconce.img.setAlpha(1);
+        sconce.img.clearTint();
+      } else {
+        sconce.img.setAlpha(0.35);
+        sconce.img.setTint(Theme.memoryWash);
+      }
     }
   }
 
@@ -1117,15 +1144,13 @@ export class GameScene extends Phaser.Scene {
     }
     this.syncItems();
 
-    const phaserTarget = fb.newLogs.includes('LOG-USE-PHASER')
-      ? prevEnemySnap.find((prev) => {
-          const cur = this.state.enemies.find((e) => e.id === prev.id);
-          if (!prev.alive || !cur) return false;
-          if (!(cur.hp < prev.hp || (!cur.alive && prev.alive))) return false;
-          const d = Math.abs(prev.x - fromPlayer.x) + Math.abs(prev.y - fromPlayer.y);
-          return d >= 2 && d <= 3;
-        })
-      : undefined;
+    const phaserTarget = phaserBeamTargetTile(
+      fb.newLogs,
+      fromPlayer,
+      fb.hitTiles,
+      action,
+      this.state,
+    );
     if (phaserTarget) {
       playPhaserBeam(
         this.tweens,
@@ -2105,6 +2130,7 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+    this.syncSconceOverlays();
     this.syncPressureCracks(st, shear);
     if (this.firstLight !== null) {
       this.lightView.applySweep(st, this.tileSprites, this.firstLight);
