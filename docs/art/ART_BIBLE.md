@@ -69,11 +69,12 @@ Roles say what a colour *means*; materials say what a surface *is*. Wet basalt
 each have a name. The two vocabularies stay disjoint — a material that duplicates
 a role gives the drawing code two ways to say one thing, and the test rejects it.
 
-Wall faces are per-sector (`t_wall_<sector>_<0..3>`): cliff / bulkhead / conduit
+Wall faces are per-sector (`t_wall_<sector>_<role>_<wear>`): cliff / bulkhead / conduit
 families with grit, fasteners, and a sparse biome accent — not three stamped
-blocks tinted by lighting. Corridors also get weak wall sconces (permanent
-`lightSources` with `fixture: 'sconce'`) so work lights exist beyond POIs;
-ambush rooms stay dark by role.
+blocks tinted by lighting. Role (0–3) is neighbor mass; wear (0–2) is a seed-stable
+2×2 patch so a corridor weathers together without wallpaper tiling.
+Corridors also get weak wall sconces (permanent `lightSources` with
+`fixture: 'sconce'`) so work lights exist beyond POIs; ambush rooms stay dark by role.
 
 ---
 

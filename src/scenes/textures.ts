@@ -12,9 +12,10 @@ import {
   drawDeluxeSconce,
   drawDeluxeWall,
   drawPressureCrack,
+  WALL_WEAR_COUNT,
 } from './tex/deluxe';
 
-export { floorScatter } from './tex/deluxe';
+export { floorScatter, wallWearAt, WALL_WEAR_COUNT } from './tex/deluxe';
 
 /** Base pixel art size — drawn 1:1 so floor seams don't scale up as a grout grid. */
 export const TILE = 48;
@@ -58,8 +59,10 @@ export function wallStyleForSector(sectorId: SectorId): WallStyle {
   }
 }
 
-export function wallTextureKey(sectorId: SectorId, variant: number): string {
-  return `t_wall_${sectorId}_${variant % 4}`;
+export function wallTextureKey(sectorId: SectorId, role: number, wear = 0): string {
+  const r = ((role % 4) + 4) % 4;
+  const w = ((wear % WALL_WEAR_COUNT) + WALL_WEAR_COUNT) % WALL_WEAR_COUNT;
+  return `t_wall_${sectorId}_${r}_${w}`;
 }
 
 export function sconceTextureKey(sectorId: SectorId): string {
@@ -135,8 +138,10 @@ export function registerTextures(scene: Phaser.Scene): void {
   ] as SectorId[]) {
     const style = wallStyleForSector(id);
     for (let v = 0; v < 4; v++) {
-      drawDeluxeWall(g, T, style, v, id);
-      bake(g, wallTextureKey(id, v), T);
+      for (let w = 0; w < WALL_WEAR_COUNT; w++) {
+        drawDeluxeWall(g, T, style, v, id, w);
+        bake(g, wallTextureKey(id, v, w), T);
+      }
     }
   }
   // Style-family aliases for the contact sheet / legacy keys.

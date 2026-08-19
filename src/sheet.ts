@@ -235,7 +235,9 @@ class SheetScene extends Phaser.Scene {
     for (const sector of SECTORS) {
       this.cell(
         'props',
-        [0, 1, 2, 3].map((variant) => wallTextureKey(sector, variant)),
+        [0, 1, 2, 3].flatMap((role) =>
+          [0, 1, 2].map((wear) => wallTextureKey(sector, role, wear)),
+        ),
         `wall / ${sector}`,
         wallStyleForSector(sector),
       );

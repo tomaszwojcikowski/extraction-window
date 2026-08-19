@@ -8,6 +8,7 @@ import {
   wallTextureKey,
   sconceTextureKey,
   floorScatter,
+  wallWearAt,
 } from './textures';
 import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
@@ -779,7 +780,11 @@ export class GameScene extends Phaser.Scene {
     const animated = (base: string): string => (f === 0 ? base : `${base}_${f}`);
     switch (kind) {
       case 'wall':
-        return wallTextureKey(this.state.sectorId, this.wallVariantAt(x, y));
+        return wallTextureKey(
+          this.state.sectorId,
+          this.wallVariantAt(x, y),
+          wallWearAt(x, y, this.state.seed),
+        );
       case 'hazard':
         return animated('t_hazard');
       case 'brine_pool':

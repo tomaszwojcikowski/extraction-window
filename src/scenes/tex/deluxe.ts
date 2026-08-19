@@ -52,6 +52,16 @@ export function floorScatter(
   };
 }
 
+export const WALL_WEAR_COUNT = 3;
+
+/** Face treatment for a wall cell — 2×2 patches so a run weathers together. */
+export function wallWearAt(x: number, y: number, seed: number): number {
+  const px = Math.floor(x / 2);
+  const py = Math.floor(y / 2);
+  const n = Math.abs((px * 29 + py * 53 + (seed & 0xffff) * 17) | 0);
+  return n % WALL_WEAR_COUNT;
+}
+
 function heaveCorner(variant: number): 0 | 1 | 2 {
   return (variant % 3) as 0 | 1 | 2;
 }
@@ -700,6 +710,7 @@ const CRACK_PATH: Record<SectorId, (p: CrackPaint) => void> = {
  * Wall mass language: crown (top lip) + face + plinth (ground contact).
  * Variants encode edge role for neighbor-aware picking at runtime:
  *   0 continuous run · 1 left-exposed · 2 right-exposed · 3 corner/pillar
+ * Wear is a seed-stable face treatment (grit, seams, strata) — not a new silhouette.
  */
 export function drawDeluxeWall(
   g: G,
@@ -707,11 +718,13 @@ export function drawDeluxeWall(
   style: WallStyle,
   variant: number,
   sector: SectorId = 'plains',
+  wear = 0,
 ): void {
   const q = unit(T);
   const tint = BIOME_FLOOR_TINT[sector];
   const accent = floorAccent(sector);
   const v = ((variant % 4) + 4) % 4;
+  const w = ((wear % WALL_WEAR_COUNT) + WALL_WEAR_COUNT) % WALL_WEAR_COUNT;
   const leftOpen = v === 1 || v === 3;
   const rightOpen = v === 2 || v === 3;
   const face =
@@ -748,9 +761,9 @@ export function drawDeluxeWall(
     g.fillRect(T - q(5), q(2), q(2), T - q(4));
   }
 
-  // Inner face — cooler so crown/plinth separate.
+  // Inner face — cooler so crown/plinth separate; wear shifts the slab slightly.
   g.fillStyle(mix(face, Material.recess, 0.14), 1);
-  g.fillRect(insetL + q(2), q(8), T - insetL - insetR - q(4), T - q(18));
+  g.fillRect(insetL + q(2 + (w % 2)), q(8 + (w === 2 ? 1 : 0)), T - insetL - insetR - q(4), T - q(18));
 
   // CROWN — bright top lip suggesting wall height above the tile.
   g.fillStyle(crownLit, 0.95);
@@ -768,19 +781,19 @@ export function drawDeluxeWall(
 
   // Face grit (kept out of crown and plinth bands).
   for (let i = 0; i < 18; i++) {
-    const x = q(6 + ((i * 11 + v * 9) % 34));
-    const y = q(10 + ((i * 17 + v * 5) % 22));
+    const x = q(6 + ((i * 11 + w * 13 + v * 2) % 34));
+    const y = q(10 + ((i * 17 + w * 7) % 22));
     if (x < insetL + q(2) || x > T - insetR - q(3)) continue;
     g.fillStyle(i % 4 === 0 ? shade(tint, 0.42) : accent, i % 4 === 0 ? 0.28 : 0.14);
     g.fillRect(x, y, q(i % 5 === 0 ? 2 : 1), q(1));
   }
 
   if (style === 'cliff') {
-    paintCliffFace(g, q, T, v, accent, insetL, insetR);
+    paintCliffFace(g, q, T, w, accent, insetL, insetR);
   } else if (style === 'bulkhead') {
-    paintBulkheadFace(g, q, T, v, accent, insetL, insetR);
+    paintBulkheadFace(g, q, T, w, accent, insetL, insetR);
   } else {
-    paintConduitFace(g, q, T, v, accent, insetL, insetR);
+    paintConduitFace(g, q, T, w, accent, insetL, insetR);
   }
 
   // PLINTH — thick ground-contact mass; walls sit on the floor, not float.
@@ -790,6 +803,8 @@ export function drawDeluxeWall(
   g.fillRect(insetL, T - q(9), T - insetL - insetR, q(3));
   g.fillStyle(Material.recess, 0.85);
   g.fillRect(insetL, T - q(6), T - insetL - insetR, q(2));
+  g.fillStyle(mix(face, Theme.groundDeep, 0.25), 0.55);
+  g.fillRect(insetL + q(6 + w * 8), T - q(8), q(5), q(2));
   // Contact shadow under the plinth.
   g.fillStyle(0x000000, 0.55);
   g.fillRect(Math.max(0, insetL - q(1)), T - q(2), T - insetL - insetR + q(2), q(2));
@@ -819,7 +834,7 @@ export function drawDeluxeWall(
     g.fillStyle(Theme.panelEdge, 0.95);
   }
 
-  WALL_ACCENT[sector]({ g, q, T, variant: v, accent, tint, style });
+  WALL_ACCENT[sector]({ g, q, T, variant: w, accent, tint, style });
 }
 
 /** Wall-mounted work light — scratched fixture, not a softglow orb. */
@@ -898,7 +913,7 @@ function paintCliffFace(
   g: G,
   q: Q,
   T: number,
-  v: number,
+  wear: number,
   accent: number,
   insetL: number,
   insetR: number,
@@ -907,23 +922,23 @@ function paintCliffFace(
   const x1 = T - insetR - q(3);
   // Stratified shelves — keep inside face band (below crown, above plinth).
   for (let i = 0; i < 4; i++) {
-    const y = q(10 + i * 6 + ((v + i) % 2));
+    const y = q(10 + i * 6 + ((wear + i) % 3));
     if (y > T - q(14)) continue;
-    const x = x0 + q((i * 9 + v * 5) % 10);
+    const x = x0 + q((i * 9 + wear * 7) % 12);
     const w = Math.min(q(18 - (i % 3) * 3), x1 - x);
     if (w < q(4)) continue;
     g.fillStyle(Material.recess, 0.95);
     g.fillRect(x, y, w, q(3));
     g.fillStyle(Theme.inkMute, 0.55);
-    g.fillRect(x, y, q(6 + (v % 3)), q(1));
+    g.fillRect(x, y, q(6 + (wear % 3)), q(1));
     g.fillStyle(mix(Material.rock, Theme.groundDeep, 0.3), 0.5);
     g.fillRect(x, y + q(2), w, q(1));
-    if (i % 2 === v % 2) {
+    if (i % 2 === wear % 2) {
       g.fillStyle(mix(Material.rock, accent, 0.35), 0.45);
       g.fillRect(x + q(2), y + q(1), q(4), q(1));
     }
   }
-  const jx = Math.min(Math.max(x0 + q(6 + v * 3), x0), x1 - q(2));
+  const jx = Math.min(Math.max(x0 + q(4 + wear * 8), x0), x1 - q(2));
   g.fillStyle(Material.recess, 0.85);
   g.fillRect(jx, q(10), q(2), T - q(24));
   g.fillStyle(Theme.groundDeep, 0.7);
@@ -934,7 +949,7 @@ function paintBulkheadFace(
   g: G,
   q: Q,
   T: number,
-  v: number,
+  wear: number,
   accent: number,
   insetL: number,
   insetR: number,
@@ -949,24 +964,24 @@ function paintBulkheadFace(
   g.strokeRect(left + q(1), top + q(1), T - left - right - q(2), T - top - bot - q(2));
 
   g.fillStyle(Theme.groundDeep, 1);
-  if (v === 0 || v === 2) {
+  if (wear === 0 || wear === 2) {
     const cx = Math.floor((left + T - right) / 2) - q(1);
-    g.fillRect(cx + (v === 2 ? q(2) : 0), top + q(2), q(3), T - top - bot - q(4));
+    g.fillRect(cx + (wear === 2 ? q(3) : -q(2)), top + q(2), q(3), T - top - bot - q(4));
   }
-  if (v === 1 || v === 2 || v === 3) {
-    g.fillRect(left + q(2), q(20 + (v === 3 ? 3 : 0)), T - left - right - q(4), q(3));
+  if (wear === 1 || wear === 2) {
+    g.fillRect(left + q(2), q(20 + (wear === 2 ? 4 : 0)), T - left - right - q(4), q(3));
   }
-  if (v === 3) {
-    g.fillRect(left + q(8), top + q(2), q(2), T - top - bot - q(4));
+  if (wear === 2) {
+    g.fillRect(left + q(6), top + q(2), q(2), T - top - bot - q(4));
   }
 
-  g.fillStyle(v === 1 ? Theme.tape : v === 3 ? accent : Theme.inkDim, 0.85);
-  g.fillRect(left + q(2), top + q(3), q(8), q(2));
-  g.fillRect(T - right - q(10), T - bot - q(6), q(8), q(2));
+  g.fillStyle(wear === 1 ? Theme.tape : wear === 2 ? accent : Theme.inkDim, 0.85);
+  g.fillRect(left + q(2 + wear), top + q(3), q(8), q(2));
+  g.fillRect(T - right - q(10 - wear), T - bot - q(6), q(8), q(2));
 
   g.fillStyle(Theme.panelEdge, 0.75);
   for (let i = 0; i < 4; i++) {
-    g.fillRect(left + q(4 + i * 7 + (v % 2)), top + q(4), q(2), q(2));
+    g.fillRect(left + q(4 + i * 7 + wear), top + q(4 + (wear % 2)), q(2), q(2));
   }
 }
 
@@ -974,7 +989,7 @@ function paintConduitFace(
   g: G,
   q: Q,
   T: number,
-  v: number,
+  wear: number,
   accent: number,
   insetL: number,
   insetR: number,
@@ -985,27 +1000,27 @@ function paintConduitFace(
   g.fillRect(left, q(9), T - left - right, T - q(22));
 
   for (let i = 0; i < 3; i++) {
-    const y = q(11 + i * 7 + (v % 3) - (v === 3 ? 1 : 0));
+    const y = q(11 + i * 7 + wear - (wear === 2 ? 1 : 0));
     if (y > T - q(16)) continue;
-    const wet = i === 1 || (v === 2 && i === 0);
+    const wet = i === wear || (wear === 2 && i === 0);
     g.fillStyle(wet ? mix(Theme.biolumDeep, accent, 0.3) : Theme.panelEdge, 0.95);
     g.fillRect(left, y, T - left - right, q(4));
     g.fillStyle(Theme.groundDeep, 0.55);
     g.fillRect(left, y + q(3), T - left - right, q(1));
     g.fillStyle(Theme.inkBright, wet ? 0.55 : 0.35);
-    g.fillRect(left + q(4 + i * 6 + v * 2), y + q(1), q(3), q(2));
+    g.fillRect(left + q(4 + i * 6 + wear * 3), y + q(1), q(3), q(2));
     g.fillStyle(Theme.panelEdge, 0.9);
-    g.fillRect(left + q(2 + ((i + v) % 3) * 8), y - q(1), q(4), q(6));
+    g.fillRect(left + q(2 + ((i + wear) % 3) * 8), y - q(1), q(4), q(6));
     if (wet) {
       g.fillStyle(Theme.biolumDeep, 0.45);
-      g.fillRect(left + q(8 + v * 2), y + q(4), q(1), q(3));
-      g.fillRect(T - right - q(10 + v), y + q(4), q(1), q(2));
+      g.fillRect(left + q(8 + wear * 2), y + q(4), q(1), q(3));
+      g.fillRect(T - right - q(10 + wear), y + q(4), q(1), q(2));
     }
   }
 
-  if (v % 2 === 1) {
+  if (wear !== 0) {
     g.fillStyle(mix(Theme.biolumDeep, Material.conduit, 0.4), 0.85);
-    const rx = Math.min(T - right - q(6), left + q(16 + (v === 3 ? -2 : 0)));
+    const rx = Math.min(T - right - q(6), left + q(14 + wear * 4));
     g.fillRect(rx, q(10), q(3), T - q(24));
   }
 }
