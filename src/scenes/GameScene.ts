@@ -921,7 +921,10 @@ export class GameScene extends Phaser.Scene {
       toggleHelp: (force) => this.toggleHelp(force),
       togglePages: (force) => this.togglePages(force),
       toggleLog: (force) => this.toggleLog(force),
-      toggleMinimap: () => this.minimap.toggle(),
+      toggleMinimap: () => {
+        this.minimap.toggle();
+        this.minimap.redraw(this.state);
+      },
       afterUiChrome: (opts) => {
         this.redrawTilesAndHud();
         if (opts?.syncItems) this.syncItems();

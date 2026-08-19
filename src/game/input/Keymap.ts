@@ -14,10 +14,10 @@ export type ChromeKey =
  */
 export function chromeFromKey(e: KeyboardEvent): ChromeKey | null {
   if (e.key === 'm' || e.key === 'M') return { kind: 'mute' };
+  if (e.key === 'n' || e.key === 'N') return { kind: 'toggle_minimap' };
   if (e.key === '?' || (e.key === '/' && e.shiftKey)) return { kind: 'toggle_help' };
   if (e.key === 'p' || e.key === 'P') return { kind: 'toggle_pages' };
   if (e.key === 'l' || e.key === 'L') return { kind: 'toggle_log' };
-  if (e.key === 'Tab') return { kind: 'toggle_minimap' };
   return null;
 }
 
