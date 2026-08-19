@@ -245,8 +245,14 @@ export interface ExtractionUplink {
 }
 
 export interface EquipSlots {
+  head: ItemKind | null;
+  suit: ItemKind | null;
+  hands: ItemKind | null;
   tool: ItemKind | null;
-  armor: ItemKind | null;
+  feet: ItemKind | null;
+  comm: ItemKind | null;
+  ring_l: ItemKind | null;
+  ring_r: ItemKind | null;
 }
 
 export interface GameState {

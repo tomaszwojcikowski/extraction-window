@@ -4,7 +4,7 @@ import { lore } from '../data/lore';
 import { applyPlayerDamage, enemyAttack } from './combat';
 import { pushLog } from './log';
 import { bfsPath } from './fov';
-import { addStatus, hasStatus, tickEnemyStatusEffects } from './status';
+import { addPlayerStatus, addStatus, hasStatus, tickEnemyStatusEffects } from './status';
 import { randInt } from './rng';
 import { livingAllyAt, tryEnemyMeleePreferPlayer } from './allyAi';
 import { inShadow } from './light';
@@ -601,7 +601,7 @@ export function moveEnemies(state: GameState): void {
               });
               addStatus(state.player, 'ion_burn', 3);
               addStatus(state.player, 'expose', 2);
-              addStatus(state.player, 'blind', 2);
+              addPlayerStatus(state, 'blind', 2);
               pushLog(state, 'LOG-STATUS-BLIND');
             }
             enemy.alive = false;

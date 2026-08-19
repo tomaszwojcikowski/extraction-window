@@ -3,9 +3,17 @@ import {
   ITEMS,
   INVENTORY_SLOTS,
   ARMOR_MAX_BONUS,
+  EQUIP_TAGS,
   type EquipSlotId,
   type ItemKind,
 } from '../data/items';
+import { EM_HIGH } from './emStress';
+import {
+  equipSlotsFor,
+  findWornSlot,
+  isItemWorn,
+  resolveEquipTarget,
+} from './equip';
 import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import type { SectorId } from '../data/encounters';
@@ -34,6 +42,11 @@ const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
   phaser: 'LOG-USE-PHASER-EQUIP',
   harness: 'LOG-USE-HARNESS',
   ablative_vest: 'LOG-USE-VEST',
+  field_comm: 'LOG-USE-COMM',
+  scan_band: 'LOG-USE-SCAN-BAND',
+  survey_visor: 'LOG-USE-VISOR',
+  grip_gloves: 'LOG-USE-GLOVES',
+  mag_boots: 'LOG-USE-BOOTS',
 };
 
 /** Unknown salvage resolves into whatever this depth of shelf actually stocks. */
@@ -46,7 +59,7 @@ function biomeIdTable(sectorId: SectorId): ItemKind[] {
   if (mid.includes(sectorId)) {
     return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe', 'phaser'];
   }
-  return ['med', 'energy', 'filter', 'plate', 'sealant', 'stim', 'mapper', 'phaser'];
+  return ['med', 'energy', 'filter', 'plate', 'sealant', 'stim', 'mapper', 'phaser', 'scan_band', 'survey_visor'];
 }
 
 const SALVAGE_FAIL = 0.18;
@@ -129,7 +142,7 @@ function applyArmorBonus(state: GameState, kind: ItemKind): void {
 function unequipSlot(state: GameState, slot: EquipSlotId): void {
   const prev = state.player.equip[slot];
   if (!prev) return;
-  if (slot === 'armor') clearArmorBonus(state, prev);
+  if (slot === 'suit') clearArmorBonus(state, prev);
   state.player.equip[slot] = null;
   pushLog(state, 'LOG-UNEQUIP');
 }
@@ -139,15 +152,27 @@ function unequipSlot(state: GameState, slot: EquipSlotId): void {
  * Use again on the worn piece to stow.
  */
 export function tryEquipItem(state: GameState, kind: ItemKind): void {
-  const slot = ITEMS[kind].equipSlot;
-  if (!slot) return;
-  if (state.player.equip[slot] === kind) {
-    unequipSlot(state, slot);
+  const slots = equipSlotsFor(kind);
+  if (slots.length === 0) return;
+  const wornSlot = findWornSlot(state, kind);
+  if (wornSlot) {
+    if (slots.length > 1) {
+      const emptyAlt = slots.find((s) => s !== wornSlot && !state.player.equip[s]);
+      if (emptyAlt) {
+        state.player.equip[emptyAlt] = kind;
+        const logId = EQUIP_LOG[kind];
+        if (logId) pushLog(state, logId);
+        return;
+      }
+    }
+    unequipSlot(state, wornSlot);
     return;
   }
+  const slot = resolveEquipTarget(state, kind);
+  if (!slot) return;
   unequipSlot(state, slot);
   state.player.equip[slot] = kind;
-  if (slot === 'armor') applyArmorBonus(state, kind);
+  if (slot === 'suit') applyArmorBonus(state, kind);
   const logId = EQUIP_LOG[kind];
   if (logId) pushLog(state, logId);
 }
@@ -174,7 +199,12 @@ function identifyUnknown(state: GameState): void {
     pushLog(state, 'LOG-USE-FAIL');
     return;
   }
-  const fail = hasSkill(state, 'scavenger') ? SALVAGE_FAIL_SCAV : SALVAGE_FAIL;
+  const failBase = hasSkill(state, 'scavenger') ? SALVAGE_FAIL_SCAV : SALVAGE_FAIL;
+  const bandBonus =
+    state.emStress >= EM_HIGH && isItemWorn(state, 'scan_band')
+      ? EQUIP_TAGS.scan_band.salvageFailReduction
+      : 0;
+  const fail = Math.max(0.04, failBase - bandBonus);
   if (state.rng() < fail) {
     state.salvageBacklash++;
     applyIdentifyBacklash(state);
@@ -195,8 +225,8 @@ export function useSelected(state: GameState): boolean {
   const slot = state.inventory[idx]!;
   const kind = slot.kind;
 
-  const equipSlot = ITEMS[kind].equipSlot;
-  if (equipSlot) {
+  const equipSlots = equipSlotsFor(kind);
+  if (equipSlots.length > 0) {
     tryEquipItem(state, kind);
     syncObjectiveFlags(state);
     return true;
@@ -310,6 +340,13 @@ export function useSelected(state: GameState): boolean {
       if (shadowed && state.rng() < 0.22) {
         addPlayerMarked(state, 3);
         pushLog(state, 'LOG-STATUS-MARKED');
+      }
+      if (
+        shadowed &&
+        isItemWorn(state, 'survey_visor') &&
+        EQUIP_TAGS.survey_visor.flareEmTax > 0
+      ) {
+        addEmStress(state, EQUIP_TAGS.survey_visor.flareEmTax, 'visor glare');
       }
       break;
     }

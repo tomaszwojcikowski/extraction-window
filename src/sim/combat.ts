@@ -1,6 +1,7 @@
 import { ENEMIES } from '../data/enemies';
 import { lore } from '../data/lore';
 import { ARMOR_DEF_BONUS, TOOL_ATK_BONUS, equipOnHitBleed, equipOnHitStun } from '../data/items';
+import { equippedSuit, equippedTool } from './equip';
 import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
 import { inShadow } from './light';
@@ -21,15 +22,15 @@ export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';
 
 export function toolAtkBonus(state: GameState): number {
-  const tool = state.player.equip.tool;
+  const tool = equippedTool(state);
   if (!tool) return 0;
   return TOOL_ATK_BONUS[tool] ?? 0;
 }
 
 export function armorDefBonus(state: GameState): number {
-  const armor = state.player.equip.armor;
-  if (!armor) return 0;
-  return ARMOR_DEF_BONUS[armor] ?? 0;
+  const suit = equippedSuit(state);
+  if (!suit) return 0;
+  return ARMOR_DEF_BONUS[suit] ?? 0;
 }
 
 /**
@@ -82,13 +83,13 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
   const name = lore(ENEMIES[enemy.kind].loreName);
   pushLog(state, 'LOG-HIT', formatCombatDetail(name, dmg, rem, enemy.maxHp));
   if (enemy.alive && enemy.hp > 0) {
-    const stunTurns = equipOnHitStun(state.player.equip.tool);
+    const stunTurns = equipOnHitStun(equippedTool(state));
     if (stunTurns > 0) {
       addStatus(enemy, 'stun', stunTurns);
       enemy.windup = 0;
       enemy.intent = undefined;
     }
-    const bleedTurns = equipOnHitBleed(state.player.equip.tool);
+    const bleedTurns = equipOnHitBleed(equippedTool(state));
     if (bleedTurns > 0) addStatus(enemy, 'bleed', bleedTurns);
   }
   if (enemy.hp <= 0) {

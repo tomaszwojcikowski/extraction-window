@@ -4,23 +4,44 @@ import { XP_NPC_AGENDA } from '../../data/progression';
 import { addItem, hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { gainXp } from '../progression';
+import { isItemWorn } from '../equip';
 import { allyAt, enemyAt, manhattan, npcAt } from '../spatial';
 import type { Action, Ally, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
+
+const COMM_HAIL_RANGE = 2;
+
+function commWorn(state: GameState): boolean {
+  return isItemWorn(state, 'field_comm');
+}
+
+function hailRange(state: GameState, forAgenda: boolean): number {
+  if (forAgenda && commWorn(state)) return COMM_HAIL_RANGE;
+  return 1;
+}
 
 function nearHailNpc(state: GameState): FieldNpc | null {
   let best: FieldNpc | null = null;
   let bestD = 99;
   for (const n of state.npcs) {
     const d = manhattan(state.player.x, state.player.y, n.x, n.y);
-    if (d > 1 || d >= bestD) continue;
-    // First hail, or open unpaid agenda
+    const maxR = n.talked && n.agendaOpen && !n.agendaDone ? hailRange(state, true) : 1;
+    if (d > maxR || d >= bestD) continue;
     if (!n.talked || (n.agendaOpen && !n.agendaDone)) {
       best = n;
       bestD = d;
     }
   }
   return best;
+}
+
+function npcWithOpenAgendaInRange(state: GameState): FieldNpc | null {
+  for (const n of state.npcs) {
+    if (!n.agendaOpen || n.agendaDone) continue;
+    const d = manhattan(state.player.x, state.player.y, n.x, n.y);
+    if (d <= hailRange(state, true)) return n;
+  }
+  return null;
 }
 
 function openNeighbor(state: GameState, ox: number, oy: number): Pos | null {
@@ -131,7 +152,6 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
       ok = true;
     }
   } else {
-    // archive_holo — no agenda
     pushLog(state, 'LOG-AGENDA-NONE');
     npc.agendaDone = true;
     return true;
@@ -206,12 +226,14 @@ export const npcMechanic: Mechanic = {
 
   contextHint(state: GameState): LoreId | null {
     if (nearHailNpc(state)) return 'UI-HINT-NPC';
+    if (commWorn(state) && npcWithOpenAgendaInRange(state)) {
+      return 'UI-HINT-AGENDA-COMM';
+    }
     return null;
   },
 
   autopilotHint(state: GameState): Action | null {
     if (state.player.hp < state.player.maxHp * 0.55) return null;
-    // Only first hail — ignore agenda crafts so WR stays stable
     for (const n of state.npcs) {
       if (n.talked) continue;
       const d = manhattan(state.player.x, state.player.y, n.x, n.y);

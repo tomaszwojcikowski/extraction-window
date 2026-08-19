@@ -41,7 +41,7 @@ describe('tickPlayerStatusEffects', () => {
     const st = combatArena();
     st.player.hp = 10;
     st.player.maxHp = 20;
-    st.player.equip.armor = 'ablative_vest';
+    st.player.equip.suit = 'ablative_vest';
     addStatus(st.player, 'bleed', 2);
     tickPlayerStatusEffects(st);
     expect(st.player.hp).toBe(9);

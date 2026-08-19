@@ -1,4 +1,6 @@
 import type { StatusId, StatusMap, GameState, Enemy } from './types';
+import { EQUIP_TAGS } from '../data/items';
+import { equippedSuit, isItemWorn } from './equip';
 import { killEnemy } from './death';
 import { pushLog } from './log';
 import { applyPlayerDamage } from './playerDamage';
@@ -6,6 +8,19 @@ import { applyPlayerDamage } from './playerDamage';
 export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: number): void {
   const cur = target.statuses[id] ?? 0;
   target.statuses[id] = Math.max(cur, turns);
+}
+
+/** Player status with loadout modifiers (visor softens blind/jam). */
+export function addPlayerStatus(state: GameState, id: StatusId, turns: number): void {
+  let t = turns;
+  if (
+    (id === 'blind' || id === 'jam') &&
+    isItemWorn(state, 'survey_visor') &&
+    EQUIP_TAGS.survey_visor.statusTurnReduction > 0
+  ) {
+    t = Math.max(1, t - EQUIP_TAGS.survey_visor.statusTurnReduction);
+  }
+  addStatus(state.player, id, t);
 }
 
 export function addPlayerMarked(state: GameState, turns: number): void {
@@ -27,7 +42,7 @@ export function tickStatuses(target: { statuses: StatusMap }): void {
 
 /** Bleed damage per tick — ablative vest softens player bleed. */
 export function playerBleedDamage(state: GameState): number {
-  return state.player.equip.armor === 'ablative_vest' ? 1 : 2;
+  return equippedSuit(state) === 'ablative_vest' ? 1 : 2;
 }
 
 /** Apply end-of-turn status damage/effects to the player. */

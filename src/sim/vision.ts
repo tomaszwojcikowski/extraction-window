@@ -1,5 +1,7 @@
 import { computeFov, playerFovRadius } from './fov';
 import { rebuildIllumination, tickLightSources } from './light';
+import { EQUIP_TAGS } from '../data/items';
+import { isItemWorn } from './equip';
 import { mechanicsModifyFov } from './mechanics';
 import { hasStatus } from './status';
 import { noticeVisibleBrands } from './brands';
@@ -9,6 +11,9 @@ export function visionRadius(state: GameState): number {
   let base =
     playerFovRadius(state.player.probeTurns) + state.paddMods.fovBonus;
   let r = mechanicsModifyFov(state, base);
+  if (isItemWorn(state, 'survey_visor')) {
+    r = Math.max(2, r - EQUIP_TAGS.survey_visor.fovCap);
+  }
   if (hasStatus(state.player, 'blind')) {
     const pen = 2;
     r = Math.max(2, r - pen);

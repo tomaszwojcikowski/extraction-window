@@ -36,6 +36,15 @@ export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
 export {
+  emptyEquipSlots,
+  equippedInSlot,
+  equippedSuit,
+  equippedTool,
+  findWornSlot,
+  isItemWorn,
+  EQUIP_SLOT_ORDER,
+} from './equip';
+export {
   findPhaserTarget,
   firePhaser,
   tryFirePhaser,

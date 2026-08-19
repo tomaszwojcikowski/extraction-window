@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGame, applyAction } from '../../src/sim';
+import { createGame, applyAction, emptyEquipSlots } from '../../src/sim';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
 import { hasItem } from '../../src/sim/inventory';
@@ -95,8 +95,10 @@ describe('contextHint coaching', () => {
     st.scriptedFired.tut_welcome = true;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
     st.player.hp = st.player.maxHp;
     st.player.energy = st.player.maxEnergy;
     st.player.armor = st.player.maxArmor;
@@ -117,8 +119,10 @@ describe('contextHint coaching', () => {
     st.objectives.hasRelayKey = false;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
     st.player.hp = st.player.maxHp;
     st.player.energy = st.player.maxEnergy;
     st.player.armor = st.player.maxArmor;
@@ -134,8 +138,10 @@ describe('contextHint coaching', () => {
     st.tutorialActive = false;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
     const a = makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y });
     const b = makeEnemy({ kind: 'mite', x: st.player.x - 1, y: st.player.y });
     st.enemies = [a, b];
@@ -151,8 +157,10 @@ describe('contextHint coaching', () => {
     st.tutorialActive = false;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
     st.player.hp = st.player.maxHp;
     st.player.energy = st.player.maxEnergy;
     st.player.armor = st.player.maxArmor;
@@ -186,8 +194,10 @@ describe('contextHint coaching', () => {
     st.tutorialActive = false;
     st.items = [];
     st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
-    st.inventory = st.inventory.filter((s) => !ITEMS[s.kind].equipSlot);
-    st.player.equip = { tool: null, armor: null };
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
     st.player.hp = st.player.maxHp;
     st.player.energy = st.player.maxEnergy;
     st.player.armor = st.player.maxArmor;

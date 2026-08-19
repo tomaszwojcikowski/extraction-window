@@ -1,6 +1,7 @@
 import type { LoreId } from '../../data/lore';
 import { ENEMIES } from '../../data/enemies';
 import { ITEMS, INVENTORY_SLOTS } from '../../data/items';
+import { equipSlotsFor, isItemWorn } from '../../sim/equip';
 import type { GameState } from '../../sim';
 import { incomingFlankSeats } from '../../sim/ai';
 import { flankPenalty } from '../../sim/combat';
@@ -159,9 +160,8 @@ export function contextHint(st: GameState): LoreId | null {
 
   // Unequipped wearables still in kit
   for (const slot of st.inventory) {
-    const eq = ITEMS[slot.kind].equipSlot;
-    if (!eq) continue;
-    if (st.player.equip[eq] !== slot.kind) return 'UI-HINT-EQUIP';
+    if (isItemWorn(st, slot.kind)) continue;
+    if (equipSlotsFor(slot.kind).length > 0) return 'UI-HINT-EQUIP';
   }
 
   const pillar = pillarCoachHint(st);

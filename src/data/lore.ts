@@ -36,6 +36,15 @@ export const LORE = {
   'UI-DOWNED': 'Downed',
   'UI-BUS-FAIL': 'Power fail',
   'UI-INV': 'Field kit',
+  'UI-LOADOUT': 'Worn loadout',
+  'UI-INV-BAG': 'kit bag',
+  'UI-EQUIP-HEAD': 'Head',
+  'UI-EQUIP-SUIT': 'Suit',
+  'UI-EQUIP-HANDS': 'Hands',
+  'UI-EQUIP-TOOL': 'Tool',
+  'UI-EQUIP-FEET': 'Feet',
+  'UI-EQUIP-COMM': 'Comm',
+  'UI-EQUIP-RING': 'Ring',
   'UI-LOG': 'Log',
   'UI-OBJECTIVE': 'Objective',
   'UI-HELP': 'Field manual',
@@ -173,6 +182,8 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
   'UI-HINT-QUEST': 'Optional site — follow the amber OPT line',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
+  'UI-HINT-AGENDA-COMM':
+    'Field comm worn — open agenda contact within two tiles · Enter / Space / >',
   'UI-TUT-MOVE': 'WASD move · . wait · lamp and Flare change who notices you',
   'UI-TUT-LIGHT':
     'LIT safer fights · SHADOW ambush risk — Flare (i → select → u) lights dark fights',
@@ -363,6 +374,21 @@ export const LORE = {
   'ITEM-SALVAGE': 'Salvage',
   'ITEM-SALVAGE-DESC':
     'u to scan — may become a kit item, or EM backlash and wake.',
+  'ITEM-COMM': 'Field Comm',
+  'ITEM-COMM-DESC':
+    'Wear on comm slot — hail open NPC agendas from two tiles away. Use again to stow.',
+  'ITEM-SCAN-BAND': 'Scan Band',
+  'ITEM-SCAN-BAND-DESC':
+    'Wear on either ring — at high EM, salvage scans fail less often. Use again to stow.',
+  'ITEM-VISOR': 'Survey Visor',
+  'ITEM-VISOR-DESC':
+    'Wear on head — blind/jam ticks −1; vision −1 tile; flaring from shadow adds EM. Stow with u.',
+  'ITEM-GLOVES': 'Grip Gloves',
+  'ITEM-GLOVES-DESC':
+    'Wear on hands — hazard tiles skip ion burn on step. Use again to stow.',
+  'ITEM-BOOTS': 'Mag Boots',
+  'ITEM-BOOTS-DESC':
+    'Wear on feet — brine/hazard Power tax −1; tripwire EM spike −1. Use again to stow.',
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
   'ENEMY-SPORE': 'Wash Spore',
@@ -472,6 +498,11 @@ export const LORE = {
   'LOG-USE-PHASER': 'Survey phaser — beam along the lane (−4 Power).',
   'LOG-USE-HARNESS': 'EVA harness equipped — shield capacity up.',
   'LOG-USE-VEST': 'Ablative vest equipped — Shield + DEF.',
+  'LOG-USE-COMM': 'Field comm online — agenda hail range extended.',
+  'LOG-USE-SCAN-BAND': 'Scan band worn — salvage steadies at high EM.',
+  'LOG-USE-VISOR': 'Survey visor mounted — blind/jam softened; vision capped.',
+  'LOG-USE-GLOVES': 'Grip gloves worn — hazard ion contact muted.',
+  'LOG-USE-BOOTS': 'Mag boots locked — brine and wire tax eased.',
   'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-SEALANT': 'Sealant Foam set — vent/hazard cleared.',

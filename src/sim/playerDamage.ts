@@ -1,4 +1,5 @@
 import { ARMOR_DEF_BONUS, equipIonReduction } from '../data/items';
+import { equippedSuit } from './equip';
 import type { LoreId } from '../data/lore';
 import { EM_HIGH } from './emStress';
 import { formatCombatDetail, pushLog } from './log';
@@ -11,15 +12,17 @@ const CRIT_SAVE_BASE = 8;
 export const KEEP_CALM_COOLDOWN = 8;
 export const KEEP_CALM_JAM = 2;
 
+import { addPlayerStatus } from './status';
+
 function grantStatus(target: { statuses: StatusMap }, id: StatusId, turns: number): void {
   const cur = target.statuses[id] ?? 0;
   target.statuses[id] = Math.max(cur, turns);
 }
 
 function armorDefBonus(state: GameState): number {
-  const armor = state.player.equip.armor;
-  if (!armor) return 0;
-  return ARMOR_DEF_BONUS[armor] ?? 0;
+  const suit = equippedSuit(state);
+  if (!suit) return 0;
+  return ARMOR_DEF_BONUS[suit] ?? 0;
 }
 
 /**
@@ -32,7 +35,7 @@ export function tryKeepCalm(state: GameState): void {
   if (state.keepCalmCooldown > 0) return;
   if (state.emStress < EM_HIGH) return;
   if (randInt(state.rng, 1, 100) <= state.emStress) {
-    grantStatus(state.player, 'jam', KEEP_CALM_JAM);
+    addPlayerStatus(state, 'jam', KEEP_CALM_JAM);
     state.keepCalmCooldown = KEEP_CALM_COOLDOWN;
     pushLog(state, 'LOG-KEEP-CALM-FAIL');
   }
@@ -58,7 +61,7 @@ export function applyPlayerDamage(
   let dmg = Math.max(0, amount);
   const filterOn = state.player.filterTurns > 0;
   const ionSkin = hasSkill(state, 'ion_skin');
-  if (type === 'ion') dmg = Math.max(1, dmg - equipIonReduction(state.player.equip.armor));
+  if (type === 'ion') dmg = Math.max(1, dmg - equipIonReduction(equippedSuit(state)));
   if (filterOn && (type === 'ion' || (ionSkin && type === 'kinetic'))) {
     dmg = Math.max(1, Math.ceil(dmg / 2));
   }

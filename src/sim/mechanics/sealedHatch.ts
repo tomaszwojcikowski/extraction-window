@@ -1,5 +1,5 @@
 import type { LoreId } from '../../data/lore';
-import { hasItem } from '../inventory';
+import { hasItem, addItem } from '../inventory';
 import { pushLog } from '../log';
 import type { Action, GameState, Pos, Tile } from '../types';
 import type { Mechanic } from './types';
@@ -25,10 +25,24 @@ export function isAdjacentSealed(state: GameState): boolean {
   return adjacentSealed(state) !== null;
 }
 
+function maybeSealedCacheDrop(state: GameState, x: number, y: number): void {
+  if (state.sectorIndex < 4) return;
+  if (state.rng() > 0.38) return;
+  const roll = state.rng();
+  const kind = roll < 0.55 ? 'field_comm' : roll < 0.85 ? 'scan_band' : 'survey_visor';
+  if (addItem(state, kind)) {
+    pushLog(state, 'LOG-SEALED-CACHE');
+  } else {
+    state.items.push({ id: state.nextEntityId++, kind, x, y });
+    pushLog(state, 'LOG-SEALED-CACHE');
+  }
+}
+
 /** Open a sealed hatch tile to floor. */
 export function openSealedTile(state: GameState, x: number, y: number, how: 'sealant' | 'pry'): void {
   state.tiles[y]![x] = { ...FLOOR };
   pushLog(state, how === 'sealant' ? 'LOG-SEALED-OPEN' : 'LOG-SEALED-PRY');
+  maybeSealedCacheDrop(state, x, y);
 }
 
 /** Sealant foam on an adjacent sealed hatch (inventory use path). */

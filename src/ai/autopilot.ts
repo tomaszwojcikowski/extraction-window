@@ -335,9 +335,9 @@ export function chooseAction(
     return { type: 'use' };
   }
   const vestIdx = state.inventory.findIndex((s) => s.kind === 'ablative_vest');
-  if (vestIdx >= 0 && state.player.equip.armor !== 'ablative_vest') {
+  if (vestIdx >= 0 && state.player.equip.suit !== 'ablative_vest') {
     if (
-      state.player.equip.armor !== 'harness' ||
+      state.player.equip.suit !== 'harness' ||
       state.player.hp < state.player.maxHp * 0.7
     ) {
       state.ui.selectedSlot = vestIdx;
@@ -345,8 +345,52 @@ export function chooseAction(
     }
   }
   const harnessIdx = state.inventory.findIndex((s) => s.kind === 'harness');
-  if (harnessIdx >= 0 && !state.player.equip.armor) {
+  if (harnessIdx >= 0 && !state.player.equip.suit) {
     state.ui.selectedSlot = harnessIdx;
+    return { type: 'use' };
+  }
+
+  const commIdx = state.inventory.findIndex((s) => s.kind === 'field_comm');
+  if (
+    commIdx >= 0 &&
+    !state.player.equip.comm &&
+    state.npcs.some((n) => n.agendaOpen && !n.agendaDone)
+  ) {
+    state.ui.selectedSlot = commIdx;
+    return { type: 'use' };
+  }
+  const bandIdx = state.inventory.findIndex((s) => s.kind === 'scan_band');
+  if (
+    bandIdx >= 0 &&
+    !state.player.equip.ring_l &&
+    !state.player.equip.ring_r &&
+    state.emStress >= EM_HIGH &&
+    state.inventory.some((s) => s.kind === 'salvage')
+  ) {
+    state.ui.selectedSlot = bandIdx;
+    return { type: 'use' };
+  }
+  const visorIdx = state.inventory.findIndex((s) => s.kind === 'survey_visor');
+  if (visorIdx >= 0 && !state.player.equip.head && state.sectorIndex >= 3) {
+    state.ui.selectedSlot = visorIdx;
+    return { type: 'use' };
+  }
+  const glovesIdx = state.inventory.findIndex((s) => s.kind === 'grip_gloves');
+  if (
+    glovesIdx >= 0 &&
+    !state.player.equip.hands &&
+    (state.sectorId === 'ash' || state.sectorId === 'duct' || state.sectorId === 'fissure')
+  ) {
+    state.ui.selectedSlot = glovesIdx;
+    return { type: 'use' };
+  }
+  const bootsIdx = state.inventory.findIndex((s) => s.kind === 'mag_boots');
+  if (
+    bootsIdx >= 0 &&
+    !state.player.equip.feet &&
+    (state.sectorId === 'brine' || state.sectorId === 'ash' || state.sectorId === 'fissure')
+  ) {
+    state.ui.selectedSlot = bootsIdx;
     return { type: 'use' };
   }
 

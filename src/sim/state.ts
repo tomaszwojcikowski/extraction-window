@@ -8,6 +8,7 @@ import { mulberry32 } from './rng';
 import type { GameState } from './types';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
+import { emptyEquipSlots } from './equip';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
 import { refreshVision } from './vision';
@@ -81,7 +82,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       filterTurns: 0,
       mapperTurns: 0,
       statuses: {},
-      equip: { tool: null, armor: null },
+      equip: emptyEquipSlots(),
     },
     inventory: [
       { kind: 'med', count: 7 },

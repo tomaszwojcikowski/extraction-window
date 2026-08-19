@@ -2,7 +2,7 @@
 
 > **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (WR band, lose-mix gates, playtest commands); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
-**Status (v1.0.0):** Waves 16–18 complete on main — ship tag, GameScene presenter extract (`TurnPresenter`, `FieldLighting`, `ActorSync`), autopilot stuck recovery. Latest held-out probe: **65.2% ±4.2** WR; stuck **~17%** of losses. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
+**Status (v1.1.0):** Waves 19–22 — ADOM-style paper doll loadout (head/suit/hands/tool/feet/comm/rings) + five new worn items. Prior v1.0.0: Waves 16–18 on main. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 

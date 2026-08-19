@@ -18,7 +18,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 | Exploration pressure | EM, wake/fauna, optional quests bill HP/kit/Power opportunity — not a turn timer |
 | Causal extract | Key → handshake → Lattice → pad; no shortcut, no fetch-quest padding |
 | Field light | Lamp / flare change notice, aggro, dart clarity — not tint |
-| Kit + pressure | 16 slots, tool + armor equip, consumables; scarcity forces improvisation |
+| Kit + pressure | 16-slot bag + worn loadout (head/suit/hands/tool/feet/comm/rings), consumables; scarcity forces improvisation |
 | In-run mastery | Levels 1–8 and forks, learned inside one run |
 | Headless truth | `sim/` owns rules; presentation may not invent them |
 
@@ -29,6 +29,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 | Unknown salvage as one gamble | Ship | Tech is opaque; scanning costs turns you owe the clocks. Shipped as tiers, later cut to a single kind — three fail rates taught nothing three times |
 | Scan scars at sustained EM-HIGH | Cut | Shipped, then cut: the body cost never surfaced anywhere the player could read it |
 | Sealed hatch kit payout | Ship | Rewards reading terrain over sprinting (Power/kit, not Window time) |
+| Wave 5 utility catch-all slot | Cut | No distinct pressure — replaced by named paper-doll slots (Wave 19+) filled only when each passes GEM |
 | Cross-run unlocks | Cut | Moves mastery out of the run |
 | Towns / shops | Cut | Turns scarcity into a shopping list |
 | Real-time physics / knockback | Cut | Breaks turn legibility and the oracle |

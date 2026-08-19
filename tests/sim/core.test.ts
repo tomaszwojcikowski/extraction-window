@@ -299,11 +299,11 @@ describe('equipment loadout', () => {
     const baseMax = st.player.maxArmor;
     st.ui.selectedSlot = 0;
     applyAction(st, { type: 'use' });
-    expect(st.player.equip.armor).toBe('harness');
+    expect(st.player.equip.suit).toBe('harness');
     expect(st.player.maxArmor).toBe(baseMax + 6);
     st.ui.selectedSlot = 1;
     applyAction(st, { type: 'use' });
-    expect(st.player.equip.armor).toBe('ablative_vest');
+    expect(st.player.equip.suit).toBe('ablative_vest');
     expect(st.player.maxArmor).toBe(baseMax + 4);
     expect(armorDefBonus(st)).toBe(1);
   });

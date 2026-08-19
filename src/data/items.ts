@@ -5,6 +5,7 @@ import type { LoreId } from './lore';
  * med heals, energy charges the bus, filter and sealant answer EM two
  * different ways, probe sees, mapper remembers, flare and
  * dart and plate fight, phaser lances a short lane, salvage gambles.
+ * Worn loadout pieces (suit, tool, comm, rings, …) stay in the kit bag when equipped.
  */
 export type ItemKind =
   | 'relay_key'
@@ -24,9 +25,22 @@ export type ItemKind =
   | 'dart'
   | 'sealant'
   | 'mapper'
-  | 'salvage';
+  | 'salvage'
+  | 'field_comm'
+  | 'scan_band'
+  | 'survey_visor'
+  | 'grip_gloves'
+  | 'mag_boots';
 
-export type EquipSlotId = 'tool' | 'armor';
+export type EquipSlotId =
+  | 'head'
+  | 'suit'
+  | 'hands'
+  | 'tool'
+  | 'feet'
+  | 'comm'
+  | 'ring_l'
+  | 'ring_r';
 
 export interface ItemDef {
   kind: ItemKind;
@@ -34,20 +48,48 @@ export interface ItemDef {
   loreDesc: LoreId;
   quest: boolean;
   stackable: boolean;
-  /** Worn loadout slot — use toggles equip / stow. */
+  /** Primary worn slot — use toggles equip / stow. */
   equipSlot?: EquipSlotId;
+  /** Alternate slots (e.g. rings) — first empty wins on equip. */
+  equipSlots?: EquipSlotId[];
 }
+
+export const EQUIP_SLOT_ORDER: EquipSlotId[] = [
+  'head',
+  'suit',
+  'hands',
+  'tool',
+  'feet',
+  'comm',
+  'ring_l',
+  'ring_r',
+];
+
+export const EQUIP_SLOT_LORE: Record<EquipSlotId, LoreId> = {
+  head: 'UI-EQUIP-HEAD',
+  suit: 'UI-EQUIP-SUIT',
+  hands: 'UI-EQUIP-HANDS',
+  tool: 'UI-EQUIP-TOOL',
+  feet: 'UI-EQUIP-FEET',
+  comm: 'UI-EQUIP-COMM',
+  ring_l: 'UI-EQUIP-RING',
+  ring_r: 'UI-EQUIP-RING',
+};
 
 /** Situational equip tags — worn gear reads as one line of consequence. */
 export const EQUIP_TAGS = {
   blade: { onHitBleed: 1 },
   pulse_baton: { onHitStun: 2 },
   ablative_vest: { bleedDamage: 1, ionDamageReduction: 1 },
+  scan_band: { salvageFailReduction: 0.06 },
+  survey_visor: { statusTurnReduction: 1, fovCap: 1, flareEmTax: 5 },
+  grip_gloves: { hazardIonSkip: true },
+  mag_boots: { hazardDrainReduction: 1, tripwireEmReduction: 1 },
 } as const;
 
 /** Ablative lattice blunts ion damage by a point while worn. */
-export function equipIonReduction(armor: ItemKind | null): number {
-  return armor === 'ablative_vest' ? EQUIP_TAGS.ablative_vest.ionDamageReduction : 0;
+export function equipIonReduction(suit: ItemKind | null): number {
+  return suit === 'ablative_vest' ? EQUIP_TAGS.ablative_vest.ionDamageReduction : 0;
 }
 
 export function equipOnHitBleed(tool: ItemKind | null): number {
@@ -154,7 +196,7 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     loreDesc: 'ITEM-HARNESS-DESC',
     quest: false,
     stackable: false,
-    equipSlot: 'armor',
+    equipSlot: 'suit',
   },
   ablative_vest: {
     kind: 'ablative_vest',
@@ -162,7 +204,7 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     loreDesc: 'ITEM-VEST-DESC',
     quest: false,
     stackable: false,
-    equipSlot: 'armor',
+    equipSlot: 'suit',
   },
   dart: {
     kind: 'dart',
@@ -192,15 +234,55 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     quest: false,
     stackable: true,
   },
+  field_comm: {
+    kind: 'field_comm',
+    loreName: 'ITEM-COMM',
+    loreDesc: 'ITEM-COMM-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'comm',
+  },
+  scan_band: {
+    kind: 'scan_band',
+    loreName: 'ITEM-SCAN-BAND',
+    loreDesc: 'ITEM-SCAN-BAND-DESC',
+    quest: false,
+    stackable: false,
+    equipSlots: ['ring_l', 'ring_r'],
+  },
+  survey_visor: {
+    kind: 'survey_visor',
+    loreName: 'ITEM-VISOR',
+    loreDesc: 'ITEM-VISOR-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'head',
+  },
+  grip_gloves: {
+    kind: 'grip_gloves',
+    loreName: 'ITEM-GLOVES',
+    loreDesc: 'ITEM-GLOVES-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'hands',
+  },
+  mag_boots: {
+    kind: 'mag_boots',
+    loreName: 'ITEM-BOOTS',
+    loreDesc: 'ITEM-BOOTS-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'feet',
+  },
 };
 
-/** Max armor granted while this armor piece is worn. */
+/** Max armor granted while this suit piece is worn. */
 export const ARMOR_MAX_BONUS: Partial<Record<ItemKind, number>> = {
   harness: 6,
   ablative_vest: 4,
 };
 
-/** Flat DEF while this armor is worn. */
+/** Flat DEF while this suit is worn. */
 export const ARMOR_DEF_BONUS: Partial<Record<ItemKind, number>> = {
   ablative_vest: 1,
 };
@@ -227,6 +309,16 @@ export function shortEquipName(kind: ItemKind | null): string {
       return 'eva';
     case 'ablative_vest':
       return 'vest';
+    case 'field_comm':
+      return 'comm';
+    case 'scan_band':
+      return 'band';
+    case 'survey_visor':
+      return 'visor';
+    case 'grip_gloves':
+      return 'gloves';
+    case 'mag_boots':
+      return 'boots';
     default:
       return kind;
   }

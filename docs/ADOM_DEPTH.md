@@ -37,7 +37,7 @@ flowchart TB
 | Terrain | hazard/vent/scrub + sealed hatch caches | Further traps / pools as needed |
 | NPC quests | Hail + ally | Wave 2: agendas |
 | Crafting | None | Wave 2: 2–3 field recipes |
-| Brands | Flat equip | Situational equip tags (Wave 1) |
+| Brands | Flat equip | Situational equip tags; paper doll loadout (Waves 19–22) |
 | Gods / alignment | Out | Doctrine tried and cut — see Wave 5 |
 | Weather | Deferred | Wave 3 ion fronts |
 
@@ -426,6 +426,53 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 | Unit tests | `autopilot.test.ts` |
 
 **Exit gate:** stuck share monitored on 500-seed probe after policy change.
+
+---
+
+## Wave 19 — Paper doll structure (done)
+
+| Ticket | Status |
+|--------|--------|
+| `EquipSlotId` — head, suit, hands, tool, feet, comm, ring_l, ring_r | Done |
+| Rename equip `armor` → `suit`; vitals `armor` stat unchanged | Done |
+| Helpers — `src/sim/equip.ts`, `isItemWorn`, `resolveEquipTarget` | Done |
+| Kit overlay — worn loadout column + bag list | Done |
+
+**Exit gate:** zero balance change from empty slots; band unchanged.
+
+---
+
+## Wave 20 — Comm slot (done)
+
+| Ticket | Status |
+|--------|--------|
+| `field_comm` → comm slot | Done |
+| NPC agenda hail range 2 tiles when comm worn | Done |
+| Optional midgame loot (sector tables + sealed cache) | Done |
+
+**GEM:** trades kit space for readable NPC agenda pressure before Power runs out.
+
+---
+
+## Wave 21 — Ring + head (done)
+
+| Ticket | Status |
+|--------|--------|
+| `scan_band` — lower salvage fail at EM-HIGH | Done |
+| `survey_visor` — blind/jam −1 tick; FOV −1; shadow-flare EM tax | Done |
+| Elite / deep loot tables | Done |
+
+---
+
+## Wave 22 — Hands + feet (done)
+
+| Ticket | Status |
+|--------|--------|
+| `grip_gloves` — hazard step skips ion burn | Done |
+| `mag_boots` — hazard/brine Power −1; tripwire EM −1 | Done |
+| Brine / duct / fissure loot bias | Done |
+
+**Tag:** `v1.1.0` when build + playtest green.
 
 ---
 
