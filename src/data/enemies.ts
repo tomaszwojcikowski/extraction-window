@@ -36,6 +36,13 @@ export type EnemyBehavior =
   | 'sentinel'
   | 'hunter';
 
+/**
+ * Per-kind silhouette override. When set, takes precedence over the behavior
+ * → shape fallback in silhouetteFor(). Use to give distinct body plans to
+ * enemies that share a behavior but look nothing alike (e.g. spore vs mite).
+ */
+export type SilhouetteOverride = 'scuttler' | 'crawler_body' | 'spore_body' | 'darter';
+
 export type EnemyBrand = 'flarebound' | 'warded' | 'shadowbound';
 
 /**
@@ -70,6 +77,8 @@ export interface EnemyDef {
   /** Named elite/boss field modifier and its deterministic recovery. */
   brand?: EnemyBrand;
   brandDrop?: ItemKind;
+  /** Override the behavior-based silhouette with a specific body plan. */
+  silhouette?: SilhouetteOverride;
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
@@ -98,6 +107,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 3,
     damageType: 'ion',
     lightPrefer: 'dark',
+    silhouette: 'spore_body',
   },
   wasp: {
     kind: 'wasp',
@@ -148,6 +158,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     behavior: 'guard',
     aggroRange: 7,
     damageType: 'kinetic',
+    silhouette: 'crawler_body',
   },
   sentinel: {
     kind: 'sentinel',

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { SectorId } from '../../data/encounters';
-import { ENEMIES, type EnemyKind } from '../../data/enemies';
+import { ENEMIES, type EnemyKind, type SilhouetteOverride } from '../../data/enemies';
 import { BIOME_FLOOR_TINT, Material, Theme } from '../theme';
 import type { WallStyle } from '../textures';
 import { mix, shade } from './color';
@@ -1593,6 +1593,8 @@ export function drawDeluxePlayer(g: G, T: number, frame: number): void {
  */
 type Silhouette =
   | 'scuttler'
+  | 'crawler_body'
+  | 'spore_body'
   | 'bloom'
   | 'darter'
   | 'crouched'
@@ -1605,8 +1607,13 @@ type Silhouette =
   | 'reacher'
   | 'aperture';
 
+// SilhouetteOverride values must be a strict subset of Silhouette — enforced here.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _overrideCheck: SilhouetteOverride extends Silhouette ? true : never = true;
+
 function silhouetteFor(kind: EnemyKind): Silhouette {
   const def = ENEMIES[kind];
+  if (def.silhouette) return def.silhouette as Silhouette;
   switch (def.behavior) {
     case 'wander':
       return 'scuttler';
@@ -1693,6 +1700,74 @@ function drawSilhouette(
       g.fillRect(q(8), q(31 + bob), q(5), q(4));
       g.fillRect(q(35), q(31 + bob), q(5), q(4));
       hostileEyes(g, q, 24, 30 + bob, 6, 3, ion);
+      break;
+    }
+    case 'crawler_body': {
+      // Wide armoured carapace + 8 thick legs — reads as bulk guard, not a nimble mite.
+      const stomp = frame === 1 ? 2 : frame === 2 ? -1 : 0;
+      g.fillStyle(deep, 1);
+      // 8 legs, pairs splayed wide across the full tile width.
+      for (let i = 0; i < 8; i++) {
+        const lx = 2 + i * 6;
+        const out = i === 0 || i === 7 ? 4 : i === 1 || i === 6 ? 2 : 0;
+        const alt = (i + frame) % 2 === 0 ? stomp : 0;
+        g.fillRect(q(lx), q(30 + bob + out), q(4), q(10 - alt));
+        g.fillRect(q(lx - 2), q(38 - alt + bob + out), q(8), q(3));
+        g.fillStyle(rim, 1);
+        g.fillRect(q(lx - 2), q(40 - alt + bob + out), q(8), q(1));
+        g.fillStyle(deep, 1);
+      }
+      // Wide flat carapace — heavier than scuttler.
+      g.fillStyle(rim, 1);
+      g.fillEllipse(q(24), q(31 + bob), q(44), q(18));
+      g.fillStyle(color, 1);
+      g.fillEllipse(q(24), q(30 + bob), q(36), q(12));
+      // Segmented ridge plates across the back.
+      g.fillStyle(lit, 1);
+      g.fillRect(q(10), q(26 + bob), q(8), q(3));
+      g.fillRect(q(20), q(25 + bob), q(8), q(3));
+      g.fillRect(q(30), q(26 + bob), q(8), q(3));
+      g.fillStyle(deep, 1);
+      g.fillRect(q(6), q(28 + bob), q(6), q(5));
+      g.fillRect(q(36), q(28 + bob), q(6), q(5));
+      // Two wide mandible blocks at the front.
+      g.fillStyle(rim, 1);
+      g.fillRect(q(10), q(33 + bob), q(5), q(4));
+      g.fillRect(q(33), q(33 + bob), q(5), q(4));
+      hostileEyes(g, q, 24, 28 + bob, 7, 4, ion);
+      break;
+    }
+    case 'spore_body': {
+      // Stationary disc with 3 upright filaments — reads as hazard flora, not a scuttler.
+      const sway = frame === 1 ? 1 : frame === 2 ? -1 : 0;
+      // Flat pad base — wide and low.
+      g.fillStyle(deep, 1);
+      g.fillEllipse(q(24), q(40 + bob), q(34), q(10));
+      g.fillStyle(color, 0.7);
+      g.fillEllipse(q(24), q(39 + bob), q(26), q(6));
+      // Biolum fringe dots around pad rim.
+      g.fillStyle(threat, 0.6);
+      for (let i = 0; i < 7; i++) {
+        const ang = (i / 7) * Math.PI;
+        g.fillRect(q(24 + Math.cos(ang) * 13 - 1), q(39 + bob + Math.sin(ang) * 2), q(2), q(2));
+      }
+      // Three upright filament stalks.
+      const stalks = [14, 24, 34] as const;
+      stalks.forEach((sx, si) => {
+        const lean = sway * (si === 0 ? -1 : si === 2 ? 1 : 0);
+        // Stalk shaft.
+        g.fillStyle(rim, 1);
+        g.fillRect(q(sx + lean - 1), q(14 + bob), q(3), q(26));
+        g.fillStyle(color, 0.9);
+        g.fillRect(q(sx + lean), q(15 + bob), q(1), q(24));
+        // Biolum tip globe.
+        g.fillStyle(deep, 1);
+        g.fillCircle(q(sx + lean), q(13 + bob), q(5));
+        g.fillStyle(threat, 1);
+        g.fillCircle(q(sx + lean), q(13 + bob), q(3));
+        g.fillStyle(Theme.arcWhite, 0.7 + frame * 0.1);
+        g.fillCircle(q(sx + lean), q(12 + bob), q(1));
+      });
       break;
     }
     case 'bloom': {
@@ -1996,7 +2071,7 @@ function drawSilhouette(
   }
 }
 
-const hoverShapes = new Set<Silhouette>(['darter', 'reacher', 'aperture', 'bloom', 'emitter']);
+const hoverShapes = new Set<Silhouette>(['darter', 'reacher', 'aperture', 'bloom', 'emitter', 'spore_body']);
 
 export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number): void {
   const q = actorBase(g, T);
