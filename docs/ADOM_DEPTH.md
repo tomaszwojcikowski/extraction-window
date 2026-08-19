@@ -106,7 +106,7 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
 | Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
-| `GameScene` shrink — extract remaining orchestration to presenters | **Pending (Wave 15)** |
+| `GameScene` shrink — extract remaining orchestration to presenters | **Partial** — `HudChrome.ts`, `ShearReadout.ts` (Wave 15) |
 | Oracle telemetry: peak EM, IDs used, stuck reason codes | Done |
 | Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
 | Room facts → optional text binds to what is actually in the room; `cohere` fails unbound and unreachable pages | Done |
@@ -365,43 +365,41 @@ Still out: first-contact ATK, Quiet, brace/shove.
 
 ---
 
-## Wave 14 — Copy coherence (next)
+## Wave 14 — Copy coherence (done)
 
-Sim rules are Power-only; player copy is not. This wave aligns lore, help, PADD, and float labels with what the sim actually does — no new mechanics.
+Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 
-| Ticket | Notes |
-|--------|-------|
-| Lore audit | Replace "Window and Power both kill you" with Power-only death + exploration pressure framing |
-| Help / drill / HUD | Drop Window bar references; Shear dial = pressure presentation, not a timer |
-| Stale rewards | Elite/boss "Window refund" strings → kit/XP; sealed hatch "+Window" → actual payout or cut dead `LOG-SEALED-CACHE` float |
-| Sector briefs | Fissure/approach copy: ion shear taxes **Power**, not "Window closes faster" |
-| `cohere` / grep gate | CI grep or cohere check: no "Window = turns" in player lore IDs post-pass |
+| Ticket | Status |
+|--------|--------|
+| Lore audit | Done — `src/data/lore.ts` Power-only voice |
+| Help / drill / HUD | Done — single Power clock + exploration pressure section |
+| Stale rewards | Done — elite/NPC/agenda copy; sealed cache float |
+| Sector briefs | Done — fissure/approach tax **Power** |
+| `cohere` / unit gate | Done — `loreClockGuard.ts` + `tests/data/loreClock.test.ts` |
 
-**Exit gate:** grep-clean player lore for clock lies; human 2-minute read — "what kills me?" has one answer (Power + hp).
-
----
-
-## Wave 15 — Presentation debt
-
-Finish Wave 4's remaining extraction and unpaid experiment human gates.
-
-| Ticket | Notes |
-|--------|-------|
-| `GameScene` shrink | Move remaining orchestration into presenters; scene stays host only |
-| Human feel gates | Experiment passes: Notice Impact weight, Shift-peek discoverability, shear dial leg read (see `docs/experiment/PASS4_QA.md`) |
-| Input polish | Two-step move cadence (if still desired) — only after human play says flow breaks |
-
-**Exit gate:** GameScene line count not growing; human checklist in PASS4_QA signed off.
+**Exit gate:** grep-clean player lore for clock lies — **met**.
 
 ---
 
-## Wave 16 — Ship tag
+## Wave 15 — Presentation debt (partial)
+
+| Ticket | Status |
+|--------|--------|
+| `GameScene` shrink — HUD chrome + shear readout | Done — `HudChrome.ts`, `ShearReadout.ts` |
+| Human feel gates | **Pending** — experiment PASS4_QA checklist still manual |
+| Input polish (two-step move) | **Deferred** — needs human play verdict |
+
+**Exit gate:** GameScene not growing; human checklist unsigned.
+
+---
+
+## Wave 16 — Ship tag (next)
 
 | Ticket | Notes |
 |--------|-------|
-| Stuck watch | If held-out stuck stays &gt;15% of losses, tune autopilot turn budget or gen reachability before tag |
-| Optional polish | Enemy display Meridian pass; opportunistic `sim/` comment cleanup |
-| Tag | `v1.0.0` when Wave 14 copy + Wave 15 human feel pass |
+| Stuck watch | Held-out probe ~18% stuck losses — monitor |
+| Human feel | PASS4_QA Impact weight, Shift-peek, shear dial read |
+| Tag | `v1.0.0` when Wave 15 human gates pass |
 
 **Exit gate:** browser title → drill → drop → extract without copy contradictions; `test:balance` green.
 

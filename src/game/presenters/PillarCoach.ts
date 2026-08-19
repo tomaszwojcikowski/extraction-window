@@ -10,7 +10,7 @@ function once(state: GameState, id: string): boolean {
 }
 
 /**
- * One-shot pillar coaching for the early shelf — dual clocks, extract spine,
+ * One-shot pillar coaching for the early shelf — Power clock, extract spine,
  * light. Flank stays on the hint line while peel is live (`contextHint`).
  * Call only when the hint line is free of combat / tile urgency
  * (DESIGN_PRINCIPLES §4: teach at the moment of need).
@@ -30,7 +30,7 @@ export function pillarCoachHint(st: GameState): LoreId | null {
 
   if (!st.scriptedFired.tut_welcome) return null;
 
-  // Window + Power go live the moment the drill hatch closes.
+  // Power drip goes live the moment the drill hatch closes.
   if (st.sectorIndex === 0 && st.turn <= 4 && once(st, 'teach_clocks')) {
     return 'UI-HINT-CLOCKS';
   }

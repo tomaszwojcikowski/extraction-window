@@ -100,7 +100,7 @@ class SheetScene extends Phaser.Scene {
         draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.55, Theme.tape, Theme.arc),
       },
       {
-        label: 'Window low',
+        label: 'Power low',
         draw: (g) => drawMeter(g, 10, 28, 120, 12, 0.28, Theme.arc, Theme.rust),
       },
       {

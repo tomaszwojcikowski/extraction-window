@@ -56,7 +56,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 
 ### Room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Window time, HP, kit — and each grants a different extraction favor. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
+Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Power opportunity, HP, kit — and each grants a different extraction favor. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
 
 ### Hostiles (early food chain)
 
@@ -109,7 +109,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 
 - Floor / rubble / scrub — open ground; scrub is sight-block only
 - Vent / hazard — ion stress drains bus (filter halves; sealant can neutralize underfoot)
-- **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; pays **+6 Window**. Never required for extract
+- **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; opens a side cache. Never required for extract
 - Hatch / beacon / shuttle — mission structures
 - Landmark — decorative room centrepiece; nothing to interact with
 

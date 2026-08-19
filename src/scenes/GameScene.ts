@@ -29,7 +29,6 @@ import {
   addCameraAtmosphere,
   createArcSweep,
   drawHintPlate,
-  drawHudStripChrome,
   type ArcSweep,
   type CameraAtmosphere,
 } from './atmosphere';
@@ -76,7 +75,9 @@ import {
   drawSkillPickOverlay,
   hideSkillPickOverlay,
 } from '../game/views/overlays/SkillPickOverlay';
-import { computeShearPressure, shearReadoutLabel, type ShearPressureState } from '../game/presenters/ShearPressure';
+import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
+import { drawHudChrome } from '../game/presenters/HudChrome';
+import { shearFlashMs, syncShearReadout } from '../game/presenters/ShearReadout';
 import {
   resetEphemeralFieldChrome,
   type EphemeralFieldChrome,
@@ -643,100 +644,49 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawChrome(shear = computeShearPressure(this.state)): void {
-    const w = this.scale.width;
-    const h = this.scale.height;
-    const biomeAccent = BIOME_FLOOR_TINT[this.state.sectorId];
-    drawHudStripChrome(this.topPanel, {
-      y: 0,
-      height: TOP,
-      width: w,
-      side: 'top',
-      corrosion: shear.value,
-      accent: shear.accent,
-      biomeAccent,
-      drainingLeg: shear.drainingLeg,
-      animFrame: this.animFrame,
-    });
-    const bottom = this.bottomInset();
-    this.bottomPanel.setVisible(this.logOpen);
-    if (this.logOpen) {
-      drawHudStripChrome(this.bottomPanel, {
-        y: h - bottom,
-        height: bottom - HUD_BOTTOM_DOCK,
-        width: w,
-        side: 'bottom',
-        corrosion: shear.value,
-        accent: shear.accent,
-        biomeAccent,
-      });
-    }
-    // Always-visible slim dock strip at the very bottom.
-    drawHudStripChrome(this.bottomDockPanel, {
-      y: h - HUD_BOTTOM_DOCK,
-      height: HUD_BOTTOM_DOCK,
-      width: w,
-      side: 'bottom',
-      corrosion: 0,
-      accent: shear.accent,
-      biomeAccent,
-    });
-    // Control micro-legend: right-aligned in the dock.
-    const legendStr = '? help  i kit  p PADD  n map  l log';
-    this.dockLegendText.setText(legendStr);
-    this.dockLegendText.setPosition(w - this.dockLegendText.width - 10, h - HUD_BOTTOM_DOCK + 3);
+    drawHudChrome(
+      {
+        topPanel: this.topPanel,
+        bottomPanel: this.bottomPanel,
+        bottomDockPanel: this.bottomDockPanel,
+        dockLegendText: this.dockLegendText,
+      },
+      {
+        screenW: this.scale.width,
+        screenH: this.scale.height,
+        topHeight: TOP,
+        bottomInset: this.bottomInset(),
+        logOpen: this.logOpen,
+        shear,
+        sectorId: this.state.sectorId,
+        biomeAccent: BIOME_FLOOR_TINT[this.state.sectorId],
+        animFrame: this.animFrame,
+      },
+    );
   }
 
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
-    if (this.lastShearState !== shear.state) {
-      const prev = this.lastShearState;
+    const sync = syncShearReadout(
+      { shearReadout: this.shearReadout, shearPlate: this.shearPlate },
+      {
+        screenW: this.scale.width,
+        shear,
+        prevState: this.lastShearState,
+        flashUntil: this.shearFlashUntil,
+        now: this.time.now,
+      },
+    );
+    if (sync.stateChanged) {
       this.lastShearState = shear.state;
-      // Juice budget ~200ms — never flash-show Calm. Breaching may linger slightly.
       if (shear.state !== 'Calm') {
-        this.shearFlashUntil = this.time.now + (shear.state === 'Breaching' ? 280 : 200);
+        this.shearFlashUntil = this.time.now + shearFlashMs(shear.state);
       } else {
         this.shearFlashUntil = 0;
       }
-      // Breaching-only climax: camera pressure beat + magnesium pinprick flash.
-      if (shear.state === 'Breaching' && prev !== 'Breaching') {
+      if (sync.enteredBreaching) {
         this.applyCameraCue(shearBreachCue());
         this.flashFx(Theme.arcWhite, 0.16);
       }
-    }
-    const flash = this.shearFlashUntil > this.time.now;
-    // Single loud channel: center readout for Charged+ only (no Calm, no badge).
-    if (shear.state === 'Calm') {
-      this.shearReadout.setVisible(false);
-      this.shearPlate.clear();
-      this.shearPlate.setVisible(false);
-    } else {
-      this.shearReadout.setVisible(true);
-      this.shearReadout.setText(shearReadoutLabel(shear));
-      this.shearReadout.setColor(
-        shear.state === 'Breaching'
-          ? ThemeCss.arcWhite
-          : shear.state === 'Arcing'
-            ? ThemeCss.arc
-            : ThemeCss.tape,
-      );
-      this.shearReadout.setAlpha(flash ? 1 : 0.9);
-      this.shearReadout.setPosition(this.scale.width / 2, 7);
-      const tw = Math.ceil(this.shearReadout.width);
-      const th = Math.ceil(this.shearReadout.height);
-      const accent =
-        shear.state === 'Breaching'
-          ? Theme.arcWhite
-          : shear.state === 'Arcing'
-            ? Theme.arc
-            : Theme.tape;
-      this.shearPlate.setVisible(true);
-      drawHintPlate(this.shearPlate, this.scale.width / 2, 7 + th / 2, tw, th, { originX: 0.5 });
-      // Retint the tab to shear accent (drawHintPlate uses tape by default).
-      const pw = Math.max(48, tw + 16);
-      const ph = Math.max(16, th + 8);
-      const px = Math.round(this.scale.width / 2 - pw / 2);
-      const py = Math.round(7 + th / 2 - ph / 2);
-      this.shearPlate.fillStyle(accent, 0.9);
-      this.shearPlate.fillRect(px + 1, py + 1, 3, ph - 3);
     }
     this.arcSweep?.setPressure(shear.value, shear.accent);
   }

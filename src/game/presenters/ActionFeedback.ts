@@ -327,7 +327,7 @@ export function collectActionFloatLabels(
         break;
       case 'LOG-SEALED-CACHE':
         next = {
-          label: log.detail ? `CACHE ${log.detail}` : '+6 Window',
+          label: log.detail ? `CACHE ${log.detail}` : 'CACHE OPEN',
           color: ThemeCss.safe,
         };
         break;

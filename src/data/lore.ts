@@ -6,9 +6,9 @@ export const LORE = {
   'UI-ORG': 'CSV HALCYON',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
-  'UI-BRIEF': 'Nav Lattice → drop skiff · Window and Power both kill you',
+  'UI-BRIEF': 'Nav Lattice → drop skiff · Power hits 0 and you lose',
   'UI-BRIEF-TUT':
-    'Drill first — Window and Power both kill you · then Key → beacon → Lattice → skiff',
+    'Drill first — Power drip paused here · then Key → beacon → Lattice → skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
@@ -41,7 +41,7 @@ export const LORE = {
   'UI-HELP': 'Field manual',
   'UI-HELP-TUT':
     'TRAINING BAY\n' +
-    'Reach the east hatch. Window and Power are paused here.\n' +
+    'Reach the east hatch. Power drip is paused here.\n' +
     '\n' +
     'WASD — move · . — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
@@ -59,9 +59,11 @@ export const LORE = {
     'n — minimap · p — PADD · l — mission log · ? — help · m — mute · Esc — close\n' +
     '1 / 2 — pick field skill when prompted\n' +
     '\n' +
-    'TWO CLOCKS (both can kill you)\n' +
-    'Window — turns left before the extract closes.\n' +
-    'Power — kit charge. Hazards, EM, and each turn drain it. Empty Power = lose.\n' +
+    'POWER CLOCK\n' +
+    'Power — kit charge. Sector drip, hazards, EM, and kit spends drain it. Empty Power = lose.\n' +
+    '\n' +
+    'EXPLORATION PRESSURE\n' +
+    'No turn timer — ion shear and fauna are the wake tax. Shear dial shows pressure, not a countdown.\n' +
     '\n' +
     'COMBAT\n' +
     'Walk into a hostile to hit it. Worn Survey Phaser: step toward a visible foe 2–3 tiles along that cardinal to fire a beam (−Power); adjacent is still melee.\n' +
@@ -88,7 +90,7 @@ export const LORE = {
     'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
-    'HP · Shield · Power · Window · XP\n' +
+    'HP · Shield · Power · XP\n' +
     'Risky / Desperate = two+ hostiles touching you (DEF already down).\n' +
     'Extract boxes (# filled) sit on the chip rail: Key → handshake → Lattice → pad.\n' +
     'Enhanced / Impaired / Downed / Kit full / Kit jammed are status chips.\n' +
@@ -134,7 +136,7 @@ export const LORE = {
     'SHADOW — ambush risk · LIT safer · Flare (i → select → u) lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
-    'Window = turns left · Power = kit charge — either hitting 0 ends the run',
+    'Power = kit charge — sector drip, hazards, and kit spends drain it. Empty Power = lose.',
   'UI-HINT-DOWNED':
     'Downed — u Field Hypo to stabilize, or step off the pack',
   'UI-HINT-EXTRACT':
@@ -231,7 +233,7 @@ export const LORE = {
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '⇢ Optional site',
   'OBJ-TUT-HATCH': '→ East hatch (learn notice, Power hazard, kit)',
-  'OBJ-TUT-BRIEF': 'Training — Window and Power paused until you leave',
+  'OBJ-TUT-BRIEF': 'Training — Power drip paused until you leave',
   'HAZ-BUS': 'Power critical',
   'UI-CODEX': 'PADD',
 
@@ -260,7 +262,7 @@ export const LORE = {
   'CODEX-BRINE':
     'Brine sample: pulse salts amplify hazard tiles; plasma filters buy minutes, not hours.',
   'CODEX-FISSURE':
-    'Fissure brief: ion shear widens cracks — Window closes faster on the skiff approach.',
+    'Fissure brief: ion shear widens cracks — Power drain spikes on the skiff approach.',
   'CODEX-VAULT':
     'Cache scrap: spare nav lattices were contingency for long-range array blackout events.',
   'CODEX-REEF':
@@ -268,7 +270,7 @@ export const LORE = {
   'CODEX-DUCT':
     'Conduit memo: abandoned power junctions still vent; duct drones patrol seal points.',
   'CODEX-APPROACH':
-    'Approach brief: Window pressure can block skiff lock — use a Power Cell first.',
+    'Approach brief: ion shear can block skiff lock — keep a Power Cell ready.',
   'CODEX-GENERIC': 'PADD fragment recovered — Halcyon survey hand, incomplete.',
   // Fact-bound pages — each may only claim what src/data/codex.ts requires of it.
   'CODEX-FACT-NEST-SWARM':
@@ -280,7 +282,7 @@ export const LORE = {
   'CODEX-FACT-TRIPWIRE':
     'Prior team strung wire across the approach. It still answers — and it tells the whole room.',
   'CODEX-FACT-SEALED':
-    'Sealed hatch: optional. Stand beside it — Sealant Foam (u) or equip Pulse Baton and Enter / Space / >. Opens a short cache (+Window).',
+    'Sealed hatch: optional. Stand beside it — Sealant Foam (u) or equip Pulse Baton and Enter / Space / >. Opens a side cache.',
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
@@ -292,7 +294,7 @@ export const LORE = {
   'CODEX-FACT-RUBBLE':
     'Collapse note: rubble reads as cover until it shifts. Prior hand lost a window to a wrong line.',
   'CODEX-HOLO':
-    'Archive holo: prior survey noted Splice Key wreckage inland — Window clock is the real enemy.',
+    'Archive holo: prior survey noted Splice Key wreckage inland — Power bleed is the real enemy.',
   'CODEX-ENSIGN':
     'Stranded ensign: escort protocol armed — temporary ally expires when Power fades.',
   'CODEX-TECH':
@@ -382,17 +384,17 @@ export const LORE = {
   'ENEMY-SERPENT-NOTE': 'Coils, then lunges one tile. Clear the ring or kill it.',
   'ENEMY-WRAITH-NOTE': 'Covers two tiles on the charge — stepping back will not break it.',
   'ENEMY-SENTINEL-NOTE': 'Arms overwatch on the tiles beside it — do not step in while it is locked.',
-  'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop and Window refund on kill.',
-  'ENEMY-BOSS-NOTE': 'Optional apex — strong kit drop and Window refund on kill.',
+  'ENEMY-ELITE-NOTE': 'Elite fauna — strong kit drop on kill.',
+  'ENEMY-BOSS-NOTE': 'Optional apex — strong kit drop on kill.',
   'BRAND-FLAREBOUND': 'FLAREBOUND — Flares hit harder and stun longer; drops a Flare on kill.',
   'BRAND-WARDED': 'WARDED — its ion hits are softer; drops a Shield Charge on kill.',
   'BRAND-SHADOWBOUND': 'SHADOWBOUND — +1 notice against you in shadow; drops a Field Array Pulse on kill.',
 
   // Logs
   'LOG-DROP':
-    'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Window or Power hits 0.',
+    'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Power hits 0.',
   'LOG-TUT-WELCOME':
-    'Drill bay — Window and Power paused. LIT/SHADOW changes who notices you; ion tiles drain Power. East hatch starts the real drop.',
+    'Drill bay — Power drip paused. LIT/SHADOW changes who notices you; ion tiles drain Power. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
     'Lamp stops at walls. Badge: LIT safer · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
@@ -400,7 +402,7 @@ export const LORE = {
   'LOG-TUT-WAKE':
     'Fauna notice your lamp and shadow footprint — Flare lights dark fights.',
   'LOG-TUT-DONE':
-    'Window and Power are ticking. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
+    'Power drip is live. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',
   'LOG-WAIT': 'Holding position.',
   'LOG-HIT': 'You strike',
@@ -412,7 +414,7 @@ export const LORE = {
   'LOG-PICKUP': 'Stowed in field kit.',
   'LOG-NPC-HAIL': 'Field contact hailed.',
   'LOG-NPC-SIGHT': 'Field contact nearby.',
-  'LOG-NPC-HOLO': 'Archive dump — Window refund.',
+  'LOG-NPC-HOLO': 'Archive dump — Power Cell recovered.',
   'LOG-NPC-ENSIGN': 'Ensign transfers kit scrap and escort protocol.',
   'LOG-NPC-TECH': 'Tech reboots a Halcyon probe for temporary assist.',
   'LOG-NPC-SURVEY': 'Survey contact shares bearings — optional site open.',
@@ -421,7 +423,7 @@ export const LORE = {
   'LOG-AGENDA-WANT-SEALANT': 'Tech wants Sealant Foam or a Filter — hail again when ready.',
   'LOG-AGENDA-WANT-SURVEY': 'Contact wants a Nav Ping — hail again when you have one.',
   'LOG-AGENDA-NONE': 'Contact has nothing further.',
-  'LOG-AGENDA-DONE': 'Contact repaid — Window refund.',
+  'LOG-AGENDA-DONE': 'Contact repaid — Power Cell spare.',
   'LOG-ALLY-UP': 'Ally online.',
   'LOG-ALLY-HIT': 'Ally strikes',
   'LOG-ALLY-KILL': 'Ally downs hostile',
@@ -435,8 +437,8 @@ export const LORE = {
   'LOG-INV-FULL': 'Field kit is full — use an item to free a slot.',
   'LOG-ELITE-CONTACT': 'Elite fauna nearby — strong drop if engaged.',
   'LOG-BOSS-TELE': 'Apex hostile telegraphs — heavy strike incoming.',
-  'LOG-BOSS-DOWN': 'Apex down — kit and Window refunded.',
-  'LOG-ELITE-DOWN': 'Elite down — salvage and Window refund.',
+  'LOG-BOSS-DOWN': 'Apex down — kit recovered.',
+  'LOG-ELITE-DOWN': 'Elite down — salvage recovered.',
   'LOG-USE-MED': 'Field Hypo used — HP restored.',
   'LOG-USE-ENERGY': 'Power Cell slotted — Power restored.',
   'LOG-USE-PROBE': 'Field Array Pulse active — +4 vision (not damage).',
@@ -541,7 +543,7 @@ export const LORE = {
   'LOG-SEC-VAULT':
     'Contingency Cache. Halcyon depot. Sentinels are site defense — EM-corrupted, still hostile.',
   'LOG-SEC-FISSURE':
-    'Shear Fissure. Ion shear opens the rock — Window closes faster; pad still inland.',
+    'Shear Fissure. Ion shear opens the rock — Power drain spikes; pad still inland.',
   'LOG-SEC-APPROACH':
     'Skiff Approach. Storm shear over the final choke — Drop Skiff Ridge ahead.',
   'LOG-SEC-RIDGE': 'Drop Skiff Ridge. Drop skiff pad ahead — Nav Lattice required for lock.',
@@ -583,8 +585,8 @@ export const LORE = {
   'LOG-PB-DESYNC': 'Skiff will not lock — use a Power Cell.',
   'LOG-EVT-AFTERGLOW':
     'Drop afterglow — EM spike. Sealant Foam helps clean residue.',
-  'LOG-EVT-APPROACH': 'Pad approach — Window shear pulses Power; keep a Power Cell for skiff lock.',
-  'LOG-EVT-SHEAR': 'Window shear pulse — Power drain on the approach.',
+  'LOG-EVT-APPROACH': 'Pad approach — ion shear pulses Power; keep a Power Cell for skiff lock.',
+  'LOG-EVT-SHEAR': 'Ion shear pulse — Power drain on the approach.',
   'LOG-ION-FRONT': 'Ion front forming — drains EM and Power; lit fauna track harder.',
   'LOG-ION-PULSE': 'Ion front pulse — +2 EM and -2 Power; Filter or Flare dampens it.',
   'LOG-ION-DAMPEN': 'Ion front pulse dampened by field kit.',
@@ -605,7 +607,7 @@ export const LORE = {
   'UI-EM-CRIT': 'EM critical',
   'UI-EM-WARN': 'EM warning',
   'UI-SKIFF-LOCK': 'Skiff lock',
-  'UI-CLOCKS-LIVE': 'Window and Power are live',
+  'UI-CLOCKS-LIVE': 'ION SHEAR ACTIVE',
   'UI-CLOCK-LOW': 'LOW',
   'UI-CLOCK-CRIT': 'CRITICAL',
   'UI-SKILL-PICK': 'Field skill',

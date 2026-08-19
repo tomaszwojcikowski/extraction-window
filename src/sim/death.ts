@@ -62,7 +62,7 @@ function tryDeathDrop(state: GameState, enemy: Enemy, bonusChance = 0): void {
   pushLog(state, 'LOG-LOOT-DROP', lore(ENEMIES[enemy.kind].loreName));
 }
 
-/** Player-credited kill: log, drops, XP, elite/boss storm refunds. */
+/** Player-credited kill: log, drops, XP, elite/boss kit drops. */
 export function killEnemy(state: GameState, enemy: Enemy): void {
   const windupInterrupt = enemy.windup > 0 || enemy.swellTurns >= 2;
   markEnemyDead(enemy);

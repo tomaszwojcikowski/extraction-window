@@ -191,7 +191,7 @@ export interface ObjectiveFlags {
 }
 
 /**
- * Three quests, each billing a different resource: salvage costs Window time,
+ * Three quests, each billing a different resource: salvage costs Power/EM opportunity,
  * purge costs HP, vent_seal costs kit.
  */
 export type RoomQuestKind = 'salvage' | 'purge' | 'vent_seal';

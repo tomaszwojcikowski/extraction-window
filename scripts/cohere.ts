@@ -11,6 +11,7 @@ import { ENEMIES, type EnemyKind } from '../src/data/enemies';
 import { ITEMS, type ItemKind } from '../src/data/items';
 import { ENEMY_DROPS } from '../src/data/drops';
 import { LORE, type LoreId } from '../src/data/lore';
+import { findClockLies } from '../src/data/loreClockGuard';
 import { SKILLS, type SkillId } from '../src/data/progression';
 
 /** Enough seeds to see the optional terrain/POI variants without a full suite. */
@@ -143,6 +144,10 @@ function main(): void {
   }
 
   checkFactCodex();
+
+  for (const hit of findClockLies(LORE)) {
+    fail(`player lore still teaches Window clock: ${hit}`);
+  }
 
   if (errors.length) {
     console.error('COHERE FAIL:');
