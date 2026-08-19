@@ -251,7 +251,7 @@ export class HudView {
     const skillLock = Boolean(st.skillPick);
     // Skill pick owns the line — Window/EM wait until the fork is chosen.
     if (skillLock) {
-      urgencyParts.push('▶ FIELD SKILL READY — press 1 or 2');
+      urgencyParts.push(`▶ ${lore('UI-SKILL-CHOOSE')}`);
     } else {
       // Power kill clock stays visible even when Shear owns the center — that
       // compression is how bus deaths used to arrive with no notice.
@@ -262,9 +262,9 @@ export class HudView {
         urgencyParts.push(`▸ ${lore('HAZ-STORM')}  (${windowLeft})`);
       }
       if (st.emStress >= EM_HIGH) {
-        urgencyParts.push(`▸ EM CRIT ${st.emStress}`);
+        urgencyParts.push(`▸ ${lore('UI-EM-CRIT')} ${st.emStress}`);
       } else if (st.emStress >= EM_WARN) {
-        urgencyParts.push(`▸ EM WARN ${st.emStress}`);
+        urgencyParts.push(`▸ ${lore('UI-EM-WARN')} ${st.emStress}`);
       }
     }
 

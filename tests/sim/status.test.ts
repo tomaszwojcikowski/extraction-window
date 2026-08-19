@@ -14,7 +14,7 @@ import { applyAction } from '../../src/sim';
 describe('statusHud', () => {
   it('formats active status badges including Wave-1 statuses', () => {
     expect(statusHud({ stun: 1, bleed: 3, ion_burn: 2, expose: 4 })).toBe(
-      'Stun 1 · Bleed 3 · P-Burn 2 · Exposed 4',
+      'Stun 1 · Bleed 3 · Burn 2 · Exposed 4',
     );
     expect(statusHud({ blind: 2, jam: 1, marked: 4 })).toBe(
       'Blind 2 · Jam 1 · Marked 4',

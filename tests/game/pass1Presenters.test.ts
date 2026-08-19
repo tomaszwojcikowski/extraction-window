@@ -115,16 +115,16 @@ describe('computeShearPressure', () => {
 });
 
 describe('shearReadoutLabel', () => {
-  it('names pressure and the leading clock, not a Shear resource', () => {
+  it('names the leading clock and severity, not a Shear resource', () => {
     const busLed = computeShearPressure(
       stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
     );
-    expect(shearReadoutLabel(busLed)).toBe(`PRESSURE  ${busLed.state.toUpperCase()}  ·  POWER`);
+    expect(shearReadoutLabel(busLed)).toBe('POWER  LOW');
 
     const windowLed = computeShearPressure(
       stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
     );
-    expect(shearReadoutLabel(windowLed)).toBe('PRESSURE  BREACHING  ·  WINDOW');
+    expect(shearReadoutLabel(windowLed)).toBe('WINDOW  CRITICAL');
   });
 });
 

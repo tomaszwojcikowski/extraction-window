@@ -42,7 +42,7 @@ export class TitleScene extends Phaser.Scene {
       })
       .setOrigin(0, 0.5);
     this.add
-      .text(width - 52, 48, 'WIN / PWR LIVE', {
+      .text(width - 52, 48, lore('UI-CLOCKS-LIVE'), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
         color: ThemeCss.tape,

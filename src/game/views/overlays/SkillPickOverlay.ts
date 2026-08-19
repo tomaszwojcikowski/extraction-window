@@ -79,7 +79,7 @@ export function drawSkillPickOverlay(
     lines.push(`${i + 1}  ${lore(def.loreName).toUpperCase()}  —  ${lore(def.loreDesc)}`);
   }
   lines.push('');
-  lines.push('Press 1 or 2 to choose. Movement locked until you pick.');
+  lines.push(lore('UI-SKILL-CHOOSE'));
 
   text.setWordWrapWidth(PANEL_W - 48);
   text.setPosition(x + 24, y + 28);

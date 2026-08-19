@@ -78,7 +78,7 @@ export function statusHud(statuses: StatusMap): string {
   if ((statuses.blind ?? 0) > 0) parts.push(`Blind ${statuses.blind}`);
   if ((statuses.jam ?? 0) > 0) parts.push(`Jam ${statuses.jam}`);
   if ((statuses.marked ?? 0) > 0) parts.push(`Marked ${statuses.marked}`);
-  if ((statuses.ion_burn ?? 0) > 0) parts.push(`P-Burn ${statuses.ion_burn}`);
+  if ((statuses.ion_burn ?? 0) > 0) parts.push(`Burn ${statuses.ion_burn}`);
   if ((statuses.expose ?? 0) > 0) parts.push(`Exposed ${statuses.expose}`);
   return parts.join(' · ');
 }

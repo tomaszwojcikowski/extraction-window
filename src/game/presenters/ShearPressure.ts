@@ -1,4 +1,5 @@
 import { STORM_TURNS } from '../../campaign/spine';
+import { lore } from '../../data/lore';
 import { Theme } from '../../scenes/theme';
 import type { GameState } from '../../sim/types';
 
@@ -44,11 +45,16 @@ export function computeShearPressure(st: GameState): ShearPressureSpec {
 }
 
 /**
- * Center chrome for Charged+ — names pressure and which clock is leading,
+ * Center chrome for Charged+ — names the leading clock and how bad it is,
  * without inventing a third resource called "Shear".
  */
 export function shearReadoutLabel(spec: ShearPressureSpec): string {
-  const leg =
-    spec.drainingLeg === 'storm' ? 'WINDOW' : spec.drainingLeg === 'bus' ? 'POWER' : 'BOTH';
-  return `PRESSURE  ${spec.state.toUpperCase()}  ·  ${leg}`;
+  const clocks =
+    spec.drainingLeg === 'storm'
+      ? lore('UI-WINDOW').toUpperCase()
+      : spec.drainingLeg === 'bus'
+        ? lore('UI-ENERGY').toUpperCase()
+        : `${lore('UI-WINDOW').toUpperCase()} + ${lore('UI-ENERGY').toUpperCase()}`;
+  const severity = spec.state === 'Breaching' ? lore('UI-CLOCK-CRIT') : lore('UI-CLOCK-LOW');
+  return `${clocks}  ${severity}`;
 }

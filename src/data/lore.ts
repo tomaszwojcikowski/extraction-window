@@ -13,7 +13,7 @@ export const LORE = {
   'UI-PRESS-START': 'ENTER — begin',
   'UI-SEED': 'Mission ID',
   'UI-SEED-HINT': '← → adjust · R randomize',
-  'UI-HP': 'Vitals',
+  'UI-HP': 'HP',
   'UI-ENERGY': 'Power',
   'UI-WINDOW': 'Window',
   'UI-BAR-HP': 'HP',
@@ -34,7 +34,7 @@ export const LORE = {
   'UI-STANCE-ENHANCED': 'Enhanced',
   'UI-STANCE-IMPAIRED': 'Impaired',
   'UI-ENCUMBERED': 'Kit full',
-  'UI-FRITZ': 'Fritz',
+  'UI-FRITZ': 'Kit jammed',
   'UI-DOWNED': 'Downed',
   'UI-BUS-FAIL': 'Power fail',
   'UI-INV': 'Field kit',
@@ -48,7 +48,7 @@ export const LORE = {
     'WASD — move · . — wait · step on kit to take it\n' +
     'i — open kit · u — use selected item\n' +
     '\n' +
-    'Yellow ion tiles drain Power — i→select Sealant Foam→u or take the south detour.\n' +
+    'Yellow ion tiles drain Power — i, select Sealant Foam, u or take the south detour.\n' +
     'LIT is safer to read · SHADOW risks ambush · Flare lights dark fights.\n' +
     '\n' +
     'Press ? after the hatch for the full manual.\n',
@@ -63,20 +63,20 @@ export const LORE = {
     '\n' +
     'TWO CLOCKS (both can kill you)\n' +
     'Window — turns left before the extract closes.\n' +
-    'Power — kit charge. Hazards, EM, and drip drain it. Empty Power = lose.\n' +
+    'Power — kit charge. Hazards, EM, and each turn drain it. Empty Power = lose.\n' +
     '\n' +
     'COMBAT\n' +
     'Walk into a hostile to hit it. Worn Survey Phaser: step toward a visible foe 2–3 tiles along that cardinal to fire a beam (−Power); adjacent is still melee.\n' +
-    'Normal hits are atk minus def.\n' +
-    'Impaired (d4) if jammed, blind, or the kit is full. Enhanced (d12) vs a stunned or exposed foe, on stim, or overcharge.\n' +
+    'Hits compare ATK to DEF.\n' +
+    'Impaired = weaker hits (jammed, blind, or kit full). Enhanced = stronger hits (stunned or exposed foe, stim, or overcharge).\n' +
     'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
-    'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
-    'Overflow past 0 HP: save or downed. Med stabilizes. Extra hits while downed shorten the clock.\n' +
+    'Two+ hostiles touching you drop DEF — fight in a doorway or break contact.\n' +
+    'Past 0 HP: you may stay up or go downed. Field Hypo (u) stabilizes. Extra hits while downed shorten the clock.\n' +
     'Painted side tiles show where a second hunter will touch you.\n' +
     '\n' +
     'LIGHT\n' +
     'LIT — safer read · SHADOW — ambush risk. Your lamp and flares change who notices you.\n' +
-    'Dark-prefer fauna bite harder in SHADOW — step to LIT. Flare lights a dark fight.\n' +
+    'Some fauna bite harder in SHADOW — step to LIT. Flare lights a dark fight.\n' +
     '\n' +
     'EXTRACT (pink marker)\n' +
     '1 Splice Key · 2 beacon · 3 Nav Lattice · 4 drop skiff\n' +
@@ -91,13 +91,13 @@ export const LORE = {
     '\n' +
     'HUD\n' +
     'HP · Shield · Power · Window · XP\n' +
-    'Risky / Desperate names peel on the meta line — peel already taxes DEF.\n' +
+    'Risky / Desperate = two+ hostiles touching you (DEF already down).\n' +
     'Extract boxes (# filled) sit on the chip rail: Key → handshake → Lattice → pad.\n' +
-    'Enhanced / Impaired / Downed / Kit full / Fritz are chips, not ATK soup.\n' +
+    'Enhanced / Impaired / Downed / Kit full / Kit jammed are status chips.\n' +
     'l — mission log (hidden by default; field chips carry the beat)\n' +
     'EM high — Sealant Foam flushes residue',
   'UI-KIT-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites grant extract rewards.',
   'UI-CONTROLS':
     'WASD move · . wait · i kit · n map · l log · ? help',
   'UI-MUTE-ON': 'Audio muted',
@@ -110,7 +110,7 @@ export const LORE = {
   'UI-HINT-HANDSHAKE': 'Handshake live — . to wait · stay on the beacon (2 turns)',
   'UI-HINT-SHUTTLE': 'Drop skiff — press Enter / Space / > while carrying the Nav Lattice',
   'UI-HINT-UPLINK-HOLD': 'Uplink live — . to hold · Power Cell skips · Flare blocks the wave',
-  'UI-HINT-DESYNC': 'Pattern desync — use a Power Cell before the skiff will lock',
+  'UI-HINT-DESYNC': 'Skiff will not lock — use a Power Cell',
   'UI-HINT-ITEM': 'Kit on this tile — step onto it to pick it up',
   'UI-HINT-ITEM-FULL': 'Kit full — free a slot (use an item), then step here again',
   'UI-HINT-AIM':
@@ -146,7 +146,7 @@ export const LORE = {
   'UI-HINT-FLANK-COMING':
     'Second hunter circling — doorway or break contact before they touch both sides',
   'UI-HINT-SKILL':
-    'Choose a field skill — press 1 or 2 (effects above; move locked until then)',
+    'Choose a field skill — press 1 or 2 (move locked until then)',
   'UI-HINT-TELE': 'Windup painted — leave those tiles or kill it',
   'UI-HINT-TELE-REACH': 'Two-tile windup — kill it or step fully clear of the painted tiles',
   'UI-HINT-TELE-OVERWATCH':
@@ -187,7 +187,7 @@ export const LORE = {
   'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
   'UI-PAGES-HINT': 'p or Esc — close',
   'UI-PAGES-PURPOSE':
-    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
+    'Kit keeps you alive. Key and Lattice unlock extract. Optional sites grant extract rewards.',
   'UI-ACTIVE': 'SYS',
   'UI-END-SUMMARY': 'Last objective · proficiency',
   'UI-QUEST-KEY': 'SPLICE KEY',
@@ -196,20 +196,20 @@ export const LORE = {
   'UI-HANDSHAKE': 'HANDSHAKE',
   'UI-UPLINK': 'UPLINK',
   'UI-WAVE-NEXT': 'WAVE NEXT',
-  'UI-PROBE': 'PROBE',
-  'UI-STIM': 'STIM',
+  'UI-PROBE': 'Vision',
+  'UI-STIM': 'Stim',
   'UI-PLATE': 'Shield',
   'UI-ARMOR': 'Shield',
   'UI-TOOL': 'Tool',
   'UI-EQUIP-ARMOR': 'Suit',
   'UI-ALLY-DRONE': 'DRONE LAMP',
   'UI-ALLY-ESCORT': 'ESCORT',
-  'UI-FILTER': 'FILTER',
+  'UI-FILTER': 'Filter',
   'UI-WORN': 'worn',
   'UI-WEARABLE': 'equip',
   'UI-WIN': 'EXTRACTION COMPLETE',
   'UI-WIN-BODY': 'Nav lock restored. Halcyon confirms drop skiff pickup.',
-  'UI-LOSE-HP': 'SURVEY OFFICER DOWN',
+  'UI-LOSE-HP': 'HP DEPLETED',
   'UI-LOSE-HP-BODY': 'HP reached 0 — fatal contact.',
   'UI-LOSE-ENERGY': 'POWER FAILURE',
   'UI-LOSE-ENERGY-BODY': 'Power stayed at 0 — kit charge gone.',
@@ -610,7 +610,14 @@ export const LORE = {
   'LOG-SALVAGE-BAD': 'Unstable salvage — EM backlash and local wake.',
   'LOG-PADD-MOD': 'PADD page alters field parameters.',
   'UI-EM': 'EM',
+  'UI-EM-CRIT': 'EM critical',
+  'UI-EM-WARN': 'EM warning',
+  'UI-SKIFF-LOCK': 'Skiff lock',
+  'UI-CLOCKS-LIVE': 'Window and Power are live',
+  'UI-CLOCK-LOW': 'LOW',
+  'UI-CLOCK-CRIT': 'CRITICAL',
   'UI-SKILL-PICK': 'Field skill',
+  'UI-SKILL-CHOOSE': 'Press 1 or 2 to choose. Movement locked until you pick.',
   'UI-LEVEL': 'LVL',
   'UI-XP': 'XP',
   'UI-MAPPER': 'NAV',
@@ -619,11 +626,11 @@ export const LORE = {
   'SKILL-SCAVENGER-NAME': 'Scavenger Eye',
   'SKILL-SCAVENGER-DESC': '+15% salvage drops; safer salvage scans.',
   'SKILL-OVERCHARGE-NAME': 'Overcharge Strike',
-  'SKILL-OVERCHARGE-DESC': 'While vitals ≤ 50%, strikes are Enhanced.',
+  'SKILL-OVERCHARGE-DESC': 'While HP ≤ 50%, strikes are Enhanced.',
   'SKILL-ION-SKIN-NAME': 'Plasma Skin',
-  'SKILL-ION-SKIN-DESC': 'Active filter also halves kinetic hits.',
+  'SKILL-ION-SKIN-DESC': 'Active filter also halves weapon hits.',
   'SKILL-DEEP-RESERVE-NAME': 'Deep Reserve',
-  'SKILL-DEEP-RESERVE-DESC': 'Skip one Power drip every 10 turns.',
+  'SKILL-DEEP-RESERVE-DESC': 'Skip one Power drain every 10 turns.',
   'SKILL-LAST-WINDOW-NAME': 'Last Window',
   'SKILL-LAST-WINDOW-DESC': '+1 DEF while Window ≤ 80.',
 } as const;

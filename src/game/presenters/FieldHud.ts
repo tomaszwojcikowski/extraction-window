@@ -38,11 +38,13 @@ export function formatHudMeta(state: GameState, opts?: { shearPrimary?: boolean 
     !downed && stance === 'normal'
       ? `${lore('UI-ATK')} ${state.player.atk}${atkBonus ? `+${atkBonus}` : ''}`
       : '';
-  const probe = state.player.probeTurns > 0 ? `Probe ${state.player.probeTurns}` : '';
-  const stim = state.player.stimTurns > 0 ? `Stim ${state.player.stimTurns}` : '';
-  const filter = state.player.filterTurns > 0 ? `Filter ${state.player.filterTurns}` : '';
+  const probe = state.player.probeTurns > 0 ? `${lore('UI-PROBE')} ${state.player.probeTurns}` : '';
+  const stim = state.player.stimTurns > 0 ? `${lore('UI-STIM')} ${state.player.stimTurns}` : '';
+  const filter = state.player.filterTurns > 0 ? `${lore('UI-FILTER')} ${state.player.filterTurns}` : '';
   const desync =
-    state.patternDesync > 0 ? `Desync ${state.patternDesync} · Power Cell` : '';
+    state.patternDesync > 0
+      ? `${lore('UI-SKIFF-LOCK')} ${state.patternDesync} · Power Cell`
+      : '';
   const allyRole = state.allies.some((a) => a.alive && a.kind === 'probe_drone')
     ? lore('UI-ALLY-DRONE')
     : state.allies.some(
@@ -58,8 +60,8 @@ export function formatHudMeta(state: GameState, opts?: { shearPrimary?: boolean 
   const statuses = statusHud(state.player.statuses);
   const statusLine = statuses ? ` · ${statuses}` : '';
   let emPart = '';
-  if (state.emStress >= EM_HIGH) emPart = ` · EM CRIT ${state.emStress}`;
-  else if (state.emStress >= EM_WARN) emPart = ` · EM WARN ${state.emStress}`;
+  if (state.emStress >= EM_HIGH) emPart = ` · ${lore('UI-EM-CRIT')} ${state.emStress}`;
+  else if (state.emStress >= EM_WARN) emPart = ` · ${lore('UI-EM-WARN')} ${state.emStress}`;
   else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${state.emStress}`;
   return [
     `${lore('UI-LEVEL')} ${state.level}`,
