@@ -12,9 +12,13 @@ export type HudChip = { label: string; fill: number };
 
 export function formatExtractBoxes(state: GameState): string {
   const boxes = extractTrack(state);
-  const pad = boxes.pad || Boolean(state.uplink?.active);
-  const cell = (on: boolean) => (on ? '#' : '-');
-  return `${lore('UI-EXTRACT')} ${cell(boxes.key)}${cell(boxes.handshake)}${cell(boxes.lattice)}${cell(pad)}`;
+  const keyCell = boxes.key ? '#' : '-';
+  let hsCell = '-';
+  if (boxes.handshake) hsCell = '#';
+  else if (state.handshake?.active) hsCell = state.handshake.progress >= 1 ? '1' : '·';
+  const latticeCell = boxes.lattice ? '#' : '-';
+  const padCell = boxes.pad || Boolean(state.uplink?.active) ? '#' : '-';
+  return `${lore('UI-EXTRACT')} ${keyCell}${hsCell}${latticeCell}${padCell}`;
 }
 
 export function formatPositionWord(state: GameState): string {
@@ -25,8 +29,12 @@ export function formatPositionWord(state: GameState): string {
 }
 
 /** Combat/EM + active timers. Position only when not Controlled. Stance chips own Enhanced/Impaired. */
-export function formatHudMeta(state: GameState, opts?: { shearPrimary?: boolean }): string {
+export function formatHudMeta(
+  state: GameState,
+  opts?: { shearPrimary?: boolean; suppressEmMeta?: boolean },
+): string {
   const shearPrimary = opts?.shearPrimary ?? false;
+  const suppressEmMeta = opts?.suppressEmMeta ?? false;
   const stance = playerHudStance(state);
   const atkBonus = toolAtkBonus(state);
   const defBonus = armorDefBonus(state);
@@ -60,9 +68,11 @@ export function formatHudMeta(state: GameState, opts?: { shearPrimary?: boolean 
   const statuses = statusHud(state.player.statuses);
   const statusLine = statuses ? ` · ${statuses}` : '';
   let emPart = '';
-  if (state.emStress >= EM_HIGH) emPart = ` · ${lore('UI-EM-CRIT')} ${state.emStress}`;
-  else if (state.emStress >= EM_WARN) emPart = ` · ${lore('UI-EM-WARN')} ${state.emStress}`;
-  else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${state.emStress}`;
+  if (!suppressEmMeta) {
+    if (state.emStress >= EM_HIGH) emPart = ` · ${lore('UI-EM-CRIT')} ${state.emStress}`;
+    else if (state.emStress >= EM_WARN) emPart = ` · ${lore('UI-EM-WARN')} ${state.emStress}`;
+    else if (!shearPrimary) emPart = ` · ${lore('UI-EM')} ${state.emStress}`;
+  }
   return [
     `${lore('UI-LEVEL')} ${state.level}`,
     posWord,
@@ -125,20 +135,8 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.extractFavor) {
     chips.push({ label: FAVOR_LABEL[state.extractFavor.kind], fill: Theme.safe });
   }
-  if (state.handshake?.active) {
-    chips.push({
-      label: `${lore('UI-HANDSHAKE')} ${state.handshake.progress}/2`,
-      fill: Theme.safe,
-    });
-  }
-  if (state.uplink?.active) {
-    chips.push({
-      label: `${lore('UI-UPLINK')} ${state.uplink.progress}/3`,
-      fill: Theme.arc,
-    });
-    if (state.uplink.progress === 1 && !state.uplink.repelled) {
-      chips.push({ label: lore('UI-WAVE-NEXT'), fill: Theme.rust });
-    }
+  if (state.uplink?.active && state.uplink.progress === 1 && !state.uplink.repelled) {
+    chips.push({ label: lore('UI-WAVE-NEXT'), fill: Theme.rust });
   }
   if (state.codexPages > 0) {
     chips.push({ label: `${lore('UI-CODEX')} ${state.codexPages}`, fill: Theme.inkMute });

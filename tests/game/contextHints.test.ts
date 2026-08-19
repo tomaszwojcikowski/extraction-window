@@ -7,10 +7,10 @@ import { ITEMS } from '../../src/data/items';
 import { makeEnemy } from '../sim/fixtures';
 
 describe('contextHint coaching', () => {
-  it('returns skill hint when skillPick is set', () => {
+  it('returns null when skillPick is set', () => {
     const st = createGame(42);
     st.skillPick = ['triage', 'deep_reserve'];
-    expect(contextHint(st)).toBe('UI-HINT-SKILL');
+    expect(contextHint(st)).toBeNull();
   });
 
   it('coaches med while downed before hatch or kit tips', () => {
@@ -204,7 +204,7 @@ describe('hint line resolver', () => {
   it('yields to a pending skill pick', () => {
     const st = createGame(42);
     st.skillPick = ['triage', 'deep_reserve'];
-    expect(resolveHintLine(st)).toBe('UI-HINT-SKILL');
+    expect(resolveHintLine(st)).toBeNull();
   });
 
   it('yields to a visible windup', () => {

@@ -94,6 +94,22 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
 
   const state = host.getState();
 
+  // Skill pick must work during move tweens — the overlay blocks everything else.
+  if (state.skillPick && state.skillPick.length > 0) {
+    if (e.key === '1' || e.key === '2') {
+      const idx = parseInt(e.key, 10) - 1;
+      const id = state.skillPick[idx];
+      if (id) {
+        applyAction(state, { type: 'pick_skill', id });
+        sfx.play('ui');
+        host.afterUiChrome();
+      }
+      return;
+    }
+    host.showSkillHint();
+    return;
+  }
+
   // While tweens run, accept mute + one-deep gameplay queue — drop other input.
   if (host.isAnimating()) {
     if (isModalInput(host, state)) return;
@@ -133,21 +149,6 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
       host.toggleLog(false);
       sfx.play('ui');
     }
-    return;
-  }
-
-  if (state.skillPick && state.skillPick.length > 0) {
-    if (e.key === '1' || e.key === '2') {
-      const idx = parseInt(e.key, 10) - 1;
-      const id = state.skillPick[idx];
-      if (id) {
-        applyAction(state, { type: 'pick_skill', id });
-        sfx.play('ui');
-        host.afterUiChrome();
-      }
-      return;
-    }
-    host.showSkillHint();
     return;
   }
 

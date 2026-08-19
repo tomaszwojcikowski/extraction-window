@@ -116,10 +116,10 @@ describe('mechanics registry', () => {
     expect(mechanicsTryAction(st, { type: 'exit' })).toBe(false);
   });
 
-  it('contextHint returns skill hint when skillPick is set', () => {
+  it('contextHint returns null when skillPick is set', () => {
     const st = createGame(42);
     st.skillPick = ['triage', 'deep_reserve'];
-    expect(contextHint(st)).toBe('UI-HINT-SKILL');
+    expect(contextHint(st)).toBeNull();
   });
 });
 

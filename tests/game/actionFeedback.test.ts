@@ -4,6 +4,7 @@ import { ThemeCss } from '../../src/scenes/theme';
 import {
   actionFloatLabels,
   causalActionFloats,
+  worldActionFloats,
   combatFeedbackTiles,
   DEATH_MS,
   enemyMoveStaggerMs,
@@ -147,6 +148,18 @@ describe('ActionFeedback', () => {
       expect.arrayContaining([{ label: 'STOWED · Salvage', color: ThemeCss.safe }]),
     );
     expect(causalActionFloats(logs, { vitals: { energyDelta: -2 } })).toHaveLength(3);
+  });
+
+  it('world floats only salient beats', () => {
+    const logs = [
+      { loreId: 'LOG-PICKUP' as const, detail: 'Salvage' },
+      { loreId: 'LOG-HAZARD' as const },
+      { loreId: 'LOG-DRAIN' as const, detail: 'Ion tile -2' },
+    ];
+    expect(causalActionFloats(logs, { vitals: { energyDelta: -2 } })).toHaveLength(3);
+    expect(worldActionFloats(logs, { vitals: { energyDelta: -2 } })).toEqual([
+      { label: 'STOWED · Salvage', color: ThemeCss.safe },
+    ]);
   });
 
   it('floats handshake and uplink progress', () => {

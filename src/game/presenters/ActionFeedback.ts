@@ -401,6 +401,22 @@ export function actionFloatLabels(
   return mergeCappedFloats(logs, all);
 }
 
+/** Labels that deserve a world-anchored float — rail carries the rest. */
+const WORLD_FLOAT_RES =
+  /^(STOWED|HP [+-]|FLANK|SHADOW \+1|OPEN · CLEAN HIT|CACHE OPEN|EXTRACT LOCK|SEALED OPEN|HANDSHAKE BROKEN|UPLINK BROKEN)|INCOMING|OVERWATCH|BEAM READY|PULSE RING|SWELL ·/;
+
+/** Subset of causal floats to paint over the player — salient beats only. */
+export function worldActionFloats(
+  logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+  opts?: {
+    vitals?: ActionFloatVitals;
+    flankBefore?: number;
+    flankAfter?: number;
+  },
+): ActionFloat[] {
+  return causalActionFloats(logs, opts).filter((l) => WORLD_FLOAT_RES.test(l.label));
+}
+
 /** Log floats plus flank edge, still capped. */
 export function causalActionFloats(
   logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,

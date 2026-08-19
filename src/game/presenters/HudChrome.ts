@@ -69,7 +69,7 @@ export function drawHudChrome(
     accent: shear.accent,
     biomeAccent,
   });
-  const legendStr = '? help  i kit  p PADD  n map  l log';
+  const legendStr = '? help  i kit  p PADD  n map  l log  m mute';
   refs.dockLegendText.setText(legendStr);
   refs.dockLegendText.setPosition(w - refs.dockLegendText.width - 10, h - HUD_BOTTOM_DOCK + 3);
 }

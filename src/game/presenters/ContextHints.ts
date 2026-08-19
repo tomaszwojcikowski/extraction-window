@@ -11,8 +11,8 @@ import { pillarCoachHint } from './PillarCoach';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
-  // Skill pick locks movement — never show vitals tips that ask for i/u/WASD
-  if (st.skillPick) return 'UI-HINT-SKILL';
+  // Skill pick overlay owns coaching — never stack a second hint channel.
+  if (st.skillPick) return null;
   if (st.ui.aimingDart) return 'UI-HINT-AIM';
 
   const fromMechanic = mechanicsContextHint(st);

@@ -99,4 +99,12 @@ describe('handleGameKey modal blocking', () => {
     expect(host.commitTurnAction).not.toHaveBeenCalled();
     expect(host.showSkillHint).toHaveBeenCalled();
   });
+
+  it('accepts skill pick during move tweens', () => {
+    const st = createGame(1);
+    st.skillPick = ['triage', 'deep_reserve'];
+    const host = stubHost({ state: st, isAnimating: () => true });
+    handleGameKey(key('1'), host);
+    expect(host.afterUiChrome).toHaveBeenCalled();
+  });
 });

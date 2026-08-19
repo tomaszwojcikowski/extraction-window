@@ -45,6 +45,7 @@ import {
 import { tileCastsPropShadow } from '../game/views/propShadows';
 import {
   causalActionFloats,
+  worldActionFloats,
   flashHit,
   flashScreen,
   playCombatContactJuice,
@@ -68,6 +69,7 @@ import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
 import { MinimapView } from '../game/views/MinimapView';
 import { drawThreatZones } from '../game/views/ThreatView';
+import { drawWakeTells } from '../game/presenters/WakeTells';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import {
@@ -1778,6 +1780,7 @@ export class GameScene extends Phaser.Scene {
         this.state.tutorialActive,
       );
     }
+    this.redrawTilesAndHud();
   }
 
   private togglePages(force?: boolean): void {
@@ -1796,6 +1799,7 @@ export class GameScene extends Phaser.Scene {
         this.state.codexPages,
       );
     }
+    this.redrawTilesAndHud();
   }
 
   private toggleLog(force?: boolean): void {
@@ -1879,8 +1883,9 @@ export class GameScene extends Phaser.Scene {
     const labels = causalActionFloats(logs, opts);
     this.recentSignals = pushSignalRail(this.recentSignals, labels);
     this.layoutBottomChrome();
+    const worldLabels = worldActionFloats(logs, opts);
     const base = this.worldXY(this.state.player.x, this.state.player.y);
-    labels.forEach((label, index) => {
+    worldLabels.forEach((label, index) => {
       const text = this.add
         .text(base.x, base.y - 16 - index * 14, label.label, {
           fontFamily: FONT_DATA,
@@ -2069,6 +2074,7 @@ export class GameScene extends Phaser.Scene {
     this.applyAllActorLighting(sources);
 
     drawThreatZones(this.threatGfx, st, this.animFrame);
+    drawWakeTells(this.threatGfx, st, st.player.x, st.player.y, this.animFrame, TILE_DRAW);
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
@@ -2239,6 +2245,7 @@ export class GameScene extends Phaser.Scene {
       tweens: this.tweens,
       windowPulseTween: pulseBox,
       shear,
+      biomeAccent: BIOME_FLOOR_TINT[st.sectorId],
     });
     this.windowPulseTween = pulseBox.current;
     this.layoutBottomChrome();

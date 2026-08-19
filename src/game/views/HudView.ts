@@ -178,7 +178,11 @@ export class HudView {
     );
     this.syncPowerPulse(278, barY, 180, barH, busHot, opts);
 
-    const meta = formatHudMeta(st, { shearPrimary });
+    const emHot = st.emStress >= EM_HIGH;
+    const skillLock = Boolean(st.skillPick);
+    const emUrgentStrip =
+      !skillLock && (emHot && !shearPrimary || st.emStress >= EM_WARN);
+    const meta = formatHudMeta(st, { shearPrimary, suppressEmMeta: emUrgentStrip });
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
     const sector = getSector(st.sectorIndex);
@@ -216,13 +220,9 @@ export class HudView {
       r.questText.setVisible(false);
     }
 
-    const emHot = st.emStress >= EM_HIGH;
     const urgencyParts: string[] = [];
-    const skillLock = Boolean(st.skillPick);
-    // Skill pick owns the line — Power/EM wait until the fork is chosen.
-    if (skillLock) {
-      urgencyParts.push(`▶ ${lore('UI-SKILL-CHOOSE')}`);
-    } else {
+    // Skill pick overlay owns the beat — no urgency strip duplicate.
+    if (!skillLock) {
       // Power kill clock stays visible even when Shear owns the center — that
       // compression is how bus deaths used to arrive with no notice.
       if (busHot) {
@@ -236,9 +236,8 @@ export class HudView {
     }
 
     const hasUrgency = urgencyParts.length > 0;
-    const urgencyColor = skillLock
-      ? ThemeCss.flag
-      : busHot || (emHot && !shearPrimary)
+    const urgencyColor =
+      busHot || (emHot && !shearPrimary)
         ? ThemeCss.rust
         : st.emStress >= EM_HIGH
           ? ThemeCss.rust
@@ -277,7 +276,7 @@ export class HudView {
     }
 
     const hint = resolveHintLine(st);
-    if (hint && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
+    if (hint && !skillLock && !st.ui.inventoryOpen && !opts.helpOpen && !opts.pagesOpen) {
       r.hintText.setVisible(true);
       r.hintText.setText(lore(hint));
       r.hintGfx.setVisible(true);

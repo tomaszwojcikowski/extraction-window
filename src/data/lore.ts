@@ -218,7 +218,7 @@ export const LORE = {
   'UI-LOSE-STUCK-BODY': 'No viable path left to extract.',
   'UI-RETRY': 'ENTER — new survey team · ESC — title',
   'UI-EMPTY-INV': 'Field kit empty',
-  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · Esc close',
+  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · Esc close kit',
 
   // Mission
   'LOC-VIRE7': 'Meridian Shelf',
