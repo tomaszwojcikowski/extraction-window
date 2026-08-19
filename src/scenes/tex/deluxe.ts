@@ -85,69 +85,43 @@ export function drawDeluxeFloor(g: G, T: number, sector: SectorId, variant: numb
   const family = floorFamily(sector);
   g.clear();
 
-  g.fillStyle(Theme.groundDeep, 1);
-  g.fillRect(0, 0, T, T);
-
   if (family === 'cliff') {
-    // Rock bedding with chip bevels — open shelf / cut stone.
+    // Continuous bedding — no perimeter grout, or every tile stamps a grid.
     const bed = mix(Material.rock, tint, 0.18);
     g.fillStyle(bed, 1);
-    g.fillRect(q(1), q(1), T - q(2), T - q(2));
-    g.fillStyle(mix(bed, Theme.groundDeep, 0.25), 1);
-    g.fillRect(q(2), q(2), T - q(4), T - q(5));
-    g.fillStyle(mix(bed, accent, 0.1), 1);
-    g.fillRect(q(3), q(3), T - q(6), T - q(8));
-    // Chip bevels — irregular lip, not a machined panel edge.
-    g.fillStyle(mix(Material.rock, Theme.inkMute, 0.3), 0.55);
-    g.fillRect(q(2), q(2), T - q(4), q(1));
+    g.fillRect(0, 0, T, T);
+    g.fillStyle(mix(bed, Theme.groundDeep, 0.16), 1);
+    g.fillRect(q(5), q(6), T - q(11), T - q(13));
+    // Broken chips, never a full lip.
     for (let i = 0; i < 5; i++) {
       const x = q(4 + ((i * 9 + variant * 5) % 36));
-      g.fillStyle(Material.recess, 0.7);
-      g.fillRect(x, q(2), q(3), q(2));
+      const y = q(3 + ((i * 5 + variant) % 6));
+      g.fillStyle(Material.recess, 0.45);
+      g.fillRect(x, y, q(3), q(2));
     }
-    g.fillStyle(Theme.groundDeep, 0.65);
-    g.fillRect(q(2), T - q(4), T - q(4), q(2));
-    g.fillRect(T - q(4), q(4), q(2), T - q(8));
   } else if (family === 'wet') {
-    // Dark throat under a skim — standing water / brine film.
-    g.fillStyle(Material.recess, 1);
-    g.fillRect(q(1), q(1), T - q(2), T - q(2));
     g.fillStyle(mix(Material.brine, tint, 0.35), 1);
-    g.fillRect(q(2), q(2), T - q(4), T - q(5));
-    g.fillStyle(mix(Material.brine, accent, 0.2), 0.85);
-    g.fillEllipse(q(4), q(5), T - q(8), T - q(12));
-    // Specular skim along the top edge.
-    g.fillStyle(Theme.inkBright, 0.22);
-    g.fillRect(q(6 + variant), q(4), q(14), q(1));
-    g.fillStyle(mix(accent, Theme.biolumDeep, 0.4), 0.35);
-    g.fillRect(q(2), T - q(5), T - q(4), q(2));
-    g.fillStyle(Theme.groundDeep, 0.5);
-    g.fillRect(T - q(4), q(4), q(2), T - q(8));
+    g.fillRect(0, 0, T, T);
+    g.fillStyle(mix(Material.brine, accent, 0.2), 0.7);
+    g.fillEllipse(q(3), q(4), T - q(6), T - q(10));
+    g.fillStyle(Theme.inkBright, 0.18);
+    g.fillRect(q(6 + variant), q(5), q(14), q(1));
   } else {
-    // Machined deck plate with panel inset seams.
     const deck = mix(Material.deck, tint, 0.2);
     g.fillStyle(deck, 1);
-    g.fillRect(q(1), q(1), T - q(2), T - q(2));
-    g.fillStyle(mix(deck, Theme.panel, 0.35), 1);
-    g.fillRect(q(3), q(3), T - q(6), T - q(7));
-    // Panel seams.
-    g.fillStyle(Theme.groundDeep, 0.55);
-    g.fillRect(q(3), T / 2 - q(1), T - q(6), q(1));
-    g.fillRect(T / 2 - q(1), q(3), q(1), T - q(7));
-    // Machined lip — bright top/left, deep bottom/right.
+    g.fillRect(0, 0, T, T);
+    g.fillStyle(mix(deck, Theme.panel, 0.28), 1);
+    g.fillRect(q(7), q(7), T - q(14), T - q(14));
+    // Plate joints stay inside the tile so they don't chain into a world grid.
+    g.fillStyle(Theme.groundDeep, 0.35);
+    g.fillRect(q(9), T / 2 - q(1), T - q(18), q(1));
+    g.fillRect(T / 2 - q(1), q(9), q(1), T - q(18));
     g.fillStyle(Theme.panelEdge, 0.55);
-    g.fillRect(q(2), q(2), T - q(4), q(1));
-    g.fillRect(q(2), q(3), q(1), T - q(7));
-    g.fillStyle(Theme.groundDeep, 0.7);
-    g.fillRect(q(2), T - q(4), T - q(4), q(2));
-    g.fillRect(T - q(4), q(4), q(2), T - q(8));
-    // Corner fastener pits.
-    g.fillStyle(Theme.panelEdge, 0.7);
     for (const [bx, by] of [
-      [5, 5],
-      [T - 9, 5],
-      [5, T - 11],
-      [T - 9, T - 11],
+      [10, 10],
+      [T - 14, 10],
+      [10, T - 16],
+      [T - 14, T - 16],
     ] as const) {
       g.fillRect(q(bx + (variant % 2)), q(by), q(2), q(2));
     }

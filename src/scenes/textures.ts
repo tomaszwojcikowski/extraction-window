@@ -14,9 +14,9 @@ import {
   drawPressureCrack,
 } from './tex/deluxe';
 
-/** Base pixel art size — rendered larger on screen for readability. */
+/** Base pixel art size — drawn 1:1 so floor seams don't scale up as a grout grid. */
 export const TILE = 48;
-export const TILE_DRAW = 46;
+export const TILE_DRAW = TILE;
 
 export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
 

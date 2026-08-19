@@ -284,9 +284,9 @@ class SheetScene extends Phaser.Scene {
 
       const dot = this.add.graphics().setPosition(ox, oy);
       dot.fillStyle(0xffffff, 1);
-      dot.fillCircle(st.player.x * TILE_DRAW + 23, st.player.y * TILE_DRAW + 23, 8);
+      dot.fillCircle(st.player.x * TILE_DRAW + TILE_DRAW / 2, st.player.y * TILE_DRAW + TILE_DRAW / 2, 8);
       dot.fillStyle(ENEMIES[kind].color, 1);
-      dot.fillCircle(enemy.x * TILE_DRAW + 23, enemy.y * TILE_DRAW + 23, 10);
+      dot.fillCircle(enemy.x * TILE_DRAW + TILE_DRAW / 2, enemy.y * TILE_DRAW + TILE_DRAW / 2, 10);
 
       this.add.text(ox + 8, oy + BLOCK * TILE_DRAW - 26, `${kind} -> ${enemy.intent}`, {
         fontFamily: 'monospace',

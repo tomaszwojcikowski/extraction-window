@@ -728,7 +728,7 @@ export class GameScene extends Phaser.Scene {
           y * TILE_DRAW + TILE_DRAW / 2,
           this.tileKey(kind, x, y),
         );
-        img.setDisplaySize(TILE_DRAW, TILE_DRAW);
+        img.setDisplaySize(TILE_DRAW + 1, TILE_DRAW + 1);
         // Raised props sit above the shadow layer so umbra falls under the art.
         if (tileCastsPropShadow(kind)) this.propLayer.add(img);
         else this.mapLayer.add(img);
