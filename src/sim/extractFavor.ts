@@ -11,7 +11,7 @@ const FAVOR_BY_QUEST = {
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
   storm_shelter: '+15 Window (extract)',
   hazard_pass: 'Skip 1 hazard',
-  pattern_fail_safe: 'Block 1 desync',
+  pattern_fail_safe: 'Block 1 skiff lock',
 };
 
 export function favorForQuest(state: GameState): ExtractFavorKind {

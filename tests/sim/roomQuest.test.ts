@@ -39,7 +39,7 @@ describe('room quest readability', () => {
       favor: FAVOR_LABEL.storm_shelter,
     });
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT — ${lore('UI-RQ-SALVAGE')} · pays ${FAVOR_LABEL.storm_shelter}`,
+      `OPT — ${lore('UI-RQ-SALVAGE')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.storm_shelter}`,
     );
   });
 
@@ -52,12 +52,12 @@ describe('room quest readability', () => {
     ]);
 
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT 1/2 — ${lore('UI-RQ-VENT-A')} · pays ${FAVOR_LABEL.pattern_fail_safe}`,
+      `OPT 1/2 — ${lore('UI-RQ-VENT-A')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
     );
 
     st.roomQuest.stepIndex = 1;
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT 2/2 — ${lore('UI-RQ-VENT-B')} · pays ${FAVOR_LABEL.pattern_fail_safe}`,
+      `OPT 2/2 — ${lore('UI-RQ-VENT-B')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
     );
   });
 
