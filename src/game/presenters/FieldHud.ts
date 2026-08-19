@@ -1,4 +1,5 @@
 import { lore } from '../../data/lore';
+import { SKILLS } from '../../data/progression';
 import { extractTrack, type GameState } from '../../sim';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
@@ -12,13 +13,25 @@ export type HudChip = { label: string; fill: number };
 
 export function formatExtractBoxes(state: GameState): string {
   const boxes = extractTrack(state);
-  const keyCell = boxes.key ? '#' : '-';
-  let hsCell = '-';
-  if (boxes.handshake) hsCell = '#';
-  else if (state.handshake?.active) hsCell = state.handshake.progress >= 1 ? '1' : '·';
-  const latticeCell = boxes.lattice ? '#' : '-';
-  const padCell = boxes.pad || Boolean(state.uplink?.active) ? '#' : '-';
-  return `${lore('UI-EXTRACT')} ${keyCell}${hsCell}${latticeCell}${padCell}`;
+  const mark = (label: string, done: boolean, progress = false) => {
+    if (done) return `${label}#`;
+    if (progress) return `${label}·`;
+    return `${label}-`;
+  };
+  const keyCell = mark('K', boxes.key);
+  let hsCell = mark('H', boxes.handshake);
+  if (!boxes.handshake && state.handshake?.active) {
+    hsCell = state.handshake.progress >= 1 ? 'H#' : 'H·';
+  }
+  const latticeCell = mark('L', boxes.lattice);
+  const padCell = mark('P', boxes.pad || Boolean(state.uplink?.active));
+  return `${lore('UI-EXTRACT')} ${keyCell} ${hsCell} ${latticeCell} ${padCell}`;
+}
+
+export function formatSkillsChip(state: GameState): string | null {
+  if (state.skills.length === 0) return null;
+  const names = state.skills.map((id) => lore(SKILLS[id].loreName));
+  return `${lore('UI-SKILL-CHIP')} ${names.join('/')}`;
 }
 
 export function formatPositionWord(state: GameState): string {
@@ -141,5 +154,7 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.codexPages > 0) {
     chips.push({ label: `${lore('UI-CODEX')} ${state.codexPages}`, fill: Theme.inkMute });
   }
+  const skills = formatSkillsChip(state);
+  if (skills) chips.push({ label: skills, fill: Theme.biolum });
   return chips;
 }

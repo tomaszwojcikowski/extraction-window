@@ -11,6 +11,7 @@ import { isItemWorn } from '../../../sim/equip';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
 import { phaserKitStatus } from '../../presenters/PhaserLanes';
+import { kitUseFeedback } from '../../presenters/KitFeedback';
 
 /** Draw the field kit / inventory modal into existing Phaser objects. */
 export function drawKitOverlay(
@@ -41,11 +42,11 @@ export function drawKitOverlay(
       ? [lore('UI-EMPTY-INV')]
       : st.inventory.map((slot, i) => {
           const mark = i === selectedSlot ? '▸' : ' ';
-          const num = i < 9 ? `${i + 1}` : ' ';
+          const num = i < 9 ? `${i + 1}` : i === 9 ? '0' : '·';
           const name = lore(ITEMS[slot.kind].loreName);
           const def = ITEMS[slot.kind];
           const wearable = def.equipSlot || def.equipSlots?.length;
-          const worn = isItemWorn(st, slot.kind) ? ' ·' : wearable ? ' ·' : '';
+          const worn = isItemWorn(st, slot.kind) ? ' ◆' : wearable ? ' ·' : '';
           return `${mark} ${num}  ${name}${worn}  ×${slot.count}`;
         });
 
@@ -77,7 +78,14 @@ export function drawKitOverlay(
   }
 
   sections.push(SEP);
-  sections.push(lore('UI-INV-HINT'));
+  const feedback = kitUseFeedback(st);
+  if (feedback) {
+    sections.push(`! ${feedback}`);
+    sections.push(SEP);
+  }
+  sections.push(
+    st.inventory.length > 10 ? lore('UI-INV-HINT-LONG') : lore('UI-INV-HINT'),
+  );
 
   const ph = Math.max(280, 120 + st.inventory.length * 22 + (detailLines.length > 0 ? 72 : 0));
   const px = (screenW - pw) / 2;

@@ -10,6 +10,7 @@ import {
   isQueueableAction,
   slotIndexFromKey,
 } from './Keymap';
+import { isKitUseFailure } from '../presenters/KitFeedback';
 
 /**
  * Scene-facing hooks for chrome / turn commit. InputController owns key
@@ -72,8 +73,13 @@ function handleInventoryKey(e: KeyboardEvent, host: InputHost, state: GameState)
       action.type === 'move')
   ) {
     host.clearQueuedAction();
+    const logBefore = action.type === 'use' ? state.log.length : 0;
     applyAction(state, action);
-    sfx.play('ui');
+    if (action.type === 'use' && isKitUseFailure(state, logBefore)) {
+      sfx.play('blocked');
+    } else {
+      sfx.play('ui');
+    }
     host.afterUiChrome({ syncItems: action.type === 'use' });
     return;
   }

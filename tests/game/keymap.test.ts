@@ -25,7 +25,7 @@ describe('Keymap', () => {
 
   it('maps slot digits and dismiss keys', () => {
     expect(slotIndexFromKey(key('3'))).toBe(2);
-    expect(slotIndexFromKey(key('0'))).toBeNull();
+    expect(slotIndexFromKey(key('0'))).toBe(9);
     expect(isHelpDismissKey(key('Escape'))).toBe(true);
     expect(isLogDismissKey(key('l'))).toBe(true);
     expect(isPagesDismissKey(key('P'))).toBe(true);

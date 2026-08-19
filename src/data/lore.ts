@@ -247,7 +247,10 @@ export const LORE = {
   'UI-LOSE-STUCK-BODY': 'No viable path left to extract.',
   'UI-RETRY': 'ENTER — new survey team · ESC — title',
   'UI-EMPTY-INV': 'Field kit empty',
-  'UI-INV-HINT': '↑↓ or 1–9 select · u use/equip (again to stow) · Esc close kit',
+  'UI-INV-HINT': '↑↓ or 1–9,0 select · u use/equip (again to stow) · Esc close kit',
+  'UI-INV-HINT-LONG': '↑↓ cycle · 1–9,0 pick slot 10 · u use/equip · Esc close kit',
+  'UI-DOCK-LEGEND': '? help · i kit · u use · . wait · Enter act · p PADD · n map · l log · m mute',
+  'UI-SKILL-CHIP': 'Skills',
 
   // Mission
   'LOC-VIRE7': 'Meridian Shelf',
@@ -537,6 +540,7 @@ export const LORE = {
   'LOG-AIM-CANCEL': 'Dart aim cancelled.',
   'LOG-USE-FAIL': 'No usable item selected.',
   'LOG-USE-EMPTY': 'Field kit empty — nothing to use.',
+  'LOG-USE-NO-POWER': 'Not enough Power for that kit action.',
   'LOG-USE-QUEST': 'Objective item — not consumable (carry to beacon / drop skiff).',
   'LOG-DRAIN': 'Power siphoned',
   'LOG-SPORE-BURST': 'Wash spore burst — power spike and burn.',

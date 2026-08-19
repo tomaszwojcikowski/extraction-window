@@ -221,6 +221,10 @@ export function useSelected(state: GameState): boolean {
     pushLog(state, 'LOG-USE-EMPTY');
     return false;
   }
+  const failNoPower = (): false => {
+    pushLog(state, 'LOG-USE-NO-POWER');
+    return false;
+  };
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
   const slot = state.inventory[idx]!;
   const kind = slot.kind;
@@ -267,14 +271,14 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-JAM-BLOCK');
         return false;
       }
-      if (!canSpendPower(state, KIT_POWER_COST.probe)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.probe)) return failNoPower();
       state.player.probeTurns = Math.max(state.player.probeTurns, 25);
       removeOne(state, kind);
       spendPower(state, KIT_POWER_COST.probe, 'LOG-USE-PROBE');
       addEmStress(state, 4, 'array pulse');
       break;
     case 'stim':
-      if (!canSpendPower(state, KIT_POWER_COST.stim)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.stim)) return failNoPower();
       state.player.stimTurns = Math.max(state.player.stimTurns, 15);
       removeOne(state, kind);
       spendPower(state, KIT_POWER_COST.stim, 'LOG-USE-STIM');
@@ -285,7 +289,7 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-PLATE');
       break;
     case 'filter': {
-      if (!canSpendPower(state, KIT_POWER_COST.filter)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.filter)) return failNoPower();
       const filterDur = 50 + state.paddMods.filterBonus;
       state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
@@ -302,8 +306,13 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
-      if (!canSpendPower(state, Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction')))) {
-        return false;
+      if (
+        !canSpendPower(
+          state,
+          Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction')),
+        )
+      ) {
+        return failNoPower();
       }
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);

@@ -357,6 +357,9 @@ export function collectActionFloatLabels(
       case 'LOG-USE-FAIL':
         next = { label: 'SELECT AN ITEM', color: ThemeCss.inkDim };
         break;
+      case 'LOG-USE-NO-POWER':
+        next = { label: 'NOT ENOUGH POWER', color: ThemeCss.tape };
+        break;
       case 'LOG-JAM-BLOCK':
         next = { label: 'JAMMED · VISION', color: ThemeCss.rust };
         break;
@@ -714,6 +717,7 @@ export function playActionSfx(
     has('LOG-NEED-CORE') ||
     has('LOG-USE-EMPTY') ||
     has('LOG-USE-FAIL') ||
+    has('LOG-USE-NO-POWER') ||
     has('LOG-JAM-BLOCK')
   ) {
     sfx.play('blocked');
