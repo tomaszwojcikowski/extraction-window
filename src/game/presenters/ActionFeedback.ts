@@ -229,6 +229,12 @@ export function collectActionFloatLabels(
       case 'LOG-USE-DART':
         next = { label: 'DART · EXPOSE', color: ThemeCss.flag };
         break;
+      case 'LOG-USE-PHASER':
+        next = { label: 'PHASER · BEAM', color: ThemeCss.arcWhite };
+        break;
+      case 'LOG-USE-PHASER-EQUIP':
+        next = { label: 'PHASER EQUIPPED', color: ThemeCss.arcWhite };
+        break;
       case 'LOG-SALVAGE-ID':
         next = {
           label: log.detail ? `SCANNED · ${log.detail}` : 'SCANNED',
@@ -444,6 +450,27 @@ export function emitActionLights(
     }
   }
 
+  if (has('LOG-USE-PHASER')) {
+    lights.addFxLight({
+      x: player.x,
+      y: player.y,
+      radius: 2.2,
+      color: LightTemp.pattern,
+      intensity: 0.85,
+      life: 1,
+    });
+    for (const t of hitTiles) {
+      lights.addFxLight({
+        x: t.x,
+        y: t.y,
+        radius: 2.4,
+        color: LightTemp.pattern,
+        intensity: 1,
+        life: 1,
+      });
+    }
+  }
+
   if (has('LOG-NPC-HAIL') || has('LOG-ALLY-UP') || has('LOG-NPC-SIGHT')) {
     lights.addFxLight({
       x: player.x,
@@ -604,6 +631,7 @@ export function playActionSfx(
     has('LOG-USE-FILTER') ||
     has('LOG-USE-BLADE') ||
     has('LOG-USE-BATON') ||
+    has('LOG-USE-PHASER-EQUIP') ||
     has('LOG-USE-HARNESS') ||
     has('LOG-USE-VEST') ||
     has('LOG-UNEQUIP') ||
@@ -738,6 +766,7 @@ export function presentActionFeedback(opts: {
   mapReloaded: boolean;
   playerMoved: boolean;
   enemyMoved: boolean;
+  hitTiles: { x: number; y: number }[];
   fromEnemies: Map<number, { x: number; y: number }>;
   fromAllies: Map<number, { x: number; y: number }>;
   fromNpcs: Map<number, { x: number; y: number }>;
@@ -799,6 +828,7 @@ export function presentActionFeedback(opts: {
         id === 'LOG-USE-FLARE' ||
         id === 'LOG-SPORE-BURST' ||
         id === 'LOG-TELE-BEAM' ||
+        id === 'LOG-USE-PHASER' ||
         id === 'LOG-TELE-OVERWATCH',
     );
     if (flareOrBurst) flash(Theme.biolum, 0.22);
@@ -832,6 +862,7 @@ export function presentActionFeedback(opts: {
     mapReloaded,
     playerMoved,
     enemyMoved: enemyMoved || allyMoved || npcMoved,
+    hitTiles,
     fromEnemies,
     fromAllies,
     fromNpcs,
@@ -844,6 +875,8 @@ export const ENEMY_STAGGER_MS = 22;
 export const ENEMY_LIFT_PX = 2;
 export const COMBAT_BUMP_MS = 65;
 export const COMBAT_BUMP_PX = 7;
+/** Short cardinal lance — long enough to read, short enough for corridor cadence. */
+export const PHASER_BEAM_MS = 180;
 
 /** Stagger delay for the nth moving hostile this turn (0-based). */
 export function enemyMoveStaggerMs(index: number): number {
@@ -874,6 +907,63 @@ export function bumpAttack(
     duration: COMBAT_BUMP_MS,
     yoyo: true,
     ease: 'Back.easeOut',
+  });
+}
+
+/** Phaser.BlendModes.ADD — numeric so ActionFeedback stays type-only vs Phaser in unit tests. */
+const BLEND_ADD = 1;
+
+/**
+ * Draw a 2–3 tile ion lance from the surveyor to the impact tile.
+ * Fire-and-forget — callers wait `PHASER_BEAM_MS` if they need the window.
+ */
+export function playPhaserBeam(
+  tweens: Phaser.Tweens.TweenManager,
+  layer: Phaser.GameObjects.Container,
+  worldXY: (gx: number, gy: number) => { x: number; y: number },
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): void {
+  const a = worldXY(from.x, from.y);
+  const b = worldXY(to.x, to.y);
+  const g = layer.scene.add.graphics();
+  g.setBlendMode(BLEND_ADD);
+  layer.add(g);
+
+  const grow = PHASER_BEAM_MS * 0.55;
+  const fade = PHASER_BEAM_MS - grow;
+  const proxy = { t: 0 };
+  tweens.add({
+    targets: proxy,
+    t: 1,
+    duration: grow,
+    ease: 'Cubic.easeOut',
+    onUpdate: () => {
+      if (!g.active) return;
+      const x = a.x + (b.x - a.x) * proxy.t;
+      const y = a.y + (b.y - a.y) * proxy.t;
+      g.clear();
+      g.lineStyle(8, Theme.arcWhite, 0.28);
+      g.lineBetween(a.x, a.y, x, y);
+      g.lineStyle(3, 0xffffff, 0.95);
+      g.lineBetween(a.x, a.y, x, y);
+      g.fillStyle(Theme.arcWhite, 0.95);
+      g.fillCircle(x, y, 3 + proxy.t * 4);
+      g.fillStyle(0xffffff, 0.85);
+      g.fillCircle(x, y, 1.5);
+    },
+    onComplete: () => {
+      if (!g.active) return;
+      tweens.add({
+        targets: g,
+        alpha: 0,
+        duration: fade,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
+          if (g.active) g.destroy();
+        },
+      });
+    },
   });
 }
 

@@ -4,7 +4,7 @@ import type { LoreId } from './lore';
  * One clear tool per job. Every kit item owns a job no other item does:
  * med heals, energy charges the bus, filter and sealant answer EM two
  * different ways, probe sees, mapper remembers, flare and
- * dart and plate fight, salvage gambles.
+ * dart and plate fight, phaser lances a short lane, salvage gambles.
  */
 export type ItemKind =
   | 'relay_key'
@@ -18,6 +18,7 @@ export type ItemKind =
   | 'filter'
   | 'blade'
   | 'pulse_baton'
+  | 'phaser'
   | 'harness'
   | 'ablative_vest'
   | 'dart'
@@ -139,6 +140,14 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     stackable: false,
     equipSlot: 'tool',
   },
+  phaser: {
+    kind: 'phaser',
+    loreName: 'ITEM-PHASER',
+    loreDesc: 'ITEM-PHASER-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'tool',
+  },
   harness: {
     kind: 'harness',
     loreName: 'ITEM-HARNESS',
@@ -200,6 +209,7 @@ export const ARMOR_DEF_BONUS: Partial<Record<ItemKind, number>> = {
 export const TOOL_ATK_BONUS: Partial<Record<ItemKind, number>> = {
   blade: 1,
   pulse_baton: 1,
+  phaser: 1,
 };
 
 export const INVENTORY_SLOTS = 16;
@@ -211,6 +221,8 @@ export function shortEquipName(kind: ItemKind | null): string {
       return 'knife';
     case 'pulse_baton':
       return 'baton';
+    case 'phaser':
+      return 'phaser';
     case 'harness':
       return 'eva';
     case 'ablative_vest':

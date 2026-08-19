@@ -30,6 +30,7 @@ const PLATE_REPAIR = 12;
 const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
   blade: 'LOG-USE-BLADE',
   pulse_baton: 'LOG-USE-BATON',
+  phaser: 'LOG-USE-PHASER-EQUIP',
   harness: 'LOG-USE-HARNESS',
   ablative_vest: 'LOG-USE-VEST',
 };
@@ -42,9 +43,9 @@ function biomeIdTable(sectorId: SectorId): ItemKind[] {
     return ['med', 'energy', 'dart', 'sealant', 'flare', 'plate'];
   }
   if (mid.includes(sectorId)) {
-    return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe'];
+    return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe', 'phaser'];
   }
-  return ['med', 'energy', 'filter', 'plate', 'sealant', 'stim', 'mapper'];
+  return ['med', 'energy', 'filter', 'plate', 'sealant', 'stim', 'mapper', 'phaser'];
 }
 
 const SALVAGE_FAIL = 0.18;

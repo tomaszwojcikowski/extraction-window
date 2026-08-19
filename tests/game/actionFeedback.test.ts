@@ -40,6 +40,12 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats phaser beam fire', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-PHASER' }])).toEqual([
+      { label: 'PHASER · BEAM', color: ThemeCss.arcWhite },
+    ]);
+  });
+
   it('floats HP hurt and kit vitals with signed deltas', () => {
     expect(
       actionFloatLabels([{ loreId: 'LOG-HURT', detail: 'mite · -4 · 48/52 hp' }], {

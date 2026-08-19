@@ -64,7 +64,8 @@ export const LORE = {
     'Power — kit charge. Hazards, EM, and drip drain it. Empty Power = lose.\n' +
     '\n' +
     'COMBAT\n' +
-    'Walk into a hostile to hit it. Normal hits are atk minus def.\n' +
+    'Walk into a hostile to hit it. Worn Survey Phaser: step toward a visible foe 2–3 tiles along that cardinal to fire a beam (−Power); adjacent is still melee.\n' +
+    'Normal hits are atk minus def.\n' +
     'Impaired (d4) if jammed, blind, or the kit is full. Enhanced (d12) vs a stunned or exposed foe, on stim, or overcharge.\n' +
     'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
     'Two+ hostiles touching you peel DEF — fight in a doorway or break contact.\n' +
@@ -324,6 +325,9 @@ export const LORE = {
   'ITEM-BATON': 'Pulse Baton',
   'ITEM-BATON-DESC':
     'Equip for +1 ATK; melee stuns 2 turns. Adjacent sealed hatch: Enter / Space / > to pry. Use again to stow.',
+  'ITEM-PHASER': 'Survey Phaser',
+  'ITEM-PHASER-DESC':
+    'Equip for +1 ATK. Step toward a visible hostile 2–3 tiles along a cardinal lane to fire a beam (−4 Power). Adjacent is still melee. Use again to stow.',
   'ITEM-HARNESS': 'EVA Harness',
   'ITEM-HARNESS-DESC': 'Equip for +6 max Shield (refills). Use again to stow.',
   'ITEM-VEST': 'Ablative Vest',
@@ -442,6 +446,8 @@ export const LORE = {
   'LOG-USE-FILTER': 'Plasma filter online — drain and plasma hits reduced.',
   'LOG-USE-BLADE': 'Combat knife equipped — ATK up while worn.',
   'LOG-USE-BATON': 'Pulse baton equipped — ATK up; melee stuns.',
+  'LOG-USE-PHASER-EQUIP': 'Survey phaser equipped — step toward a hostile 2–3 tiles out to fire.',
+  'LOG-USE-PHASER': 'Survey phaser — beam along the lane.',
   'LOG-USE-HARNESS': 'EVA harness equipped — shield capacity up.',
   'LOG-USE-VEST': 'Ablative vest equipped — Shield + DEF.',
   'LOG-UNEQUIP': 'Gear stowed in kit.',

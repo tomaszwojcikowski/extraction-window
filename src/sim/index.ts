@@ -35,6 +35,14 @@ export { windowDrainRate, windowTurnsLeft } from './window';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
+export {
+  findPhaserTarget,
+  firePhaser,
+  tryFirePhaser,
+  PHASER_ENERGY_COST,
+  PHASER_RANGE_MAX,
+  PHASER_RANGE_MIN,
+} from './phaser';
 export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack, lightPreferAtkBonus, flankPenalty } from './combat';
 export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';

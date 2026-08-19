@@ -1,5 +1,6 @@
 import { hasItem, tryPickup, useSelected, fireDart, addItem } from './inventory';
 import { playerAttack } from './combat';
+import { tryFirePhaser } from './phaser';
 import { pushLog, recordLoreEvent } from './log';
 import { endPlayerTurn, advanceSector, checkLose, finishSectorTransition } from './turn';
 import { finishTutorial } from './state';
@@ -36,6 +37,11 @@ function tryMove(state: GameState, dx: number, dy: number): void {
       return;
     }
     fireDart(state, dx, dy);
+    endPlayerTurn(state);
+    return;
+  }
+
+  if (tryFirePhaser(state, dx, dy)) {
     endPlayerTurn(state);
     return;
   }

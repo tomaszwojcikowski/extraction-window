@@ -44,6 +44,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
   ],
   drone: [
     { kind: 'energy', weight: 2 },
+    { kind: 'phaser', weight: 1 },
     { kind: 'sealant', weight: 2 },
     { kind: 'salvage', weight: 1 },
   ],
@@ -65,6 +66,7 @@ export const ENEMY_DROPS: Record<EnemyKind, Array<{ kind: ItemKind; weight: numb
   ],
   duct_drone: [
     { kind: 'sealant', weight: 2 },
+    { kind: 'phaser', weight: 1 },
     { kind: 'filter', weight: 1 },
   ],
   elite_skirmisher: [

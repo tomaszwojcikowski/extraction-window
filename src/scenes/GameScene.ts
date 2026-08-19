@@ -41,9 +41,11 @@ import {
   flashScreen,
   playCombatContactJuice,
   playMoveAnims,
+  playPhaserBeam,
   presentActionFeedback,
   tintPlayerHurt,
   tintVisibleEnemies,
+  PHASER_BEAM_MS,
   type ActionFloat,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
@@ -1039,16 +1041,37 @@ export class GameScene extends Phaser.Scene {
     }
     this.syncItems();
 
-    const afterPresent = () => {
-      playCombatContactJuice(this.tweens, {
-        action,
-        playerMoved: fb.playerMoved,
-        prevHp,
-        state: this.state,
-        playerSprite: this.playerSprite,
-        enemyViews: this.enemyViews,
-        worldXY: (gx, gy) => this.worldXY(gx, gy),
-      });
+    const phaserTarget = fb.newLogs.includes('LOG-USE-PHASER')
+      ? prevEnemySnap.find((prev) => {
+          const cur = this.state.enemies.find((e) => e.id === prev.id);
+          if (!prev.alive || !cur) return false;
+          if (!(cur.hp < prev.hp || (!cur.alive && prev.alive))) return false;
+          const d = Math.abs(prev.x - fromPlayer.x) + Math.abs(prev.y - fromPlayer.y);
+          return d >= 2 && d <= 3;
+        })
+      : undefined;
+    if (phaserTarget) {
+      playPhaserBeam(
+        this.tweens,
+        this.lightLayer,
+        (gx, gy) => this.worldXY(gx, gy),
+        fromPlayer,
+        { x: phaserTarget.x, y: phaserTarget.y },
+      );
+    }
+
+    const afterPresent = (opts?: { juice?: boolean }) => {
+      if (opts?.juice !== false) {
+        playCombatContactJuice(this.tweens, {
+          action,
+          playerMoved: fb.playerMoved,
+          prevHp,
+          state: this.state,
+          playerSprite: this.playerSprite,
+          enemyViews: this.enemyViews,
+          worldXY: (gx, gy) => this.worldXY(gx, gy),
+        });
+      }
       this.lightView.endMoveLight();
       this.redrawTilesAndHud();
       this.syncActors(true);
@@ -1060,6 +1083,24 @@ export class GameScene extends Phaser.Scene {
       playMoveAnims(this.moveAnimHost(), fromPlayer, fb.fromEnemies, afterPresent, {
         fromAllies: fb.fromAllies,
         fromNpcs: fb.fromNpcs,
+      });
+      return;
+    }
+
+    if (phaserTarget) {
+      playCombatContactJuice(this.tweens, {
+        action,
+        playerMoved: fb.playerMoved,
+        prevHp,
+        state: this.state,
+        playerSprite: this.playerSprite,
+        enemyViews: this.enemyViews,
+        worldXY: (gx, gy) => this.worldXY(gx, gy),
+      });
+      this.animating = true;
+      this.time.delayedCall(PHASER_BEAM_MS, () => {
+        this.animating = false;
+        afterPresent({ juice: false });
       });
       return;
     }

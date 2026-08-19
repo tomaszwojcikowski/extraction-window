@@ -312,6 +312,11 @@ export function chooseAction(
     state.ui.selectedSlot = batonIdx;
     return { type: 'use' };
   }
+  const phaserIdx = state.inventory.findIndex((s) => s.kind === 'phaser');
+  if (phaserIdx >= 0 && !state.player.equip.tool) {
+    state.ui.selectedSlot = phaserIdx;
+    return { type: 'use' };
+  }
   const bladeIdx = state.inventory.findIndex((s) => s.kind === 'blade');
   if (bladeIdx >= 0 && !state.player.equip.tool) {
     state.ui.selectedSlot = bladeIdx;
