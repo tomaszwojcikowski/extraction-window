@@ -23,7 +23,14 @@ export type SfxId =
   | 'extract'
   | 'notice'
   | 'enemy'
-  | 'scuttle';
+  | 'scuttle'
+  | 'telegraph_beam'
+  | 'telegraph_hold'
+  | 'telegraph_charge'
+  | 'telegraph_pulse'
+  | 'enemy_beam'
+  | 'enemy_pulse'
+  | 'player_beam';
 
 const COMBAT: SfxId[] = [
   'hit',
@@ -34,6 +41,13 @@ const COMBAT: SfxId[] = [
   'notice',
   'enemy',
   'scuttle',
+  'telegraph_beam',
+  'telegraph_hold',
+  'telegraph_charge',
+  'telegraph_pulse',
+  'enemy_beam',
+  'enemy_pulse',
+  'player_beam',
 ];
 
 /** Band-limited noise reads quiet — multiply before bus gain. */
@@ -137,6 +151,28 @@ class SfxBus {
         this.noiseBurst(ctx, t, { dur: 0.09, vol: 0.12, bp: 950, Q: 2.5, attack: 0.004 });
         this.noiseBurst(ctx, t + 0.12, { dur: 0.1, vol: 0.1, bp: 750, Q: 2.5, attack: 0.004 });
         break;
+      case 'telegraph_beam':
+        // Tight ion lane warning: bright edge + cold sustain tail.
+        this.noiseBurst(ctx, t, { dur: 0.05, vol: 0.1, bp: 2100, Q: 3.2, attack: 0.002 });
+        this.hum(ctx, t + 0.03, { freq: 122, dur: 0.16, vol: 0.055 });
+        this.noiseBurst(ctx, t + 0.06, { dur: 0.1, vol: 0.05, bp: 1200, Q: 1.8, attack: 0.01 });
+        break;
+      case 'telegraph_hold':
+        // Sentinel hold: short latch + low mechanical stay-open.
+        this.noiseBurst(ctx, t, { dur: 0.03, vol: 0.11, bp: 2600, Q: 4, attack: 0.001 });
+        this.sub(ctx, t + 0.015, { freq: 68, dur: 0.12, vol: 0.07, slide: -6 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.08, vol: 0.045, bp: 700, Q: 1.1, attack: 0.008 });
+        break;
+      case 'telegraph_charge':
+        // Closing body mass: scrape into forward shove.
+        this.noiseBurst(ctx, t, { dur: 0.04, vol: 0.12, bp: 900, Q: 1.6, attack: 0.002, sweep: -250 });
+        this.sub(ctx, t + 0.02, { freq: 62, dur: 0.12, vol: 0.11, slide: -18 });
+        break;
+      case 'telegraph_pulse':
+        // Expanding field charge: airy swell instead of a directional strike.
+        this.noiseBurst(ctx, t, { dur: 0.14, vol: 0.09, bp: 650, Q: 0.9, attack: 0.02, sweep: 500 });
+        this.hum(ctx, t + 0.03, { freq: 96, dur: 0.18, vol: 0.045 });
+        break;
       case 'win':
         // Pad swell + air, no fanfare notes.
         this.hum(ctx, t, { freq: 65, dur: 0.55, vol: 0.08 });
@@ -217,6 +253,24 @@ class SfxBus {
         this.noiseBurst(ctx, t, { dur: 0.07, vol: 0.16, bp: 350, Q: 0.8, attack: 0.002 });
         this.sub(ctx, t, { freq: 48, dur: 0.14, vol: 0.16, slide: -18 });
         this.noiseBurst(ctx, t + 0.05, { dur: 0.08, vol: 0.06, bp: 900, Q: 1.5, attack: 0.01 });
+        break;
+      case 'enemy_beam':
+        // Ion rake: cold front edge plus a longer charged tail.
+        this.noiseBurst(ctx, t, { dur: 0.035, vol: 0.12, bp: 2500, Q: 4.2, attack: 0.001 });
+        this.hum(ctx, t + 0.01, { freq: 132, dur: 0.18, vol: 0.07 });
+        this.noiseBurst(ctx, t + 0.03, { dur: 0.14, vol: 0.07, bp: 1100, Q: 1.4, attack: 0.006, sweep: -250 });
+        break;
+      case 'enemy_pulse':
+        // Area discharge: wider body than beam, less directional.
+        this.noiseBurst(ctx, t, { dur: 0.08, vol: 0.13, bp: 800, Q: 1.1, attack: 0.004, sweep: 350 });
+        this.sub(ctx, t + 0.02, { freq: 58, dur: 0.16, vol: 0.12, slide: -8 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.1, vol: 0.05, bp: 1400, Q: 1.6, attack: 0.008 });
+        break;
+      case 'player_beam':
+        // Survey phaser: cleaner, more tooled version of the ion beam.
+        this.noiseBurst(ctx, t, { dur: 0.025, vol: 0.11, bp: 2800, Q: 5, attack: 0.001 });
+        this.hum(ctx, t + 0.005, { freq: 148, dur: 0.12, vol: 0.055 });
+        this.sub(ctx, t + 0.015, { freq: 84, dur: 0.09, vol: 0.07, slide: -10 });
         break;
       case 'scuttle':
         this.noiseBurst(ctx, t, { dur: 0.03, vol: 0.07, bp: 600, Q: 1.3, attack: 0.001 });

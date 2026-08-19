@@ -1,6 +1,11 @@
 import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
 import type { Action, Enemy, GameState } from '../../sim';
+import {
+  findPhaserTarget,
+  PHASER_RANGE_MAX,
+  PHASER_RANGE_MIN,
+} from '../../sim/phaser';
 import { sfx } from '../../audio/sfx';
 import { LightTemp, Theme, ThemeCss } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
@@ -599,19 +604,13 @@ export function playActionSfx(
   if (has('LOG-STORM-WARN') || has('LOG-BUS-WARN') || has('LOG-BUS-FAILING')) {
     sfx.play('warn');
   }
-  if (
-    has('LOG-TELE-BEAM') ||
-    has('LOG-TELE-OVERWATCH') ||
-    has('LOG-TELE-SWELL') ||
-    has('LOG-TELE-POUNCE') ||
-    has('LOG-TELE-REACH') ||
-    has('LOG-TELE-ZONE')
-  ) {
-    sfx.play('warn');
-  }
-  if (has('LOG-ZONE-PULSE') || has('LOG-SPORE-BURST') || has('LOG-UPLINK-WAVE-HIT')) {
-    sfx.play('enemy');
-  }
+  if (has('LOG-TELE-BEAM')) sfx.play('telegraph_beam');
+  if (has('LOG-TELE-OVERWATCH')) sfx.play('telegraph_hold');
+  if (has('LOG-TELE-SWELL') || has('LOG-TELE-ZONE')) sfx.play('telegraph_pulse');
+  if (has('LOG-TELE-POUNCE') || has('LOG-TELE-REACH')) sfx.play('telegraph_charge');
+  if (has('LOG-BEAM-FIRE')) sfx.play('enemy_beam');
+  if (has('LOG-ZONE-PULSE') || has('LOG-SPORE-BURST')) sfx.play('enemy_pulse');
+  if (has('LOG-UPLINK-WAVE-HIT')) sfx.play('enemy');
   if (has('LOG-ARMOR-ABSORB') && !has('LOG-HURT') && !has('LOG-ALLY-HURT')) {
     sfx.play('armor');
   }
@@ -627,6 +626,12 @@ export function playActionSfx(
   }
   if (has('LOG-HIT') || has('LOG-ALLY-HIT')) {
     sfx.play('hit');
+    return;
+  }
+  if (
+    has('LOG-USE-PHASER')
+  ) {
+    sfx.play('player_beam');
     return;
   }
   if (
@@ -975,6 +980,31 @@ export function bumpAttack(
 /** Phaser.BlendModes.ADD — numeric so ActionFeedback stays type-only vs Phaser in unit tests. */
 const BLEND_ADD = 1;
 
+/** Above `LightView.lightsGfx` (depth 1) so bloom does not paint over the beam. */
+const PHASER_BEAM_DEPTH = 2;
+
+/** Impact tile for phaser VFX — prefers combat hit tiles, then sim target lookup. */
+export function phaserBeamTargetTile(
+  newLogs: LoreId[],
+  fromPlayer: { x: number; y: number },
+  hitTiles: { x: number; y: number }[],
+  action: Action,
+  state: GameState,
+): { x: number; y: number } | undefined {
+  if (!newLogs.includes('LOG-USE-PHASER')) return undefined;
+  const inRange = (t: { x: number; y: number }) => {
+    const d = Math.abs(t.x - fromPlayer.x) + Math.abs(t.y - fromPlayer.y);
+    return d >= PHASER_RANGE_MIN && d <= PHASER_RANGE_MAX;
+  };
+  const hit = hitTiles.find(inRange);
+  if (hit) return hit;
+  if (action.type === 'move') {
+    const foe = findPhaserTarget(state, action.dx, action.dy);
+    if (foe) return { x: foe.x, y: foe.y };
+  }
+  return undefined;
+}
+
 /**
  * Draw a 2–3 tile ion lance from the surveyor to the impact tile.
  * Fire-and-forget — callers wait `PHASER_BEAM_MS` if they need the window.
@@ -990,6 +1020,7 @@ export function playPhaserBeam(
   const b = worldXY(to.x, to.y);
   const g = layer.scene.add.graphics();
   g.setBlendMode(BLEND_ADD);
+  g.setDepth(PHASER_BEAM_DEPTH);
   layer.add(g);
 
   const grow = PHASER_BEAM_MS * 0.55;

@@ -9,6 +9,7 @@ import {
   enemyMoveStaggerMs,
   flankEdgeFloat,
   maxMoveAnimMs,
+  phaserBeamTargetTile,
   playActionSfx,
   playActorDeath,
   type EnemySnap,
@@ -185,6 +186,28 @@ describe('ActionFeedback', () => {
 
     const { hitTiles } = combatFeedbackTiles(st, snap);
     expect(hitTiles.some((t) => t.x === cur.x && t.y === cur.y)).toBe(true);
+  });
+
+  it('resolves phaser beam target from ranged hit tiles', () => {
+    const from = { x: 1, y: 1 };
+    expect(
+      phaserBeamTargetTile(
+        ['LOG-USE-PHASER'],
+        from,
+        [{ x: 3, y: 1 }],
+        { type: 'wait' },
+        createGame(42),
+      ),
+    ).toEqual({ x: 3, y: 1 });
+    expect(
+      phaserBeamTargetTile(['LOG-USE-PHASER'], from, [{ x: 4, y: 1 }], { type: 'wait' }, createGame(42)),
+    ).toEqual({ x: 4, y: 1 });
+    expect(
+      phaserBeamTargetTile(['LOG-USE-PHASER'], from, [{ x: 2, y: 1 }], { type: 'wait' }, createGame(42)),
+    ).toBeUndefined();
+    expect(
+      phaserBeamTargetTile(['LOG-USE-PHASER'], from, [{ x: 5, y: 1 }], { type: 'wait' }, createGame(42)),
+    ).toBeUndefined();
   });
 
   it('plays sector sfx on sector change without flashing', async () => {
