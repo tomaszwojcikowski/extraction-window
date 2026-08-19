@@ -16,6 +16,7 @@ import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
 import { consumeExtractFavor } from './extractFavor';
 import { spendWindow, windowDrainAt, windowDrainRate } from './window';
+import { tickBusPressure } from './bus';
 import type { Enemy, GameState } from './types';
 
 function trySpawnNestMite(state: GameState): void {
@@ -59,14 +60,22 @@ function trySpawnNestMite(state: GameState): void {
   }
 }
 
-export function checkLose(state: GameState): void {
+export function checkLose(state: GameState, opts?: { skipBus?: boolean }): void {
   if (state.status !== 'playing') return;
   if (state.player.hp <= 0 && !state.player.statuses.downed) {
     state.status = 'lost';
     state.loseReason = 'hp';
     return;
   }
-  if (state.player.energy <= 0) {
+  if (state.player.energy > 0) {
+    state.busFailing = false;
+  } else if (!opts?.skipBus) {
+    state.player.energy = 0;
+    if (!state.busFailing) {
+      state.busFailing = true;
+      pushLog(state, 'LOG-BUS-FAILING');
+      return;
+    }
     state.status = 'lost';
     state.loseReason = 'energy';
     return;
@@ -83,7 +92,9 @@ export function finishSectorTransition(state: GameState): void {
   spendWindow(state, 1);
   refreshVision(state);
   syncObjectiveFlags(state);
-  checkLose(state);
+  // Hatch crossing is not the bus-death beat — keep failing so the first
+  // action in the new sector still has a cell-use window.
+  checkLose(state, { skipBus: true });
 }
 
 /** Underfoot terrain tax — shared so the drill can teach visible hazards. */
@@ -181,6 +192,7 @@ function tickEnvironment(state: GameState): void {
 
 export function endPlayerTurn(state: GameState): void {
   if (state.status !== 'playing') return;
+  const energyBefore = state.player.energy;
   state.turn += 1;
   tickEnvironment(state);
   // FOV + light from the player's new tile before AI so ambush/FOV checks see current vision.
@@ -191,6 +203,7 @@ export function endPlayerTurn(state: GameState): void {
   // Recompute after enemy moves so presentation matches final visibility / light.
   refreshVision(state);
   syncObjectiveFlags(state);
+  tickBusPressure(state, energyBefore);
   checkLose(state);
 }
 

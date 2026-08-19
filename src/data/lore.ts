@@ -36,6 +36,7 @@ export const LORE = {
   'UI-ENCUMBERED': 'Kit full',
   'UI-FRITZ': 'Fritz',
   'UI-DOWNED': 'Downed',
+  'UI-BUS-FAIL': 'Power fail',
   'UI-INV': 'Field kit',
   'UI-LOG': 'Log',
   'UI-OBJECTIVE': 'Objective',
@@ -115,6 +116,7 @@ export const LORE = {
     'Aim dart — direction fires (lit, range 3) · . cancels · miss spends the dart',
   'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-ENERGY': 'Power low — open kit (i), select Power Cell, press u',
+  'UI-HINT-BUS-LOW': 'Power failing — pick up a Power Cell this turn',
   'UI-HINT-USE-ARMOR': 'Shield low — open kit (i), select Shield Charge, press u',
   'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-SEALANT':
@@ -209,7 +211,7 @@ export const LORE = {
   'UI-LOSE-HP': 'SURVEY OFFICER DOWN',
   'UI-LOSE-HP-BODY': 'HP reached 0 — fatal contact.',
   'UI-LOSE-ENERGY': 'POWER FAILURE',
-  'UI-LOSE-ENERGY-BODY': 'Power hit 0 — kit charge gone.',
+  'UI-LOSE-ENERGY-BODY': 'Power stayed at 0 — kit charge gone.',
   'UI-LOSE-STORM': 'WINDOW COLLAPSED',
   'UI-LOSE-STORM-BODY': 'Window hit 0 — the extract closed.',
   'UI-LOSE-STUCK': 'MISSION ABORT',
@@ -233,6 +235,7 @@ export const LORE = {
   'OBJ-TUT-HATCH': '→ East hatch (learn notice, Power hazard, kit)',
   'OBJ-TUT-BRIEF': 'Training — Window and Power paused until you leave',
   'HAZ-STORM': 'Window critical',
+  'HAZ-BUS': 'Power critical',
   'UI-CODEX': 'PADD',
 
   // Sectors
@@ -563,6 +566,8 @@ export const LORE = {
   'LOG-UPLINK-FLARE': 'Flare ready for the incoming pressure wave.',
   'LOG-UPLINK-INTERRUPT': 'Uplink interrupted — left the ridge pad.',
   'LOG-STORM-WARN': 'Window low — extract soon.',
+  'LOG-BUS-WARN': 'Power low — use a Power Cell.',
+  'LOG-BUS-FAILING': 'Power at 0 — use a Power Cell this turn or the kit dies.',
   'LOG-WINDOW-TAX': 'Shear pressure deepens — the Window burns faster from here.',
   'LOG-WINDUP-KILL': 'Windup interrupted — salvage bonus.',
   'LOG-USE-MAPPER': 'Nav ping — hatch bearing locked.',

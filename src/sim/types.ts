@@ -256,6 +256,8 @@ export interface GameState {
   loseReason: LoseReason;
   turn: number;
   stormTurns: number;
+  /** Power hit 0 this run and has not been restored — next end-turn at 0 is death. */
+  busFailing: boolean;
   sectorIndex: number;
   sectorId: SectorId;
   /** Pre-campaign drill bay — not a 16th sector; gates plains afterglow / storm tax. */

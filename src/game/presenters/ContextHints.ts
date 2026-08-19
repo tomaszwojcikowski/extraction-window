@@ -41,6 +41,10 @@ export function contextHint(st: GameState): LoreId | null {
 
   if ((st.player.statuses.downed ?? 0) > 0) return 'UI-HINT-DOWNED';
 
+  if (st.busFailing || st.player.energy <= 8) {
+    return hasItem(st, 'energy') ? 'UI-HINT-USE-ENERGY' : 'UI-HINT-BUS-LOW';
+  }
+
   // Pack pressure — persist while the spatial question is live.
   // Windup and site mechanics still win; hatch/kit tips yield.
   if (flankPenalty(st) > 0) return 'UI-HINT-FLANK';

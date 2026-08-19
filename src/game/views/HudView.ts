@@ -19,6 +19,7 @@ import { drawKitOverlay } from './overlays/KitOverlay';
 import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
+import { busIsCritical } from '../../sim/bus';
 
 export const HUD_BAR_SLOTS = 5;
 export const HUD_BADGE_SLOTS = 8;
@@ -119,6 +120,7 @@ export class HudView {
     // The Window counts in units but is planned in turns, and late sectors spend
     // up to 2.5 units a turn. Print the turns and name the rate that bought them.
     const windowLeft = windowTurnsLeft(st);
+    const busHot = busIsCritical(st);
     const windowRate = windowDrainRate(st.sectorIndex);
     const windowCaption =
       windowRate > 1 ? `${lore('UI-BAR-WINDOW')} x${windowRate}` : lore('UI-BAR-WINDOW');
@@ -193,12 +195,11 @@ export class HudView {
       opts,
     );
     this.syncWindowPulse(
-      400,
+      busHot ? 278 : 400,
       barY,
-      100,
+      busHot ? 110 : 100,
       barH,
-      // When Shear owns the center readout, skip Window bar pulse (one channel).
-      !shearPrimary && windowLeft <= 80,
+      busHot || (!shearPrimary && windowLeft <= 80),
       opts,
     );
 
@@ -254,6 +255,11 @@ export class HudView {
           .join(' · '),
       );
     } else {
+      // Power kill clock stays visible even when Shear owns the center — that
+      // compression is how bus deaths used to arrive with no notice.
+      if (busHot) {
+        urgencyParts.push(`${lore('HAZ-BUS')}  (${st.player.energy})`);
+      }
       if (stormHot && !shearPrimary) {
         urgencyParts.push(`${lore('HAZ-STORM')}  (${windowLeft})`);
       }
@@ -267,7 +273,7 @@ export class HudView {
     const hasUrgency = urgencyParts.length > 0;
     const urgencyColor = skillLock
       ? ThemeCss.flag
-      : stormHot && !shearPrimary
+      : busHot || (stormHot && !shearPrimary)
         ? ThemeCss.rust
         : st.emStress >= EM_HIGH
           ? ThemeCss.rust

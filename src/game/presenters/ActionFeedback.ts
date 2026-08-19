@@ -267,6 +267,12 @@ export function collectActionFloatLabels(
           color: ThemeCss.inkBright,
         };
         break;
+      case 'LOG-BUS-WARN':
+        next = { label: 'POWER LOW', color: ThemeCss.tape };
+        break;
+      case 'LOG-BUS-FAILING':
+        next = { label: 'POWER FAIL · LAST TURN', color: ThemeCss.rust };
+        break;
       case 'LOG-HS-START':
       case 'LOG-HS-TICK':
         next = {
@@ -590,7 +596,7 @@ export function playActionSfx(
     flash(Theme.safe, 0.35);
     return;
   }
-  if (has('LOG-STORM-WARN')) {
+  if (has('LOG-STORM-WARN') || has('LOG-BUS-WARN') || has('LOG-BUS-FAILING')) {
     sfx.play('warn');
   }
   if (

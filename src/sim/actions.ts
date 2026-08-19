@@ -23,7 +23,7 @@ function onExitTile(state: GameState): boolean {
 
 /** Drill bay → real plains. Shared by `>` / walk-on / wait-on-hatch. */
 function completeTutorialExit(state: GameState): void {
-  checkLose(state);
+  checkLose(state, { skipBus: true });
   if (state.status !== 'playing') return;
   finishTutorial(state);
   finishSectorTransition(state);
@@ -153,7 +153,7 @@ function tryExit(state: GameState): void {
       endPlayerTurn(state);
       return;
     }
-    checkLose(state);
+    checkLose(state, { skipBus: true });
     if (state.status !== 'playing') return;
     if (state.tutorialActive) {
       completeTutorialExit(state);

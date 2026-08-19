@@ -58,6 +58,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     loseReason: null,
     turn: 0,
     stormTurns: STORM_TURNS,
+    busFailing: false,
     sectorIndex: 0,
     sectorId: sector.id,
     tutorialActive,

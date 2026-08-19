@@ -32,6 +32,7 @@ export {
 } from './light';
 export { refreshVision } from './vision';
 export { windowDrainRate, windowTurnsLeft } from './window';
+export { busIsCritical, BUS_CRITICAL } from './bus';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';

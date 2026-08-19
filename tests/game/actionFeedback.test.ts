@@ -48,6 +48,15 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats bus warn and last-turn fail', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-BUS-WARN' }])).toEqual([
+      { label: 'POWER LOW', color: ThemeCss.tape },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-BUS-FAILING' }])).toEqual([
+      { label: 'POWER FAIL · LAST TURN', color: ThemeCss.rust },
+    ]);
+  });
+
   it('floats HP hurt and kit vitals with signed deltas', () => {
     expect(
       actionFloatLabels([{ loreId: 'LOG-HURT', detail: 'mite · -4 · 48/52 hp' }], {

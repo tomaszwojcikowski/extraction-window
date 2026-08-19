@@ -80,6 +80,7 @@ export function fieldHudChips(state: GameState): HudChip[] {
   const chips: HudChip[] = [];
   const downed = state.player.statuses.downed ?? 0;
   if (downed > 0) chips.push({ label: `${lore('UI-DOWNED')} ${downed}`, fill: Theme.rust });
+  if (state.busFailing) chips.push({ label: lore('UI-BUS-FAIL'), fill: Theme.tape });
 
   const light = lightBadgeSpec(state);
   if (light) chips.push(light);
