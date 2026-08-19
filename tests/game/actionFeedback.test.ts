@@ -26,7 +26,7 @@ describe('ActionFeedback', () => {
     ).toEqual([
       { label: 'SHIELD Rift Mite -2', color: ThemeCss.inkBright },
       { label: 'POWER Duct Drone -2 Power', color: ThemeCss.arc },
-      { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag },
+      { label: 'OPEN · CLEAN HIT', color: ThemeCss.flag },
     ]);
   });
 

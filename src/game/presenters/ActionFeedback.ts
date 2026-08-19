@@ -314,7 +314,7 @@ export function collectActionFloatLabels(
         next = { label: 'OVERWATCH', color: ThemeCss.tape };
         break;
       case 'LOG-PUNISH':
-        next = { label: 'OFF BALANCE · CLEAN HIT', color: ThemeCss.flag };
+        next = { label: 'OPEN · CLEAN HIT', color: ThemeCss.flag };
         break;
       case 'LOG-SEALED-OPEN':
       case 'LOG-SEALED-PRY':
@@ -346,7 +346,7 @@ export function collectActionFloatLabels(
         next = { label: 'SELECT AN ITEM', color: ThemeCss.inkDim };
         break;
       case 'LOG-JAM-BLOCK':
-        next = { label: 'JAMMED · PULSE', color: ThemeCss.rust };
+        next = { label: 'JAMMED · VISION', color: ThemeCss.rust };
         break;
       case 'LOG-EXIT-NEED-KEY':
       case 'LOG-NEED-KEY':
