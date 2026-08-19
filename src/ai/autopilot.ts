@@ -447,6 +447,40 @@ export function chooseAction(
   return randomStep(state);
 }
 
+/**
+ * Break path thrash before the action cap — melee through blockers, hold
+ * handshake/uplink pads, or free a kit slot when full.
+ */
+export function unstickAction(state: GameState): Action {
+  if (state.handshake?.active) return { type: 'wait' };
+  if (state.uplink?.active) return { type: 'wait' };
+
+  const { x, y } = state.player;
+  for (const [dx, dy] of [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ] as const) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) continue;
+    if (!state.tiles[ny]![nx]!.walkable) continue;
+    const foe = state.enemies.find((e) => e.alive && e.x === nx && e.y === ny);
+    if (foe) return { type: 'move', dx, dy };
+  }
+
+  if (state.inventory.length >= INVENTORY_SLOTS) {
+    const junkIdx = state.inventory.findIndex((s) => s.kind === 'salvage');
+    if (junkIdx >= 0) {
+      state.ui.selectedSlot = junkIdx;
+      return { type: 'use' };
+    }
+  }
+
+  return randomStep(state);
+}
+
 /** Why the policy gave up — distinguishes a wedged run from a slow one. */
 export type StuckReason = 'idle' | 'no_action' | 'action_cap';
 
@@ -475,9 +509,13 @@ export function runAutopilot(
 
   let noAction = false;
   const persona = opts.persona ?? PERSONAS.stable;
+  const capPressure = Math.floor(maxActions * 0.92);
 
   while (state.status === 'playing' && actions < maxActions) {
-    const action = chooseAction(state, persona);
+    const action =
+      idleStreak > 40 || (actions >= capPressure && idleStreak > 8)
+        ? unstickAction(state)
+        : chooseAction(state, persona);
     if (!action) {
       noAction = true;
       break;

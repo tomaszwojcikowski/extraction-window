@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chooseAction, PERSONAS, runAutopilot } from '../../src/ai/autopilot';
+import { chooseAction, PERSONAS, runAutopilot, unstickAction } from '../../src/ai/autopilot';
 import { applyAction, createGame, hasItem } from '../../src/sim';
 import { summarize, type SeedReport } from '../harness';
 import { makeEnemy } from '../sim/fixtures';
@@ -37,6 +37,20 @@ describe('autopilot chooseAction', () => {
     expect(action).toEqual({ type: 'use' });
     const kind = st.inventory[st.ui.selectedSlot]?.kind;
     expect(kind).toBe('energy');
+  });
+
+  it('unstick waits during an active handshake', () => {
+    const st = createGame(42);
+    st.handshake = { active: true, progress: 1 };
+    expect(unstickAction(st)).toEqual({ type: 'wait' });
+  });
+
+  it('unstick melees an adjacent blocker', () => {
+    const st = createGame(42);
+    st.enemies = [
+      makeEnemy({ id: 1, kind: 'mite', x: st.player.x + 1, y: st.player.y }),
+    ];
+    expect(unstickAction(st)).toEqual({ type: 'move', dx: 1, dy: 0 });
   });
 });
 
