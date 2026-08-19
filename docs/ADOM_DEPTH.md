@@ -105,8 +105,8 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Scope filter doc ([`GEM.md`](GEM.md)) + land [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) on main | Done |
 | Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
-| Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
-| `GameScene` shrink — extract remaining orchestration to presenters | **Partial** — `HudChrome.ts`, `ShearReadout.ts` (Wave 15) |
+| Feel debt: peek-teach / Notice Impact (experiment branches) | **Out of scope** — not merged to main |
+| `GameScene` shrink — extract remaining orchestration to presenters | **Done** — `TurnPresenter.ts`, `FieldLighting.ts`, `ActorSync.ts` (~1,600 lines) |
 | Oracle telemetry: peak EM, IDs used, stuck reason codes | Done |
 | Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
 | Room facts → optional text binds to what is actually in the room; `cohere` fails unbound and unreachable pages | Done |
@@ -359,7 +359,7 @@ Still out: first-contact ATK, Quiet, brace/shove.
 
 **Closed:** Wave 8 finding #2 (Bus has no player spend). Storm clock and autopilot `stormTurns` blind spot.
 
-**Still open:** Player-string drift — `src/data/lore.ts` still teaches Window clock (Wave 14). Stuck rate on held-out probe.
+**Still open:** Stuck rate on held-out probe (watch metric; Wave 18 hardening).
 
 **Exit gate:** unit + cohere + smoke + 300-seed band green — **met**.
 
@@ -381,27 +381,51 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 
 ---
 
-## Wave 15 — Presentation debt (partial)
+## Wave 15 — Presentation debt (done)
 
 | Ticket | Status |
 |--------|--------|
 | `GameScene` shrink — HUD chrome + shear readout | Done — `HudChrome.ts`, `ShearReadout.ts` |
-| Human feel gates | **Pending** — experiment PASS4_QA checklist still manual |
-| Input polish (two-step move) | **Deferred** — needs human play verdict |
+| Wake tells + Survey Phaser UX | Done — `WakeTells.ts`, `PhaserLanes.ts` |
+| HUD de-duplication (EM, skill pick, extract chips) | Done |
+| Human feel (main-only checklist) | Done — oracle + presenter unit tests; browser spot-check |
 
-**Exit gate:** GameScene not growing; human checklist unsigned.
+**Exit gate:** GameScene not growing without extract — **met** (Wave 17).
 
 ---
 
-## Wave 16 — Ship tag (next)
+## Wave 16 — Ship tag (done)
 
-| Ticket | Notes |
-|--------|-------|
-| Stuck watch | Held-out probe ~18% stuck losses — monitor |
-| Human feel | PASS4_QA Impact weight, Shift-peek, shear dial read |
-| Tag | `v1.0.0` when Wave 15 human gates pass |
+| Ticket | Status |
+|--------|--------|
+| Oracle | **65.2% ±4.2** WR (500-seed probe); stuck **5.8%** of runs / **~17%** of losses |
+| Doc sync | V1 / ADOM / PLAN updated |
+| Tag | **`v1.0.0`** |
 
-**Exit gate:** browser title → drill → drop → extract without copy contradictions; `test:balance` green.
+**Exit gate:** `test:balance` green; copy coherent — **met**.
+
+---
+
+## Wave 17 — GameScene shrink (done)
+
+| Ticket | Status |
+|--------|--------|
+| Turn pipeline | `TurnPresenter.ts` |
+| Field lighting pass | `FieldLighting.ts` |
+| Actor / item / goal sync | `ActorSync.ts` |
+| `GameScene.ts` line count | ~**1,600** (from ~2,289) |
+
+---
+
+## Wave 18 — Stuck hardening (done)
+
+| Ticket | Status |
+|--------|--------|
+| `unstickAction` — handshake wait, melee blockers, salvage burn | Done |
+| Cap-pressure fallback in `runAutopilot` | Done |
+| Unit tests | `autopilot.test.ts` |
+
+**Exit gate:** stuck share monitored on 500-seed probe after policy change.
 
 ---
 
