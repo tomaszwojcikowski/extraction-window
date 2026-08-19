@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { applyAction, createGame, describeObjective, finishTutorial } from '../../src/sim';
+import { refreshVision } from '../../src/sim/vision';
 import { contextHint } from '../../src/game/presenters/ContextHints';
 import { presentActionFeedback } from '../../src/game/presenters/ActionFeedback';
 import { mechanicsAutopilotHint } from '../../src/sim/mechanics';
@@ -14,6 +15,16 @@ function drill(seed = 42) {
 
 function clearHostiles(st: ReturnType<typeof createGame>): void {
   for (const e of st.enemies) e.alive = false;
+}
+
+function clearCorridorHostiles(st: ReturnType<typeof createGame>): void {
+  for (const e of st.enemies) {
+    if (e.kind === 'stalker') e.alive = false;
+  }
+}
+
+function skipPhaserDrill(st: ReturnType<typeof createGame>): void {
+  st.scriptedFired.tut_phaser_fired = true;
 }
 
 describe('drill bay tutorial', () => {
@@ -31,20 +42,22 @@ describe('drill bay tutorial', () => {
     expect(st.tutorialActive).toBe(true);
     expect(st.sectorId).toBe('plains');
     expect(st.sectorIndex).toBe(0);
-    expect(st.width).toBe(24);
+    expect(st.width).toBe(32);
     expect(st.height).toBe(16);
     expect(st.exitPos).not.toBeNull();
-    expect(st.enemies.filter((e) => e.alive).length).toBeLessThanOrEqual(1);
-    expect(st.items.length).toBe(2);
+    expect(st.enemies.filter((e) => e.alive).length).toBeLessThanOrEqual(4);
+    expect(st.items.length).toBe(3);
     expect(st.items.some((item) => item.kind === 'flare')).toBe(true);
+    expect(st.items.some((item) => item.kind === 'phaser')).toBe(true);
     expect(st.enemies.some((enemy) => enemy.kind === 'stalker')).toBe(true);
+    expect(st.enemies.some((enemy) => enemy.kind === 'mite')).toBe(true);
     expect(st.roomQuest).toBeNull();
     expect(st.npcs.length).toBe(0);
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-WELCOME')).toBe(true);
     expect(st.log.some((l) => l.loreId === 'LOG-EVT-AFTERGLOW')).toBe(false);
-    expect(describeObjective(st).local).toBe('OBJ-TUT-HATCH');
+    expect(describeObjective(st).local).toBe('OBJ-TUT-PHASER');
     expect(describeObjective(st).campaign).toBe('OBJ-TUT-BRIEF');
-    expect(describeObjective(st).pos).toEqual(st.exitPos);
+    expect(describeObjective(st).pos).toEqual({ x: 20, y: 7 });
     expect(contextHint(st)).toBe('UI-TUT-MOVE');
   });
 
@@ -112,13 +125,13 @@ describe('drill bay tutorial', () => {
     st.player.y = 7;
     applyAction(st, { type: 'wait' });
     // Bright floor: no light tip yet — badge already says LIT.
-    expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-PHASER');
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(false);
     st.illumination[st.player.y]![st.player.x] = 0.15;
     expect(inShadow(st, st.player.x, st.player.y)).toBe(true);
     expect(contextHint(st)).toBe('UI-TUT-LIGHT');
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-LIGHT')).toBe(false);
-    expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-PHASER');
   });
 
   it('shows kit hint early after picking identification loot', () => {
@@ -189,6 +202,9 @@ describe('drill bay tutorial', () => {
     clearHostiles(st);
     st.player.x = 2;
     st.player.y = 7;
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-PHASER');
+
+    skipPhaserDrill(st);
     expect(contextHint(st)).toBe('UI-TUT-GOTO-HATCH');
 
     st.player.x = st.exitPos!.x;
@@ -198,6 +214,7 @@ describe('drill bay tutorial', () => {
 
   it('exit hatch finishes tutorial into real plains without XP_SECTOR', () => {
     const st = drill(42);
+    skipPhaserDrill(st);
     const xpBefore = st.xp;
     expect(st.exitPos).not.toBeNull();
     st.player.x = st.exitPos!.x;
@@ -219,6 +236,7 @@ describe('drill bay tutorial', () => {
   it('walking onto the drill hatch finishes the tutorial', () => {
     const st = drill(42);
     clearHostiles(st);
+    skipPhaserDrill(st);
     const exit = st.exitPos!;
     st.player.x = exit.x - 1;
     st.player.y = exit.y;
@@ -230,6 +248,7 @@ describe('drill bay tutorial', () => {
 
   it('waiting while already on the drill hatch finishes the tutorial', () => {
     const st = drill(42);
+    skipPhaserDrill(st);
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
     applyAction(st, { type: 'wait' });
@@ -250,6 +269,7 @@ describe('drill bay tutorial', () => {
 
   it('resumes Power drip after leaving the drill bay', () => {
     const st = drill(11);
+    skipPhaserDrill(st);
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
     applyAction(st, { type: 'exit' });
@@ -262,6 +282,7 @@ describe('drill bay tutorial', () => {
 
   it('fires plains afterglow only once when the real drop loads', () => {
     const st = drill(5);
+    skipPhaserDrill(st);
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
     applyAction(st, { type: 'exit' });
@@ -277,13 +298,14 @@ describe('drill bay tutorial', () => {
     expect(st.log.filter((l) => l.loreId === 'LOG-TUT-WELCOME').length).toBe(1);
   });
 
-  it('autopilot hint paths toward the hatch and exits on it', () => {
+  it('autopilot hint paths toward the phaser bay then the hatch', () => {
     const st = drill(42);
-    clearHostiles(st);
+    clearCorridorHostiles(st);
     const toward = mechanicsAutopilotHint(st);
     expect(toward).not.toBeNull();
-    expect(toward!.type === 'move' || toward!.type === 'exit').toBe(true);
+    expect(toward!.type === 'move' || toward!.type === 'use').toBe(true);
 
+    skipPhaserDrill(st);
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
     expect(mechanicsAutopilotHint(st)).toEqual({ type: 'exit' });
@@ -291,8 +313,8 @@ describe('drill bay tutorial', () => {
 
   it('autopilot can clear the drill bay into real plains', () => {
     const st = drill(42);
-    clearHostiles(st);
-    let guard = 80;
+    clearCorridorHostiles(st);
+    let guard = 120;
     while (st.tutorialActive && guard-- > 0) {
       const hint = mechanicsAutopilotHint(st);
       expect(hint).not.toBeNull();
@@ -301,6 +323,38 @@ describe('drill bay tutorial', () => {
     expect(st.tutorialActive).toBe(false);
     expect(st.width).toBeGreaterThan(24);
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-DONE')).toBe(true);
+  });
+
+  it('phaser bay coaches pickup, equip, and marks drill done after a beam', () => {
+    const st = drill(42);
+    clearCorridorHostiles(st);
+    st.scriptedFired.tut_light = true;
+    st.turn = 1;
+    st.player.x = 14;
+    st.player.y = 7;
+    expect(contextHint(st)).toBe('UI-TUT-GOTO-PHASER');
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    expect(contextHint(st)).toBe('UI-TUT-PHASER-PICKUP');
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    expect(contextHint(st)).toMatch(/UI-(TUT|HINT)-PHASER-EQUIP/);
+
+    const phaserIdx = st.inventory.findIndex((s) => s.kind === 'phaser');
+    expect(phaserIdx).toBeGreaterThanOrEqual(0);
+    st.ui.selectedSlot = phaserIdx;
+    applyAction(st, { type: 'use' });
+    expect(st.player.equip.tool).toBe('phaser');
+
+    st.player.x = 20;
+    st.player.y = 7;
+    refreshVision(st);
+    expect(contextHint(st)).toMatch(/UI-(TUT|HINT)-PHASER/);
+
+    applyAction(st, { type: 'move', dx: 0, dy: -1 });
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER')).toBe(true);
+    expect(st.scriptedFired.tut_phaser_fired).toBe(true);
+    expect(describeObjective(st).local).toBe('OBJ-TUT-HATCH');
   });
 
   it('marks mapReloaded when tutorial exits without changing sectorIndex', async () => {

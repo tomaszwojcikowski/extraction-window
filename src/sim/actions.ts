@@ -41,13 +41,29 @@ function tryMove(state: GameState, dx: number, dy: number): void {
     return;
   }
 
+  const nx = state.player.x + dx;
+  const ny = state.player.y + dy;
+
+  // Point-blank: stepping onto a hostile is always melee, never a beam.
+  if (nx >= 0 && ny >= 0 && nx < state.width && ny < state.height) {
+    const bumpFoe = enemyAt(state, nx, ny);
+    if (bumpFoe) {
+      if (hasStatus(state.player, 'downed')) {
+        pushLog(state, 'LOG-DOWNED-ACT');
+        return;
+      }
+      triggerOverwatchOnAttack(state, bumpFoe);
+      playerAttack(state, bumpFoe, randInt(state.rng, -1, 1));
+      endPlayerTurn(state);
+      return;
+    }
+  }
+
   if (tryFirePhaser(state, dx, dy)) {
     endPlayerTurn(state);
     return;
   }
 
-  const nx = state.player.x + dx;
-  const ny = state.player.y + dy;
   if (nx < 0 || ny < 0 || nx >= state.width || ny >= state.height) {
     pushLog(state, 'LOG-MOVE-BLOCKED');
     return;
@@ -58,18 +74,6 @@ function tryMove(state: GameState, dx: number, dy: number): void {
       state,
       tile.kind === 'sealed' ? 'LOG-SEALED-BLOCK' : 'LOG-MOVE-BLOCKED',
     );
-    return;
-  }
-
-  const foe = enemyAt(state, nx, ny);
-  if (foe) {
-    if (hasStatus(state.player, 'downed')) {
-      pushLog(state, 'LOG-DOWNED-ACT');
-      return;
-    }
-    triggerOverwatchOnAttack(state, foe);
-    playerAttack(state, foe, randInt(state.rng, -1, 1));
-    endPlayerTurn(state);
     return;
   }
 

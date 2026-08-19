@@ -3,6 +3,7 @@ import { lore } from '../../src/data/lore';
 import {
   phaserContextHint,
   phaserKitStatus,
+  phaserLiveLaneCount,
   phaserNeedsRangeCoach,
 } from '../../src/game/presenters/PhaserLanes';
 import { combatArena, makeEnemy } from '../sim/fixtures';
@@ -65,6 +66,19 @@ describe('phaserContextHint', () => {
     openLane(st, 2);
     st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y })];
     expect(phaserContextHint(st)).toBeNull();
+  });
+});
+
+describe('phaserLiveLaneCount', () => {
+  it('counts live lanes when worn, powered, and hostiles are in band', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 40;
+    openLane(st, 2);
+    st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y })];
+    expect(phaserLiveLaneCount(st)).toBe(1);
+    st.player.energy = 2;
+    expect(phaserLiveLaneCount(st)).toBe(0);
   });
 });
 

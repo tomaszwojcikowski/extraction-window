@@ -1,5 +1,5 @@
 import { playerAttack } from './combat';
-import { pushLog } from './log';
+import { canSpendPower, KIT_POWER_COST, spendPower } from './bus';
 import { randInt } from './rng';
 import { allyAt, enemyAt, npcAt } from './spatial';
 import { hasStatus } from './status';
@@ -8,7 +8,7 @@ import type { Enemy, GameState } from './types';
 /** Worn phaser is a short cardinal lance — not adjacent melee, not a long dart. */
 export const PHASER_RANGE_MIN = 2;
 export const PHASER_RANGE_MAX = 3;
-export const PHASER_ENERGY_COST = 4;
+export const PHASER_ENERGY_COST = KIT_POWER_COST.phaser;
 
 export function hasPhaserEquipped(state: GameState): boolean {
   return state.player.equip.tool === 'phaser';
@@ -22,6 +22,17 @@ export const PHASER_CARDINALS = [
 ] as const;
 
 export type PhaserLaneStep = { x: number; y: number; step: number };
+
+export function phaserTargetDistance(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): number {
+  return Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
+}
+
+export function isPhaserBandDistance(dist: number): boolean {
+  return dist >= PHASER_RANGE_MIN && dist <= PHASER_RANGE_MAX;
+}
 
 /**
  * Trace a cardinal lane up to PHASER_RANGE_MAX — shared by sim fire checks and
@@ -48,7 +59,9 @@ export function tracePhaserLane(
     steps.push({ x, y, step });
     const foe = enemyAt(state, x, y);
     if (!foe) continue;
+    // Point-blank hostiles block the lane — never a beam target.
     if (step < PHASER_RANGE_MIN) return { steps };
+    if (!isPhaserBandDistance(phaserTargetDistance(state.player, foe))) return { steps };
     if (!(state.visible[y]?.[x] ?? false)) return { steps };
     return { steps, target: foe };
   }
@@ -70,8 +83,9 @@ export function phaserAnyTarget(state: GameState): boolean {
 }
 
 export function firePhaser(state: GameState, enemy: Enemy): void {
-  state.player.energy = Math.max(0, state.player.energy - PHASER_ENERGY_COST);
-  pushLog(state, 'LOG-USE-PHASER', `-${PHASER_ENERGY_COST} Power`);
+  const dist = phaserTargetDistance(state.player, enemy);
+  if (!isPhaserBandDistance(dist)) return;
+  if (!spendPower(state, PHASER_ENERGY_COST, 'LOG-USE-PHASER')) return;
   playerAttack(state, enemy, randInt(state.rng, -1, 1));
 }
 
@@ -79,9 +93,10 @@ export function firePhaser(state: GameState, enemy: Enemy): void {
 export function tryFirePhaser(state: GameState, dx: number, dy: number): boolean {
   if (!hasPhaserEquipped(state)) return false;
   if (hasStatus(state.player, 'downed')) return false;
-  if (state.player.energy < PHASER_ENERGY_COST) return false;
+  if (!canSpendPower(state, PHASER_ENERGY_COST)) return false;
   const foe = findPhaserTarget(state, dx, dy);
   if (!foe) return false;
+  if (!isPhaserBandDistance(phaserTargetDistance(state.player, foe))) return false;
   firePhaser(state, foe);
   return true;
 }

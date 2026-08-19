@@ -58,6 +58,53 @@ describe('survey phaser', () => {
     expect(tryFirePhaser(st, 1, 0)).toBe(false);
   });
 
+  it('melees on bump when phaser is worn — no beam at 1 tile', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 40;
+    openLane(st, 1);
+    const en = foeAt(st, 1);
+    const hp = en.hp;
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    expect(en.hp).toBeLessThan(hp);
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER')).toBe(false);
+    expect(st.log.some((l) => l.loreId === 'LOG-HIT')).toBe(true);
+  });
+
+  it('melees adjacent even when a valid 2-tile target is behind on the lane', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 40;
+    openLane(st, 2);
+    const near = foeAt(st, 1);
+    const far = makeEnemy({
+      kind: 'mite',
+      hp: 30,
+      maxHp: 30,
+      def: 0,
+      id: 9002,
+      x: st.player.x + 2,
+      y: st.player.y,
+    });
+    st.enemies.push(far);
+    const nearHp = near.hp;
+    applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    expect(near.hp).toBeLessThan(nearHp);
+    expect(far.hp).toBe(far.maxHp);
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER')).toBe(false);
+  });
+
+  it('firePhaser ignores point-blank hostiles', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    openLane(st, 1);
+    const en = foeAt(st, 1);
+    const hp = en.hp;
+    firePhaser(st, en);
+    expect(en.hp).toBe(hp);
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER')).toBe(false);
+  });
+
   it('does not fire at 4 tiles or through walls', () => {
     const st = combatArena();
     st.player.equip.tool = 'phaser';

@@ -183,6 +183,12 @@ export const LORE = {
     'Fauna notice your lamp and shadow — stay LIT when you can · Flare for dark fights',
   'UI-TUT-FIGHT': 'Walk into them to hit · dark: i, select Plasma Flare, u',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
+  'UI-TUT-GOTO-PHASER':
+    'East phaser bay — pick up Survey Phaser, wear it, fire at 2–3 tiles on a clear lane',
+  'UI-TUT-PHASER-PICKUP': 'Survey Phaser on the deck — walk onto it, then i → u to wear',
+  'UI-TUT-PHASER-EQUIP': 'Wear the phaser (u) — step toward a hostile 2–3 out to fire',
+  'UI-TUT-PHASER':
+    'Stand on the lane — step toward a mite 2–3 tiles away (−4 Power) · adjacent is melee',
   'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Power drip then goes live)',
   'UI-TUT-EXIT':
     'On hatch — step on it or press Enter / Space to start the drop (Power drip goes live)',
@@ -243,7 +249,8 @@ export const LORE = {
   'OBJ-LOCAL-CORE': '→ Nav Lattice',
   'OBJ-LOCAL-SHUTTLE': '→ Drop skiff pad',
   'OBJ-LOCAL-ROOM': '⇢ Optional site',
-  'OBJ-TUT-HATCH': '→ East hatch (learn notice, Power hazard, kit)',
+  'OBJ-TUT-PHASER': '→ Phaser bay (2–3 tile lane drill)',
+  'OBJ-TUT-HATCH': '→ East hatch (notice, Power hazard, phaser, kit)',
   'OBJ-TUT-BRIEF': 'Training — Power drip paused until you leave',
   'HAZ-BUS': 'Power critical',
   'UI-CODEX': 'PADD',
@@ -405,13 +412,15 @@ export const LORE = {
   'LOG-DROP':
     'Meridian Shelf drop. Field array still bleeding EM — fauna will wake. Recover Lattice; extract before Power hits 0.',
   'LOG-TUT-WELCOME':
-    'Drill bay — Power drip paused. LIT/SHADOW changes who notices you; ion tiles drain Power. East hatch starts the real drop.',
+    'Drill bay — Power drip paused. Room 1: notice + hazard. Room 2: Survey Phaser lanes. East hatch starts the real drop.',
   'LOG-TUT-LIGHT':
     'Lamp stops at walls. Badge: LIT safer · SHADOW ambush risk.',
   'LOG-TUT-HAZARD':
     'Ion tile drains Power — Sealant (i → select → u) or take the south detour.',
   'LOG-TUT-WAKE':
     'Fauna notice your lamp and shadow footprint — Flare lights dark fights.',
+  'LOG-TUT-PHASER':
+    'Phaser bay — cardinal lanes at 2–3 tiles. Adjacent stays melee. Fire once, then the hatch.',
   'LOG-TUT-DONE':
     'Power drip is live. Order: Splice Key → beacon → Nav Lattice → drop skiff.',
   'LOG-MOVE-BLOCKED': 'Cannot walk there.',
@@ -460,7 +469,7 @@ export const LORE = {
   'LOG-USE-BLADE': 'Combat knife equipped — +1 ATK while worn.',
   'LOG-USE-BATON': 'Pulse Baton equipped — +1 ATK; melee stuns.',
   'LOG-USE-PHASER-EQUIP': 'Survey phaser equipped — step toward a hostile 2–3 tiles out to fire.',
-  'LOG-USE-PHASER': 'Survey phaser — beam along the lane.',
+  'LOG-USE-PHASER': 'Survey phaser — beam along the lane (−4 Power).',
   'LOG-USE-HARNESS': 'EVA harness equipped — shield capacity up.',
   'LOG-USE-VEST': 'Ablative vest equipped — Shield + DEF.',
   'LOG-UNEQUIP': 'Gear stowed in kit.',

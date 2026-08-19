@@ -44,9 +44,12 @@ describe('ActionFeedback', () => {
     ]);
   });
 
-  it('floats phaser beam fire', () => {
-    expect(actionFloatLabels([{ loreId: 'LOG-USE-PHASER' }])).toEqual([
-      { label: 'PHASER · BEAM', color: ThemeCss.arcWhite },
+  it('floats phaser beam fire with Power spend', () => {
+    expect(
+      actionFloatLabels([{ loreId: 'LOG-USE-PHASER', detail: '-4 Power' }]),
+    ).toEqual([{ label: 'PHASER · -4 Power', color: ThemeCss.arcWhite }]);
+    expect(actionFloatLabels([{ loreId: 'LOG-USE-PHASER' }], { energyDelta: -4 })).toEqual([
+      { label: 'PHASER · POWER -4', color: ThemeCss.arcWhite },
     ]);
   });
 

@@ -49,6 +49,7 @@ export const KIT_POWER_COST = {
   flare: 2,
   filter: 1,
   stim: 2,
+  phaser: 4,
 } as const;
 
 export function taxPower(state: GameState, cost: number, logId: LoreId): void {

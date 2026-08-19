@@ -47,6 +47,13 @@ export type ObjectiveDesc = {
 /** Shared HUD / coherency description of the active goal. */
 export function describeObjective(state: GameState): ObjectiveDesc {
   if (state.tutorialActive) {
+    if (!state.scriptedFired.tut_phaser_fired) {
+      return {
+        local: 'OBJ-TUT-PHASER',
+        campaign: 'OBJ-TUT-BRIEF',
+        pos: { x: 20, y: 7 },
+      };
+    }
     return {
       local: 'OBJ-TUT-HATCH',
       campaign: 'OBJ-TUT-BRIEF',

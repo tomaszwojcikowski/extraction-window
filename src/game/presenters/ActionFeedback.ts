@@ -237,7 +237,14 @@ export function collectActionFloatLabels(
         next = { label: 'DART · EXPOSE', color: ThemeCss.flag };
         break;
       case 'LOG-USE-PHASER':
-        next = { label: 'PHASER · BEAM', color: ThemeCss.arcWhite };
+        next = {
+          label: log.detail
+            ? `PHASER · ${log.detail}`
+            : vitals?.energyDelta !== undefined && vitals.energyDelta < 0
+              ? `PHASER · POWER ${signedDelta(vitals.energyDelta)}`
+              : 'PHASER · BEAM',
+          color: ThemeCss.arcWhite,
+        };
         break;
       case 'LOG-USE-PHASER-EQUIP':
         next = { label: 'PHASER EQUIPPED', color: ThemeCss.arcWhite };
@@ -925,7 +932,7 @@ export const ENEMY_LIFT_PX = 2;
 export const COMBAT_BUMP_MS = 65;
 export const COMBAT_BUMP_PX = 7;
 /** Short cardinal lance — long enough to read, short enough for corridor cadence. */
-export const PHASER_BEAM_MS = 180;
+export const PHASER_BEAM_MS = 240;
 /** Hostile / surveyor collapse — readable, still shorter than a corridor beat. */
 export const DEATH_MS = 220;
 
@@ -1042,6 +1049,60 @@ export function phaserBeamTargetTile(
 }
 
 /**
+ * Single frame of the survey phaser beam — contact sheet and tween updates.
+ */
+export function paintPhaserBeamFrame(
+  g: Phaser.GameObjects.Graphics,
+  worldXY: (gx: number, gy: number) => { x: number; y: number },
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+  progress = 1,
+): void {
+  const a = worldXY(from.x, from.y);
+  const b = worldXY(to.x, to.y);
+  const x = a.x + (b.x - a.x) * progress;
+  const y = a.y + (b.y - a.y) * progress;
+
+  const pathTiles: { x: number; y: number }[] = [];
+  const sx = Math.sign(to.x - from.x);
+  const sy = Math.sign(to.y - from.y);
+  let px = from.x + sx;
+  let py = from.y + sy;
+  while (px !== to.x || py !== to.y) {
+    pathTiles.push({ x: px, y: py });
+    px += sx;
+    py += sy;
+  }
+  pathTiles.push(to);
+
+  const litCount = Math.max(1, Math.ceil(pathTiles.length * progress));
+  for (let i = 0; i < litCount; i++) {
+    const tile = pathTiles[i]!;
+    const c = worldXY(tile.x, tile.y);
+    const half = TILE_DRAW * 0.38;
+    g.fillStyle(Theme.scanWash, 0.14 + progress * 0.12);
+    g.fillRect(c.x - half, c.y - half, half * 2, half * 2);
+    g.lineStyle(1, Theme.arc, 0.55);
+    g.strokeRect(c.x - half + 1, c.y - half + 1, half * 2 - 2, half * 2 - 2);
+  }
+
+  g.lineStyle(10, Theme.scanWash, 0.32);
+  g.lineBetween(a.x, a.y, x, y);
+  g.lineStyle(5, Theme.arcWhite, 0.42);
+  g.lineBetween(a.x, a.y, x, y);
+  g.lineStyle(2, 0xffffff, 0.98);
+  g.lineBetween(a.x, a.y, x, y);
+
+  const impactR = 4 + progress * 7;
+  g.fillStyle(Theme.arcWhite, 0.55);
+  g.fillCircle(b.x, b.y, impactR);
+  g.lineStyle(2, 0xffffff, 0.9);
+  g.strokeCircle(b.x, b.y, impactR * 0.72);
+  g.fillStyle(0xffffff, 0.95);
+  g.fillCircle(b.x, b.y, 2.5);
+}
+
+/**
  * Draw a 2–3 tile ion lance from the surveyor to the impact tile.
  * Fire-and-forget — callers wait `PHASER_BEAM_MS` if they need the window.
  */
@@ -1052,14 +1113,12 @@ export function playPhaserBeam(
   from: { x: number; y: number },
   to: { x: number; y: number },
 ): void {
-  const a = worldXY(from.x, from.y);
-  const b = worldXY(to.x, to.y);
   const g = layer.scene.add.graphics();
   g.setBlendMode(BLEND_ADD);
   g.setDepth(PHASER_BEAM_DEPTH);
   layer.add(g);
 
-  const grow = PHASER_BEAM_MS * 0.55;
+  const grow = PHASER_BEAM_MS * 0.58;
   const fade = PHASER_BEAM_MS - grow;
   const proxy = { t: 0 };
   tweens.add({
@@ -1069,17 +1128,8 @@ export function playPhaserBeam(
     ease: 'Cubic.easeOut',
     onUpdate: () => {
       if (!g.active) return;
-      const x = a.x + (b.x - a.x) * proxy.t;
-      const y = a.y + (b.y - a.y) * proxy.t;
       g.clear();
-      g.lineStyle(8, Theme.arcWhite, 0.28);
-      g.lineBetween(a.x, a.y, x, y);
-      g.lineStyle(3, 0xffffff, 0.95);
-      g.lineBetween(a.x, a.y, x, y);
-      g.fillStyle(Theme.arcWhite, 0.95);
-      g.fillCircle(x, y, 3 + proxy.t * 4);
-      g.fillStyle(0xffffff, 0.85);
-      g.fillCircle(x, y, 1.5);
+      paintPhaserBeamFrame(g, worldXY, from, to, proxy.t);
     },
     onComplete: () => {
       if (!g.active) return;

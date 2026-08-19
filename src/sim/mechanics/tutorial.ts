@@ -4,6 +4,8 @@ import { inShadow } from '../light';
 import { hasItem } from '../inventory';
 import { pushLog } from '../log';
 import { wouldNoticeEnemy } from '../notice';
+import { findPhaserTarget, hasPhaserEquipped } from '../phaser';
+import { inPhaserBay, PHASER_STAND } from '../../map/tutorialMap';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 
@@ -43,6 +45,13 @@ export const tutorialMechanic: Mechanic = {
     }
   },
 
+  onEndTurn(state: GameState): void {
+    if (!state.tutorialActive) return;
+    if (state.log.some((l) => l.loreId === 'LOG-USE-PHASER')) {
+      state.scriptedFired.tut_phaser_fired = true;
+    }
+  },
+
   contextHint(state: GameState): LoreId | null {
     if (!state.tutorialActive) return null;
 
@@ -66,10 +75,13 @@ export const tutorialMechanic: Mechanic = {
 
     if (hasItem(state, 'salvage') && state.turn < 8) return 'UI-TUT-KIT';
 
-    const hostileVisible = state.enemies.some(
-      (e) => e.alive && (state.visible[e.y]?.[e.x] ?? false),
+    const corridorHostile = state.enemies.some(
+      (e) =>
+        e.alive &&
+        e.kind === 'stalker' &&
+        (state.visible[e.y]?.[e.x] ?? false),
     );
-    if (hostileVisible) {
+    if (corridorHostile) {
       const stalkerWinding = state.enemies.some(
         (e) =>
           e.alive &&
@@ -79,18 +91,17 @@ export const tutorialMechanic: Mechanic = {
       );
       if (stalkerWinding) return 'UI-TUT-STALKER';
 
-      // Teach wake only when lines would actually show (visible + would notice).
       const px = state.player.x;
       const py = state.player.y;
       const wakeActive = state.enemies.some(
         (e) =>
           e.alive &&
+          e.kind === 'stalker' &&
           (state.visible[e.y]?.[e.x] ?? false) &&
           wouldNoticeEnemy(state, e, px, py),
       );
       if (wakeActive && !state.scriptedFired.tut_wake) {
         once(state, 'tut_wake');
-        // Fauna notice is sim-side — hint only, no duplicate log.
         return 'UI-TUT-WAKE';
       }
 
@@ -98,6 +109,19 @@ export const tutorialMechanic: Mechanic = {
         return 'UI-HINT-FLARE';
       }
       return 'UI-TUT-FIGHT';
+    }
+
+    if (!state.scriptedFired.tut_phaser_fired) {
+      if (inPhaserBay(state.player.x, state.player.y)) {
+        if (once(state, 'tut_phaser_log')) pushLog(state, 'LOG-TUT-PHASER');
+        const phaserOnGround = state.items.some((i) => i.kind === 'phaser');
+        if (phaserOnGround) return 'UI-TUT-PHASER-PICKUP';
+        if (hasItem(state, 'phaser') && !hasPhaserEquipped(state)) {
+          return 'UI-TUT-PHASER-EQUIP';
+        }
+        return 'UI-TUT-PHASER';
+      }
+      return 'UI-TUT-GOTO-PHASER';
     }
 
     const onHatch =
@@ -112,11 +136,51 @@ export const tutorialMechanic: Mechanic = {
   autopilotHint(state: GameState): Action | null {
     if (!state.tutorialActive || !state.exitPos) return null;
     const { x, y } = state.player;
+    const blocked = (bx: number, by: number) =>
+      state.enemies.some((e) => e.alive && e.x === bx && e.y === by);
+
+    if (!state.scriptedFired.tut_phaser_fired) {
+      const phaserGround = state.items.find((i) => i.kind === 'phaser');
+      if (phaserGround) {
+        const path = bfsPath(state.tiles, { x, y }, phaserGround, blocked);
+        if (path?.[0]) {
+          return { type: 'move', dx: path[0].x - x, dy: path[0].y - y };
+        }
+      }
+
+      const phaserIdx = state.inventory.findIndex((s) => s.kind === 'phaser');
+      if (phaserIdx >= 0 && !hasPhaserEquipped(state)) {
+        state.ui.selectedSlot = phaserIdx;
+        return { type: 'use' };
+      }
+
+      if (hasPhaserEquipped(state)) {
+        if (x !== PHASER_STAND.x || y !== PHASER_STAND.y) {
+          const path = bfsPath(state.tiles, { x, y }, PHASER_STAND, blocked);
+          if (path?.[0]) {
+            return { type: 'move', dx: path[0].x - x, dy: path[0].y - y };
+          }
+        }
+        for (const [dx, dy] of [
+          [1, 0],
+          [0, -1],
+        ] as const) {
+          if (findPhaserTarget(state, dx, dy)) {
+            return { type: 'move', dx, dy };
+          }
+        }
+      }
+
+      const bayEntry = { x: 16, y: 7 };
+      const path = bfsPath(state.tiles, { x, y }, bayEntry, blocked);
+      if (path?.[0]) {
+        return { type: 'move', dx: path[0].x - x, dy: path[0].y - y };
+      }
+    }
+
     if (x === state.exitPos.x && y === state.exitPos.y) {
       return { type: 'exit' };
     }
-    const blocked = (bx: number, by: number) =>
-      state.enemies.some((e) => e.alive && e.x === bx && e.y === by);
     // Prefer south alcove while still west of it — skips stalker + ion tile.
     const alcove = { x: 12, y: 10 } as const;
     const useAlcove =

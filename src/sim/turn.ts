@@ -5,6 +5,7 @@ import { XP_SECTOR } from '../data/progression';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
+import { pinPhaserTrainingMites } from '../map/tutorialMap';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
 import { addStatus, addPlayerMarked, tickPlayerStatusEffects } from './status';
@@ -188,6 +189,7 @@ export function endPlayerTurn(state: GameState): void {
   refreshVisionAfterTurn(state);
   applyAllyFieldRoles(state);
   moveEnemies(state);
+  pinPhaserTrainingMites(state);
   moveAllies(state);
   refreshVision(state);
   syncObjectiveFlags(state);

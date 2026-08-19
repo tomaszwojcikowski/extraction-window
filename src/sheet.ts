@@ -11,6 +11,8 @@ import {
 import { drawMeter, drawStencilBadge } from './scenes/atmosphere';
 import { Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
 import { drawThreatZones } from './game/views/ThreatView';
+import { paintPhaserBeamFrame } from './game/presenters/ActionFeedback';
+import { drawPhaserLanes } from './game/presenters/PhaserLanes';
 import { createGame } from './sim/state';
 import { moveEnemies } from './sim/ai';
 import type { GameState } from './sim/types';
@@ -79,6 +81,7 @@ class SheetScene extends Phaser.Scene {
     this.buildCrackGrid();
     this.buildStructureGrid();
     this.buildChromeGrid();
+    this.buildPhaserArtifacts();
     this.buildTelegraphBoards();
   }
 
@@ -246,6 +249,113 @@ class SheetScene extends Phaser.Scene {
       const frames = this.textures.exists(`${key}_1`) ? [key, `${key}_1`, `${key}_2`] : [key];
       this.cell('props', frames, label, 'rule-changing');
     }
+  }
+
+  private drawMiniGrid(g: Phaser.GameObjects.Graphics, tiles: number): void {
+    const size = tiles * TILE_DRAW;
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(0, 0, size, size);
+    g.lineStyle(1, Theme.panelEdge, 1);
+    for (let i = 0; i <= tiles; i++) {
+      g.lineBetween(i * TILE_DRAW, 0, i * TILE_DRAW, size);
+      g.lineBetween(0, i * TILE_DRAW, size, i * TILE_DRAW);
+    }
+  }
+
+  /** Survey phaser lane overlay + beam frames — real presenter geometry. */
+  private buildPhaserArtifacts(): void {
+    const host = document.getElementById('phaser');
+    if (!host) return;
+
+    const tiles = 7;
+    const w = tiles * TILE_DRAW;
+    const h = tiles * TILE_DRAW;
+    const worldXY = (gx: number, gy: number) => ({
+      x: gx * TILE_DRAW + TILE_DRAW / 2,
+      y: gy * TILE_DRAW + TILE_DRAW / 2,
+    });
+
+    const samples: Array<{
+      label: string;
+      meta: string;
+      dist: number;
+      energy: number;
+      beam?: boolean;
+      animFrame?: number;
+    }> = [
+      { label: 'live · 2 tiles', meta: 'reticle · beam guide', dist: 2, energy: 40 },
+      { label: 'live · 3 tiles', meta: 'far band · step dot', dist: 3, energy: 40, animFrame: 2 },
+      { label: 'melee band', meta: 'adjacent · rust X', dist: 1, energy: 40 },
+      { label: 'low power', meta: 'dim lanes · need 4 Power', dist: 2, energy: 2 },
+      { label: 'beam fire', meta: 'tile flash · impact ring', dist: 2, energy: 40, beam: true },
+    ];
+
+    samples.forEach((sample, i) => {
+      const st = openRoom(200 + i);
+      const px = 2;
+      const py = 3;
+      st.player.x = px;
+      st.player.y = py;
+      st.player.equip.tool = 'phaser';
+      st.player.energy = sample.energy;
+      st.enemies = [
+        {
+          ...st.enemies[0]!,
+          id: 1,
+          kind: 'mite',
+          x: px + sample.dist,
+          y: py,
+          alive: true,
+          hp: 10,
+          maxHp: 10,
+        },
+      ];
+
+      const key = `phaser_${i}`;
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      this.drawMiniGrid(g, tiles);
+
+      const player = worldXY(px, py);
+      const foe = worldXY(st.enemies[0]!.x, st.enemies[0]!.y);
+      g.fillStyle(Theme.inkBright, 0.92);
+      g.fillCircle(player.x, player.y, 6);
+      g.fillStyle(ENEMIES.mite.color, 1);
+      g.fillCircle(foe.x, foe.y, 7);
+
+      drawPhaserLanes(g, st, sample.animFrame ?? 0, TILE_DRAW);
+
+      if (sample.beam) {
+        paintPhaserBeamFrame(
+          g,
+          worldXY,
+          { x: px, y: py },
+          { x: st.enemies[0]!.x, y: st.enemies[0]!.y },
+          1,
+        );
+      }
+
+      g.generateTexture(key, w, h);
+      g.destroy();
+
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = `${w + 12}px`;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.textures.get(key).getSourceImage() as CanvasImageSource, 0, 0);
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = sample.label;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = sample.meta;
+      meta.style.color = ThemeCss.scanWash;
+      cell.append(canvas, name, meta);
+      host.appendChild(cell);
+    });
   }
 
   private buildTelegraphBoards(): void {
