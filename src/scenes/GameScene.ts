@@ -1,9 +1,6 @@
 import Phaser from 'phaser';
 import {
   TILE_DRAW,
-  enemyTextureKey,
-  npcTextureKey,
-  allyTextureKey,
   playerTextureKey,
   wallTextureKey,
   sconceTextureKey,
@@ -17,14 +14,11 @@ import {
   LightTemp,
   Theme,
   ThemeCss,
-  crackTextureKey,
   floorTextureKey,
 } from './theme';
 import { ENEMIES } from '../data/enemies';
 import { lore, type LoreId } from '../data/lore';
-import { applyAction, createGame, describeObjective, type Action, type GameState } from '../sim';
-import { activeQuestStep } from '../sim/roomQuest';
-import { tileBrightness } from '../sim/light';
+import { createGame, describeObjective, type Action, type GameState } from '../sim';
 import {
   addCameraAtmosphere,
   createArcSweep,
@@ -48,29 +42,27 @@ import {
   worldActionFloats,
   flashHit,
   flashScreen,
-  playCombatContactJuice,
   playMoveAnims,
-  phaserBeamTargetTile,
-  playPhaserBeam,
-  playActorDeath,
   playPlayerDeath,
-  presentActionFeedback,
-  tintPlayerHurt,
-  tintVisibleEnemies,
-  PHASER_BEAM_MS,
   type ActionFloat,
   type EnemyView,
 } from '../game/presenters/ActionFeedback';
-import { flankPenalty } from '../sim/combat';
+import {
+  refreshEnemyAnimFrame,
+  syncFieldActors,
+  syncFieldItems,
+  syncGoalVisuals,
+  syncOptionalSiteVisuals,
+  type ActorSyncHost,
+} from '../game/presenters/ActorSync';
+import { applyFieldLightingPass, type FieldLightingHost } from '../game/presenters/FieldLighting';
+import { runTurnCommit, type TurnCommitHost } from '../game/presenters/TurnPresenter';
 import { pickCameraCue, shearBreachCue, type CameraCue } from '../game/presenters/EventCamera';
 import { CameraKick } from '../game/presenters/CameraKick';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
 import { MinimapView } from '../game/views/MinimapView';
-import { drawThreatZones } from '../game/views/ThreatView';
-import { drawWakeTells } from '../game/presenters/WakeTells';
-import { drawPhaserLanes } from '../game/presenters/PhaserLanes';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import {
@@ -86,8 +78,6 @@ import {
   type EphemeralFieldChrome,
   type LightPreferenceHint,
 } from '../game/presenters/FieldChrome';
-import { pressureRevealAt } from '../game/presenters/PressureReveal';
-import { npcQuestMarker, npcQuestMarkerColor } from '../game/presenters/NpcMarkers';
 
 const TOP = HUD_TOP;
 const BAR_SLOTS = HUD_BAR_SLOTS;
@@ -530,8 +520,8 @@ export class GameScene extends Phaser.Scene {
 
     this.drawChrome();
     this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.handleKey(e));
-    this.syncItems();
-    this.syncActors(true);
+    syncFieldItems(this.actorSyncHost(), this.state);
+    syncFieldActors(this.actorSyncHost(), this.state, true);
     this.redrawTilesAndHud();
     this.updateCamera(true);
     this.syncFieldAudio(true);
@@ -589,7 +579,7 @@ export class GameScene extends Phaser.Scene {
       this.tickAnimatedTiles();
       this.tickAnimatedActors();
       // Pulse vent/hazard/beacon bloom with anim frame
-      if (this.state.status === 'playing') this.applyFieldLighting();
+      if (this.state.status === 'playing') applyFieldLightingPass(this.fieldLightingHost(), this.state);
     }
     if (!this.animating && !this.playerDying) {
       // Snappy 1px plotter redraw, not floaty bob
@@ -623,13 +613,7 @@ export class GameScene extends Phaser.Scene {
 
   private tickAnimatedActors(): void {
     this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
-    for (const en of this.state.enemies) {
-      if (!en.alive) continue;
-      const view = this.enemyViews.get(en.id);
-      if (!view) continue;
-      view.img.setTexture(enemyTextureKey(en.kind, this.animFrame % 3));
-      this.updateEnemyIntentLabel(view, en);
-    }
+    refreshEnemyAnimFrame(this.actorSyncHost(), this.state);
   }
 
   private worldXY(tx: number, ty: number): { x: number; y: number } {
@@ -965,7 +949,7 @@ export class GameScene extends Phaser.Scene {
       },
       afterUiChrome: (opts) => {
         this.redrawTilesAndHud();
-        if (opts?.syncItems) this.syncItems();
+        if (opts?.syncItems) syncFieldItems(this.actorSyncHost(), this.state);
       },
       showSkillHint: () => {
         this.hintText.setVisible(true);
@@ -984,187 +968,113 @@ export class GameScene extends Phaser.Scene {
   }
 
   private commitTurnAction(action: Action): void {
-    this.queuedAction = null;
-    this.releaseFirstLight();
-    const prevSector = this.state.sectorIndex;
-    const prevTutorialActive = this.state.tutorialActive;
-    const prevMapWidth = this.state.width;
-    const prevMapHeight = this.state.height;
-    const prevHp = this.state.player.hp;
-    const prevEnergy = this.state.player.energy;
-    const prevArmor = this.state.player.armor;
-    const prevFlank = flankPenalty(this.state);
-    const prevLogLen = this.state.log.length;
-    const prevAlive = this.state.enemies.filter((en) => en.alive).length;
-    const fromPlayer = { x: this.state.player.x, y: this.state.player.y };
-    const prevEnemySnap = this.state.enemies.map((en) => ({
-      id: en.id,
-      x: en.x,
-      y: en.y,
-      hp: en.hp,
-      alive: en.alive,
-      kind: en.kind,
-    }));
-    const prevAllySnap = this.state.allies.map((a) => ({
-      id: a.id,
-      x: a.x,
-      y: a.y,
-      alive: a.alive,
-    }));
-    const prevNpcSnap = this.state.npcs.map((n) => ({
-      id: n.id,
-      x: n.x,
-      y: n.y,
-    }));
+    runTurnCommit(this.turnCommitHost(), action);
+  }
 
-    applyAction(this.state, action);
-
-    const fb = presentActionFeedback({
-      state: this.state,
-      action,
-      prevSector,
-      prevTutorialActive,
-      prevMapWidth,
-      prevMapHeight,
-      prevHp,
-      prevLogLen,
-      prevAlive,
-      fromPlayer,
-      prevEnemySnap,
-      prevAllySnap,
-      prevNpcSnap,
-      lights: this.lightView,
-      flash: (color, alpha) => this.flashFx(color, alpha),
-      tintHitEnemies: () => tintVisibleEnemies(this.time, this.enemyViews.values()),
-    });
-    this.playEventCamera(fb.newLogs);
-    this.queueLightPreferenceHint();
-    const floatOpts = {
-      vitals: {
-        hpDelta: this.state.player.hp - prevHp,
-        energyDelta: this.state.player.energy - prevEnergy,
-        armorDelta: this.state.player.armor - prevArmor,
+  private actorSyncHost(): ActorSyncHost {
+    return {
+      addImage: (x, y, texture) => this.add.image(x, y, texture),
+      addText: (x, y, text, style) => this.add.text(x, y, text, style),
+      entityLayer: this.entityLayer,
+      itemLayer: this.itemLayer,
+      tweens: this.tweens,
+      snapImg: (img, gx, gy) => this.snapImg(img, gx, gy),
+      playerSprite: this.playerSprite,
+      playerDying: this.playerDying,
+      enemyViews: this.enemyViews,
+      npcViews: this.npcViews,
+      allyViews: this.allyViews,
+      goalMarker: this.goalMarker,
+      getGoalPulseTween: () => this.goalPulseTween,
+      setGoalPulseTween: (t) => {
+        this.goalPulseTween = t;
       },
-      flankBefore: prevFlank,
-      flankAfter: flankPenalty(this.state),
+      chevronGfx: this.chevronGfx,
+      optionalSiteGfx: this.optionalSiteGfx,
+      tileSprites: this.tileSprites,
+      camX: this.camX,
+      camY: this.camY,
+      scale: this.scale,
+      topInset: TOP,
+      bottomInset: () => this.bottomInset(),
+      animFrame: this.animFrame,
     };
-    if (this.state.player.hp < prevHp) {
-      tintPlayerHurt(this.time, this.playerSprite);
-    }
-    // Meter stamps fire with floats — don't wait for the move tween to finish.
-    if (!fb.mapReloaded) this.redrawHudEager();
+  }
 
-    if (fb.mapReloaded) {
-      this.resetLevelTooltips();
-      this.lightView.clearFx();
-      this.buildMapSprites();
-      this.syncItems();
-      this.syncActors(true);
-      this.redrawTilesAndHud();
-      this.updateCamera(true);
-      this.syncFieldAudio(true);
-      this.startFirstLight();
-      // Spawn after rebuild — killAll() would freeze hatch floats in the world.
-      this.showActionFloats(this.state.log.slice(prevLogLen), floatOpts);
-      if (this.state.player.hp < prevHp) this.flashHit();
-      this.maybeEnd();
-      this.flushQueuedAction();
-      return;
-    }
-
-    this.showActionFloats(this.state.log.slice(prevLogLen), floatOpts);
-
-    music.syncField({
-      sectorId: this.state.sectorId,
-      sectorIndex: this.state.sectorIndex,
-      playerEnergy: this.state.player.energy,
-      maxEnergy: this.state.player.maxEnergy,
-      inCombat: this.threatNearby(),
-    });
-
-    // Light travels with the hop — capture the old wash, compute destination into
-    // caches only (no sprite paint), then lock at t=0 so nothing flashes ahead.
-    if (fb.playerMoved) {
-      this.lightView.captureMoveFrom(fromPlayer, {
-        x: this.state.player.x,
-        y: this.state.player.y,
-      });
-    }
-    this.applyFieldLighting();
-    if (fb.playerMoved) {
-      this.moveLightFxStep = -1;
-      this.lightView.lockMoveBlend(this.tileSprites, this.state.sectorId);
-      this.lightView.paintMoveTextures(this.state, this.tileSprites, (kind, x, y) =>
-        this.tileKey(kind, x, y),
-      );
-      this.lightView.setMoveLightProgress(0, this.tileSprites);
-      this.refreshMoveLightFx();
-    }
-    this.syncItems();
-
-    const phaserTarget = phaserBeamTargetTile(
-      fb.newLogs,
-      fromPlayer,
-      fb.hitTiles,
-      action,
-      this.state,
-    );
-    if (phaserTarget) {
-      playPhaserBeam(
-        this.tweens,
-        this.lightLayer,
-        (gx, gy) => this.worldXY(gx, gy),
-        fromPlayer,
-        { x: phaserTarget.x, y: phaserTarget.y },
-      );
-    }
-
-    const afterPresent = (opts?: { juice?: boolean }) => {
-      if (opts?.juice !== false) {
-        playCombatContactJuice(this.tweens, {
-          action,
-          playerMoved: fb.playerMoved,
-          prevHp,
-          state: this.state,
-          playerSprite: this.playerSprite,
-          enemyViews: this.enemyViews,
-          worldXY: (gx, gy) => this.worldXY(gx, gy),
-        });
-      }
-      this.lightView.endMoveLight();
-      this.redrawTilesAndHud();
-      this.syncActors(true);
-      this.maybeEnd();
-      this.flushQueuedAction();
+  private fieldLightingHost(): FieldLightingHost {
+    return {
+      lightView: this.lightView,
+      tileSprites: this.tileSprites,
+      tileKey: (kind, x, y) => this.tileKey(kind, x, y),
+      animFrame: this.animFrame,
+      threatGfx: this.threatGfx,
+      fieldMotes: this.fieldMotes,
+      firstLight: this.firstLight,
+      crackSprites: this.crackSprites,
+      mapLayer: this.mapLayer,
+      addCrackSprite: (x, y, texture) => {
+        const spr = this.add.image(
+          x * TILE_DRAW + TILE_DRAW / 2,
+          y * TILE_DRAW + TILE_DRAW / 2,
+          texture,
+        );
+        spr.setDisplaySize(TILE_DRAW, TILE_DRAW);
+        spr.setDepth(1.5);
+        this.mapLayer.add(spr);
+        return spr;
+      },
+      shadowCasters: () => this.shadowCasters(),
+      applyAllActorLighting: (sources) => this.applyAllActorLighting(sources),
+      syncSconceOverlays: () => this.syncSconceOverlays(),
+      bodyLightAt: () => this.bodyLightAt(),
+      refreshMoveLightFx: () => this.refreshMoveLightFx(),
     };
+  }
 
-    if (fb.playerMoved || fb.enemyMoved) {
-      playMoveAnims(this.moveAnimHost(), fromPlayer, fb.fromEnemies, afterPresent, {
-        fromAllies: fb.fromAllies,
-        fromNpcs: fb.fromNpcs,
-      });
-      return;
-    }
-
-    if (phaserTarget) {
-      playCombatContactJuice(this.tweens, {
-        action,
-        playerMoved: fb.playerMoved,
-        prevHp,
-        state: this.state,
-        playerSprite: this.playerSprite,
-        enemyViews: this.enemyViews,
-        worldXY: (gx, gy) => this.worldXY(gx, gy),
-      });
-      this.animating = true;
-      this.time.delayedCall(PHASER_BEAM_MS, () => {
-        this.animating = false;
-        afterPresent({ juice: false });
-      });
-      return;
-    }
-
-    afterPresent();
+  private turnCommitHost(): TurnCommitHost {
+    const host = this.actorSyncHost();
+    return {
+      getState: () => this.state,
+      setAnimating: (v) => {
+        this.animating = v;
+      },
+      clearQueuedAction: () => {
+        this.queuedAction = null;
+      },
+      releaseFirstLight: () => this.releaseFirstLight(),
+      flashFx: (color, alpha) => this.flashFx(color, alpha),
+      playEventCamera: (logs) => this.playEventCamera(logs),
+      queueLightPreferenceHint: () => this.queueLightPreferenceHint(),
+      redrawHudEager: () => this.redrawHudEager(),
+      resetLevelTooltips: () => this.resetLevelTooltips(),
+      buildMapSprites: () => this.buildMapSprites(),
+      syncItems: () => syncFieldItems(host, this.state),
+      syncActors: (snap) => syncFieldActors(host, this.state, snap),
+      redrawTilesAndHud: () => this.redrawTilesAndHud(),
+      updateCamera: (snap) => this.updateCamera(snap),
+      syncFieldAudio: (force) => this.syncFieldAudio(force),
+      startFirstLight: () => this.startFirstLight(),
+      showActionFloats: (logs, opts) => this.showActionFloats(logs, opts),
+      flashHit: () => this.flashHit(),
+      maybeEnd: () => this.maybeEnd(),
+      flushQueuedAction: () => this.flushQueuedAction(),
+      threatNearby: () => this.threatNearby(),
+      applyFieldLighting: () => applyFieldLightingPass(this.fieldLightingHost(), this.state),
+      refreshMoveLightFx: () => this.refreshMoveLightFx(),
+      setMoveLightFxStep: (step) => {
+        this.moveLightFxStep = step;
+      },
+      lightView: this.lightView,
+      tweens: this.tweens,
+      time: this.time,
+      playerSprite: this.playerSprite,
+      enemyViews: this.enemyViews,
+      lightLayer: this.lightLayer,
+      worldXY: (gx, gy) => this.worldXY(gx, gy),
+      moveAnimHost: () => this.moveAnimHost(),
+      tileSprites: this.tileSprites,
+      tileKey: (kind, x, y) => this.tileKey(kind, x, y),
+    };
   }
 
   private moveAnimHost() {
@@ -1180,7 +1090,7 @@ export class GameScene extends Phaser.Scene {
       allyViews: this.allyViews,
       npcViews: this.npcViews,
       state: this.state,
-      syncActors: (snap: boolean) => this.syncActors(snap),
+      syncActors: (snap: boolean) => syncFieldActors(this.actorSyncHost(), this.state, snap),
       snapImg: (img: Phaser.GameObjects.Image, gx: number, gy: number) => this.snapImg(img, gx, gy),
       onPlayerMoveLight: (t: number) => this.tickMoveLight(t),
     };
@@ -1281,252 +1191,6 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private syncItems(): void {
-    // Keep goal marker across refresh — removeAll(true) would destroy it
-    if (this.goalMarker?.parentContainer === this.itemLayer) {
-      this.itemLayer.remove(this.goalMarker, false);
-    }
-    this.itemLayer.removeAll(true);
-    const st = this.state;
-    for (const item of st.items) {
-      const seen = st.explored[item.y]![item.x];
-      const vis = st.visible[item.y]![item.x];
-      if (!seen) continue;
-      const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
-      // Non-quest loot only while in FOV; quest items leave a dim memory ghost
-      if (!vis && !quest) continue;
-      const tex =
-        item.kind === 'nav_core' ? 't_nav_core' : item.kind === 'relay_key' ? 't_key' : 't_item';
-      const spr = this.add.image(
-        item.x * TILE_DRAW + TILE_DRAW / 2,
-        item.y * TILE_DRAW + TILE_DRAW / 2,
-        tex,
-      );
-      spr.setDisplaySize(TILE_DRAW - 4, TILE_DRAW - 4);
-      spr.setAlpha(vis ? 1 : 0.3);
-      if (!vis) spr.setTint(Theme.memoryWash);
-      this.itemLayer.add(spr);
-      if (quest && vis) {
-        this.tweens.add({
-          targets: spr,
-          alpha: 0.55,
-          duration: 500,
-          yoyo: true,
-          repeat: -1,
-        });
-      }
-    }
-    if (this.goalMarker?.active) {
-      this.itemLayer.add(this.goalMarker);
-    }
-  }
-
-  private syncActors(snapPositions: boolean): void {
-    const st = this.state;
-    const aliveIds = new Set<number>();
-    const visAt = (x: number, y: number): boolean =>
-      st.visible[Math.round(y)]?.[Math.round(x)] ?? false;
-
-    for (const en of st.enemies) {
-      if (!en.alive) continue;
-      aliveIds.add(en.id);
-      const destVis = visAt(en.x, en.y);
-      let view = this.enemyViews.get(en.id);
-      if (!view) {
-        const img = this.add.image(0, 0, enemyTextureKey(en.kind, this.animFrame % 3));
-        // Tier reads as physical presence, sourced from sim state rather than
-        // baked per kind, so a scaled-up spawn still looks like what it is.
-        const bulk = en.tier === 'boss' ? 6 : en.tier === 'elite' ? 3 : 0;
-        img.setDisplaySize(TILE_DRAW - 2 + bulk, TILE_DRAW - 2 + bulk);
-        // Silhouette only while idle — windup markers replace text in updateEnemyIntentLabel.
-        const label = this.add.text(0, 0, '', {
-          fontFamily: FONT_DATA,
-          fontSize: '11px',
-          color: ThemeCss.inkBright,
-          stroke: ThemeCss.groundDeep,
-          strokeThickness: 3,
-        });
-        label.setOrigin(0.5, 1);
-        label.setVisible(false);
-        this.entityLayer.add(img);
-        this.entityLayer.add(label);
-        view = { img, label, gx: en.x, gy: en.y };
-        this.enemyViews.set(en.id, view);
-        this.snapImg(img, en.x, en.y);
-        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
-      }
-      // Mid-hop: keep visible while either the body tile or dest is in FOV.
-      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
-      view.img.setVisible(visible);
-      view.label.setVisible(visible);
-      view.img.setTexture(enemyTextureKey(en.kind, this.animFrame % 3));
-      this.updateEnemyIntentLabel(view, en);
-      if (snapPositions) {
-        this.snapImg(view.img, en.x, en.y);
-        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
-        view.gx = en.x;
-        view.gy = en.y;
-      }
-    }
-
-    for (const [id, view] of this.enemyViews) {
-      if (aliveIds.has(id) || view.dying) continue;
-      this.beginActorDeath(this.enemyViews, id, view);
-    }
-
-    const npcIds = new Set<number>();
-    for (const n of st.npcs) {
-      npcIds.add(n.id);
-      const destVis = visAt(n.x, n.y);
-      let view = this.npcViews.get(n.id);
-      if (!view) {
-        const img = this.add.image(0, 0, npcTextureKey(n.kind));
-        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
-        const label = this.add.text(0, 0, '', {
-          fontFamily: FONT_DATA,
-          fontSize: '14px',
-          color: ThemeCss.tape,
-          stroke: ThemeCss.groundDeep,
-          strokeThickness: 4,
-        });
-        label.setOrigin(0.5, 1);
-        label.setVisible(false);
-        this.entityLayer.add(img);
-        this.entityLayer.add(label);
-        view = { img, label, gx: n.x, gy: n.y };
-        this.npcViews.set(n.id, view);
-        this.snapImg(img, n.x, n.y);
-        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 2);
-      }
-      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
-      view.img.setVisible(visible);
-      this.updateNpcQuestLabel(view, n, visible);
-      view.img.setAlpha(n.talked ? 0.45 : 1);
-      if (snapPositions) {
-        this.snapImg(view.img, n.x, n.y);
-        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 2);
-        view.gx = n.x;
-        view.gy = n.y;
-      }
-    }
-    for (const [id, view] of this.npcViews) {
-      if (!npcIds.has(id)) {
-        view.img.destroy();
-        view.label.destroy();
-        this.npcViews.delete(id);
-      }
-    }
-
-    const allyIds = new Set<number>();
-    for (const a of st.allies) {
-      if (!a.alive) continue;
-      allyIds.add(a.id);
-      const destVis = visAt(a.x, a.y);
-      let view = this.allyViews.get(a.id);
-      if (!view) {
-        const img = this.add.image(0, 0, allyTextureKey(a.kind));
-        img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
-        // Silhouette only — no letter glyphs over field allies.
-        const label = this.add.text(0, 0, '', {
-          fontFamily: FONT_DATA,
-          fontSize: '11px',
-          color: ThemeCss.biolum,
-          stroke: ThemeCss.groundDeep,
-          strokeThickness: 3,
-        });
-        label.setOrigin(0.5, 1);
-        label.setVisible(false);
-        this.entityLayer.add(img);
-        this.entityLayer.add(label);
-        view = { img, label, gx: a.x, gy: a.y };
-        this.allyViews.set(a.id, view);
-        this.snapImg(img, a.x, a.y);
-        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
-      }
-      const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
-      view.img.setVisible(visible);
-      view.label.setVisible(false);
-      view.img.setTexture(allyTextureKey(a.kind));
-      if (snapPositions) {
-        this.snapImg(view.img, a.x, a.y);
-        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
-        view.gx = a.x;
-        view.gy = a.y;
-      }
-    }
-    for (const [id, view] of this.allyViews) {
-      if (allyIds.has(id) || view.dying) continue;
-      this.beginActorDeath(this.allyViews, id, view);
-    }
-
-    this.playerSprite.setVisible(true);
-    if (snapPositions && !this.playerDying) this.snapImg(this.playerSprite, st.player.x, st.player.y);
-    // Keep player on top
-    this.entityLayer.bringToTop(this.playerSprite);
-  }
-
-  private beginActorDeath(
-    map: Map<number, EnemyView>,
-    id: number,
-    view: EnemyView,
-  ): void {
-    playActorDeath(this.tweens, view, () => {
-      map.delete(id);
-    });
-  }
-
-  private updateEnemyIntentLabel(
-    view: EnemyView,
-    enemy: GameState['enemies'][number],
-  ): void {
-    if (enemy.windup <= 0) {
-      // Trust silhouette — no idle letter glyphs.
-      view.label.setText('');
-      view.label.setVisible(false);
-      return;
-    }
-    // Marker names the windup type so the player can choose leave vs fight.
-    const marker =
-      enemy.intent === 'beam'
-        ? 'BEAM'
-        : enemy.intent === 'overwatch'
-          ? 'HOLD'
-          : enemy.intent === 'pounce'
-            ? 'LUNGE'
-            : enemy.intent === 'reach'
-              ? 'REACH'
-              : enemy.intent === 'zone'
-                ? 'PULSE'
-                : 'WINDUP';
-    const color =
-      enemy.intent === 'beam'
-        ? ThemeCss.arcWhite
-        : enemy.intent === 'overwatch'
-          ? ThemeCss.tape
-          : enemy.intent === 'zone'
-            ? ThemeCss.scanWash
-            : ThemeCss.rust;
-    view.label.setText(marker);
-    view.label.setColor(color);
-    view.label.setFontSize(marker.length > 4 ? 8 : 10);
-    view.label.setVisible(view.img.visible);
-  }
-
-  private updateNpcQuestLabel(
-    view: EnemyView,
-    npc: GameState['npcs'][number],
-    visible: boolean,
-  ): void {
-    const mark = npcQuestMarker(npc);
-    if (!visible) {
-      view.label.setVisible(false);
-      return;
-    }
-    view.label.setText(mark);
-    view.label.setColor(npcQuestMarkerColor(mark));
-    view.label.setVisible(true);
-  }
-
   private updateCamera(snap: boolean): void {
     const viewW = this.scale.width;
     const bottom = this.bottomInset();
@@ -1541,7 +1205,6 @@ export class GameScene extends Phaser.Scene {
       this.camY += (targetY - this.camY) * 0.28;
     }
     const nudge = this.camKick.offset(this.time.now);
-    // World-layer zoom toward the player (not Phaser camera — HUD stays unzoomed).
     const zoom = this.camKick.zoom(this.time.now);
     const fx = this.playerSprite.x;
     const fy = this.playerSprite.y;
@@ -1568,202 +1231,12 @@ export class GameScene extends Phaser.Scene {
         layer.setPosition(ox, oy);
       }
     }
-    // Chevron redraw is cheap-ish but not free — keep it off the hot idle path.
     if (snap || this.time.now - this.lastGoalSyncAt >= 48) {
       this.lastGoalSyncAt = this.time.now;
-      this.syncGoalVisuals(describeObjective(this.state).pos);
-      this.syncOptionalSiteVisuals();
+      const host = this.actorSyncHost();
+      syncGoalVisuals(host, this.state, describeObjective(this.state).pos);
+      syncOptionalSiteVisuals(host, this.state);
     }
-  }
-
-  /** Pulse explored/visible extract goal; edge chevron when known but off-screen. */
-  private syncGoalVisuals(pos: { x: number; y: number } | null): void {
-    this.chevronGfx.clear();
-    const st = this.state;
-    if (!pos) {
-      this.goalMarker.setAlpha(0);
-      this.goalPulseTween?.stop();
-      this.goalPulseTween = null;
-      return;
-    }
-
-    const explored = st.explored[pos.y]?.[pos.x] === true;
-    const visible = st.visible[pos.y]?.[pos.x] === true;
-    const mapperReveal = st.player.mapperTurns > 0;
-    if (!explored && !visible && !mapperReveal) {
-      this.goalMarker.setAlpha(0);
-      this.goalPulseTween?.stop();
-      this.goalPulseTween = null;
-      return;
-    }
-
-    const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
-    const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
-    this.goalMarker.setPosition(wx, wy);
-    this.goalMarker.setTint(Theme.flag);
-    if (!this.goalPulseTween) {
-      this.goalMarker.setAlpha(0.75);
-      this.goalPulseTween = this.tweens.add({
-        targets: this.goalMarker,
-        alpha: 0.35,
-        duration: 520,
-        yoyo: true,
-        repeat: -1,
-      });
-    }
-
-    // Screen-space position of goal
-    const screenX = wx - this.camX;
-    const screenY = wy - this.camY + TOP;
-    const pad = 18;
-    const left = pad;
-    const right = this.scale.width - pad;
-    const top = TOP + pad;
-    const bottomInset = this.bottomInset();
-    const bottom = this.scale.height - bottomInset - pad;
-    const onScreen =
-      screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
-    if (onScreen) return;
-
-    const cx = this.scale.width / 2;
-    const cy = TOP + (this.scale.height - TOP - bottomInset) / 2;
-    const dx = screenX - cx;
-    const dy = screenY - cy;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
-    // Clamp to viewport edge
-    const edgeDistX = ux > 0 ? (right - cx) / ux : ux < 0 ? (left - cx) / ux : Infinity;
-    const edgeDistY = uy > 0 ? (bottom - cy) / uy : uy < 0 ? (top - cy) / uy : Infinity;
-    const edgeDist = Math.min(Math.abs(edgeDistX), Math.abs(edgeDistY));
-    const ex = cx + ux * edgeDist;
-    const ey = cy + uy * edgeDist;
-
-    this.chevronGfx.fillStyle(Theme.flag, 0.95);
-    this.chevronGfx.lineStyle(1, Theme.inkBright, 1);
-    const s = 10;
-    const px = -uy;
-    const py = ux;
-    this.chevronGfx.fillTriangle(
-      ex + ux * s,
-      ey + uy * s,
-      ex - ux * s * 0.4 + px * s * 0.7,
-      ey - uy * s * 0.4 + py * s * 0.7,
-      ex - ux * s * 0.4 - px * s * 0.7,
-      ey - uy * s * 0.4 - py * s * 0.7,
-    );
-  }
-
-  /**
-   * Optional site language: amber tile frame + off-screen square pip.
-   * Standing on it draws a small interact caret — no essay HUD line.
-   */
-  private syncOptionalSiteVisuals(): void {
-    this.optionalSiteGfx.clear();
-    // Screen-space optional pip reuses chevronGfx after extract triangle may have drawn.
-    const st = this.state;
-    const rq = st.roomQuest;
-    if (!rq || rq.done) return;
-    const step = activeQuestStep(rq);
-    if (!step) return;
-
-    const explored = st.explored[step.pos.y]?.[step.pos.x] === true;
-    const visible = st.visible[step.pos.y]?.[step.pos.x] === true;
-    const mapperReveal = st.player.mapperTurns > 0;
-    if (!explored && !visible && !mapperReveal) return;
-
-    const onPlayer = st.player.x === step.pos.x && st.player.y === step.pos.y;
-    const wx = step.pos.x * TILE_DRAW;
-    const wy = step.pos.y * TILE_DRAW;
-    const flash = st.ui.questFlash > 0;
-    const a = flash ? 0.95 : onPlayer ? 0.9 : 0.7;
-
-    // Dashed amber frame in world space (mapLayer).
-    this.optionalSiteGfx.lineStyle(2, Theme.tape, a);
-    const inset = 3;
-    const x0 = wx + inset;
-    const y0 = wy + inset;
-    const x1 = wx + TILE_DRAW - inset;
-    const y1 = wy + TILE_DRAW - inset;
-    const dash = 5;
-    const gap = 3;
-    const strokeDashed = (ax: number, ay: number, bx: number, by: number) => {
-      const dx = bx - ax;
-      const dy = by - ay;
-      const len = Math.hypot(dx, dy) || 1;
-      const ux = dx / len;
-      const uy = dy / len;
-      let d = 0;
-      while (d < len) {
-        const seg = Math.min(dash, len - d);
-        this.optionalSiteGfx.lineBetween(
-          ax + ux * d,
-          ay + uy * d,
-          ax + ux * (d + seg),
-          ay + uy * (d + seg),
-        );
-        d += dash + gap;
-      }
-    };
-    strokeDashed(x0, y0, x1, y0);
-    strokeDashed(x1, y0, x1, y1);
-    strokeDashed(x1, y1, x0, y1);
-    strokeDashed(x0, y1, x0, y0);
-
-    // Corner bolts — furniture tell vs extract diamond.
-    this.optionalSiteGfx.fillStyle(Theme.tape, a);
-    for (const [cx, cy] of [
-      [x0, y0],
-      [x1 - 3, y0],
-      [x0, y1 - 3],
-      [x1 - 3, y1 - 3],
-    ] as const) {
-      this.optionalSiteGfx.fillRect(cx, cy, 3, 3);
-    }
-
-    if (onPlayer) {
-      // Interact caret above the console.
-      const cx = wx + TILE_DRAW / 2;
-      const cy = wy + 6;
-      this.optionalSiteGfx.fillStyle(Theme.inkBright, 0.95);
-      this.optionalSiteGfx.fillTriangle(cx, cy - 5, cx - 5, cy + 3, cx + 5, cy + 3);
-      this.optionalSiteGfx.fillStyle(Theme.tape, 0.9);
-      this.optionalSiteGfx.fillRect(cx - 1.5, cy + 4, 3, 5);
-    }
-
-    // Tint the console tile amber so it reads before the frame.
-    const tile = this.tileSprites[step.pos.y]?.[step.pos.x];
-    if (tile && visible) tile.setTint(Theme.tape);
-
-    const screenX = wx + TILE_DRAW / 2 - this.camX;
-    const screenY = wy + TILE_DRAW / 2 - this.camY + TOP;
-    const pad = 18;
-    const left = pad;
-    const right = this.scale.width - pad;
-    const top = TOP + pad;
-    const bottomInset = this.bottomInset();
-    const bottom = this.scale.height - bottomInset - pad;
-    const onScreen =
-      screenX >= left && screenX <= right && screenY >= top && screenY <= bottom;
-    if (onScreen) return;
-
-    const scx = this.scale.width / 2;
-    const scy = TOP + (this.scale.height - TOP - bottomInset) / 2;
-    const dx = screenX - scx;
-    const dy = screenY - scy;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
-    const edgeDistX = ux > 0 ? (right - scx) / ux : ux < 0 ? (left - scx) / ux : Infinity;
-    const edgeDistY = uy > 0 ? (bottom - scy) / uy : uy < 0 ? (top - scy) / uy : Infinity;
-    const edgeDist = Math.min(Math.abs(edgeDistX), Math.abs(edgeDistY));
-    const ex = scx + ux * edgeDist;
-    const ey = scy + uy * edgeDist;
-    // Square pip — distinct from pink extract triangle.
-    this.chevronGfx.lineStyle(2, Theme.tape, 0.95);
-    this.chevronGfx.strokeRect(ex - 5, ey - 5, 10, 10);
-    this.chevronGfx.fillStyle(Theme.tape, 0.35);
-    this.chevronGfx.fillRect(ex - 3, ey - 3, 6, 6);
   }
 
   private toggleHelp(force?: boolean): void {
@@ -1978,169 +1451,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Biome-native field motes — ecology in the air, rebuilt each tick inside FOV. */
-  private drawFieldMotes(): void {
-    const st = this.state;
-    this.fieldMotes.clear();
-    let count = 0;
-    const maxMotes = 52;
-    const sector = st.sectorId;
-
-    for (let y = 0; y < st.height && count < maxMotes; y++) {
-      for (let x = 0; x < st.width && count < maxMotes; x++) {
-        if (!st.visible[y]?.[x] || tileBrightness(st, x, y) < 0.22) continue;
-        const hash = (x * 73856093) ^ (y * 19349663) ^ (st.seed * 83492791);
-        // Density gate — denser in ash/duct/brine, sparse on open shelf.
-        const dens =
-          sector === 'ash' || sector === 'duct' || sector === 'brine' || sector === 'flood'
-            ? 5
-            : sector === 'canopy' || sector === 'reef'
-              ? 6
-              : 8;
-        if (Math.abs(hash) % dens !== this.animFrame % Math.min(4, dens)) continue;
-
-        const ox = 4 + (Math.abs(hash >> 7) % Math.max(1, TILE_DRAW - 8));
-        let oy =
-          4 +
-          ((Math.abs(hash >> 13) + this.animFrame) % Math.max(1, TILE_DRAW - 8));
-        const px = x * TILE_DRAW + ox;
-        const py = y * TILE_DRAW + oy;
-
-        if (sector === 'ash' || sector === 'approach') {
-          // Fallout grit drifting down.
-          oy = (oy + this.animFrame * 2) % Math.max(1, TILE_DRAW - 6);
-          this.fieldMotes.fillStyle(Theme.arc, 0.35);
-          this.fieldMotes.fillRect(px, y * TILE_DRAW + oy, 1, 2);
-        } else if (sector === 'brine' || sector === 'flood' || sector === 'reef') {
-          // Cool mist beads.
-          this.fieldMotes.fillStyle(Theme.biolum, 0.4);
-          this.fieldMotes.fillRect(px, py, 2, 1);
-          if ((hash & 3) === 0) {
-            this.fieldMotes.fillStyle(Theme.biolumDeep, 0.35);
-            this.fieldMotes.fillRect(px + 1, py + 2, 1, 1);
-          }
-        } else if (sector === 'duct' || sector === 'spire' || sector === 'vault') {
-          // Steam / conduit vapour rising.
-          oy = (TILE_DRAW - 6 - ((oy + this.animFrame) % Math.max(1, TILE_DRAW - 6))) | 0;
-          this.fieldMotes.fillStyle(Theme.inkDim, 0.32);
-          this.fieldMotes.fillRect(px, y * TILE_DRAW + oy, 1, 3);
-        } else if (sector === 'canopy') {
-          // Pollen / leaf flecks.
-          this.fieldMotes.fillStyle(Theme.safe, 0.38);
-          this.fieldMotes.fillRect(px, py, 2, 1);
-          this.fieldMotes.fillRect(px + 1, py + 1, 1, 1);
-        } else {
-          // Open shelf grit + rare biolum mote.
-          const ion = (Math.abs(hash >> 4) + this.animFrame) % 6 === 0;
-          this.fieldMotes.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.45 : 0.26);
-          this.fieldMotes.fillRect(px, py, ion ? 2 : 1, ion ? 2 : 1);
-        }
-        count += 1;
-      }
-    }
-  }
-
-  private applyFieldLighting(): void {
-    const st = this.state;
-    const shear = computeShearPressure(st);
-    this.lightView.syncTurn(st.turn);
-    const sources = this.lightView.allSources(st, this.animFrame, this.bodyLightAt());
-
-    // Mid-hop: keep blending the captured wash — don't snap tiles to the destination.
-    if (this.lightView.hasMoveBlend()) {
-      this.refreshMoveLightFx();
-      return;
-    }
-
-    const pending = this.lightView.hasPendingMoveBlend();
-    this.lightView.applyTileLighting(
-      st,
-      this.tileSprites,
-      (kind, x, y) => this.tileKey(kind, x, y),
-      sources,
-      { paintSprites: !pending },
-    );
-    // Pending hop: destination wash is cached only — sprites stay on the from frame
-    // until lockMoveBlend + refreshMoveLightFx start the carry.
-    if (pending) return;
-
-    this.drawFieldMotes();
-    this.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
-    this.lightView.drawDynamicShadows(
-      st,
-      this.shadowCasters(),
-      sources,
-      this.firstLight,
-    );
-    this.applyAllActorLighting(sources);
-
-    drawThreatZones(this.threatGfx, st, this.animFrame);
-    drawWakeTells(this.threatGfx, st, st.player.x, st.player.y, this.animFrame, TILE_DRAW);
-    drawPhaserLanes(this.threatGfx, st, this.animFrame, TILE_DRAW);
-
-    for (let y = 0; y < st.height; y++) {
-      for (let x = 0; x < st.width; x++) {
-        const tile = this.tileSprites[y]?.[x];
-        if (!tile) continue;
-        const patch = st.contamination.some((c) => c.x === x && c.y === y);
-        if (patch && st.visible[y]?.[x]) {
-          tile.setTint(Theme.biolum);
-        } else {
-          // Keep the wash from applyTileLighting — clearing wiped SHADOW band tint.
-          const tint = this.lightView.tileTintAt(x, y);
-          if (tint !== undefined) tile.setTint(tint);
-          else tile.clearTint();
-        }
-      }
-    }
-    this.syncSconceOverlays();
-    this.syncPressureCracks(st, shear);
-    if (this.firstLight !== null) {
-      this.lightView.applySweep(st, this.tileSprites, this.firstLight);
-    }
-  }
-
-  /** Sector hairline fractures on optional paths — biome motif, not a full-tile arc wash. */
-  private syncPressureCracks(st: GameState, shear: ReturnType<typeof computeShearPressure>): void {
-    const live = new Set<string>();
-    for (let y = 0; y < st.height; y++) {
-      for (let x = 0; x < st.width; x++) {
-        const reveal = pressureRevealAt(st, shear, x, y, this.animFrame);
-        if (!reveal) continue;
-        const id = `${x},${y}`;
-        live.add(id);
-        let spr = this.crackSprites.get(id);
-        if (!spr) {
-          spr = this.add.image(
-            x * TILE_DRAW + TILE_DRAW / 2,
-            y * TILE_DRAW + TILE_DRAW / 2,
-            crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent),
-          );
-          spr.setDisplaySize(TILE_DRAW, TILE_DRAW);
-          spr.setDepth(1.5);
-          this.mapLayer.add(spr);
-          this.crackSprites.set(id, spr);
-        } else {
-          spr.setTexture(crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent));
-        }
-        spr.setVisible(reveal.visible);
-        spr.setAlpha(reveal.alpha);
-        if (reveal.urgent) {
-          // Soft size pulse so Breaching cracks feel live without a full-tile wash.
-          const pulse = 1 + 0.05 * Math.sin((this.animFrame + x + y) * 0.9);
-          spr.setDisplaySize(TILE_DRAW * pulse, TILE_DRAW * pulse);
-        } else {
-          spr.setDisplaySize(TILE_DRAW, TILE_DRAW);
-        }
-      }
-    }
-    for (const [id, spr] of this.crackSprites) {
-      if (!live.has(id)) {
-        spr.destroy();
-        this.crackSprites.delete(id);
-      }
-    }
-  }
 
   /** Bodies and ground kit — contact plants only; walls use occluder umbra. */
   private *shadowCasters(): Generator<{
@@ -2229,7 +1539,7 @@ export class GameScene extends Phaser.Scene {
 
   private redrawTilesAndHud(): void {
     const st = this.state;
-    this.applyFieldLighting();
+    applyFieldLightingPass(this.fieldLightingHost(), st);
 
     drawFovVignette(this.fovVignette, this.scale.width, this.scale.height, TOP, this.bottomInset());
 
@@ -2282,8 +1592,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     const goal = describeObjective(st);
-    this.syncGoalVisuals(goal.pos);
-    this.syncOptionalSiteVisuals();
+    const host = this.actorSyncHost();
+    syncGoalVisuals(host, st, goal.pos);
+    syncOptionalSiteVisuals(host, st);
     this.minimap.redraw(st);
   }
 }
