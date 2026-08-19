@@ -40,7 +40,7 @@ function biomeIdTable(sectorId: SectorId): ItemKind[] {
   const early: SectorId[] = ['plains', 'flood', 'canopy', 'reef'];
   const mid: SectorId[] = ['spire', 'ruin', 'beacon', 'trench', 'duct'];
   if (early.includes(sectorId)) {
-    return ['med', 'energy', 'dart', 'sealant', 'flare', 'plate'];
+    return ['med', 'energy', 'dart', 'sealant', 'flare', 'plate', 'phaser'];
   }
   if (mid.includes(sectorId)) {
     return ['med', 'energy', 'filter', 'dart', 'sealant', 'plate', 'stim', 'probe', 'phaser'];

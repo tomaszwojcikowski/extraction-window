@@ -8,6 +8,7 @@ import {
 } from '../../src/sim/phaser';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
 import type { GameState } from '../../src/sim/types';
+import { getSector } from '../../src/data/encounters';
 
 function openLane(st: GameState, dist: number, dx = 1): void {
   const px = Math.min(8, st.width - dist - 2);
@@ -111,5 +112,12 @@ describe('survey phaser', () => {
     applyAction(st, { type: 'move', dx: 1, dy: 0 });
     expect(st.player.x).toBe(fromX + 1);
     expect(en.hp).toBe(en.maxHp);
+  });
+
+  it('is stocked from flood onward, not only ruin wreckage', () => {
+    expect(getSector(0).lootTable.includes('phaser')).toBe(false);
+    expect(getSector(1).lootTable.includes('phaser')).toBe(true);
+    expect(getSector(2).lootTable.includes('phaser')).toBe(true);
+    expect(getSector(5).lootTable.includes('phaser')).toBe(true);
   });
 });

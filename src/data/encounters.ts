@@ -51,6 +51,7 @@ const FIELD_LOOT: ItemKind[] = [
   'dart',
   'sealant',
   'salvage',
+  'phaser',
 ];
 const DEEP_LOOT: ItemKind[] = [
   'med',
@@ -106,7 +107,7 @@ export const SECTORS: SectorDef[] = [
     roomCount: [5, 7],
     enemyTable: ['leech', 'mite', 'spore'],
     enemyCount: [2, 4],
-    lootTable: ['med', 'energy', 'med', 'filter', 'sealant', 'sealant'],
+    lootTable: ['med', 'energy', 'med', 'filter', 'sealant', 'sealant', 'phaser'],
     lootCount: [3, 5],
     hazardChance: 0.12,
     scrubChance: 0.03,
