@@ -838,6 +838,25 @@ export function presentActionFeedback(opts: {
   };
 }
 
+/** Per-hostile stagger so packs read as individuals, not one sliding blob. */
+export const ENEMY_STAGGER_MS = 22;
+/** Subtle lift — hostiles stay mostly flat for pack readability. */
+export const ENEMY_LIFT_PX = 2;
+export const COMBAT_BUMP_MS = 65;
+export const COMBAT_BUMP_PX = 7;
+
+/** Stagger delay for the nth moving hostile this turn (0-based). */
+export function enemyMoveStaggerMs(index: number): number {
+  return Math.max(0, index) * ENEMY_STAGGER_MS;
+}
+
+/** Longest move tween window when hostiles step with stagger. */
+export function maxMoveAnimMs(enemyMoverCount: number): number {
+  const stagger =
+    enemyMoverCount > 0 ? enemyMoveStaggerMs(enemyMoverCount - 1) : 0;
+  return MOVE_MS + stagger;
+}
+
 export function bumpAttack(
   tweens: Phaser.Tweens.TweenManager,
   playerSprite: Phaser.GameObjects.Image,
@@ -850,51 +869,87 @@ export function bumpAttack(
   playerSprite.setPosition(base.x, base.y);
   tweens.add({
     targets: playerSprite,
-    x: base.x + dx * 6,
-    y: base.y + dy * 6,
-    duration: 50,
+    x: base.x + dx * COMBAT_BUMP_PX,
+    y: base.y + dy * COMBAT_BUMP_PX,
+    duration: COMBAT_BUMP_MS,
     yoyo: true,
-    ease: 'Quad.easeOut',
+    ease: 'Back.easeOut',
   });
 }
 
-/** Nudge adjacent enemies that struck the player without moving. */
+/** Nudge adjacent hostiles toward the surveyor when melee contact hurts HP. */
 export function bumpMeleeAttackers(
   tweens: Phaser.Tweens.TweenManager,
   opts: {
     state: GameState;
-    fromEnemies: Map<number, { x: number; y: number }>;
     enemyViews: Map<number, EnemyView>;
     worldXY: (gx: number, gy: number) => { x: number; y: number };
   },
 ): void {
-  const { state, fromEnemies, enemyViews, worldXY } = opts;
+  const { state, enemyViews, worldXY } = opts;
   const px = state.player.x;
   const py = state.player.y;
   for (const en of state.enemies) {
     if (!en.alive) continue;
-    const prev = fromEnemies.get(en.id);
-    if (!prev || prev.x !== en.x || prev.y !== en.y) continue;
     if (Math.abs(en.x - px) + Math.abs(en.y - py) !== 1) continue;
     const view = enemyViews.get(en.id);
     if (!view?.img.visible) continue;
     const base = worldXY(en.x, en.y);
     const dx = Math.sign(px - en.x);
     const dy = Math.sign(py - en.y);
+    const scaleX = view.img.scaleX;
+    const scaleY = view.img.scaleY;
     view.img.setPosition(base.x, base.y);
     tweens.add({
       targets: view.img,
-      x: base.x + dx * 5,
-      y: base.y + dy * 5,
-      duration: 45,
+      x: base.x + dx * COMBAT_BUMP_PX,
+      y: base.y + dy * COMBAT_BUMP_PX,
+      scaleX: scaleX * 1.07,
+      scaleY: scaleY * 1.07,
+      duration: COMBAT_BUMP_MS,
       yoyo: true,
-      ease: 'Quad.easeOut',
+      ease: 'Back.easeOut',
       onUpdate: () => {
         if (view.label.active) {
           view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
         }
       },
+      onComplete: () => {
+        if (view.img.active) view.img.setScale(scaleX, scaleY);
+      },
     });
+  }
+}
+
+/**
+ * Short lunges after tile slides finish — blocked moves, attack-into-foe, and
+ * hostile melee that closed distance in the same turn all get a contact read.
+ */
+export function playCombatContactJuice(
+  tweens: Phaser.Tweens.TweenManager,
+  opts: {
+    action: Action;
+    playerMoved: boolean;
+    prevHp: number;
+    state: GameState;
+    playerSprite: Phaser.GameObjects.Image;
+    enemyViews: Map<number, EnemyView>;
+    worldXY: (gx: number, gy: number) => { x: number; y: number };
+  },
+): void {
+  const { action, playerMoved, prevHp, state, playerSprite, enemyViews, worldXY } = opts;
+  if (action.type === 'move' && !playerMoved) {
+    bumpAttack(
+      tweens,
+      playerSprite,
+      worldXY,
+      { x: state.player.x, y: state.player.y },
+      action.dx,
+      action.dy,
+    );
+  }
+  if (state.player.hp < prevHp) {
+    bumpMeleeAttackers(tweens, { state, enemyViews, worldXY });
   }
 }
 
@@ -919,12 +974,19 @@ export type MoveAnimHost = {
 
 const HOP_PX = 5;
 
+type StepMotion = {
+  hop?: boolean;
+  delay?: number;
+  liftPx?: number;
+  ease?: string;
+};
+
 /**
  * Slide an actor from one tile to the next.
  *
  * `hop` lifts the sprite through a short arc so a one-tile step reads as a step
- * rather than a slide on ice — enemies and escorts stay flat so packs stay
- * readable as a group.
+ * rather than a slide on ice — enemies and escorts stay mostly flat so packs
+ * stay readable as a group.
  */
 function tweenTileStep(
   host: MoveAnimHost,
@@ -932,10 +994,14 @@ function tweenTileStep(
   label: Phaser.GameObjects.Text | null,
   from: { x: number; y: number },
   to: { x: number; y: number },
-  hop: boolean,
+  motion: StepMotion,
   done: () => void,
   onProgress?: (t: number) => void,
 ): void {
+  const hop = motion.hop ?? false;
+  const liftPx = motion.liftPx ?? (hop ? HOP_PX : 0);
+  const ease = motion.ease ?? (hop ? 'Cubic.easeOut' : 'Sine.easeInOut');
+  const delay = motion.delay ?? 0;
   const a = host.worldXY(from.x, from.y);
   const b = host.worldXY(to.x, to.y);
   img.setPosition(a.x, a.y);
@@ -946,11 +1012,12 @@ function tweenTileStep(
     targets: proxy,
     t: 1,
     duration: MOVE_MS,
-    ease: 'Cubic.easeOut',
+    delay,
+    ease,
     onUpdate: () => {
       if (!img.active) return;
       const t = proxy.t;
-      const lift = hop ? Math.sin(t * Math.PI) * HOP_PX : 0;
+      const lift = liftPx > 0 ? Math.sin(t * Math.PI) * liftPx : 0;
       img.setPosition(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t - lift);
       if (label?.active) {
         label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
@@ -1004,11 +1071,12 @@ export function playMoveAnims(
     label: Phaser.GameObjects.Text | null;
     from: { x: number; y: number };
     to: { x: number; y: number };
-    hop: boolean;
+    motion: StepMotion;
     onProgress?: (t: number) => void;
     afterStart?: () => void;
   };
   const steps: Step[] = [];
+  let enemyMovers = 0;
 
   if (playerMoved) {
     steps.push({
@@ -1016,7 +1084,7 @@ export function playMoveAnims(
       label: null,
       from: fromPlayer,
       to: { x: px, y: py },
-      hop: true,
+      motion: { hop: true },
       onProgress: host.onPlayerMoveLight,
     });
   } else {
@@ -1029,12 +1097,19 @@ export function playMoveAnims(
     if (!view) continue;
     const prev = fromEnemies.get(en.id) ?? { x: en.x, y: en.y };
     if (prev.x === en.x && prev.y === en.y) continue;
+    const stagger = enemyMoveStaggerMs(enemyMovers);
+    enemyMovers += 1;
     steps.push({
       img: view.img,
       label: view.label,
       from: prev,
       to: { x: en.x, y: en.y },
-      hop: false,
+      motion: {
+        hop: false,
+        delay: stagger,
+        liftPx: ENEMY_LIFT_PX,
+        ease: 'Sine.easeInOut',
+      },
       // Keep logical gx/gy on the sprite path — afterStart used to snap to the
       // destination while the image lerped, so umbra jumped ahead of the body.
       onProgress: (t) => {
@@ -1060,7 +1135,7 @@ export function playMoveAnims(
       label: view.label,
       from: prev,
       to: { x: ally.x, y: ally.y },
-      hop: false,
+      motion: { hop: false, ease: 'Sine.easeInOut' },
       onProgress: (t) => {
         view.gx = prev.x + (ally.x - prev.x) * t;
         view.gy = prev.y + (ally.y - prev.y) * t;
@@ -1083,7 +1158,7 @@ export function playMoveAnims(
       label: view.label,
       from: prev,
       to: { x: npc.x, y: npc.y },
-      hop: false,
+      motion: { hop: false, ease: 'Sine.easeInOut' },
       onProgress: (t) => {
         view.gx = prev.x + (npc.x - prev.x) * t;
         view.gy = prev.y + (npc.y - prev.y) * t;
@@ -1109,11 +1184,20 @@ export function playMoveAnims(
 
   for (const step of steps) {
     step.afterStart?.();
-    tweenTileStep(host, step.img, step.label, step.from, step.to, step.hop, finishOne, step.onProgress);
+    tweenTileStep(
+      host,
+      step.img,
+      step.label,
+      step.from,
+      step.to,
+      step.motion,
+      finishOne,
+      step.onProgress,
+    );
   }
 
-  // Safety net if a tween is killed mid-scene — keep slightly past MOVE_MS.
-  host.time.delayedCall(MOVE_MS + 60, () => {
+  // Safety net if a tween is killed mid-scene — allow stagger tail.
+  host.time.delayedCall(maxMoveAnimMs(enemyMovers) + 60, () => {
     if (!finished) complete();
   });
 }

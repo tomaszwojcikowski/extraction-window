@@ -5,10 +5,13 @@ import {
   actionFloatLabels,
   causalActionFloats,
   combatFeedbackTiles,
+  enemyMoveStaggerMs,
   flankEdgeFloat,
+  maxMoveAnimMs,
   playActionSfx,
   type EnemySnap,
 } from '../../src/game/presenters/ActionFeedback';
+import { MOVE_MS } from '../../src/game/GameHost';
 
 describe('ActionFeedback', () => {
   it('turns causal log events into short floating labels', () => {
@@ -189,6 +192,12 @@ describe('ActionFeedback', () => {
     expect(play).toHaveBeenCalledWith('sector');
     expect(flash).not.toHaveBeenCalled();
     play.mockRestore();
+  });
+
+  it('staggers hostile steps and extends the move safety window', () => {
+    expect(enemyMoveStaggerMs(0)).toBe(0);
+    expect(enemyMoveStaggerMs(2)).toBe(44);
+    expect(maxMoveAnimMs(3)).toBe(MOVE_MS + 44);
   });
 
   it('plays move sfx when the player relocated', async () => {

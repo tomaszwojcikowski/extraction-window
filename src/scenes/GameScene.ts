@@ -36,11 +36,10 @@ import {
 } from '../game/presenters/SignalRail';
 import { tileCastsPropShadow } from '../game/views/propShadows';
 import {
-  bumpAttack,
-  bumpMeleeAttackers,
   causalActionFloats,
   flashHit,
   flashScreen,
+  playCombatContactJuice,
   playMoveAnims,
   presentActionFeedback,
   tintPlayerHurt,
@@ -58,6 +57,11 @@ import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import { computeShearPressure, shearReadoutLabel, type ShearPressureState } from '../game/presenters/ShearPressure';
+import {
+  resetEphemeralFieldChrome,
+  type EphemeralFieldChrome,
+  type LightPreferenceHint,
+} from '../game/presenters/FieldChrome';
 import { pressureRevealAt } from '../game/presenters/PressureReveal';
 
 const TOP = HUD_TOP;
@@ -130,8 +134,7 @@ export class GameScene extends Phaser.Scene {
   private goalMarker!: Phaser.GameObjects.Image;
   private goalPulseTween: Phaser.Tweens.Tween | null = null;
   private readonly lightPreferenceHints = new Set<number>();
-  private preferenceHint: { id: 'UI-HINT-PREFER-DARK' | 'UI-HINT-PREFER-LIT'; until: number } | null =
-    null;
+  private preferenceHint: LightPreferenceHint | null = null;
   /** Event camera kick + punch-in zoom; world layers only (HUD stays 1:1). */
   private readonly camKick = new CameraKick();
   private lastCamOx = Number.NaN;
@@ -171,13 +174,11 @@ export class GameScene extends Phaser.Scene {
     this.helpOpen = false;
     this.pagesOpen = false;
     this.logOpen = false;
-    this.recentSignals = [];
     this.animating = false;
     this.enemyViews.clear();
     this.npcViews.clear();
     this.allyViews.clear();
-    this.lightPreferenceHints.clear();
-    this.preferenceHint = null;
+    this.resetLevelTooltips();
     this.camKick.reset();
     this.firstLight = null;
     this.firstLightTween = null;
@@ -997,6 +998,7 @@ export class GameScene extends Phaser.Scene {
     if (!fb.mapReloaded) this.redrawHudEager();
 
     if (fb.mapReloaded) {
+      this.resetLevelTooltips();
       this.lightView.clearFx();
       this.buildMapSprites();
       this.syncItems();
@@ -1038,6 +1040,15 @@ export class GameScene extends Phaser.Scene {
     this.syncItems();
 
     const afterPresent = () => {
+      playCombatContactJuice(this.tweens, {
+        action,
+        playerMoved: fb.playerMoved,
+        prevHp,
+        state: this.state,
+        playerSprite: this.playerSprite,
+        enemyViews: this.enemyViews,
+        worldXY: (gx, gy) => this.worldXY(gx, gy),
+      });
       this.lightView.endMoveLight();
       this.redrawTilesAndHud();
       this.syncActors(true);
@@ -1053,28 +1064,6 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    // A bump that did not relocate still needs a lunge to sell the impact.
-    const lunge =
-      action.type === 'move' ? { dx: action.dx, dy: action.dy } : null;
-    if (lunge) {
-      bumpAttack(
-        this.tweens,
-        this.playerSprite,
-        (gx, gy) => this.worldXY(gx, gy),
-        { x: this.state.player.x, y: this.state.player.y },
-        lunge.dx,
-        lunge.dy,
-      );
-    }
-    // Enemy melee bump when they struck without relocating
-    if (this.state.player.hp < prevHp) {
-      bumpMeleeAttackers(this.tweens, {
-        state: this.state,
-        fromEnemies: fb.fromEnemies,
-        enemyViews: this.enemyViews,
-        worldXY: (gx, gy) => this.worldXY(gx, gy),
-      });
-    }
     afterPresent();
   }
 
@@ -1712,6 +1701,19 @@ export class GameScene extends Phaser.Scene {
 
   private flashHit(): void {
     flashHit(this.tweens, this.flash);
+  }
+
+  /** Hint line + signal rail — do not carry coaching from the prior sector. */
+  private resetLevelTooltips(): void {
+    resetEphemeralFieldChrome(this.ephemeralFieldChrome());
+  }
+
+  private ephemeralFieldChrome(): EphemeralFieldChrome {
+    return {
+      lightPreferenceHints: this.lightPreferenceHints,
+      preferenceHint: this.preferenceHint,
+      recentSignals: this.recentSignals,
+    };
   }
 
   private queueLightPreferenceHint(): void {
