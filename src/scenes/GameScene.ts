@@ -42,6 +42,8 @@ import {
   playCombatContactJuice,
   playMoveAnims,
   playPhaserBeam,
+  playActorDeath,
+  playPlayerDeath,
   presentActionFeedback,
   tintPlayerHurt,
   tintVisibleEnemies,
@@ -93,6 +95,8 @@ export class GameScene extends Phaser.Scene {
   private npcViews = new Map<number, EnemyView>();
   private allyViews = new Map<number, EnemyView>();
   private animating = false;
+  /** Collapse in flight — skip idle bob and tile snaps so the tween owns the sprite. */
+  private playerDying = false;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
   private arcSweep: ArcSweep | null = null;
@@ -180,6 +184,7 @@ export class GameScene extends Phaser.Scene {
     this.pagesOpen = false;
     this.logOpen = false;
     this.animating = false;
+    this.playerDying = false;
     this.enemyViews.clear();
     this.npcViews.clear();
     this.allyViews.clear();
@@ -537,7 +542,7 @@ export class GameScene extends Phaser.Scene {
       // Pulse vent/hazard/beacon bloom with anim frame
       if (this.state.status === 'playing') this.applyFieldLighting();
     }
-    if (!this.animating) {
+    if (!this.animating && !this.playerDying) {
       // Snappy 1px plotter redraw, not floaty bob
       this.idleBob = Math.sin(_t / 220) > 0 ? 1 : 0;
       const p = this.worldXY(this.state.player.x, this.state.player.y);
@@ -1185,8 +1190,12 @@ export class GameScene extends Phaser.Scene {
     gx: number;
     gy: number;
   }> {
-    yield* this.enemyViews.values();
-    yield* this.allyViews.values();
+    for (const view of this.enemyViews.values()) {
+      if (!view.dying) yield view;
+    }
+    for (const view of this.allyViews.values()) {
+      if (!view.dying) yield view;
+    }
     yield* this.npcViews.values();
   }
 
@@ -1209,6 +1218,10 @@ export class GameScene extends Phaser.Scene {
 
   private maybeEnd(): void {
     if (this.state.status === 'playing') return;
+    if (this.state.status === 'lost' && !this.playerDying) {
+      this.playerDying = true;
+      playPlayerDeath(this.tweens, this.playerSprite);
+    }
     this.time.delayedCall(450, () => {
       this.scene.start('End', {
         status: this.state.status,
@@ -1311,11 +1324,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     for (const [id, view] of this.enemyViews) {
-      if (!aliveIds.has(id)) {
-        view.img.destroy();
-        view.label.destroy();
-        this.enemyViews.delete(id);
-      }
+      if (aliveIds.has(id) || view.dying) continue;
+      this.beginActorDeath(this.enemyViews, id, view);
     }
 
     const npcIds = new Set<number>();
@@ -1399,17 +1409,24 @@ export class GameScene extends Phaser.Scene {
       }
     }
     for (const [id, view] of this.allyViews) {
-      if (!allyIds.has(id)) {
-        view.img.destroy();
-        view.label.destroy();
-        this.allyViews.delete(id);
-      }
+      if (allyIds.has(id) || view.dying) continue;
+      this.beginActorDeath(this.allyViews, id, view);
     }
 
     this.playerSprite.setVisible(true);
-    if (snapPositions) this.snapImg(this.playerSprite, st.player.x, st.player.y);
+    if (snapPositions && !this.playerDying) this.snapImg(this.playerSprite, st.player.x, st.player.y);
     // Keep player on top
     this.entityLayer.bringToTop(this.playerSprite);
+  }
+
+  private beginActorDeath(
+    map: Map<number, EnemyView>,
+    id: number,
+    view: EnemyView,
+  ): void {
+    playActorDeath(this.tweens, view, () => {
+      map.delete(id);
+    });
   }
 
   private updateEnemyIntentLabel(

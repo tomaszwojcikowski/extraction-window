@@ -937,13 +937,15 @@ export class LightView {
 
     // Mid-hop: sample from the carried lamp so alpha matches wash/tint, not dest tile.
     const playerLight = this.lampCarry ?? { x: st.player.x, y: st.player.y };
-    playerSprite.setAlpha(litAlpha(playerLight.x, playerLight.y));
-    if (st.patternDesync > 0) {
-      playerSprite.setTint(LightTemp.pattern);
-    } else {
-      const tint = keyTint(playerLight.x, playerLight.y);
-      if (tint !== null) playerSprite.setTint(tint);
-      else playerSprite.clearTint();
+    if (!playerSprite.getData('dying')) {
+      playerSprite.setAlpha(litAlpha(playerLight.x, playerLight.y));
+      if (st.patternDesync > 0) {
+        playerSprite.setTint(LightTemp.pattern);
+      } else {
+        const tint = keyTint(playerLight.x, playerLight.y);
+        if (tint !== null) playerSprite.setTint(tint);
+        else playerSprite.clearTint();
+      }
     }
 
     for (const view of actorViews) {

@@ -5,10 +5,12 @@ import {
   actionFloatLabels,
   causalActionFloats,
   combatFeedbackTiles,
+  DEATH_MS,
   enemyMoveStaggerMs,
   flankEdgeFloat,
   maxMoveAnimMs,
   playActionSfx,
+  playActorDeath,
   type EnemySnap,
 } from '../../src/game/presenters/ActionFeedback';
 import { MOVE_MS } from '../../src/game/GameHost';
@@ -228,5 +230,57 @@ describe('ActionFeedback', () => {
 
     expect(play).toHaveBeenCalledWith('move');
     play.mockRestore();
+  });
+
+  it('collapses a visible body then destroys the view', () => {
+    const img = {
+      active: true,
+      visible: true,
+      scaleX: 1,
+      scaleY: 1,
+      y: 40,
+      setTint: vi.fn(),
+      destroy: vi.fn(),
+    };
+    const label = {
+      active: true,
+      setVisible: vi.fn(),
+      destroy: vi.fn(),
+    };
+    const tweens = {
+      add: vi.fn((cfg: { onComplete?: () => void; duration: number }) => {
+        cfg.onComplete?.();
+        return {};
+      }),
+    };
+    const view = { img, label, gx: 1, gy: 2, dying: false };
+    playActorDeath(tweens as never, view as never);
+    expect(view.dying).toBe(true);
+    expect(label.setVisible).toHaveBeenCalledWith(false);
+    expect(tweens.add).toHaveBeenCalledWith(
+      expect.objectContaining({ duration: DEATH_MS, alpha: 0 }),
+    );
+    expect(img.destroy).toHaveBeenCalled();
+    expect(label.destroy).toHaveBeenCalled();
+  });
+
+  it('tears down off-screen bodies without a collapse tween', () => {
+    const img = {
+      active: true,
+      visible: false,
+      setTint: vi.fn(),
+      destroy: vi.fn(),
+    };
+    const label = {
+      active: true,
+      setVisible: vi.fn(),
+      destroy: vi.fn(),
+    };
+    const tweens = { add: vi.fn() };
+    const onDone = vi.fn();
+    playActorDeath(tweens as never, { img, label, gx: 0, gy: 0 } as never, onDone);
+    expect(tweens.add).not.toHaveBeenCalled();
+    expect(img.destroy).toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalled();
   });
 });

@@ -12,6 +12,8 @@ export type EnemyView = {
   label: Phaser.GameObjects.Text;
   gx: number;
   gy: number;
+  /** Collapse tween in flight — skip lighting, tints, and a second teardown. */
+  dying?: boolean;
 };
 
 export type FlashFn = (color: number, alpha: number) => void;
@@ -877,6 +879,60 @@ export const COMBAT_BUMP_MS = 65;
 export const COMBAT_BUMP_PX = 7;
 /** Short cardinal lance — long enough to read, short enough for corridor cadence. */
 export const PHASER_BEAM_MS = 180;
+/** Hostile / surveyor collapse — readable, still shorter than a corridor beat. */
+export const DEATH_MS = 220;
+
+function collapseBody(
+  tweens: Phaser.Tweens.TweenManager,
+  img: Phaser.GameObjects.Image,
+  onComplete?: () => void,
+): void {
+  img.setTint(Theme.rust);
+  tweens.add({
+    targets: img,
+    alpha: 0,
+    scaleX: img.scaleX * 0.72,
+    scaleY: img.scaleY * 0.18,
+    y: img.y + 10,
+    duration: DEATH_MS,
+    ease: 'Quad.easeIn',
+    onComplete,
+  });
+}
+
+/**
+ * Squash a hostile or escort into the tile, then destroy the view.
+ * Invisible bodies skip the tween so off-screen packs don't linger.
+ */
+export function playActorDeath(
+  tweens: Phaser.Tweens.TweenManager,
+  view: EnemyView,
+  onDone?: () => void,
+): void {
+  view.dying = true;
+  if (view.label.active) view.label.setVisible(false);
+  const img = view.img;
+  if (!img.active || !img.visible) {
+    if (img.active) img.destroy();
+    if (view.label.active) view.label.destroy();
+    onDone?.();
+    return;
+  }
+  collapseBody(tweens, img, () => {
+    if (img.active) img.destroy();
+    if (view.label.active) view.label.destroy();
+    onDone?.();
+  });
+}
+
+/** Surveyor loss — collapse in place; the scene owns the sprite teardown. */
+export function playPlayerDeath(
+  tweens: Phaser.Tweens.TweenManager,
+  playerSprite: Phaser.GameObjects.Image,
+): void {
+  playerSprite.setData('dying', true);
+  collapseBody(tweens, playerSprite);
+}
 
 /** Stagger delay for the nth moving hostile this turn (0-based). */
 export function enemyMoveStaggerMs(index: number): number {
@@ -1298,10 +1354,10 @@ export function tintVisibleEnemies(
   enemyViews: Iterable<EnemyView>,
 ): void {
   for (const view of enemyViews) {
-    if (!view.img.visible) continue;
+    if (!view.img.visible || view.dying) continue;
     view.img.setTint(0xffffff);
     time.delayedCall(80, () => {
-      if (view.img.active) view.img.clearTint();
+      if (view.img.active && !view.dying) view.img.clearTint();
     });
   }
 }
@@ -1313,6 +1369,6 @@ export function tintPlayerHurt(
 ): void {
   playerSprite.setTint(Theme.rust);
   time.delayedCall(80, () => {
-    if (playerSprite.active) playerSprite.clearTint();
+    if (playerSprite.active && !playerSprite.getData('dying')) playerSprite.clearTint();
   });
 }
