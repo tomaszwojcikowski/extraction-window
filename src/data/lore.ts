@@ -58,7 +58,8 @@ export const LORE = {
     '. — wait\n' +
     'i — kit · u — use or equip · step onto kit to pick it up\n' +
     'Enter / Space / > — hatch, beacon, pad, optional site, hail\n' +
-    'p — PADD · l — mission log · 1/2 — pick skill · ? — help · m — mute · Esc — close\n' +
+    'n — minimap · p — PADD · l — mission log · ? — help · m — mute · Esc — close\n' +
+    '1 / 2 — pick field skill when prompted\n' +
     '\n' +
     'TWO CLOCKS (both can kill you)\n' +
     'Window — turns left before the extract closes.\n' +
@@ -98,7 +99,7 @@ export const LORE = {
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Optional sites pay extract rewards.',
   'UI-CONTROLS':
-    'WASD move · . wait · i kit · l log · ? help',
+    'WASD move · . wait · i kit · n map · l log · ? help',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',

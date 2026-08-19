@@ -12,17 +12,27 @@ export function drawPaddOverlay(
   codexLog: LoreId[],
   codexPages: number,
 ): void {
-  const w = 460;
-  const body =
+  const w = 480;
+  const SEP = '──────────────────────────────────';
+  const entries =
     codexLog.length === 0
-      ? lore('UI-PAGES-EMPTY')
-      : codexLog.map((id, i) => `${i + 1}. ${lore(id)}`).join('\n\n');
-  const h = Math.min(420, 90 + Math.max(40, codexLog.length * 48));
+      ? [lore('UI-PAGES-EMPTY')]
+      : codexLog.map((id, i) => `${i + 1}  ${lore(id)}`);
+
+  const body = entries.join(`\n${SEP}\n`);
+  const h = Math.min(460, 110 + Math.max(40, codexLog.length * 52));
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
   drawFieldPanel(panel, x, y, w, h, Theme.flag);
+  text.setWordWrapWidth(w - 40);
   text.setPosition(x + 20, y + 22);
   text.setText(
-    `${lore('UI-PAGES')}  (${codexPages})\n\n${lore('UI-PAGES-PURPOSE')}\n\n${body}\n\n${lore('UI-PAGES-HINT')}`,
+    `${lore('UI-PAGES')}  (${codexPages} pages)\n` +
+      `${SEP}\n` +
+      `${lore('UI-PAGES-PURPOSE')}\n` +
+      `${SEP}\n` +
+      `${body}\n` +
+      `${SEP}\n` +
+      `${lore('UI-PAGES-HINT')}`,
   );
 }

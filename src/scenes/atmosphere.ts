@@ -434,6 +434,9 @@ export function drawHudStripChrome(
     g.fillRect(14, y + height - 8, 42, 2);
     drawStencilTicks(g, 12, y + height - 8, width - 150, false, Theme.inkMute);
     drawTapeStrip(g, width - 128, y + 4, 116, 6, accent, 0.55);
+    // Subtle interior divider separating the objective block from the urgency row.
+    g.fillStyle(Theme.panelEdge, 0.35);
+    g.fillRect(14, y + 104, width - 200, 1);
     if (corrosion >= 0.25 && opts.drainingLeg) {
       drawShearLegGlyphs(
         g,

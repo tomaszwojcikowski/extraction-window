@@ -35,7 +35,7 @@ import {
 } from './atmosphere';
 import { sfx } from '../audio/sfx';
 import { ambient, music } from '../audio';
-import { HUD_BOTTOM_LOG, HUD_TOP } from '../game/GameHost';
+import { HUD_BOTTOM_LOG, HUD_BOTTOM_DOCK, HUD_TOP } from '../game/GameHost';
 import { handleGameKey } from '../game/input/InputController';
 import { resolveHintLine } from '../game/presenters/ContextHints';
 import {
@@ -70,6 +70,11 @@ import { MinimapView } from '../game/views/MinimapView';
 import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
+import {
+  createSkillPickObjects,
+  drawSkillPickOverlay,
+  hideSkillPickOverlay,
+} from '../game/views/overlays/SkillPickOverlay';
 import { computeShearPressure, shearReadoutLabel, type ShearPressureState } from '../game/presenters/ShearPressure';
 import {
   resetEphemeralFieldChrome,
@@ -122,6 +127,8 @@ export class GameScene extends Phaser.Scene {
 
   private topPanel!: Phaser.GameObjects.Graphics;
   private bottomPanel!: Phaser.GameObjects.Graphics;
+  private bottomDockPanel!: Phaser.GameObjects.Graphics;
+  private dockLegendText!: Phaser.GameObjects.Text;
   private barsGfx!: Phaser.GameObjects.Graphics;
   private badgeGfx!: Phaser.GameObjects.Graphics;
   private hudMeta!: Phaser.GameObjects.Text;
@@ -174,6 +181,10 @@ export class GameScene extends Phaser.Scene {
   private helpPanel!: Phaser.GameObjects.Graphics;
   private helpText!: Phaser.GameObjects.Text;
   private helpOpen = false;
+  private skillPickBg!: Phaser.GameObjects.Rectangle;
+  private skillPickPanel!: Phaser.GameObjects.Graphics;
+  private skillPickText!: Phaser.GameObjects.Text;
+  private skillPickBadgeGfx!: Phaser.GameObjects.Graphics;
   /** Mission log strip — hidden by default; `l` toggles. */
   private logOpen = false;
   private minimap = new MinimapView();
@@ -230,6 +241,16 @@ export class GameScene extends Phaser.Scene {
 
     this.topPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.bottomPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
+    this.bottomDockPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
+    this.dockLegendText = this.add
+      .text(0, 0, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+      })
+      .setAlpha(0.7)
+      .setScrollFactor(0)
+      .setDepth(91);
     this.barsGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
     this.badgeGfx = this.add.graphics().setScrollFactor(0).setDepth(91);
 
@@ -462,6 +483,12 @@ export class GameScene extends Phaser.Scene {
       .setDepth(112)
       .setVisible(false);
 
+    const skillPickObjs = createSkillPickObjects(this);
+    this.skillPickBg = skillPickObjs.bg;
+    this.skillPickPanel = skillPickObjs.panel;
+    this.skillPickText = skillPickObjs.text;
+    this.skillPickBadgeGfx = skillPickObjs.badgeGfx;
+
     this.flash = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, Theme.rust, 0)
       .setOrigin(0)
@@ -607,7 +634,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Collapsed default: full viewport. Open mission log (`l`) reserves the strip. */
   private bottomInset(): number {
-    return this.logOpen ? HUD_BOTTOM_LOG : 0;
+    return (this.logOpen ? HUD_BOTTOM_LOG : 0) + HUD_BOTTOM_DOCK;
   }
 
   private drawChrome(shear = computeShearPressure(this.state)): void {
@@ -627,15 +654,31 @@ export class GameScene extends Phaser.Scene {
     });
     const bottom = this.bottomInset();
     this.bottomPanel.setVisible(this.logOpen);
-    drawHudStripChrome(this.bottomPanel, {
-      y: h - bottom,
-      height: bottom,
+    if (this.logOpen) {
+      drawHudStripChrome(this.bottomPanel, {
+        y: h - bottom,
+        height: bottom - HUD_BOTTOM_DOCK,
+        width: w,
+        side: 'bottom',
+        corrosion: shear.value,
+        accent: shear.accent,
+        biomeAccent,
+      });
+    }
+    // Always-visible slim dock strip at the very bottom.
+    drawHudStripChrome(this.bottomDockPanel, {
+      y: h - HUD_BOTTOM_DOCK,
+      height: HUD_BOTTOM_DOCK,
       width: w,
       side: 'bottom',
-      corrosion: shear.value,
+      corrosion: 0,
       accent: shear.accent,
       biomeAccent,
     });
+    // Control micro-legend: right-aligned in the dock.
+    const legendStr = '? help  i kit  p PADD  n map  l log';
+    this.dockLegendText.setText(legendStr);
+    this.dockLegendText.setPosition(w - this.dockLegendText.width - 10, h - HUD_BOTTOM_DOCK + 3);
   }
 
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
@@ -2218,6 +2261,25 @@ export class GameScene extends Phaser.Scene {
     });
     this.windowPulseTween = pulseBox.current;
     this.layoutBottomChrome();
+    // Skill pick overlay — shown when the sim has a pending choice.
+    if (st.skillPick && st.skillPick.length > 0) {
+      drawSkillPickOverlay(
+        this.skillPickPanel,
+        this.skillPickText,
+        this.skillPickBadgeGfx,
+        this.skillPickBg,
+        this.scale.width,
+        this.scale.height,
+        st.skillPick,
+      );
+    } else {
+      hideSkillPickOverlay(
+        this.skillPickBg,
+        this.skillPickPanel,
+        this.skillPickText,
+        this.skillPickBadgeGfx,
+      );
+    }
     // Preference tip fills an empty hint line only — never stomps tele/vitals/context.
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {
       if (!this.hintText.visible) {

@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { lore } from '../../data/lore';
 import { getSector } from '../../data/encounters';
-import { SKILLS } from '../../data/progression';
 import {
   describeObjective,
   stickyMilestone,
@@ -252,27 +251,20 @@ export class HudView {
     const skillLock = Boolean(st.skillPick);
     // Skill pick owns the line — Window/EM wait until the fork is chosen.
     if (skillLock) {
-      urgencyParts.push(
-        st.skillPick!
-          .map(
-            (id, i) =>
-              `${i + 1} ${lore(SKILLS[id]!.loreName)} — ${lore(SKILLS[id]!.loreDesc)}`,
-          )
-          .join(' · '),
-      );
+      urgencyParts.push('▶ FIELD SKILL READY — press 1 or 2');
     } else {
       // Power kill clock stays visible even when Shear owns the center — that
       // compression is how bus deaths used to arrive with no notice.
       if (busHot) {
-        urgencyParts.push(`${lore('HAZ-BUS')}  (${st.player.energy})`);
+        urgencyParts.push(`▸ ${lore('HAZ-BUS')}  (${st.player.energy})`);
       }
       if (stormHot && !shearPrimary) {
-        urgencyParts.push(`${lore('HAZ-STORM')}  (${windowLeft})`);
+        urgencyParts.push(`▸ ${lore('HAZ-STORM')}  (${windowLeft})`);
       }
       if (st.emStress >= EM_HIGH) {
-        urgencyParts.push(`EM CRIT ${st.emStress}`);
+        urgencyParts.push(`▸ EM CRIT ${st.emStress}`);
       } else if (st.emStress >= EM_WARN) {
-        urgencyParts.push(`EM WARN ${st.emStress}`);
+        urgencyParts.push(`▸ EM WARN ${st.emStress}`);
       }
     }
 

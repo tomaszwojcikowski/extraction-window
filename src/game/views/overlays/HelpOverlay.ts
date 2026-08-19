@@ -12,17 +12,24 @@ export function drawHelpOverlay(
   tutorialActive = false,
 ): void {
   const w = 520;
-  const h = Math.min(tutorialActive ? 360 : 520, screenH - 48);
+  const h = Math.min(tutorialActive ? 360 : 540, screenH - 48);
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
   drawFieldPanel(panel, x, y, w, h, Theme.biolum);
   text.setWordWrapWidth(w - 48);
   text.setPosition(x + 24, y + 22);
   if (tutorialActive) {
-    text.setText(`${lore('UI-HELP')}\n\n${lore('UI-HELP-TUT')}\nESC or ? — close`);
+    text.setText(
+      `${lore('UI-HELP')}\n\n${lore('UI-HELP-TUT')}\nESC or ? — close`,
+    );
   } else {
     text.setText(
-      `${lore('UI-HELP')}\n\n${lore('UI-KIT-PURPOSE')}\n\n${lore('UI-HELP-BODY')}\n\nESC or ? — close`,
+      `${lore('UI-HELP')}\n\n` +
+        `${lore('UI-KIT-PURPOSE')}\n\n` +
+        `────────────────────────────────\n` +
+        `${lore('UI-HELP-BODY')}\n` +
+        `────────────────────────────────\n` +
+        `ESC or ? — close`,
     );
   }
 }
