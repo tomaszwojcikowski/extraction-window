@@ -248,12 +248,23 @@ export class LightView {
    * After destination lighting filled the caches, lock the blend end and show
    * the start frame so the wash doesn't pop ahead of the sprite.
    */
-  lockMoveBlend(tileSprites: Phaser.GameObjects.Image[][]): void {
+  lockMoveBlend(
+    tileSprites: Phaser.GameObjects.Image[][],
+    sectorId: SectorId,
+  ): void {
     const blend = this.moveBlend;
     if (!blend || blend.locked) return;
     blend.toAlpha = cloneGrid(this.alphaGrid);
     blend.toTint = cloneGrid(this.tintGrid);
-    applyShroudRevealFrom(blend.fromAlpha, blend.fromTint, blend.fromShroud, Theme.fog);
+    // Re-tint shroud (unexplored) tiles to match the sector's fog temperature.
+    // This keeps the hop reveal from feeling like a constant neutral overlay.
+    const fogTint = multiplyTint(Theme.fog, BIOME_FLOOR_TINT[sectorId], 0.35);
+    applyShroudRevealFrom(
+      blend.fromAlpha,
+      blend.fromTint,
+      blend.fromShroud,
+      fogTint,
+    );
     blend.dirty = moveBlendDirtyCells(blend.fromAlpha, blend.toAlpha, blend.fromTint, blend.toTint);
     blend.locked = true;
     this.setMoveLightProgress(0, tileSprites);
@@ -270,12 +281,15 @@ export class LightView {
     tileKey: (kind: string, x: number, y: number) => string,
   ): void {
     if (!this.moveBlend?.locked) return;
+    const floorTint = BIOME_FLOOR_TINT[st.sectorId];
+    const fogTint = multiplyTint(Theme.fog, floorTint, 0.35);
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
         const img = tileSprites[y]?.[x];
         if (!img) continue;
         if (!st.explored[y]![x]) {
           img.setTexture('t_fog');
+          img.setTint(fogTint);
           continue;
         }
         img.setTexture(tileKey(st.tiles[y]![x]!.kind, x, y));
@@ -764,6 +778,7 @@ export class LightView {
     const paint = opts.paintSprites !== false;
     const biome = BIOME_AMBIENT[st.sectorId];
     const floorTint = BIOME_FLOOR_TINT[st.sectorId];
+    const fogTint = multiplyTint(Theme.fog, floorTint, 0.35);
     const ambientTint = biome.tint;
     const reflect =
       st.sectorId === 'brine' || st.sectorId === 'flood' || st.sectorId === 'reef' ? 1.24 : 1;
@@ -789,11 +804,11 @@ export class LightView {
         if (!st.explored[y]![x]) {
           if (paint) {
             img.setTexture('t_fog');
-            img.clearTint();
+            img.setTint(fogTint);
             img.setAlpha(1);
           }
           this.alphaGrid[y]![x] = 1;
-          this.tintGrid[y]![x] = 0xffffff;
+          this.tintGrid[y]![x] = fogTint;
           this.shroudGrid[y]![x] = true;
           continue;
         }

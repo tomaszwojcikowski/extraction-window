@@ -1108,7 +1108,7 @@ export class GameScene extends Phaser.Scene {
     this.applyFieldLighting();
     if (fb.playerMoved) {
       this.moveLightFxStep = -1;
-      this.lightView.lockMoveBlend(this.tileSprites);
+      this.lightView.lockMoveBlend(this.tileSprites, this.state.sectorId);
       this.lightView.paintMoveTextures(this.state, this.tileSprites, (kind, x, y) =>
         this.tileKey(kind, x, y),
       );

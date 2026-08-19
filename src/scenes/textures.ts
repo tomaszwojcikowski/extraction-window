@@ -91,11 +91,25 @@ function drawFog(g: G, T: number): void {
   g.clear();
   ink(g, Theme.fog);
   g.fillRect(0, 0, T, T);
+  // Keep fog readable: a tiny edge vignette plus deterministic “specks”.
+  // This makes unexplored shroud feel atmospheric rather than a flat tile wash.
+  ink(g, Theme.groundDeep, 0.18);
+  g.fillRect(0, 0, T, 2);
+  g.fillRect(0, T - 2, T, 2);
+  g.fillRect(0, 0, 2, T);
+  g.fillRect(T - 2, 0, 2, T);
+
   ink(g, Theme.ground, 0.35);
-  g.fillRect(6, 8, 1, 1);
-  g.fillRect(18, 14, 1, 1);
-  g.fillRect(12, 22, 1, 1);
-  g.fillRect(24, 6, 1, 1);
+  for (let i = 0; i < 22; i++) {
+    const x = 2 + ((i * 11 + 7) % (T - 4));
+    const y = 2 + ((i * 7 + 13) % (T - 4));
+    const bright = 0.25 + (i % 5) * 0.05;
+    ink(g, Theme.ground, bright);
+    g.fillRect(x, y, 1, 1);
+    if (i % 6 === 0) {
+      g.fillRect(Math.min(T - 2, x + 1), y, 1, 1);
+    }
+  }
 }
 
 function drawMemory(g: G, T: number): void {
