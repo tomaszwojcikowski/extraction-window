@@ -4,6 +4,8 @@ import {
   PHASER_ENERGY_COST,
   findPhaserTarget,
   firePhaser,
+  phaserAnyTarget,
+  tracePhaserLane,
   tryFirePhaser,
 } from '../../src/sim/phaser';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
@@ -112,6 +114,17 @@ describe('survey phaser', () => {
     applyAction(st, { type: 'move', dx: 1, dy: 0 });
     expect(st.player.x).toBe(fromX + 1);
     expect(en.hp).toBe(en.maxHp);
+  });
+
+  it('tracePhaserLane matches findPhaserTarget', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    openLane(st, 3);
+    const en = foeAt(st, 3);
+    const lane = tracePhaserLane(st, 1, 0);
+    expect(lane.target?.id).toBe(en.id);
+    expect(findPhaserTarget(st, 1, 0)?.id).toBe(en.id);
+    expect(phaserAnyTarget(st)).toBe(true);
   });
 
   it('is stocked from flood onward, not only ruin wreckage', () => {

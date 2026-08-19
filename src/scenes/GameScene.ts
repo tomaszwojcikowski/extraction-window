@@ -70,6 +70,7 @@ import { drawFovVignette } from '../game/views/MapView';
 import { MinimapView } from '../game/views/MinimapView';
 import { drawThreatZones } from '../game/views/ThreatView';
 import { drawWakeTells } from '../game/presenters/WakeTells';
+import { drawPhaserLanes } from '../game/presenters/PhaserLanes';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
 import {
@@ -2075,6 +2076,7 @@ export class GameScene extends Phaser.Scene {
 
     drawThreatZones(this.threatGfx, st, this.animFrame);
     drawWakeTells(this.threatGfx, st, st.player.x, st.player.y, this.animFrame, TILE_DRAW);
+    drawPhaserLanes(this.threatGfx, st, this.animFrame, TILE_DRAW);
 
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {

@@ -14,35 +14,59 @@ export function hasPhaserEquipped(state: GameState): boolean {
   return state.player.equip.tool === 'phaser';
 }
 
+export const PHASER_CARDINALS = [
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+] as const;
+
+export type PhaserLaneStep = { x: number; y: number; step: number };
+
 /**
- * First hostile on a unit cardinal step at range 2–3, with a clear transparent
- * lane. Adjacent contact stays melee; walls, allies, and field contacts stop
- * the beam.
+ * Trace a cardinal lane up to PHASER_RANGE_MAX — shared by sim fire checks and
+ * field lane overlay.
  */
-export function findPhaserTarget(
+export function tracePhaserLane(
   state: GameState,
   dx: number,
   dy: number,
-): Enemy | undefined {
-  if ((dx === 0) === (dy === 0)) return undefined;
-  if (Math.abs(dx) > 1 || Math.abs(dy) > 1) return undefined;
+): { steps: PhaserLaneStep[]; target?: Enemy } {
+  const steps: PhaserLaneStep[] = [];
+  if ((dx === 0) === (dy === 0)) return { steps };
+  if (Math.abs(dx) > 1 || Math.abs(dy) > 1) return { steps };
 
   const sx = Math.sign(dx);
   const sy = Math.sign(dy);
   for (let step = 1; step <= PHASER_RANGE_MAX; step++) {
     const x = state.player.x + sx * step;
     const y = state.player.y + sy * step;
-    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return undefined;
+    if (x < 0 || y < 0 || x >= state.width || y >= state.height) return { steps };
     const tile = state.tiles[y]![x]!;
-    if (!tile.transparent) return undefined;
-    if (allyAt(state, x, y) || npcAt(state, x, y)) return undefined;
+    if (!tile.transparent) return { steps };
+    if (allyAt(state, x, y) || npcAt(state, x, y)) return { steps };
+    steps.push({ x, y, step });
     const foe = enemyAt(state, x, y);
     if (!foe) continue;
-    if (step < PHASER_RANGE_MIN) return undefined;
-    if (!(state.visible[y]?.[x] ?? false)) return undefined;
-    return foe;
+    if (step < PHASER_RANGE_MIN) return { steps };
+    if (!(state.visible[y]?.[x] ?? false)) return { steps };
+    return { steps, target: foe };
   }
-  return undefined;
+  return { steps };
+}
+
+/** First hostile on a unit cardinal step at range 2–3, with a clear transparent lane. */
+export function findPhaserTarget(
+  state: GameState,
+  dx: number,
+  dy: number,
+): Enemy | undefined {
+  return tracePhaserLane(state, dx, dy).target;
+}
+
+/** True when any cardinal lane has a valid 2–3 tile shot (equip not required). */
+export function phaserAnyTarget(state: GameState): boolean {
+  return PHASER_CARDINALS.some(([dx, dy]) => findPhaserTarget(state, dx, dy) !== undefined);
 }
 
 export function firePhaser(state: GameState, enemy: Enemy): void {

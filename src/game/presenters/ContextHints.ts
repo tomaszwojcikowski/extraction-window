@@ -8,12 +8,16 @@ import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { pillarCoachHint } from './PillarCoach';
+import { phaserContextHint } from './PhaserLanes';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
   // Skill pick overlay owns coaching — never stack a second hint channel.
   if (st.skillPick) return null;
   if (st.ui.aimingDart) return 'UI-HINT-AIM';
+
+  const phaserHint = phaserContextHint(st);
+  if (phaserHint) return phaserHint;
 
   const fromMechanic = mechanicsContextHint(st);
   // The first-run drill deliberately teaches its bespoke stalker response.

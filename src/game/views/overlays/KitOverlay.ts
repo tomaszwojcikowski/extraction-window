@@ -4,6 +4,7 @@ import { ITEMS, shortEquipName } from '../../../data/items';
 import type { GameState } from '../../../sim';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
+import { phaserKitStatus } from '../../presenters/PhaserLanes';
 
 function isWorn(st: GameState, kind: string): boolean {
   const e = st.player.equip;
@@ -60,6 +61,12 @@ export function drawKitOverlay(
   if (detailLines.length > 0) {
     sections.push(SEP);
     sections.push(detailLines.join('\n'));
+  }
+
+  const phaserStatus = phaserKitStatus(st, selected?.kind);
+  if (phaserStatus) {
+    sections.push(SEP);
+    sections.push(lore(phaserStatus));
   }
 
   sections.push(SEP);

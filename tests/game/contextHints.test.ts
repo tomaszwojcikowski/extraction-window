@@ -50,7 +50,7 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).toBe('UI-HINT-USE-PATCH');
   });
 
-  it('hints equip when blade in kit but not worn', () => {
+  it('coaches equip when blade in kit but not worn', () => {
     const st = createGame(42);
     st.player.hp = st.player.maxHp;
     st.player.energy = st.player.maxEnergy;

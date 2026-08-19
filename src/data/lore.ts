@@ -115,6 +115,17 @@ export const LORE = {
   'UI-HINT-ITEM-FULL': 'Kit full — free a slot (use an item), then step here again',
   'UI-HINT-AIM':
     'Aim dart — direction fires (lit, range 3) · . cancels · miss spends the dart',
+  'UI-HINT-PHASER-TEACH':
+    'Survey Phaser worn — step toward a visible hostile 2–3 tiles on a clear lane to fire (−4 Power). Adjacent stays melee.',
+  'UI-HINT-PHASER-FIRE': 'Phaser lane live — step that direction to fire (−4 Power)',
+  'UI-HINT-PHASER-LOW': 'Phaser needs 4 Power — use a Power Cell or walk in to melee',
+  'UI-HINT-PHASER-RANGE':
+    'Hostile off phaser band — stand 2–3 tiles away on a clear lane, or walk in to melee',
+  'UI-HINT-PHASER-EQUIP':
+    'Survey Phaser in kit — i, select, u to wear · step toward foe at 2–3 tiles to fire',
+  'UI-PHASER-READY': 'Worn · READY · 2–3 tile lane · −4 Power per beam',
+  'UI-PHASER-LOW': 'Worn · LOW POWER (need 4) · adjacent is still melee',
+  'UI-PHASER-WEAR': 'Equip to fire at 2–3 tiles · −4 Power · adjacent stays melee',
   'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
   'UI-HINT-USE-ENERGY': 'Power low — open kit (i), select Power Cell, press u',
   'UI-HINT-BUS-LOW': 'Power failing — pick up a Power Cell this turn',
