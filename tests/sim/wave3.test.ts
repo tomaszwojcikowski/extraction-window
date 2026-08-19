@@ -12,9 +12,9 @@ import { combatArena, makeAlly, makeEnemy } from './fixtures';
 describe('Wave 3 branded rewards', () => {
   it('tags elite families with a readable deterministic drop', () => {
     expect(ENEMIES.elite_skirmisher.brand).toBe('flarebound');
-    expect(ENEMIES.elite_skirmisher.brandDrop).toBe('flare');
-    expect(ENEMIES.elite_ward.brandDrop).toBe('plate');
-    expect(ENEMIES.elite_apex.brandDrop).toBe('probe');
+    expect(ENEMIES.elite_skirmisher.brandDrop).toBe('flare_prism');
+    expect(ENEMIES.elite_ward.brandDrop).toBe('ward_weave');
+    expect(ENEMIES.elite_apex.brandDrop).toBe('shadow_lens');
   });
 
   it('grants exactly one deterministic branded item on elite death', () => {
@@ -25,7 +25,7 @@ describe('Wave 3 branded rewards', () => {
     killEnemy(st, elite);
 
     expect(st.items).toHaveLength(1);
-    expect(st.items[0]?.kind).toBe('plate');
+    expect(st.items[0]?.kind).toBe('ward_weave');
     expect(st.log.some((entry) => entry.loreId === 'LOG-BRAND-DROP')).toBe(true);
   });
 

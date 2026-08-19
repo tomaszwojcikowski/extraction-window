@@ -175,7 +175,8 @@ export const LORE = {
   'UI-HINT-TELE-ZONE': 'Pulse charging — leave the painted ring or kill it',
   'UI-HINT-BEACON-NEED-KEY':
     'Beacon sealed — carry the Splice Key, then Enter / Space / >',
-  'UI-HINT-BRAND': 'Branded elite — optional; Flare, Field Array Pulse, or Filter match its brand',
+  'UI-HINT-BRAND':
+    'Branded elite — optional; equip its drop (Prism / Weave / Lens) or counter with Flare, Pulse, Filter',
   'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
   'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
@@ -315,7 +316,7 @@ export const LORE = {
   'CODEX-FACT-MACHINE':
     'Machine note: patrol units keep the old seal routes. They do not tire and they do not lose interest.',
   'CODEX-FACT-BRANDED':
-    'Contact brief: marked specimen on this ground. It answers Flare, Field Array Pulse, and Filter differently — route around or match the brand.',
+    'Contact brief: marked specimen on this ground. Kill it for a branded wearable — or route with Flare, Pulse, or Filter.',
   'CODEX-FACT-BRINE':
     'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
   'CODEX-FACT-VENT':
@@ -389,6 +390,15 @@ export const LORE = {
   'ITEM-BOOTS': 'Mag Boots',
   'ITEM-BOOTS-DESC':
     'Wear on feet — brine/hazard Power tax −1; tripwire EM spike −1. Use again to stow.',
+  'ITEM-FLARE-PRISM': 'Flare Prism',
+  'ITEM-FLARE-PRISM-DESC':
+    'Branded ring — flare spends −1 Power; shadow-flares mark +1 turn. Elite flarebound drop. Stow with u.',
+  'ITEM-WARD-WEAVE': 'Ward Weave',
+  'ITEM-WARD-WEAVE-DESC':
+    'Branded suit — +3 Shield, ion −2; vent tiles cost +1 Power per step. Elite warded drop. Stow with u.',
+  'ITEM-SHADOW-LENS': 'Shadow Lens',
+  'ITEM-SHADOW-LENS-DESC':
+    'Branded head mount — dark-prefer notice −1 in shadow; blind/jam +1 turn in lit tiles. Elite shadowbound drop.',
   // Enemies
   'ENEMY-MITE': 'Scar Mite',
   'ENEMY-SPORE': 'Wash Spore',
@@ -503,6 +513,9 @@ export const LORE = {
   'LOG-USE-VISOR': 'Survey visor mounted — blind/jam softened; vision capped.',
   'LOG-USE-GLOVES': 'Grip gloves worn — hazard ion contact muted.',
   'LOG-USE-BOOTS': 'Mag boots locked — brine and wire tax eased.',
+  'LOG-USE-FLARE-PRISM': 'Flare Prism seated — cheaper flares, harsher shadow marks.',
+  'LOG-USE-WARD-WEAVE': 'Ward Weave worn — ion blunted; vents tax Power.',
+  'LOG-USE-SHADOW-LENS': 'Shadow Lens mounted — hunters shrink in shadow; lit tiles bite longer.',
   'LOG-UNEQUIP': 'Gear stowed in kit.',
   'LOG-USE-DART': 'Plasma microdart impact — target exposed.',
   'LOG-USE-SEALANT': 'Sealant Foam set — vent/hazard cleared.',
@@ -560,7 +573,7 @@ export const LORE = {
   'LOG-STATUS-MARKED': 'Marked — fauna interest rising.',
   'LOG-LOOT-DROP': 'Salvage drops from the carcass.',
   'LOG-BRAND-SIGHT': 'Branded hostile identified.',
-  'LOG-BRAND-DROP': 'Branded field kit recovered.',
+  'LOG-BRAND-DROP': 'Branded wearable recovered from the kill.',
   'LOG-GOT-KEY': 'Splice Key acquired from Crash Wreck Belt. Proceed to Emergency Beacon.',
   'LOG-USED-KEY':
     'Beacon authorized. Inland corridor open — Contingency Cache holds spare Nav Lattice.',

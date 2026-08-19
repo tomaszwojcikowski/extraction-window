@@ -44,6 +44,7 @@ export {
   isItemWorn,
   EQUIP_SLOT_ORDER,
 } from './equip';
+export { wornTagSum, wornTagMax, wornHasTag, slotTag } from './equipTags';
 export {
   findPhaserTarget,
   firePhaser,

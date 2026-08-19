@@ -291,7 +291,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 6,
     damageType: 'kinetic',
     brand: 'flarebound',
-    brandDrop: 'flare',
+    brandDrop: 'flare_prism',
   },
   elite_ward: {
     kind: 'elite_ward',
@@ -306,7 +306,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     damageType: 'kinetic',
     overwatch: true,
     brand: 'warded',
-    brandDrop: 'plate',
+    brandDrop: 'ward_weave',
   },
   elite_apex: {
     kind: 'elite_apex',
@@ -321,7 +321,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     damageType: 'ion',
     hunt: 'reach',
     brand: 'shadowbound',
-    brandDrop: 'probe',
+    brandDrop: 'shadow_lens',
   },
   isolinear_warden: {
     kind: 'isolinear_warden',
@@ -335,7 +335,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 6,
     damageType: 'ion',
     brand: 'warded',
-    brandDrop: 'plate',
+    brandDrop: 'ward_weave',
   },
   pattern_custodian: {
     kind: 'pattern_custodian',
@@ -349,7 +349,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     aggroRange: 6,
     damageType: 'ion',
     brand: 'shadowbound',
-    brandDrop: 'probe',
+    brandDrop: 'shadow_lens',
   },
   shear_sovereign: {
     kind: 'shear_sovereign',
@@ -364,6 +364,6 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     damageType: 'ion',
     hunt: 'reach',
     brand: 'flarebound',
-    brandDrop: 'flare',
+    brandDrop: 'flare_prism',
   },
 };

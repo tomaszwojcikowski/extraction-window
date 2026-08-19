@@ -8,8 +8,7 @@ import { loadSector } from './state';
 import { pinPhaserTrainingMites } from '../map/tutorialMap';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
-import { EQUIP_TAGS } from '../data/items';
-import { isItemWorn } from './equip';
+import { wornHasTag, wornTagMax } from './equipTags';
 import { addPlayerStatus, addStatus, addPlayerMarked, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, emEnergyTax } from './emStress';
@@ -100,16 +99,15 @@ function tickUnderfootTerrain(state: GameState): void {
   const tile = state.tiles[state.player.y]![state.player.x]!;
   const hazardCrossing =
     tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
-  const boots = isItemWorn(state, 'mag_boots');
-  const gloves = isItemWorn(state, 'grip_gloves');
-  const drainCut = boots ? EQUIP_TAGS.mag_boots.hazardDrainReduction : 0;
+  const drainCut = wornTagMax(state, 'hazardDrainReduction');
+  const gloves = wornHasTag(state, 'hazardIonSkip');
   if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
     pushLog(state, 'LOG-FAVOR-HAZARD');
   } else if (tile.kind === 'hazard') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     const drain = Math.max(1, (filter ? 1 : 2) + brineExtra - drainCut);
     state.player.energy -= drain;
-    if (!gloves || !EQUIP_TAGS.grip_gloves.hazardIonSkip) {
+    if (!gloves) {
       addStatus(state.player, 'ion_burn', 1);
     }
     pushLog(state, 'LOG-HAZARD');
@@ -119,17 +117,15 @@ function tickUnderfootTerrain(state: GameState): void {
     state.player.energy -= drain;
     pushLog(state, 'LOG-BRINE-POOL');
   } else if (tile.kind === 'vent') {
-    state.player.energy -= filter ? 0 : 1;
+    const ventExtra = wornTagMax(state, 'ventDrainExtra');
+    state.player.energy -= (filter ? 0 : 1) + ventExtra;
     if (sector.id === 'ash' || sector.id === 'vault') addEmStress(state, 1);
     if (state.rng() < 0.12) {
       addPlayerStatus(state, 'jam', 1);
       pushLog(state, 'LOG-STATUS-JAM');
     }
   } else if (tile.kind === 'tripwire') {
-    const tripEm = Math.max(
-      1,
-      2 - (boots ? EQUIP_TAGS.mag_boots.tripwireEmReduction : 0),
-    );
+    const tripEm = Math.max(1, 2 - wornTagMax(state, 'tripwireEmReduction'));
     addEmStress(state, tripEm, 'tripwire');
     for (const en of state.enemies) {
       if (!en.alive) continue;

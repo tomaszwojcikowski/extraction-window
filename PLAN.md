@@ -2,7 +2,7 @@
 
 > **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (WR band, lose-mix gates, playtest commands); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
-**Status (v1.1.0):** Waves 19–22 — ADOM-style paper doll loadout (head/suit/hands/tool/feet/comm/rings) + five new worn items. Prior v1.0.0: Waves 16–18 on main. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
+**Status (v1.2.0):** Wave 23 — elite-branded wearables (Flare Prism, Ward Weave, Shadow Lens) + equip tag refactor. Prior v1.1.0: paper doll loadout. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 

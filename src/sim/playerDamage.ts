@@ -1,5 +1,6 @@
-import { ARMOR_DEF_BONUS, equipIonReduction } from '../data/items';
+import { ARMOR_DEF_BONUS } from '../data/items';
 import { equippedSuit } from './equip';
+import { wornTagSum } from './equipTags';
 import type { LoreId } from '../data/lore';
 import { EM_HIGH } from './emStress';
 import { formatCombatDetail, pushLog } from './log';
@@ -61,7 +62,7 @@ export function applyPlayerDamage(
   let dmg = Math.max(0, amount);
   const filterOn = state.player.filterTurns > 0;
   const ionSkin = hasSkill(state, 'ion_skin');
-  if (type === 'ion') dmg = Math.max(1, dmg - equipIonReduction(equippedSuit(state)));
+  if (type === 'ion') dmg = Math.max(1, dmg - wornTagSum(state, 'ionDamageReduction'));
   if (filterOn && (type === 'ion' || (ionSkin && type === 'kinetic'))) {
     dmg = Math.max(1, Math.ceil(dmg / 2));
   }

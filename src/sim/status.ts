@@ -1,6 +1,6 @@
 import type { StatusId, StatusMap, GameState, Enemy } from './types';
-import { EQUIP_TAGS } from '../data/items';
-import { equippedSuit, isItemWorn } from './equip';
+import { isLit } from './light';
+import { slotTag } from './equipTags';
 import { killEnemy } from './death';
 import { pushLog } from './log';
 import { applyPlayerDamage } from './playerDamage';
@@ -10,15 +10,16 @@ export function addStatus(target: { statuses: StatusMap }, id: StatusId, turns: 
   target.statuses[id] = Math.max(cur, turns);
 }
 
-/** Player status with loadout modifiers (visor softens blind/jam). */
+/** Player status with loadout modifiers (visor/lens on head slot). */
 export function addPlayerStatus(state: GameState, id: StatusId, turns: number): void {
   let t = turns;
-  if (
-    (id === 'blind' || id === 'jam') &&
-    isItemWorn(state, 'survey_visor') &&
-    EQUIP_TAGS.survey_visor.statusTurnReduction > 0
-  ) {
-    t = Math.max(1, t - EQUIP_TAGS.survey_visor.statusTurnReduction);
+  if (id === 'blind' || id === 'jam') {
+    const reduction = slotTag(state, 'head', 'statusTurnReduction');
+    const litPenalty =
+      isLit(state, state.player.x, state.player.y)
+        ? slotTag(state, 'head', 'litStatusPenalty')
+        : 0;
+    t = Math.max(1, t - reduction + litPenalty);
   }
   addStatus(state.player, id, t);
 }
@@ -40,15 +41,15 @@ export function tickStatuses(target: { statuses: StatusMap }): void {
   }
 }
 
-/** Bleed damage per tick — ablative vest softens player bleed. */
+/** Bleed damage per tick — ablative vest / suit tags soften player bleed. */
 export function playerBleedDamage(state: GameState): number {
-  return equippedSuit(state) === 'ablative_vest' ? 1 : 2;
+  const suitBleed = slotTag(state, 'suit', 'bleedDamage');
+  return suitBleed > 0 ? suitBleed : 2;
 }
 
 /** Apply end-of-turn status damage/effects to the player. */
 export function tickPlayerStatusEffects(state: GameState): void {
   const p = state.player;
-  // Drill bay: keep teaching calm — statuses may exist after the stalker, but don't bleed out.
   if (!state.tutorialActive) {
     if (hasStatus(p, 'bleed') && !hasStatus(p, 'downed')) {
       applyPlayerDamage(state, playerBleedDamage(state), 'kinetic', {
@@ -97,4 +98,3 @@ export function statusHud(statuses: StatusMap): string {
   if ((statuses.expose ?? 0) > 0) parts.push(`Exposed ${statuses.expose}`);
   return parts.join(' · ');
 }
-

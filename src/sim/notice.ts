@@ -1,5 +1,6 @@
 import type { Enemy, GameState } from './types';
 import { ENEMIES } from '../data/enemies';
+import { slotTag } from './equipTags';
 import { emAggroBonus } from './emStress';
 import { inShadow, isLit } from './light';
 import { hasStatus } from './status';
@@ -41,6 +42,9 @@ export function effectiveAggroAt(
       else if (dark) r = Math.max(1, r - 1);
     }
     if (lit && state.ionFrontTurns > 0 && def.lightPrefer === 'lit') r += 1;
+    if (def.lightPrefer === 'dark' && dark) {
+      r = Math.max(1, r - slotTag(state, 'head', 'darkNoticeReduction'));
+    }
   }
   r += shadowboundDarkAggro(enemy, inShadow(state, px, py));
   return r;

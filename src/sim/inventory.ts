@@ -3,7 +3,6 @@ import {
   ITEMS,
   INVENTORY_SLOTS,
   ARMOR_MAX_BONUS,
-  EQUIP_TAGS,
   type EquipSlotId,
   type ItemKind,
 } from '../data/items';
@@ -11,9 +10,9 @@ import { EM_HIGH } from './emStress';
 import {
   equipSlotsFor,
   findWornSlot,
-  isItemWorn,
   resolveEquipTarget,
 } from './equip';
+import { wornTagMax } from './equipTags';
 import { XP_QUEST_ITEM } from '../data/progression';
 import type { GameState } from './types';
 import type { SectorId } from '../data/encounters';
@@ -47,6 +46,9 @@ const EQUIP_LOG: Partial<Record<ItemKind, Parameters<typeof pushLog>[1]>> = {
   survey_visor: 'LOG-USE-VISOR',
   grip_gloves: 'LOG-USE-GLOVES',
   mag_boots: 'LOG-USE-BOOTS',
+  flare_prism: 'LOG-USE-FLARE-PRISM',
+  ward_weave: 'LOG-USE-WARD-WEAVE',
+  shadow_lens: 'LOG-USE-SHADOW-LENS',
 };
 
 /** Unknown salvage resolves into whatever this depth of shelf actually stocks. */
@@ -201,9 +203,7 @@ function identifyUnknown(state: GameState): void {
   }
   const failBase = hasSkill(state, 'scavenger') ? SALVAGE_FAIL_SCAV : SALVAGE_FAIL;
   const bandBonus =
-    state.emStress >= EM_HIGH && isItemWorn(state, 'scan_band')
-      ? EQUIP_TAGS.scan_band.salvageFailReduction
-      : 0;
+    state.emStress >= EM_HIGH ? wornTagMax(state, 'salvageFailReduction') : 0;
   const fail = Math.max(0.04, failBase - bandBonus);
   if (state.rng() < fail) {
     state.salvageBacklash++;
@@ -302,7 +302,9 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
-      if (!canSpendPower(state, KIT_POWER_COST.flare)) return false;
+      if (!canSpendPower(state, Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction')))) {
+        return false;
+      }
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
       cancelOverwatch(state);
@@ -330,23 +332,22 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-ION-DAMPEN');
       }
       rebuildIllumination(state);
+      const flareCost = Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction'));
       spendPower(
         state,
-        KIT_POWER_COST.flare,
+        flareCost,
         'LOG-USE-FLARE',
-        hits ? `x${hits} · -${KIT_POWER_COST.flare} Power` : `-${KIT_POWER_COST.flare} Power`,
+        hits ? `x${hits} · -${flareCost} Power` : `-${flareCost} Power`,
       );
       // Hunter notice: flaring while already in shadow
       if (shadowed && state.rng() < 0.22) {
-        addPlayerMarked(state, 3);
+        const markTurns = 3 + wornTagMax(state, 'shadowFlareMarkBonus');
+        addPlayerMarked(state, markTurns);
         pushLog(state, 'LOG-STATUS-MARKED');
       }
-      if (
-        shadowed &&
-        isItemWorn(state, 'survey_visor') &&
-        EQUIP_TAGS.survey_visor.flareEmTax > 0
-      ) {
-        addEmStress(state, EQUIP_TAGS.survey_visor.flareEmTax, 'visor glare');
+      const flareEmTax = wornTagMax(state, 'flareEmTax');
+      if (shadowed && flareEmTax > 0) {
+        addEmStress(state, flareEmTax, 'visor glare');
       }
       break;
     }

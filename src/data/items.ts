@@ -30,7 +30,10 @@ export type ItemKind =
   | 'scan_band'
   | 'survey_visor'
   | 'grip_gloves'
-  | 'mag_boots';
+  | 'mag_boots'
+  | 'flare_prism'
+  | 'ward_weave'
+  | 'shadow_lens';
 
 export type EquipSlotId =
   | 'head'
@@ -48,9 +51,7 @@ export interface ItemDef {
   loreDesc: LoreId;
   quest: boolean;
   stackable: boolean;
-  /** Primary worn slot — use toggles equip / stow. */
   equipSlot?: EquipSlotId;
-  /** Alternate slots (e.g. rings) — first empty wins on equip. */
   equipSlots?: EquipSlotId[];
 }
 
@@ -85,12 +86,10 @@ export const EQUIP_TAGS = {
   survey_visor: { statusTurnReduction: 1, fovCap: 1, flareEmTax: 5 },
   grip_gloves: { hazardIonSkip: true },
   mag_boots: { hazardDrainReduction: 1, tripwireEmReduction: 1 },
+  flare_prism: { flarePowerReduction: 1, shadowFlareMarkBonus: 1 },
+  ward_weave: { ionDamageReduction: 2, ventDrainExtra: 1 },
+  shadow_lens: { darkNoticeReduction: 1, litStatusPenalty: 1 },
 } as const;
-
-/** Ablative lattice blunts ion damage by a point while worn. */
-export function equipIonReduction(suit: ItemKind | null): number {
-  return suit === 'ablative_vest' ? EQUIP_TAGS.ablative_vest.ionDamageReduction : 0;
-}
 
 export function equipOnHitBleed(tool: ItemKind | null): number {
   if (tool === 'blade') return EQUIP_TAGS.blade.onHitBleed;
@@ -274,12 +273,37 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     stackable: false,
     equipSlot: 'feet',
   },
+  flare_prism: {
+    kind: 'flare_prism',
+    loreName: 'ITEM-FLARE-PRISM',
+    loreDesc: 'ITEM-FLARE-PRISM-DESC',
+    quest: false,
+    stackable: false,
+    equipSlots: ['ring_l', 'ring_r'],
+  },
+  ward_weave: {
+    kind: 'ward_weave',
+    loreName: 'ITEM-WARD-WEAVE',
+    loreDesc: 'ITEM-WARD-WEAVE-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'suit',
+  },
+  shadow_lens: {
+    kind: 'shadow_lens',
+    loreName: 'ITEM-SHADOW-LENS',
+    loreDesc: 'ITEM-SHADOW-LENS-DESC',
+    quest: false,
+    stackable: false,
+    equipSlot: 'head',
+  },
 };
 
 /** Max armor granted while this suit piece is worn. */
 export const ARMOR_MAX_BONUS: Partial<Record<ItemKind, number>> = {
   harness: 6,
   ablative_vest: 4,
+  ward_weave: 3,
 };
 
 /** Flat DEF while this suit is worn. */
@@ -319,6 +343,12 @@ export function shortEquipName(kind: ItemKind | null): string {
       return 'gloves';
     case 'mag_boots':
       return 'boots';
+    case 'flare_prism':
+      return 'prism';
+    case 'ward_weave':
+      return 'weave';
+    case 'shadow_lens':
+      return 'lens';
     default:
       return kind;
   }

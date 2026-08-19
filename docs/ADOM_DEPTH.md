@@ -476,6 +476,22 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 
 ---
 
+## Wave 23 — Branded wearables (done)
+
+| Ticket | Status |
+|--------|--------|
+| Tag lookup refactor — `equipTags.ts` (`wornTagSum`, `wornTagMax`, `slotTag`) | Done |
+| Elite drops — Flare Prism / Ward Weave / Shadow Lens replace consumable `brandDrop` | Done |
+| Sim hooks — flare cost/mark, weave ion/vent, lens notice/status | Done |
+| Autopilot — equip branded piece when matching elite visible | Done |
+| Unit — `brandedWear.test.ts` | Done |
+
+**GEM:** each branded wearable trades kit space for one readable brand-counter pressure.
+
+**Tag:** `v1.2.0` when `test:balance` green.
+
+---
+
 ## Explicit defer (post-v1)
 
 Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

@@ -8,7 +8,10 @@ import {
   type Action,
   type GameState,
 } from '../sim';
-import { INVENTORY_SLOTS } from '../data/items';
+import { INVENTORY_SLOTS, type ItemKind } from '../data/items';
+import { ENEMIES, type EnemyBrand } from '../data/enemies';
+import { effectiveAggro } from '../sim/notice';
+import { manhattan } from '../sim/spatial';
 import type { SkillId } from '../data/progression';
 import { EM_WARN, EM_HIGH } from '../sim/emStress';
 import { inShadow, isLit } from '../sim/light';
@@ -132,6 +135,22 @@ function randomStep(state: GameState): Action {
     return { type: 'move', dx: dx!, dy: dy! };
   }
   return { type: 'wait' };
+}
+
+function visibleBrand(state: GameState, brand: EnemyBrand): boolean {
+  return state.enemies.some((e) => {
+    if (!e.alive || ENEMIES[e.kind].brand !== brand) return false;
+    if (!(state.visible[e.y]?.[e.x] ?? false)) return false;
+    const dist = manhattan(e.x, e.y, state.player.x, state.player.y);
+    return dist <= effectiveAggro(state, e);
+  });
+}
+
+function tryEquipWearable(state: GameState, kind: ItemKind): Action | null {
+  const idx = state.inventory.findIndex((s) => s.kind === kind);
+  if (idx < 0) return null;
+  state.ui.selectedSlot = idx;
+  return { type: 'use' };
 }
 
 /**
@@ -319,6 +338,19 @@ export function chooseAction(
       return { type: 'use' };
     }
   }
+  if (visibleBrand(state, 'flarebound') && !state.player.equip.ring_l && !state.player.equip.ring_r) {
+    const action = tryEquipWearable(state, 'flare_prism');
+    if (action) return action;
+  }
+  if (visibleBrand(state, 'warded') && state.player.equip.suit !== 'ward_weave') {
+    const action = tryEquipWearable(state, 'ward_weave');
+    if (action) return action;
+  }
+  if (visibleBrand(state, 'shadowbound') && !state.player.equip.head) {
+    const action = tryEquipWearable(state, 'shadow_lens');
+    if (action) return action;
+  }
+
   const batonIdx = state.inventory.findIndex((s) => s.kind === 'pulse_baton');
   if (batonIdx >= 0 && state.player.equip.tool !== 'pulse_baton') {
     state.ui.selectedSlot = batonIdx;
