@@ -14,6 +14,8 @@ import {
   drawPressureCrack,
 } from './tex/deluxe';
 
+export { floorScatter } from './tex/deluxe';
+
 /** Base pixel art size — drawn 1:1 so floor seams don't scale up as a grout grid. */
 export const TILE = 48;
 export const TILE_DRAW = TILE;

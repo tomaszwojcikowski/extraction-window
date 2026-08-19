@@ -34,6 +34,54 @@ function transparent(g: G, T: number): void {
   g.fillRect(0, 0, T, T);
 }
 
+function floorScatterHash(x: number, y: number, seed: number): number {
+  return Math.abs((x * 19 + y * 47 + (seed & 0xffff) * 13) | 0);
+}
+
+/** 1px lattice break + overlap pad so ground sits uneven without opening grout gaps. */
+export function floorScatter(
+  x: number,
+  y: number,
+  seed: number,
+): { dx: number; dy: number; pad: number } {
+  const n = floorScatterHash(x, y, seed);
+  return {
+    dx: (n % 3) - 1,
+    dy: ((n >> 3) % 3) - 1,
+    pad: 1 + ((n >> 5) % 2),
+  };
+}
+
+function heaveCorner(variant: number): 0 | 1 | 2 {
+  return (variant % 3) as 0 | 1 | 2;
+}
+
+/** Irregular edge chips — same family as the bed, so they break the ruler without grout. */
+function biteEdges(g: G, T: number, q: Q, variant: number, dark: number, light: number): void {
+  for (let i = 0; i < 4; i++) {
+    const along = q(6 + ((i * 11 + variant * 7) % 34));
+    const span = q(3 + ((i + variant) % 3));
+    g.fillStyle(i % 2 === 0 ? dark : light, 0.4);
+    g.fillRect(along, 0, span, q(2));
+    g.fillRect(along + q(2), T - q(2), span, q(2));
+    g.fillRect(0, along, q(2), span);
+    g.fillRect(T - q(2), along + q(1), q(2), span);
+  }
+}
+
+/** Raised plane from a variant corner so neighbouring tiles don't share a height. */
+function paintHeave(g: G, T: number, variant: number, high: number, low: number): void {
+  const c = heaveCorner(variant);
+  g.fillStyle(high, 0.38);
+  if (c === 0) g.fillTriangle(0, 0, T, 0, 0, T * 0.62);
+  else if (c === 1) g.fillTriangle(T, 0, T, T, T * 0.38, 0);
+  else g.fillTriangle(0, T, T, T, T * 0.55, T * 0.32);
+  g.fillStyle(low, 0.3);
+  if (c === 0) g.fillTriangle(T, T, T, T * 0.4, T * 0.45, T);
+  else if (c === 1) g.fillTriangle(0, T, 0, T * 0.35, T * 0.55, T);
+  else g.fillTriangle(0, 0, T * 0.6, 0, 0, T * 0.55);
+}
+
 function floorAccent(sector: SectorId): number {
   switch (sector) {
     case 'flood':
@@ -83,6 +131,8 @@ export function drawDeluxeFloor(g: G, T: number, sector: SectorId, variant: numb
   const tint = BIOME_FLOOR_TINT[sector];
   const accent = floorAccent(sector);
   const family = floorFamily(sector);
+  const ox = q((variant % 3) - 1);
+  const oy = q(((variant + 1) % 3) - 1);
   g.clear();
 
   if (family === 'cliff') {
@@ -90,41 +140,49 @@ export function drawDeluxeFloor(g: G, T: number, sector: SectorId, variant: numb
     const bed = mix(Material.rock, tint, 0.18);
     g.fillStyle(bed, 1);
     g.fillRect(0, 0, T, T);
+    paintHeave(g, T, variant, mix(bed, Theme.inkMute, 0.22), mix(bed, Theme.groundDeep, 0.28));
     g.fillStyle(mix(bed, Theme.groundDeep, 0.16), 1);
-    g.fillRect(q(5), q(6), T - q(11), T - q(13));
-    // Broken chips, never a full lip.
+    g.fillRect(q(5) + ox, q(6) + oy, T - q(11), T - q(13));
     for (let i = 0; i < 5; i++) {
-      const x = q(4 + ((i * 9 + variant * 5) % 36));
-      const y = q(3 + ((i * 5 + variant) % 6));
+      const x = q(2 + ((i * 9 + variant * 5) % 42));
+      const y = q(2 + ((i * 11 + variant * 7) % 40));
       g.fillStyle(Material.recess, 0.45);
-      g.fillRect(x, y, q(3), q(2));
+      g.fillRect(x, y, q(3 + (i % 2)), q(2));
     }
+    biteEdges(g, T, q, variant, mix(bed, Theme.groundDeep, 0.24), mix(bed, Theme.inkMute, 0.18));
   } else if (family === 'wet') {
-    g.fillStyle(mix(Material.brine, tint, 0.35), 1);
+    const wet = mix(Material.brine, tint, 0.35);
+    g.fillStyle(wet, 1);
     g.fillRect(0, 0, T, T);
+    paintHeave(g, T, variant, mix(wet, Theme.inkBright, 0.14), mix(wet, Theme.groundDeep, 0.22));
     g.fillStyle(mix(Material.brine, accent, 0.2), 0.7);
-    g.fillEllipse(q(3), q(4), T - q(6), T - q(10));
+    g.fillEllipse(q(3) + ox, q(4) + oy, T - q(6) + q(variant), T - q(10) - oy);
     g.fillStyle(Theme.inkBright, 0.18);
-    g.fillRect(q(6 + variant), q(5), q(14), q(1));
+    g.fillRect(q(6 + variant) + ox, q(5) + oy, q(14), q(1));
+    biteEdges(g, T, q, variant, mix(wet, Theme.groundDeep, 0.2), mix(wet, Theme.inkBright, 0.12));
   } else {
     const deck = mix(Material.deck, tint, 0.2);
     g.fillStyle(deck, 1);
     g.fillRect(0, 0, T, T);
+    paintHeave(g, T, variant, mix(deck, Theme.panel, 0.2), mix(deck, Theme.groundDeep, 0.26));
     g.fillStyle(mix(deck, Theme.panel, 0.28), 1);
-    g.fillRect(q(7), q(7), T - q(14), T - q(14));
+    g.fillRect(q(7) + ox * 2, q(7) + oy * 2, T - q(14), T - q(14));
     // Plate joints stay inside the tile so they don't chain into a world grid.
+    const mx = T / 2 + ox * 3;
+    const my = T / 2 + oy * 2;
     g.fillStyle(Theme.groundDeep, 0.35);
-    g.fillRect(q(9), T / 2 - q(1), T - q(18), q(1));
-    g.fillRect(T / 2 - q(1), q(9), q(1), T - q(18));
+    g.fillRect(q(9) + ox, my - q(1), T - q(18), q(1));
+    g.fillRect(mx - q(1), q(9) + oy, q(1), T - q(18));
     g.fillStyle(Theme.panelEdge, 0.55);
     for (const [bx, by] of [
-      [10, 10],
-      [T - 14, 10],
-      [10, T - 16],
-      [T - 14, T - 16],
+      [10 + ox, 10 + oy],
+      [T - 14 + ox, 10 - oy],
+      [10 - ox, T - 16 + oy],
+      [T - 14 - ox, T - 16 - oy],
     ] as const) {
       g.fillRect(q(bx + (variant % 2)), q(by), q(2), q(2));
     }
+    biteEdges(g, T, q, variant, mix(deck, Theme.groundDeep, 0.22), mix(deck, Theme.panel, 0.16));
   }
 
   // Deterministic micro-noise — density follows family.

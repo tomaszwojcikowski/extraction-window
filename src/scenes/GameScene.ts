@@ -7,6 +7,7 @@ import {
   playerTextureKey,
   wallTextureKey,
   sconceTextureKey,
+  floorScatter,
 } from './textures';
 import { FONT_DATA, FONT_DISPLAY, LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './theme';
 import { ENEMIES } from '../data/enemies';
@@ -723,12 +724,16 @@ export class GameScene extends Phaser.Scene {
       this.tileSprites[y] = [];
       for (let x = 0; x < width; x++) {
         const kind = tiles[y]![x]!.kind;
-        const img = this.add.image(
-          x * TILE_DRAW + TILE_DRAW / 2,
-          y * TILE_DRAW + TILE_DRAW / 2,
-          this.tileKey(kind, x, y),
-        );
-        img.setDisplaySize(TILE_DRAW + 1, TILE_DRAW + 1);
+        const cx = x * TILE_DRAW + TILE_DRAW / 2;
+        const cy = y * TILE_DRAW + TILE_DRAW / 2;
+        const img = this.add.image(cx, cy, this.tileKey(kind, x, y));
+        if (kind === 'floor') {
+          const s = floorScatter(x, y, this.state.seed);
+          img.setPosition(cx + s.dx, cy + s.dy);
+          img.setDisplaySize(TILE_DRAW + s.pad, TILE_DRAW + s.pad);
+        } else {
+          img.setDisplaySize(TILE_DRAW + 1, TILE_DRAW + 1);
+        }
         // Raised props sit above the shadow layer so umbra falls under the art.
         if (tileCastsPropShadow(kind)) this.propLayer.add(img);
         else this.mapLayer.add(img);
