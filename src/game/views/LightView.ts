@@ -809,15 +809,20 @@ export class LightView {
             kind === 'scrub_nest' ||
             kind === 'rubble' ||
             kind === 'tripwire';
-          let mem = isTerrain ? floorTint : 0xffffff;
-          mem = desaturate(mem, 0.72);
+          const isHazard = kind === 'hazard' || kind === 'vent' || kind === 'brine_pool';
+          const isWall = kind === 'wall' || kind === 'sealed';
+          const hazardTint =
+            kind === 'brine_pool' ? multiplyTint(Theme.arcWhite, Theme.biolum, 0.35) : Theme.arc;
+          let mem = isTerrain ? floorTint : isHazard ? hazardTint : isWall ? floorTint : 0xffffff;
+          mem = desaturate(mem, isWall ? 0.85 : 0.72);
           mem = multiplyTint(mem, Theme.memoryWash, 0.42);
           mem = multiplyTint(mem, Theme.memory, 0.28);
+          const memoryAlpha = isWall ? 0.5 : 0.4;
           if (paint) {
             img.setTint(mem);
-            img.setAlpha(0.4);
+            img.setAlpha(memoryAlpha);
           }
-          this.alphaGrid[y]![x] = 0.4;
+          this.alphaGrid[y]![x] = memoryAlpha;
           this.tintGrid[y]![x] = mem;
           continue;
         }
