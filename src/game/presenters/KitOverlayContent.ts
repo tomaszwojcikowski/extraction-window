@@ -17,6 +17,35 @@ import { kitUseFeedback } from './KitFeedback';
 import { phaserKitStatus } from './PhaserLanes';
 
 export const BAG_VISIBLE_ROWS = 8;
+/** Monospace wrap width — matches panel inner width at 13px IBM Plex Mono. */
+export const KIT_WRAP_CHARS = 58;
+export const KIT_LINE_H = 17;
+export const KIT_PANEL_PAD = 36;
+
+/** Word-wrap kit copy to a fixed character width (pure, testable). */
+export function wrapKitLine(text: string, maxChars = KIT_WRAP_CHARS): string[] {
+  if (text.length <= maxChars) return [text];
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let cur = '';
+  for (const word of words) {
+    const next = cur ? `${cur} ${word}` : word;
+    if (next.length <= maxChars) {
+      cur = next;
+    } else {
+      if (cur) lines.push(cur);
+      cur = word;
+    }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function pushWrapped(lines: string[], text: string): void {
+  for (const row of wrapKitLine(text)) {
+    lines.push(row);
+  }
+}
 
 /** Keep the selected bag row inside a fixed visible window. */
 export function bagScrollStart(
@@ -140,7 +169,7 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
     const def = ITEMS[selectedItem.kind];
     lines.push(SEP);
     lines.push(`${lore(def.loreName).toUpperCase()}  ×${selectedItem.count}`);
-    lines.push(lore(def.loreDesc));
+    pushWrapped(lines, lore(def.loreDesc));
     lines.push(itemActionHint(st, selectedItem.kind));
     const power = kitPowerCost(st, selectedItem.kind);
     if (power !== null) {
@@ -150,28 +179,19 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
 
   const phaserStatus = phaserKitStatus(st, selectedItem?.kind);
   if (phaserStatus) {
-    lines.push(lore(phaserStatus));
+    pushWrapped(lines, lore(phaserStatus));
   }
 
   const feedback = kitUseFeedback(st);
   if (feedback) {
     lines.push(SEP);
-    lines.push(`${lore('UI-KIT-FEEDBACK')} ${feedback}`);
+    pushWrapped(lines, `${lore('UI-KIT-FEEDBACK')} ${feedback}`);
   }
 
   lines.push(SEP);
   lines.push(lore('UI-INV-HINT'));
 
-  const detailRows = selectedItem ? 4 + (kitPowerCost(st, selectedItem.kind) !== null ? 1 : 0) : 0;
-  const phaserRows = phaserStatus ? 1 : 0;
-  const feedbackRows = feedback ? 2 : 0;
-  const ph = Math.min(
-    440,
-    Math.max(
-      320,
-      118 + BAG_VISIBLE_ROWS * 16 + detailRows * 14 + phaserRows * 14 + feedbackRows * 14,
-    ),
-  );
+  const panelH = KIT_PANEL_PAD + lines.length * KIT_LINE_H;
 
-  return { lines, panelW: pw, panelH: ph };
+  return { lines, panelW: pw, panelH };
 }

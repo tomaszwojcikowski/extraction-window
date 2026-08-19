@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { INVENTORY_SLOTS } from '../../src/data/items';
 import { lore } from '../../src/data/lore';
-import { buildKitOverlayContent, bagScrollStart } from '../../src/game/presenters/KitOverlayContent';
+import {
+  buildKitOverlayContent,
+  bagScrollStart,
+  wrapKitLine,
+} from '../../src/game/presenters/KitOverlayContent';
 import { pushLog } from '../../src/sim/log';
 import { tryEquipItem } from '../../src/sim/inventory';
 import { combatArena } from '../sim/fixtures';
@@ -31,13 +35,17 @@ describe('buildKitOverlayContent', () => {
     expect(lines.some((l) => l.includes('▸ 1') && l.includes('Field Hypo'))).toBe(true);
   });
 
-  it('shows equip target and power cost for selected consumables', () => {
+  it('wraps long item descriptions and sizes the panel to fit', () => {
+    const desc = lore('ITEM-FLARE-DESC');
+    expect(wrapKitLine(desc).length).toBeGreaterThan(1);
+
     const st = combatArena();
-    st.inventory = [{ kind: 'flare', count: 1 }];
+    st.inventory = [{ kind: 'flare', count: 2 }];
     st.ui.selectedSlot = 0;
-    const { lines } = buildKitOverlayContent(st);
+    const { lines, panelH } = buildKitOverlayContent(st);
     expect(lines.some((l) => l.includes(lore('UI-KIT-USE')))).toBe(true);
     expect(lines.some((l) => l.includes(`${lore('UI-KIT-POWER')} 2`))).toBe(true);
+    expect(panelH).toBeGreaterThanOrEqual(36 + lines.length * 17 - 4);
   });
 
   it('shows stow hint and loadout marker for worn items', () => {

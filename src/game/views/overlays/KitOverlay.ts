@@ -12,7 +12,8 @@ export function drawKitOverlay(
   screenH: number,
   st: GameState,
 ): void {
-  const { lines, panelW, panelH } = buildKitOverlayContent(st);
+  const { lines, panelW, panelH: contentH } = buildKitOverlayContent(st);
+  const panelH = Math.min(contentH, screenH - 32);
   const px = (screenW - panelW) / 2;
   const py = (screenH - panelH) / 2;
   drawFieldPanel(panel, px, py, panelW, panelH, Theme.tape);
