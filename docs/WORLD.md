@@ -6,7 +6,7 @@ Design canon for the Halcyon / Meridian Shelf overhaul. Player-facing copy lives
 
 ## Pitch (one sentence)
 
-Meridian Shelf was a Halcyon relay staging ground; the prior team’s field array never shut down cleanly — residual scan pressure keeps the ecology hot and the shear window unstable until you pull a spare Nav Lattice and leave.
+Meridian Shelf was a Halcyon relay staging ground; the prior team’s field array never shut down cleanly — residual scan pressure keeps the ecology hot until you pull a spare Nav Lattice and leave before **Power** runs out.
 
 ---
 
@@ -14,12 +14,12 @@ Meridian Shelf was a Halcyon relay staging ground; the prior team’s field arra
 
 | Slot | Canon |
 |------|-------|
-| Title | **EXTRACTION WINDOW** |
+| Title | **EXTRACTION WINDOW** (fiction — ion shear on the shelf; **not** a turn timer in v1) |
 | Org | **Halcyon Survey Corps** |
 | Ship | **CSV Halcyon** (civilian survey vessel) |
 | Site | **Meridian Shelf** (class-M ridge / storm belt) |
-| Window | **shear window** (ion/shear storm gameplay; renamed copy) |
-| Power | **bus / life-support reserve** |
+| Shear / ion pressure | Environmental presentation — taxes **Power** and EM; dial on HUD |
+| Power | **bus / life-support reserve** — sole death clock |
 | Scanner | **field array / survey probe** |
 | Med | **field hypo / seal gel** |
 | Key | **Splice Key** |

@@ -1,6 +1,6 @@
 # Design principles for Extraction Window
 
-A short, applied summary of established game-design ideas that fit this project’s pillars — dual clocks, causal extract, field light, kit pressure, in-run mastery, headless truth ([`V1.md`](./V1.md)).
+A short, applied summary of established game-design ideas that fit this project’s pillars — Power clock, exploration pressure, causal extract, field light, kit pressure, in-run mastery, headless truth ([`V1.md`](./V1.md)).
 
 Use this when proposing features, reviewing UI/copy, or writing pass briefs. Prefer **one principle that explains the change** over inventing new systems.
 
@@ -23,7 +23,7 @@ For Meridian Shelf, the aesthetics we care about most:
 
 | Aesthetic | What it should feel like here |
 |-----------|-------------------------------|
-| **Challenge** | Two clocks (Window + Power) and fauna as a **wake tax** — careless light and open packs hurt; combat is not the skill pillar |
+| **Challenge** | **Power** clock + fauna as a **wake tax** — careless light and open packs hurt; combat is not the skill pillar |
 | **Discovery** | Reading the shelf — LIT/SHADOW, windups, sealed routes |
 | **Tension / drama** | Shear pressure rising; hatch → real drop; uplink hold |
 | **Expression** | Kit loadout, light vs loud fights, skill forks — not towns/meta unlocks |
@@ -59,7 +59,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Bars: HP · Shield · Power · Window · XP.
+- Bars: HP · Shield · Power · XP. Shear dial = pressure presentation (Power reserve + EM), not a second death bar.
 - Meta line: combat/EM + *active* timers/statuses — not permanent equip dump. Position word only when Risky or Desperate (Controlled is silence). ATK number hides when the Enhanced/Impaired chip owns the bump.
 - Extract boxes live on the chip rail (Key → handshake → Lattice → pad), not in the meta soup. They replace KEY / CORE / BEACON OPEN badges.
 - Downed, Kit full, and Fritz are chips. Peel already taxes DEF — do not badge peel.
@@ -82,7 +82,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 | Prefer | Avoid mixing in UI |
 |--------|-------------------|
 | Power | Energy / Bus / EPS (help may gloss once as kit charge) |
-| Window | Storm / shear storm (Shear = pressure *presentation*) |
+| Shear / ion pressure | Presentation dial for EM + low Power — not a turn timer |
 | Shield | Armor / SHD |
 | Nav Lattice / Splice Key | CORE / KEY only as short badges |
 | Controlled / Risky / Desperate | Position word for peel + expose (HUD only — peel already taxes DEF) |
@@ -184,7 +184,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 
 **Apply here**
 
-- Telegraphs for windups; LIT/SHADOW badge for notice risk; Power/Window numbers stay visible.
+- Telegraphs for windups; LIT/SHADOW badge for notice risk; Power numbers stay visible.
 - Ambush-in-shadow is a *known* SHADOW trade, taught in drill + badge.
 - Legal win path stays causal (Key → handshake → Lattice → pad) — feel polish never softens assertLegalWin.
 
@@ -203,7 +203,7 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - After major sim/UI-to-action changes: `build` → `playtest:smoke` (+ full `playtest` when win/sector/inventory/autopilot touched).
 - Pass briefs state a **single bold bet** and QA criteria (see `docs/experiment/PASS*_DESIGN.md`).
 - Separate the rule from the policy before reading a result. A player option cannot lower the win rate on its own; when the number drops after adding one, the oracle's new habit is the suspect. Ablate it before touching the rule.
-- **A turn spent on defence is a turn the Window still bills.** Answering telegraphs by bracing, retreating to better footing, and shoving to thin a crowd each cost the oracle 6–20 points, because the enemy simply re-establishes and the clock keeps running. Defensive options have to convert into damage or position that survives the enemy phase, or they are traps dressed as choices.
+- **A turn spent on defence is a turn Power still drips.** Answering telegraphs by bracing, retreating to better footing, and shoving to thin a crowd each cost the oracle 6–20 points, because the enemy simply re-establishes and sector drip keeps running. Defensive options have to convert into damage or position that survives the enemy phase, or they are traps dressed as choices.
 - 30 seeds cannot see a 5-point move, and 8 cannot see a 20-point one — an 8-seed smoke run read 38% for a change that measured 60% on 300. Confirm anything near a band edge with `scripts/probe-wr.ts`, and always against a stashed baseline measured the same way, not against a number remembered from last pass.
 - **Concentration is free; addition is not.** Moving the same hostile budget from an even scatter into packs left the win rate flat while changing every room. Putting an elite *on top of* a pack cost 5 points; removing one body from every crowned room refunded 12. When a change should be about texture, check that the totals really did stay put.
 
@@ -239,7 +239,7 @@ Borrow the closest open procedure per job. Do not import a library. Do not take 
 | Position word | Blades | `controlled` / `risky` / `desperate` from peel + expose. **HUD only** — peel already taxes def. |
 | Downed | Cairn critical | Overflow past 0 HP: save or `downed`. Med (bandages) stabilizes. Untreated → HP lose. Enemies still die at 0. |
 | Kit | Cairn / Knave | 16 slots stay. **Full kit** (16/16) makes outgoing attacks Impaired. |
-| Extract | Starforged | Same four gates. Interrupt / reject / desperate pickup **Pays the Price** (Window, EM, or pattern desync). |
+| Extract | Starforged | Same four gates. Interrupt / reject / desperate pickup **Pays the Price** (Power, EM, or pattern desync). |
 | Stress | Mothership *feeling* | EM_HIGH can fail a keep-calm check → `jam`. No panic table, no AP rewrite. |
 
 **Do not double-dip:** flanked peels def; position is the name for that. Encumbered Impaired is a different fact (kit). Keep-calm jam is a different fact (EM).

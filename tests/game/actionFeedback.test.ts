@@ -128,6 +128,25 @@ describe('ActionFeedback', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-PICKUP', detail: 'Field Hypo' }])).toEqual([
       { label: 'STOWED · Field Hypo', color: ThemeCss.safe },
     ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-PICKUP', detail: 'Salvage' }])).toEqual([
+      { label: 'STOWED · Salvage', color: ThemeCss.safe },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-SALVAGE-ID', detail: 'Plasma Flare' }])).toEqual([
+      { label: 'STOWED · Plasma Flare', color: ThemeCss.safe },
+    ]);
+  });
+
+  it('keeps salvage pickup floats when the turn log is noisy', () => {
+    const logs = [
+      { loreId: 'LOG-PICKUP' as const, detail: 'Salvage' },
+      { loreId: 'LOG-HAZARD' as const },
+      { loreId: 'LOG-DRAIN' as const, detail: 'Ion tile -2' },
+      { loreId: 'LOG-WAIT' as const },
+    ];
+    expect(causalActionFloats(logs, { vitals: { energyDelta: -2 } })).toEqual(
+      expect.arrayContaining([{ label: 'STOWED · Salvage', color: ThemeCss.safe }]),
+    );
+    expect(causalActionFloats(logs, { vitals: { energyDelta: -2 } })).toHaveLength(3);
   });
 
   it('floats handshake and uplink progress', () => {

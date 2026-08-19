@@ -8,13 +8,14 @@ The **scope filter**: whether a feature belongs in this game at all. Once someth
 
 ## 1. Simulation-face question
 
-> Does this reinforce **surveying a hostile residual-scan shelf under dual clocks**?
+> Does this reinforce **surveying a hostile residual-scan shelf under Power pressure and exploration wake tax**?
 
 A feature passes only if you can name the pressure it adds in one sentence. "It looks cool" or "roguelikes have this" is a reframe or a defer, not a ship.
 
 | Pillar | The pressure it owns |
 |--------|----------------------|
-| Dual clocks | Window vs Bus — every turn is paid for twice |
+| Power clock | Bus reserve — sector drip, hazards, kit spends; the only timed death channel |
+| Exploration pressure | EM, wake/fauna, optional quests bill HP/kit/Power opportunity — not a turn timer |
 | Causal extract | Key → handshake → Lattice → pad; no shortcut, no fetch-quest padding |
 | Field light | Lamp / flare change notice, aggro, dart clarity — not tint |
 | Kit + pressure | 16 slots, tool + armor equip, consumables; scarcity forces improvisation |
@@ -27,7 +28,7 @@ A feature passes only if you can name the pressure it adds in one sentence. "It 
 |-----------|---------|-----|
 | Unknown salvage as one gamble | Ship | Tech is opaque; scanning costs turns you owe the clocks. Shipped as tiers, later cut to a single kind — three fail rates taught nothing three times |
 | Scan scars at sustained EM-HIGH | Cut | Shipped, then cut: the body cost never surfaced anywhere the player could read it |
-| Sealed hatch Window refund | Ship | Rewards reading terrain over sprinting |
+| Sealed hatch kit payout | Ship | Rewards reading terrain over sprinting (Power/kit, not Window time) |
 | Cross-run unlocks | Cut | Moves mastery out of the run |
 | Towns / shops | Cut | Turns scarcity into a shopping list |
 | Real-time physics / knockback | Cut | Breaks turn legibility and the oracle |

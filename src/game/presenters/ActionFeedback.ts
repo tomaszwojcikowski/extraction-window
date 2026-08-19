@@ -244,7 +244,7 @@ export function collectActionFloatLabels(
         break;
       case 'LOG-SALVAGE-ID':
         next = {
-          label: log.detail ? `SCANNED · ${log.detail}` : 'SCANNED',
+          label: log.detail ? `STOWED · ${log.detail}` : 'STOWED',
           color: ThemeCss.safe,
         };
         break;
@@ -370,6 +370,24 @@ export function collectActionFloatLabels(
   return appendMissingVitalsFloats(labels, vitals);
 }
 
+/** Pickup floats stay visible even when the turn log is noisy. */
+const PICKUP_PIN_LORE = new Set<LoreId>(['LOG-PICKUP', 'LOG-SALVAGE-ID']);
+
+function mergeCappedFloats(
+  logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
+  labels: ActionFloat[],
+  flank?: ActionFloat | null,
+): ActionFloat[] {
+  const pinned = logs
+    .filter((l) => PICKUP_PIN_LORE.has(l.loreId))
+    .flatMap((log) => collectActionFloatLabels([log]));
+  const pinnedLabels = new Set(pinned.map((p) => p.label));
+  const rest = labels.filter((l) => !pinnedLabels.has(l.label));
+  const reserve = pinned.length + (flank ? 1 : 0);
+  const restCap = Math.max(0, ACTION_FLOAT_CAP - reserve);
+  return [...rest.slice(-restCap), ...pinned, ...(flank ? [flank] : [])];
+}
+
 /** Cap floats so the newest consequences stay readable without stacking a wall. */
 const ACTION_FLOAT_CAP = 3;
 
@@ -378,7 +396,9 @@ export function actionFloatLabels(
   logs: ReadonlyArray<{ loreId: LoreId; detail?: string }>,
   vitals?: ActionFloatVitals,
 ): ActionFloat[] {
-  return collectActionFloatLabels(logs, vitals).slice(-ACTION_FLOAT_CAP);
+  const all = collectActionFloatLabels(logs, vitals);
+  if (all.length <= ACTION_FLOAT_CAP) return all;
+  return mergeCappedFloats(logs, all);
 }
 
 /** Log floats plus flank edge, still capped. */
@@ -391,11 +411,11 @@ export function causalActionFloats(
   },
 ): ActionFloat[] {
   const labels = collectActionFloatLabels(logs, opts?.vitals);
-  if (opts?.flankBefore !== undefined && opts.flankAfter !== undefined) {
-    const flank = flankEdgeFloat(opts.flankBefore, opts.flankAfter);
-    if (flank) labels.push(flank);
-  }
-  return labels.slice(-ACTION_FLOAT_CAP);
+  const flank =
+    opts?.flankBefore !== undefined && opts.flankAfter !== undefined
+      ? flankEdgeFloat(opts.flankBefore, opts.flankAfter)
+      : null;
+  return mergeCappedFloats(logs, labels, flank);
 }
 
 /**

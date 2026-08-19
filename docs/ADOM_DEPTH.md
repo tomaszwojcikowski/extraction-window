@@ -15,7 +15,12 @@ flowchart TB
   wave4[Wave4 craft and coherence]
   wave5[Wave5 simplify]
   wave6[Wave6 simplify]
+  wave11[Wave11-13 Power clock]
+  wave14[Wave14 copy]
+  wave15[Wave15 presentation]
+  wave16[Wave16 ship]
   pillars --> wave1 --> wave2 --> wave3 --> wave4 --> wave5 --> wave6
+  wave6 --> wave11 --> wave14 --> wave15 --> wave16
 ```
 
 ---
@@ -91,7 +96,7 @@ the optional quest route remains outside the extraction spine.
 
 ---
 
-## Wave 4 — Craft & Coherence (in progress)
+## Wave 4 — Craft & Coherence (mostly done)
 
 Depth of *craft* rather than new systems: lock the filters, bind optional text to real rooms, and make the mastery paths fail differently. Sourced from a design review against the sibling project `ruin-protocol`.
 
@@ -101,22 +106,24 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
 | Feel debt: peek-teach yields to drill/tele hints; Notice Impact chase latch | Done — plus a single `resolveHintLine` channel so Escape cannot burn an unseen tip |
-| `GameScene` shrink — extract remaining orchestration to presenters | Pending |
+| `GameScene` shrink — extract remaining orchestration to presenters | **Pending (Wave 15)** |
 | Oracle telemetry: peak EM, IDs used, stuck reason codes | Done |
 | Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
 | Room facts → optional text binds to what is actually in the room; `cohere` fails unbound and unreachable pages | Done |
-| Distinct failure modes per path (GEM §2) | **Measured — tuning deferred**, see below |
+| Distinct failure modes per path (GEM §2) | **Improved post–Wave 11–13** — hp ~57%, energy ~25% on 500-seed probe; see Waves 11–13 |
 
-### Path-failure measurement (first read)
+### Path-failure measurement (historical → current)
 
-Full suite on `stable`: **19/30 (63%)**, hp 8 · storm 3 · energy 0 · stuck 0 — one channel owns **73%** of deaths. The persona sweep (`playtest --personas`) showed the same shape on every path, which is what set up Wave 5.
+Pre–Wave 11: full suite on `stable` **19/30 (63%)**, hp 8 · storm 3 · energy 0 · stuck 0 — one channel owned **73%** of deaths. Persona sweep showed the same shape on every path.
 
-Two findings survive the Wave 5 cut and are still open:
+Waves 11–13 closed the structural issues:
+- **Storm channel removed** — no turn timer; exploration viable.
+- **Power is a real spend clock** — kit burns and sector drip produce energy losses (~25% of held-out probe losses).
+- **hp dominance eased** — ~57% on 500 held-out seeds (was ~75% pre–Wave 11).
 
-1. **Quiet is not one option among several — it is the tax you must pay.** Dropping the jammer (`probe` persona) costs 12 points of win rate and makes deaths **100%** hp. That is a single curve with a mandatory item, not a real choice.
-2. **The bus clock is nearly dead as a channel.** Only `reckless` ever produced an energy loss. Bus pressure currently converts into hp deaths instead of its own failure.
+Still open: **stuck ~18%** of held-out probe losses — watch before tag; human play may differ from autopilot turn caps.
 
-Do **not** retune these from the oracle alone: the personas are reporting instruments. Pair the retune with human play, and re-gate `test:balance` after each step.
+Do **not** retune from the oracle alone: pair with human play, and re-gate `test:balance` after each step.
 
 **Not in Wave 4/5** (reviewed and rejected as wrong-project imports): React/Zustand HUD, fullscreen SDF or clustered lighting, cyber-psychosis / mutation fantasy, WFC megastructure generation, hub-every-5-sectors spine, cross-run meta of any kind.
 
@@ -314,7 +321,7 @@ Still out: first-contact ATK, Quiet, brace/shove.
 
 ---
 
-## Waves 11–13 — Power-only clock (2026)
+## Waves 11–13 — Power-only clock (done)
 
 **Design shift:** dual clocks (Window + Power) → **Power is the only death clock**. Exploration is allowed; pressure comes from Power management (sector drip, hazards, kit spends) and exploration tax (EM, wake/fauna, optional quests billing HP/kit — not time).
 
@@ -326,11 +333,80 @@ Still out: first-contact ATK, Quiet, brace/shove.
 
 ### Wave 12 — Power as real clock
 
-- Kit spends: probe −3, flare −2, filter −1, stim −2, phaser −4 (existing).
-- Late-spine sector drip +1 (brine, vault, fissure, approach). Autopilot respects `rechargeAt` before kit burns.
+- Kit spends: probe −3, flare −2, filter −1, stim −2, phaser −4.
+- Late-spine sector drip +1 (brine, vault, fissure, approach). Autopilot `canBurnKit()` reserves Power headroom before optional kit use.
 
 ### Wave 13 — Exploration without rush
 
 - Optional quests and mapping viable — no hard turn cap.
 - Persona sweep targets **hp vs energy** only; storm channel = 0.
 - Docs: `V1.md` pillar shift; this section.
+
+### Presentation follow-ups (same arc, not gated on WR)
+
+- Modal overlays block gameplay keys (`InputController` modal-first routing) — **done**.
+- Salvage pickup floats `STOWED · {item}` with cap-pin on noisy turns — **done** (uncommitted at doc time).
+
+### Result
+
+| Check | Result |
+|-------|--------|
+| 300-seed band gate | PASS — in 55–85% band |
+| Held-out probe (500 seeds) | **66.2% ±4.1** WR; avg turns ~448 |
+| Lose mix (500 probe) | `hp=97 energy=42 stuck=30` — hp ~57%, energy ~25%, stuck ~18% of losses |
+| Smoke | PASS — storm channel 0 |
+| Unit | PASS — 394 tests |
+
+**Closed:** Wave 8 finding #2 (Bus has no player spend). Storm clock and autopilot `stormTurns` blind spot.
+
+**Still open:** Player-string drift — `src/data/lore.ts` still teaches Window clock (Wave 14). Stuck rate on held-out probe.
+
+**Exit gate:** unit + cohere + smoke + 300-seed band green — **met**.
+
+---
+
+## Wave 14 — Copy coherence (next)
+
+Sim rules are Power-only; player copy is not. This wave aligns lore, help, PADD, and float labels with what the sim actually does — no new mechanics.
+
+| Ticket | Notes |
+|--------|-------|
+| Lore audit | Replace "Window and Power both kill you" with Power-only death + exploration pressure framing |
+| Help / drill / HUD | Drop Window bar references; Shear dial = pressure presentation, not a timer |
+| Stale rewards | Elite/boss "Window refund" strings → kit/XP; sealed hatch "+Window" → actual payout or cut dead `LOG-SEALED-CACHE` float |
+| Sector briefs | Fissure/approach copy: ion shear taxes **Power**, not "Window closes faster" |
+| `cohere` / grep gate | CI grep or cohere check: no "Window = turns" in player lore IDs post-pass |
+
+**Exit gate:** grep-clean player lore for clock lies; human 2-minute read — "what kills me?" has one answer (Power + hp).
+
+---
+
+## Wave 15 — Presentation debt
+
+Finish Wave 4's remaining extraction and unpaid experiment human gates.
+
+| Ticket | Notes |
+|--------|-------|
+| `GameScene` shrink | Move remaining orchestration into presenters; scene stays host only |
+| Human feel gates | Experiment passes: Notice Impact weight, Shift-peek discoverability, shear dial leg read (see `docs/experiment/PASS4_QA.md`) |
+| Input polish | Two-step move cadence (if still desired) — only after human play says flow breaks |
+
+**Exit gate:** GameScene line count not growing; human checklist in PASS4_QA signed off.
+
+---
+
+## Wave 16 — Ship tag
+
+| Ticket | Notes |
+|--------|-------|
+| Stuck watch | If held-out stuck stays &gt;15% of losses, tune autopilot turn budget or gen reachability before tag |
+| Optional polish | Enemy display Meridian pass; opportunistic `sim/` comment cleanup |
+| Tag | `v1.0.0` when Wave 14 copy + Wave 15 human feel pass |
+
+**Exit gate:** browser title → drill → drop → extract without copy contradictions; `test:balance` green.
+
+---
+
+## Explicit defer (post-v1)
+
+Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

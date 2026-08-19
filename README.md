@@ -1,6 +1,6 @@
 # Extraction Window
 
-Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before **Window** (turns) or **Power** (kit charge) hits zero.
+Solo turn-based sci-fi ADOM-lite for the browser. **Halcyon Survey Corps** from **CSV Halcyon** on **Meridian Shelf** — recover a spare **Nav Lattice** and extract via drop skiff before **Power** (bus reserve) hits zero. Exploration is allowed; ion shear and fauna are the wake tax.
 
 Prior team’s field array never shut down cleanly; residual scan pressure keeps the ecology hot. Your field lamp and flares are how you work the Shelf.
 
@@ -16,7 +16,7 @@ Prior team’s field array never shut down cleanly; residual scan pressure keeps
 | [docs/art/ART_BIBLE.md](./docs/art/ART_BIBLE.md) | Locked look — palette, tiles, chrome, motion, rejects |
 | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Layer rules (`sim/` never imports Phaser) |
 | [docs/ADOM_DEPTH.md](./docs/ADOM_DEPTH.md) | Post-v1 depth waves |
-| [PLAN.md](./PLAN.md) | Harness / balance numbers only (storm budget, WR band, playtest gates) |
+| [PLAN.md](./PLAN.md) | Harness / balance numbers only (WR band, lose-mix gates, playtest commands) |
 
 ## Run
 
