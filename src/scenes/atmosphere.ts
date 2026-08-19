@@ -237,8 +237,8 @@ export function drawMenuChrome(
 }
 
 /**
- * Title hero — a recessed survey aperture bolted into the case lid.
- * `phase` steps a mechanical scan tick and reshuffles biolum motes (no soft fade).
+ * Title hero — recessed survey glass in the case lid.
+ * Static frame; no scan tick, biolum flecks, or hazard dressing.
  */
 export function drawTitleWindow(
   g: G,
@@ -246,75 +246,41 @@ export function drawTitleWindow(
   y: number,
   w: number,
   h: number,
-  phase = 0,
+  _phase = 0,
 ): void {
   g.clear();
   drawPlate(g, x, y, w, h, { fill: Theme.panel, alpha: 0.98 });
-  drawTapeStrip(g, x + 10, y + 6, Math.min(148, w - 20), 8, Theme.tape, 0.85);
-  g.fillStyle(Theme.flag, 0.7);
-  g.fillRect(x + w - 54, y + 7, 40, 6);
-  g.fillStyle(Theme.groundDeep, 0.55);
-  g.fillRect(x + w - 52, y + 9, 12, 2);
 
   const vx = x + 14;
-  const vy = y + 22;
+  const vy = y + 18;
   const vw = w - 28;
-  const vh = h - 36;
-  // Deep recess — the Shelf seen through scratched glass.
+  const vh = h - 32;
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(vx, vy, vw, vh);
-  g.fillStyle(shade(Theme.groundDeep, 0.82), 1);
+  g.fillStyle(shade(Theme.groundDeep, 0.88), 1);
   g.fillRect(vx + 2, vy + 2, vw - 4, vh - 4);
-  // Inner lip.
   g.fillStyle(Theme.panelEdge, 0.35);
   g.fillRect(vx, vy, vw, 1);
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(vx, vy + vh - 1, vw, 1);
 
-  // Shelf grit — basalt flecks, not a starfield.
-  for (let i = 0; i < 70; i++) {
-    const fx = vx + 4 + grain(i + phase * 3, 41) * (vw - 8);
-    const fy = vy + 4 + grain(i + 90 + phase, 41) * (vh - 8);
-    g.fillStyle(Theme.inkDim, 0.07 + grain(i, 41) * 0.1);
+  for (let i = 0; i < 36; i++) {
+    const fx = vx + 4 + grain(i, 41) * (vw - 8);
+    const fy = vy + 4 + grain(i + 90, 41) * (vh - 8);
+    g.fillStyle(Theme.inkDim, 0.08 + grain(i, 41) * 0.06);
     g.fillRect(Math.floor(fx), Math.floor(fy), 1, 1);
   }
-  // Biolum beads — fauna / vent light catching in the glass.
-  for (let i = 0; i < 18; i++) {
-    const bx = vx + 6 + grain(i * 7 + phase * 5, 17) * (vw - 12);
-    const by = vy + 6 + grain(i * 11 + phase * 2, 17) * (vh - 12);
-    g.fillStyle(Theme.biolum, 0.16 + grain(i + phase, 17) * 0.22);
-    g.fillRect(Math.floor(bx), Math.floor(by), 1 + (i % 3 === 0 ? 1 : 0), 1);
-  }
-  // Distant ridge suggestion — one hard horizon bar, not a landscape painting.
-  const horizon = vy + Math.floor(vh * 0.62);
-  g.fillStyle(Theme.ground, 0.45);
+
+  const horizon = vy + Math.floor(vh * 0.64);
+  g.fillStyle(Theme.ground, 0.4);
   g.fillRect(vx + 8, horizon, vw - 16, 1);
-  g.fillStyle(Theme.panelEdge, 0.2);
-  for (let i = 0; i < 5; i++) {
-    const rx = vx + 20 + grain(i + phase, 9) * (vw - 40);
-    const rh = 3 + Math.floor(grain(i + 4, 9) * 10);
-    g.fillRect(Math.floor(rx), horizon - rh, 2 + Math.floor(grain(i, 9) * 8), rh);
-  }
 
-  // Mechanical scan tick — stepped, not eased.
-  const scanY = vy + 4 + ((phase * 7) % Math.max(1, vh - 8));
-  g.fillStyle(Theme.biolum, 0.22);
-  g.fillRect(vx + 3, scanY, vw - 6, 1);
-  g.fillStyle(Theme.arcWhite, 0.08);
-  g.fillRect(vx + 3, scanY + 1, vw - 6, 1);
-
-  // Sight brackets scratched into the glass corners.
-  const arm = 14;
-  g.lineStyle(1, Theme.biolum, 0.55);
+  const arm = 10;
+  g.lineStyle(1, Theme.inkMute, 0.45);
   g.lineBetween(vx + 6, vy + 6, vx + 6 + arm, vy + 6);
   g.lineBetween(vx + 6, vy + 6, vx + 6, vy + 6 + arm);
   g.lineBetween(vx + vw - 6, vy + vh - 6, vx + vw - 6 - arm, vy + vh - 6);
   g.lineBetween(vx + vw - 6, vy + vh - 6, vx + vw - 6, vy + vh - 6 - arm);
-  g.lineStyle(1, Theme.tape, 0.4);
-  g.lineBetween(vx + vw - 6, vy + 6, vx + vw - 6 - arm, vy + 6);
-  g.lineBetween(vx + vw - 6, vy + 6, vx + vw - 6, vy + 6 + arm);
-  g.lineBetween(vx + 6, vy + vh - 6, vx + 6 + arm, vy + vh - 6);
-  g.lineBetween(vx + 6, vy + vh - 6, vx + 6, vy + vh - 6 - arm);
 
   for (const [bx, by] of [
     [x + 5, y + 5],
@@ -324,8 +290,6 @@ export function drawTitleWindow(
   ]) {
     drawBolt(g, bx!, by!);
   }
-  drawStencilTicks(g, x + 16, y + h - 10, w - 32, false, Theme.inkMute);
-  drawCorrosion(g, x + 8, y + h - 18, w - 16, 10, 0.35 + (phase % 5) * 0.02, 3);
 }
 
 /** Compact bolted plate for mission ID / begin / footer strips on menus. */

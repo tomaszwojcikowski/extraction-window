@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { lore } from '../../src/data/lore';
 import {
   computeTitleLayout,
   formatMissionSeed,
@@ -8,15 +7,15 @@ import {
 } from '../../src/scenes/titleLayout';
 
 describe('titleLayout', () => {
-  it('fits plates within the 960×640 frame', () => {
+  it('keeps the hero window inside the frame', () => {
     const layout = computeTitleLayout(960, 640);
-    expect(layout.window.w).toBe(540);
-    expect(layout.footerPlate.y + layout.footerPlate.h).toBeLessThanOrEqual(640);
-    expect(layout.beginPlate.y).toBeGreaterThan(layout.seedPlate.y + layout.seedPlate.h);
+    expect(layout.window.w).toBe(520);
+    expect(layout.controlsY).toBeLessThan(640);
+    expect(layout.beginY).toBeGreaterThan(layout.seedY);
   });
 
-  it('formats mission seed with zero padding', () => {
-    expect(formatMissionSeed(42, lore('UI-SEED'))).toBe('MISSION  00042  /  Mission ID');
+  it('formats seed as zero-padded digits', () => {
+    expect(formatMissionSeed(42)).toBe('00042');
   });
 
   it('accepts Enter and Space to start', () => {
