@@ -17,7 +17,12 @@ import {
   lightCastsOccluderShadow,
 } from './occluderShadows';
 import { marchPoolRays, marchPoolRaysAt, type PoolRay } from './poolReach';
-import { moveBlendDirtyCells } from './moveBlendDirty';
+import {
+  applyShroudRevealFrom,
+  cloneShroudGrid,
+  moveBlendDirtyCells,
+  shroudRevealEase,
+} from './moveBlendDirty';
 
 export type LightSource = FieldLightSource & { color: number };
 export { moveBlendDirtyCells } from './moveBlendDirty';
@@ -134,6 +139,7 @@ function biomeBloomGain(sectorId: SectorId): number {
  *     and a flare has an ignition beat (`ignite`) instead of a state change.
  *     Tile steps carry the personal lamp with the hop (`captureMoveFrom` /
  *     `setMoveLightProgress`) so bloom and wash do not snap ahead of the sprite.
+ *     Tiles leaving FOW ease in from a fog wash across that same hop.
  *
  * FOV still gates fog; brightness still matches gameplay `isLit` / quiet dim.
  */
@@ -145,6 +151,8 @@ export class LightView {
   /** Cached per-tile presentation so sweeps/gates avoid a full relight. */
   private alphaGrid: number[][] = [];
   private tintGrid: number[][] = [];
+  /** True where the last paint showed FOW (`t_fog`) — hop blends fade these in. */
+  private shroudGrid: boolean[][] = [];
   /** Per-source flood energy grids — colour/casts match gameplay wrap + scrub. */
   private sourceEnergy: number[][][] = [];
   private sourceEnergyKey = '';
@@ -158,6 +166,7 @@ export class LightView {
     fromTint: number[][];
     toAlpha: number[][];
     toTint: number[][];
+    fromShroud: boolean[][];
     lampFrom: { x: number; y: number };
     lampTo: { x: number; y: number };
     t: number;
@@ -224,6 +233,7 @@ export class LightView {
       fromTint: cloneGrid(this.tintGrid),
       toAlpha: [],
       toTint: [],
+      fromShroud: cloneShroudGrid(this.shroudGrid),
       lampFrom: { x: from.x, y: from.y },
       lampTo: { x: to.x, y: to.y },
       t: 0,
@@ -243,6 +253,7 @@ export class LightView {
     if (!blend || blend.locked) return;
     blend.toAlpha = cloneGrid(this.alphaGrid);
     blend.toTint = cloneGrid(this.tintGrid);
+    applyShroudRevealFrom(blend.fromAlpha, blend.fromTint, blend.fromShroud, Theme.fog);
     blend.dirty = moveBlendDirtyCells(blend.fromAlpha, blend.toAlpha, blend.fromTint, blend.toTint);
     blend.locked = true;
     this.setMoveLightProgress(0, tileSprites);
@@ -250,7 +261,8 @@ export class LightView {
 
   /**
    * During a hop, restore destination tile art under the lerped wash so FOV
-   * expands with the step instead of snapping only at the end.
+   * expands with the step. Newly explored cells keep a fog wash at t=0 and
+   * ease in instead of blinking from `t_fog` to full tile.
    */
   paintMoveTextures(
     st: GameState,
@@ -291,8 +303,9 @@ export class LightView {
       const a1 = blend.toAlpha[y]?.[x] ?? 1;
       const t0 = blend.fromTint[y]?.[x] ?? 0xffffff;
       const t1 = blend.toTint[y]?.[x] ?? 0xffffff;
-      img.setAlpha(a0 + (a1 - a0) * u);
-      img.setTint(lerpTint(t0, t1, u));
+      const s = blend.fromShroud[y]?.[x] ? shroudRevealEase(u) : u;
+      img.setAlpha(a0 + (a1 - a0) * s);
+      img.setTint(lerpTint(t0, t1, s));
     }
   }
 
@@ -766,6 +779,7 @@ export class LightView {
     if (this.alphaGrid.length !== st.height) {
       this.alphaGrid = Array.from({ length: st.height }, () => new Array<number>(st.width).fill(0));
       this.tintGrid = Array.from({ length: st.height }, () => new Array<number>(st.width).fill(0));
+      this.shroudGrid = Array.from({ length: st.height }, () => new Array<boolean>(st.width).fill(true));
     }
 
     for (let y = 0; y < st.height; y++) {
@@ -780,8 +794,11 @@ export class LightView {
           }
           this.alphaGrid[y]![x] = 1;
           this.tintGrid[y]![x] = 0xffffff;
+          this.shroudGrid[y]![x] = true;
           continue;
         }
+
+        this.shroudGrid[y]![x] = false;
 
         if (paint) img.setTexture(tileKey(kind, x, y));
         if (!st.visible[y]![x]) {
