@@ -15,7 +15,6 @@ import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
 import { consumeExtractFavor } from './extractFavor';
-import { spendWindow, windowDrainAt, windowDrainRate } from './window';
 import { tickBusPressure } from './bus';
 import type { Enemy, GameState } from './types';
 
@@ -78,18 +77,12 @@ export function checkLose(state: GameState, opts?: { skipBus?: boolean }): void 
     }
     state.status = 'lost';
     state.loseReason = 'energy';
-    return;
-  }
-  if (state.stormTurns <= 0) {
-    state.status = 'lost';
-    state.loseReason = 'storm';
   }
 }
 
-/** Storm tick + FOV after a sector load (no enemy moves / energy drip). */
+/** FOV refresh after a sector load (no enemy moves / energy drip). */
 export function finishSectorTransition(state: GameState): void {
   state.turn += 1;
-  spendWindow(state, 1);
   refreshVision(state);
   syncObjectiveFlags(state);
   // Hatch crossing is not the bus-death beat — keep failing so the first
@@ -148,7 +141,7 @@ function tickUnderfootTerrain(state: GameState): void {
 }
 
 function tickEnvironment(state: GameState): void {
-  // Drill bay — pause storm clock and bus drip; still teach underfoot hazards.
+  // Drill bay — pause bus drip; still teach underfoot hazards.
   if (state.tutorialActive) {
     tickUnderfootTerrain(state);
     if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
@@ -163,8 +156,6 @@ function tickEnvironment(state: GameState): void {
   }
 
   const sector = getSector(state.sectorIndex);
-  spendWindow(state, windowDrainAt(sector.index, state.turn));
-
   const filter = state.player.filterTurns > 0;
   if (state.turn % 5 === 0) {
     const skipDrip =
@@ -177,7 +168,6 @@ function tickEnvironment(state: GameState): void {
   state.player.energy -= filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
 
   tickUnderfootTerrain(state);
-  // scrub / scrub_nest are sight-blockers — scrub_nest may also spawn
   tickContamination(state);
 
   if (state.player.probeTurns > 0) state.player.probeTurns -= 1;
@@ -195,12 +185,10 @@ export function endPlayerTurn(state: GameState): void {
   const energyBefore = state.player.energy;
   state.turn += 1;
   tickEnvironment(state);
-  // FOV + light from the player's new tile before AI so ambush/FOV checks see current vision.
   refreshVisionAfterTurn(state);
   applyAllyFieldRoles(state);
   moveEnemies(state);
   moveAllies(state);
-  // Recompute after enemy moves so presentation matches final visibility / light.
   refreshVision(state);
   syncObjectiveFlags(state);
   tickBusPressure(state, energyBefore);
@@ -210,17 +198,11 @@ export function endPlayerTurn(state: GameState): void {
 export function advanceSector(state: GameState): boolean {
   if (state.sectorIndex >= CAMPAIGN_LENGTH - 1) return false;
   const nextIndex = state.sectorIndex + 1;
-  // Crossing into a taxed sector shortens the run far more than the counter
-  // suggests, so it is called out at the hatch rather than discovered later.
-  const taxRises = windowDrainRate(nextIndex) > windowDrainRate(state.sectorIndex);
   gainXp(state, XP_SECTOR, 'sector');
-  // Plating is a per-sector shield, not a one-time buffer for the whole run:
-  // you re-seat it in the hatch. Plate stays the mid-sector repair.
   if (state.player.armor < state.player.maxArmor) {
     state.player.armor = state.player.maxArmor;
     pushLog(state, 'LOG-ARMOR-RESEAT');
   }
   loadSector(state, nextIndex);
-  if (taxRises) pushLog(state, 'LOG-WINDOW-TAX');
   return true;
 }

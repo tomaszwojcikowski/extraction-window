@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, createGame } from '../../src/sim';
+import { POWER_TAX_HEAVY } from '../../src/sim/bus';
 import { extractTrack } from '../../src/sim/objectives';
 import { combatArena, lastLog } from './fixtures';
 
 describe('extract Pays the Price', () => {
-  it('handshake interrupt spends Window and raises EM', () => {
+  it('handshake interrupt taxes Power and raises EM', () => {
     const st = createGame(42);
     st.sectorId = 'beacon';
     st.beaconPos = { x: st.player.x, y: st.player.y };
@@ -17,7 +18,7 @@ describe('extract Pays the Price', () => {
     st.objectives.beaconOpen = false;
     applyAction(st, { type: 'exit' });
     expect(st.handshake?.active).toBe(true);
-    const windowBefore = st.stormTurns;
+    const powerBefore = st.player.energy;
     const emBefore = st.emStress;
     const nx = Math.min(st.width - 2, st.player.x + 1);
     if (st.tiles[st.player.y]![nx]!.walkable) {
@@ -27,12 +28,12 @@ describe('extract Pays the Price', () => {
       applyAction(st, { type: 'wait' });
     }
     expect(st.handshake).toBeNull();
-    expect(st.stormTurns).toBeLessThan(windowBefore);
+    expect(st.player.energy).toBeLessThanOrEqual(powerBefore - POWER_TAX_HEAVY);
     expect(st.emStress).toBeGreaterThan(emBefore);
     expect(lastLog(st, 'LOG-PAY-PRICE')).toBeTruthy();
   });
 
-  it('pattern reject spends Window', () => {
+  it('pattern reject taxes Power', () => {
     const st = createGame(42);
     st.sectorId = 'ridge';
     st.shuttlePos = { x: st.player.x, y: st.player.y };
@@ -46,10 +47,10 @@ describe('extract Pays the Price', () => {
     st.objectives.usedRelayKey = true;
     st.objectives.beaconOpen = true;
     st.patternDesync = 2;
-    const windowBefore = st.stormTurns;
+    const powerBefore = st.player.energy;
     applyAction(st, { type: 'exit' });
     expect(st.status).toBe('playing');
-    expect(st.stormTurns).toBeLessThan(windowBefore);
+    expect(st.player.energy).toBeLessThanOrEqual(powerBefore - POWER_TAX_HEAVY);
     expect(lastLog(st, 'LOG-PB-REJECT')).toBeTruthy();
     expect(lastLog(st, 'LOG-PAY-PRICE')).toBeTruthy();
   });

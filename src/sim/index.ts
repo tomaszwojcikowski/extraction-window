@@ -31,8 +31,7 @@ export {
   SHADOW_THRESHOLD,
 } from './light';
 export { refreshVision } from './vision';
-export { windowDrainRate, windowTurnsLeft } from './window';
-export { busIsCritical, BUS_CRITICAL } from './bus';
+export { busIsCritical, BUS_CRITICAL, canSpendPower, spendPower, taxPower, POWER_TAX_HEAVY, KIT_POWER_COST } from './bus';
 export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';

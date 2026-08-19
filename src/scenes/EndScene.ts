@@ -65,10 +65,6 @@ export class EndScene extends Phaser.Scene {
           titleId = 'UI-LOSE-ENERGY';
           bodyId = 'UI-LOSE-ENERGY-BODY';
           break;
-        case 'storm':
-          titleId = 'UI-LOSE-STORM';
-          bodyId = 'UI-LOSE-STORM-BODY';
-          break;
         default:
           titleId = 'UI-LOSE-STUCK';
           bodyId = 'UI-LOSE-STUCK-BODY';

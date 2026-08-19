@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { lore } from '../../src/data/lore';
 import { effectiveAggro } from '../../src/sim/ai';
 import { rebuildIllumination } from '../../src/sim/light';
 import { startIonFront } from '../../src/sim/mechanics/ionFront';
@@ -80,7 +81,7 @@ describe('room quests', () => {
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
 
     expect(roomQuestHudLine(st)).toMatchObject({
-      favor: '+15 Window (extract)',
+      payoff: lore('UI-QUEST-PAYS-KIT'),
       index: 1,
       total: 1,
     });

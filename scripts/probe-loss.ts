@@ -1,16 +1,16 @@
 /**
- * Where runs die, and where the Window actually goes.
+ * Where runs die, and where Power actually goes.
  *
- * `probe-wr` reports the lose mix but not its shape: a storm loss that stalled
+ * `probe-wr` reports the lose mix but not its shape: an energy loss that stalled
  * at sector 5 and one that came up two sectors short are the same line of
  * output and completely different problems. This splits each channel by how far
  * up the spine it happened and charges every turn to the sector it was spent
- * in, so a Window shortfall can be traced to the sector eating the clock.
+ * in, so a Power shortfall can be traced to the sector eating the reserve.
  *
  * Usage: `npx tsx scripts/probe-loss.ts [seedCount]`
  */
 import { PERSONAS, runAutopilot } from '../src/ai/autopilot';
-import { CAMPAIGN_LENGTH, STORM_TURNS } from '../src/campaign/spine';
+import { CAMPAIGN_LENGTH } from '../src/campaign/spine';
 import { getSector } from '../src/data/encounters';
 import { createGame } from '../src/sim';
 
@@ -69,18 +69,13 @@ function median(xs: number[]): number {
 console.log(
   `${wins.length}/${runs.length} wins = ${((wins.length / runs.length) * 100).toFixed(1)}%`,
 );
-console.log(
-  `win turns: median ${median(wins.map((r) => r.turns))} of ${STORM_TURNS} window`,
-);
+console.log(`win turns: median ${median(wins.map((r) => r.turns))}`);
 
-// Each channel split by spine progress — same count, very different diagnosis.
 const channels = [...new Set(losses.map((r) => r.loseReason))].sort();
 for (const channel of channels) {
   const hit = losses.filter((r) => r.loseReason === channel);
   const hist: Record<number, number> = {};
   for (const r of hit) hist[r.sectorReached] = (hist[r.sectorReached] ?? 0) + 1;
-  // Turns burned in the sector the run died in: a short stay is a run that got
-  // overwhelmed, a long one is a run that could not finish what it arrived to do.
   const lastStay = median(hit.map((r) => r.cost[r.sectorReached] ?? 0));
   console.log(
     `\n${channel}=${hit.length} (${((hit.length / runs.length) * 100).toFixed(1)}% of runs) ` +
@@ -96,38 +91,30 @@ for (const channel of channels) {
   );
 }
 
-// Turn cost per sector, counting only runs that actually entered it, so late
-// sectors are not averaged down by the runs that never arrived. Winners and
-// storm losers are split: a gap concentrated in one row is a sector to retune,
-// a gap spread across every row is global pace variance.
-const stormLosers = losses.filter((r) => r.loseReason === 'storm');
+const energyLosers = losses.filter((r) => r.loseReason === 'energy');
 const costIn = (set: Run[], i: number) =>
   median(set.map((r) => r.cost[i]).filter((n): n is number => n !== undefined));
 
-console.log('\nwindow spend per sector (median turns | won vs storm-lost):');
+console.log('\nsector dwell (median turns | won vs energy-lost):');
 let cumWon = 0;
-let cumStorm = 0;
+let cumEnergy = 0;
 for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
   const won = costIn(wins, i);
-  const lost = costIn(stormLosers, i);
+  const lost = costIn(energyLosers, i);
   cumWon += won;
-  cumStorm += lost;
+  cumEnergy += lost;
   console.log(
     `  ${String(i).padStart(2)} ${getSector(i).id.padEnd(10)} ` +
       `won ${String(won).padStart(5)} cum ${String(cumWon).padStart(5)}   ` +
-      `storm ${String(lost).padStart(5)} cum ${String(cumStorm).padStart(5)}   ` +
+      `energy ${String(lost).padStart(5)} cum ${String(cumEnergy).padStart(5)}   ` +
       `+${(lost - won).toFixed(1)}`,
   );
 }
-console.log(
-  `\nmedian full-spine cost: won ${cumWon} · storm-lost ${cumStorm} vs ${STORM_TURNS} window`,
-);
+console.log(`\nmedian full-spine cost: won ${cumWon} · energy-lost ${cumEnergy}`);
 
-// Medians hide the runs that lost the Window in one place, so charge each
-// storm loss to its single most expensive sector.
 const worstHist: Record<number, number> = {};
 const worstCost: number[] = [];
-for (const r of stormLosers) {
+for (const r of energyLosers) {
   let worst = 0;
   let at = 0;
   r.cost.forEach((turns, i) => {
@@ -140,7 +127,7 @@ for (const r of stormLosers) {
   worstCost.push(worst);
 }
 console.log(
-  `\nstorm losses by worst single sector (median worst = ${median(worstCost)} turns):`,
+  `\nenergy losses by worst single sector (median worst = ${median(worstCost)} turns):`,
 );
 console.log(
   '  ' +

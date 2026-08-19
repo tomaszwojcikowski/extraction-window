@@ -1,21 +1,17 @@
 import { pushLog } from './log';
 import type { ExtractFavorKind, GameState } from './types';
 
-/** One favor per quest, so which quest you took shows up at extraction. */
-const FAVOR_BY_QUEST = {
-  salvage: 'storm_shelter',
-  purge: 'hazard_pass',
-  vent_seal: 'pattern_fail_safe',
-} as const satisfies Record<NonNullable<GameState['roomQuest']>['kind'], ExtractFavorKind>;
-
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
-  storm_shelter: '+15 Window (extract)',
   hazard_pass: 'Skip 1 hazard',
   pattern_fail_safe: 'Block 1 skiff lock',
 };
 
-export function favorForQuest(state: GameState): ExtractFavorKind {
-  return FAVOR_BY_QUEST[state.roomQuest?.kind ?? 'salvage'];
+/** Purge and vent_seal pay extract favors; salvage pays kit/XP only. */
+export function favorForQuest(state: GameState): ExtractFavorKind | null {
+  const kind = state.roomQuest?.kind;
+  if (kind === 'purge') return 'hazard_pass';
+  if (kind === 'vent_seal') return 'pattern_fail_safe';
+  return null;
 }
 
 /** Replacing an old favor keeps the reward cap readable and deterministic. */
@@ -36,11 +32,4 @@ export function consumeExtractFavor(state: GameState, kind: ExtractFavorKind): b
   state.extractFavor = null;
   pushLog(state, 'LOG-FAVOR-CONSUME', FAVOR_LABEL[kind]);
   return true;
-}
-
-/** Shelter converts into a final-sector window buffer rather than expiring unused. */
-export function applyStormShelterOnSectorEntry(state: GameState): void {
-  if (!consumeExtractFavor(state, 'storm_shelter')) return;
-  state.stormTurns += 15;
-  pushLog(state, 'LOG-FAVOR-SHELTER');
 }

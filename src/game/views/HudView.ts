@@ -4,11 +4,9 @@ import { getSector } from '../../data/encounters';
 import {
   describeObjective,
   stickyMilestone,
-  windowDrainRate,
-  windowTurnsLeft,
   type GameState,
 } from '../../sim';
-import { CAMPAIGN_LENGTH, STORM_TURNS } from '../../campaign/spine';
+import { CAMPAIGN_LENGTH } from '../../campaign/spine';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
@@ -20,7 +18,7 @@ import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { busIsCritical } from '../../sim/bus';
 
-export const HUD_BAR_SLOTS = 5;
+export const HUD_BAR_SLOTS = 4;
 export const HUD_BADGE_SLOTS = 8;
 
 /** Instrument needle travel — short enough to stay inside the juice budget. */
@@ -122,13 +120,7 @@ export class HudView {
     const shearPrimary = (opts.shear?.value ?? 0) > 0.12;
     const secondaryCss = shearPrimary ? ThemeCss.inkMute : ThemeCss.inkDim;
     const secondaryValCss = shearPrimary ? ThemeCss.inkDim : ThemeCss.ink;
-    // The Window counts in units but is planned in turns, and late sectors spend
-    // up to 2.5 units a turn. Print the turns and name the rate that bought them.
-    const windowLeft = windowTurnsLeft(st);
     const busHot = busIsCritical(st);
-    const windowRate = windowDrainRate(st.sectorIndex);
-    const windowCaption =
-      windowRate > 1 ? `${lore('UI-BAR-WINDOW')} x${windowRate}` : lore('UI-BAR-WINDOW');
     this.placeBarSlot(
       0,
       14,
@@ -159,7 +151,7 @@ export class HudView {
       2,
       278,
       barY,
-      110,
+      180,
       barH,
       st.player.energy / st.player.maxEnergy,
       Theme.tape,
@@ -170,27 +162,12 @@ export class HudView {
       secondaryCss,
       secondaryValCss,
     );
-    this.placeBarSlot(
-      3,
-      400,
-      barY,
-      100,
-      barH,
-      st.stormTurns / STORM_TURNS,
-      Theme.arc,
-      Theme.rust,
-      windowCaption,
-      `${windowLeft}`,
-      opts,
-      secondaryCss,
-      secondaryValCss,
-    );
     const xpFrac = st.xpToNext > 0 ? st.xp / st.xpToNext : 1;
     this.placeBarSlot(
-      4,
-      512,
+      3,
+      472,
       barY,
-      80,
+      120,
       barH,
       xpFrac,
       Theme.flag,
@@ -199,14 +176,7 @@ export class HudView {
       st.xpToNext ? `${st.xp}/${st.xpToNext}` : `${st.xp}`,
       opts,
     );
-    this.syncWindowPulse(
-      busHot ? 278 : 400,
-      barY,
-      busHot ? 110 : 100,
-      barH,
-      busHot || (!shearPrimary && windowLeft <= 80),
-      opts,
-    );
+    this.syncPowerPulse(278, barY, 180, barH, busHot, opts);
 
     const meta = formatHudMeta(st, { shearPrimary });
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
@@ -246,10 +216,10 @@ export class HudView {
       r.questText.setVisible(false);
     }
 
-    const stormHot = windowLeft <= 80;
+    const emHot = st.emStress >= EM_HIGH;
     const urgencyParts: string[] = [];
     const skillLock = Boolean(st.skillPick);
-    // Skill pick owns the line — Window/EM wait until the fork is chosen.
+    // Skill pick owns the line — Power/EM wait until the fork is chosen.
     if (skillLock) {
       urgencyParts.push(`▶ ${lore('UI-SKILL-CHOOSE')}`);
     } else {
@@ -258,10 +228,7 @@ export class HudView {
       if (busHot) {
         urgencyParts.push(`▸ ${lore('HAZ-BUS')}  (${st.player.energy})`);
       }
-      if (stormHot && !shearPrimary) {
-        urgencyParts.push(`▸ ${lore('HAZ-STORM')}  (${windowLeft})`);
-      }
-      if (st.emStress >= EM_HIGH) {
+      if (emHot && !shearPrimary) {
         urgencyParts.push(`▸ ${lore('UI-EM-CRIT')} ${st.emStress}`);
       } else if (st.emStress >= EM_WARN) {
         urgencyParts.push(`▸ ${lore('UI-EM-WARN')} ${st.emStress}`);
@@ -271,7 +238,7 @@ export class HudView {
     const hasUrgency = urgencyParts.length > 0;
     const urgencyColor = skillLock
       ? ThemeCss.flag
-      : busHot || (stormHot && !shearPrimary)
+      : busHot || (emHot && !shearPrimary)
         ? ThemeCss.rust
         : st.emStress >= EM_HIGH
           ? ThemeCss.rust
@@ -503,7 +470,7 @@ export class HudView {
     });
   }
 
-  private syncWindowPulse(
+  private syncPowerPulse(
     x: number,
     y: number,
     w: number,

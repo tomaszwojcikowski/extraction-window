@@ -41,20 +41,22 @@ export const roomQuestMechanic: Mechanic = {
 
 export function roomQuestHudLine(
   state: GameState,
-): { prompt: LoreId; index: number; total: number; favor: string } | null {
+): { prompt: LoreId; index: number; total: number; payoff: string } | null {
   const rq = state.roomQuest;
   if (!rq || rq.done) return null;
   const prompt = questStepPrompt(rq);
   if (!prompt) return null;
+  const favor = favorForQuest(state);
+  const payoff = favor ? FAVOR_LABEL[favor] : lore('UI-QUEST-PAYS-KIT');
   return {
     prompt,
     index: rq.stepIndex + 1,
     total: rq.steps.length,
-    favor: FAVOR_LABEL[favorForQuest(state)],
+    payoff,
   };
 }
 
-/** Compact OPT tracker for the HUD — step verb + extract favor preview. */
+/** Compact OPT tracker for the HUD — step verb + payoff preview. */
 export function formatRoomQuestHudLine(state: GameState): string | null {
   const line = roomQuestHudLine(state);
   if (!line) return null;
@@ -62,5 +64,5 @@ export function formatRoomQuestHudLine(state: GameState): string | null {
     line.total > 1
       ? `${lore('UI-QUEST-BADGE')} ${line.index}/${line.total}`
       : lore('UI-QUEST-BADGE');
-  return `${track} — ${lore(line.prompt)} · ${lore('UI-QUEST-PAYS')} ${line.favor}`;
+  return `${track} — ${lore(line.prompt)} · ${lore('UI-QUEST-PAYS')} ${line.payoff}`;
 }

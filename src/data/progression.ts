@@ -5,8 +5,7 @@ export type SkillId =
   | 'scavenger'
   | 'overcharge'
   | 'ion_skin'
-  | 'deep_reserve'
-  | 'last_window';
+  | 'deep_reserve';
 
 export const MAX_LEVEL = 8;
 
@@ -78,12 +77,6 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     loreName: 'SKILL-DEEP-RESERVE-NAME',
     loreDesc: 'SKILL-DEEP-RESERVE-DESC',
   },
-  last_window: {
-    id: 'last_window',
-    unlockLevel: 7,
-    loreName: 'SKILL-LAST-WINDOW-NAME',
-    loreDesc: 'SKILL-LAST-WINDOW-DESC',
-  },
 };
 
 export const XP_KILL_BASE = 6;
@@ -94,9 +87,6 @@ export const XP_BEACON = 15;
 export const XP_ELITE = 24;
 export const XP_BOSS = 40;
 export const XP_NPC_AGENDA = 5;
-
-export const STORM_ELITE_KILL = [6, 10] as const;
-export const STORM_BOSS_KILL = [12, 18] as const;
 
 export function xpToNextForLevel(level: number): number {
   if (level >= MAX_LEVEL) return 0;

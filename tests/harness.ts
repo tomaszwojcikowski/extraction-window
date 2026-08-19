@@ -158,7 +158,6 @@ export function summarize(results: SeedReport[]) {
   const loseReasons = {
     hp: losses.filter((r) => r.loseReason === 'hp').length,
     energy: losses.filter((r) => r.loseReason === 'energy').length,
-    storm: losses.filter((r) => r.loseReason === 'storm').length,
     stuck: losses.filter((r) => r.loseReason === 'stuck').length,
   };
 

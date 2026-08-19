@@ -1,60 +1,57 @@
-import { STORM_TURNS } from '../../campaign/spine';
+import { EM_HIGH } from '../../sim/emStress';
 import { lore } from '../../data/lore';
 import { Theme } from '../../scenes/theme';
 import type { GameState } from '../../sim/types';
 
 export type ShearPressureState = 'Calm' | 'Charged' | 'Arcing' | 'Breaching';
 
-export type ShearDrainLeg = 'storm' | 'bus' | 'both';
+export type ShearDrainLeg = 'bus' | 'em' | 'both';
 
 export type ShearPressureSpec = {
-  /** 0–1 corrosion / dial fill — presentation-only compression of window + bus. */
+  /** 0–1 field strain dial — Power reserve + scan pressure. */
   value: number;
   state: ShearPressureState;
   accent: number;
-  /** Raw 0–1 window drain (storm closing). */
-  windowDrain: number;
-  /** Raw 0–1 bus reserve drain. */
+  /** Raw 0–1 Power reserve drain. */
   busDrain: number;
+  /** Raw 0–1 EM scan pressure. */
+  emDrain: number;
   /** Which leg is driving the blend — for sub-glyph pulse on the dial. */
   drainingLeg: ShearDrainLeg;
 };
 
-/** Diegetic Shear Pressure — window closing + bus reserve, one readable dial. */
+/** Diegetic field strain — Power reserve + EM, one readable dial. */
 export function computeShearPressure(st: GameState): ShearPressureSpec {
-  const windowDrain = 1 - Math.max(0, st.stormTurns) / STORM_TURNS;
   const busDrain = 1 - st.player.energy / Math.max(1, st.player.maxEnergy);
-  const windowContrib = windowDrain * 0.62;
-  const busContrib = busDrain * 0.38;
-  const value = Math.min(1, Math.max(0, windowContrib + busContrib));
+  const emDrain = Math.min(1, st.emStress / EM_HIGH);
+  const busContrib = busDrain * 0.72;
+  const emContrib = emDrain * 0.28;
+  const value = Math.min(1, Math.max(0, busContrib + emContrib));
 
-  const legDelta = Math.abs(windowContrib - busContrib);
+  const legDelta = Math.abs(busContrib - emContrib);
   const drainingLeg: ShearDrainLeg =
-    legDelta < 0.06 ? 'both' : windowContrib >= busContrib ? 'storm' : 'bus';
+    legDelta < 0.06 ? 'both' : busContrib >= emContrib ? 'bus' : 'em';
 
   if (value < 0.25) {
-    return { value, state: 'Calm', accent: Theme.biolumDeep, windowDrain, busDrain, drainingLeg };
+    return { value, state: 'Calm', accent: Theme.biolumDeep, busDrain, emDrain, drainingLeg };
   }
   if (value < 0.5) {
-    return { value, state: 'Charged', accent: Theme.tape, windowDrain, busDrain, drainingLeg };
+    return { value, state: 'Charged', accent: Theme.tape, busDrain, emDrain, drainingLeg };
   }
   if (value < 0.75) {
-    return { value, state: 'Arcing', accent: Theme.arc, windowDrain, busDrain, drainingLeg };
+    return { value, state: 'Arcing', accent: Theme.arc, busDrain, emDrain, drainingLeg };
   }
-  return { value, state: 'Breaching', accent: Theme.arcWhite, windowDrain, busDrain, drainingLeg };
+  return { value, state: 'Breaching', accent: Theme.arcWhite, busDrain, emDrain, drainingLeg };
 }
 
-/**
- * Center chrome for Charged+ — names the leading clock and how bad it is,
- * without inventing a third resource called "Shear".
- */
+/** Center chrome for Charged+ — names the leading pressure and how bad it is. */
 export function shearReadoutLabel(spec: ShearPressureSpec): string {
   const clocks =
-    spec.drainingLeg === 'storm'
-      ? lore('UI-WINDOW').toUpperCase()
-      : spec.drainingLeg === 'bus'
-        ? lore('UI-ENERGY').toUpperCase()
-        : `${lore('UI-WINDOW').toUpperCase()} + ${lore('UI-ENERGY').toUpperCase()}`;
+    spec.drainingLeg === 'bus'
+      ? lore('UI-ENERGY').toUpperCase()
+      : spec.drainingLeg === 'em'
+        ? lore('UI-EM').toUpperCase()
+        : `${lore('UI-ENERGY').toUpperCase()} + ${lore('UI-EM').toUpperCase()}`;
   const severity = spec.state === 'Breaching' ? lore('UI-CLOCK-CRIT') : lore('UI-CLOCK-LOW');
   return `${clocks}  ${severity}`;
 }

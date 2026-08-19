@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { lore } from '../../src/data/lore';
 import { resolveHintLine } from '../../src/game/presenters/ContextHints';
-import {
-  applyStormShelterOnSectorEntry,
-  FAVOR_LABEL,
-} from '../../src/sim/extractFavor';
+import { FAVOR_LABEL } from '../../src/sim/extractFavor';
 import { useSelected } from '../../src/sim/inventory';
 import {
   formatRoomQuestHudLine,
@@ -28,7 +25,7 @@ function placeOnQuest(st: ReturnType<typeof combatArena>, x: number, y: number):
 }
 
 describe('room quest readability', () => {
-  it('HUD line names salvage verb and storm-shelter favor', () => {
+  it('HUD line names salvage verb and kit payoff', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
 
@@ -36,10 +33,10 @@ describe('room quest readability', () => {
       prompt: 'UI-RQ-SALVAGE',
       index: 1,
       total: 1,
-      favor: FAVOR_LABEL.storm_shelter,
+      payoff: lore('UI-QUEST-PAYS-KIT'),
     });
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT — ${lore('UI-RQ-SALVAGE')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.storm_shelter}`,
+      `OPT — ${lore('UI-RQ-SALVAGE')} · ${lore('UI-QUEST-PAYS')} ${lore('UI-QUEST-PAYS-KIT')}`,
     );
   });
 
@@ -95,21 +92,16 @@ describe('room quest readability', () => {
 });
 
 describe('room quest flows', () => {
-  it('salvage completes and grants storm shelter that boosts Window on entry', () => {
+  it('salvage completes and pays kit/XP only — no extract favor', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
     placeOnQuest(st, 2, 2);
 
     expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(true);
-    expect(st.extractFavor).toEqual({ kind: 'storm_shelter' });
-    expect(formatRoomQuestHudLine(st)).toBeNull();
-
-    const before = st.stormTurns;
-    applyStormShelterOnSectorEntry(st);
-    expect(st.stormTurns).toBe(before + 15);
     expect(st.extractFavor).toBeNull();
-    expect(st.log.some((e) => e.loreId === 'LOG-FAVOR-SHELTER')).toBe(true);
+    expect(formatRoomQuestHudLine(st)).toBeNull();
+    expect(st.log.some((e) => e.loreId === 'LOG-RQ-SALVAGE')).toBe(true);
   });
 
   it('purge holds until nest hostiles die, then grants hazard pass', () => {

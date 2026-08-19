@@ -3,9 +3,6 @@ import type { LoreId } from '../data/lore';
 
 export const CAMPAIGN_LENGTH = SECTORS.length;
 
-/** Starting storm window — ~90–120 min target with 15 sectors. */
-export const STORM_TURNS = 700;
-
 export const PLAYER_BASE = {
   hp: 52,
   maxHp: 52,

@@ -151,8 +151,11 @@ function applyPaddModifier(state: GameState, page: LoreId): void {
       pushLog(state, 'LOG-PADD-MOD', 'quiet vault');
       break;
     case 'CODEX-TRENCH':
-      state.stormTurns += 15;
-      pushLog(state, 'LOG-PADD-MOD', '+15 Window');
+      state.player.energy = Math.min(
+        state.player.maxEnergy,
+        state.player.energy + 15,
+      );
+      pushLog(state, 'LOG-PADD-MOD', '+15 Power');
       break;
     case 'CODEX-FISSURE':
       state.player.def += 1;
@@ -164,8 +167,11 @@ function applyPaddModifier(state: GameState, page: LoreId): void {
       pushLog(state, 'LOG-PADD-MOD', 'reef FOV');
       break;
     case 'CODEX-DUCT':
-      state.stormTurns += 10;
-      pushLog(state, 'LOG-PADD-MOD', '+10 window');
+      state.player.energy = Math.min(
+        state.player.maxEnergy,
+        state.player.energy + 10,
+      );
+      pushLog(state, 'LOG-PADD-MOD', '+10 Power');
       break;
     case 'CODEX-APPROACH':
       state.player.filterTurns = Math.max(state.player.filterTurns, 20);
@@ -181,12 +187,8 @@ function purgeEmViaPadd(state: GameState): void {
   state.emStress = Math.max(0, state.emStress - 10);
 }
 
-/** Storm refund / temporary systems charge / unique consumable — changes the run. */
+/** Storm refund / charge / unique consumable — kit payoff only (no Window clock). */
 function grantQuestPayoff(state: GameState, tier: 'basic' | 'good'): void {
-  const refund = tier === 'good' ? 20 : 12;
-  state.stormTurns += refund;
-  pushLog(state, 'LOG-RQ-STORM', `+${refund}`);
-
   if (tier === 'good' || state.rng() < 0.45) {
     state.player.filterTurns = Math.max(state.player.filterTurns, 35);
     state.player.stimTurns = Math.max(state.player.stimTurns, 12);
@@ -267,7 +269,8 @@ function finishQuestLoot(state: GameState, better: boolean): void {
   pushLog(state, 'LOG-PICKUP', names.join(', '));
   grantQuestPayoff(state, better ? 'good' : 'basic');
   grantCodex(state);
-  grantExtractFavor(state, favorForQuest(state));
+  const favor = favorForQuest(state);
+  if (favor) grantExtractFavor(state, favor);
 }
 
 function flashQuestStep(state: GameState): void {

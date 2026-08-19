@@ -1,13 +1,13 @@
+import type { LoreId } from '../data/lore';
 import { pushLog } from './log';
 import type { GameState } from './types';
 
-/**
- * Power remaining marks that earn a warning, crossed downward.
- * Same idea as the Window turns marks — notice before the clock actually kills.
- */
+/** Power remaining marks that earn a warning, crossed downward. */
 export const BUS_WARN_AT = [40, 20, 8] as const;
 /** HUD / hint: Power is the live kill clock. */
 export const BUS_CRITICAL = 20;
+/** Handshake / pattern fail tax — matches prior Window penalty weight. */
+export const POWER_TAX_HEAVY = 8;
 
 export function busIsCritical(state: GameState): boolean {
   return state.busFailing || state.player.energy <= BUS_CRITICAL;
@@ -24,4 +24,34 @@ export function tickBusPressure(state: GameState, energyBefore: number): void {
   if (BUS_WARN_AT.some((mark) => energyBefore > mark && after <= mark)) {
     pushLog(state, 'LOG-BUS-WARN');
   }
+}
+
+export function canSpendPower(state: GameState, cost: number): boolean {
+  return state.player.energy >= cost;
+}
+
+/** Spend Power for a chosen kit action; returns false when broke. */
+export function spendPower(
+  state: GameState,
+  cost: number,
+  logId: LoreId,
+  detail?: string,
+): boolean {
+  if (!canSpendPower(state, cost)) return false;
+  state.player.energy = Math.max(0, state.player.energy - cost);
+  pushLog(state, logId, detail ?? `-${cost} Power`);
+  return true;
+}
+
+/** Mandatory Power tax (interrupts, fails) — always applies. */
+export const KIT_POWER_COST = {
+  probe: 3,
+  flare: 2,
+  filter: 1,
+  stim: 2,
+} as const;
+
+export function taxPower(state: GameState, cost: number, logId: LoreId): void {
+  state.player.energy = Math.max(0, state.player.energy - cost);
+  pushLog(state, logId, `-${cost} Power`);
 }

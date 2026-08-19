@@ -49,12 +49,12 @@ describe('balance — full suite', () => {
     expect(summary.allLegal).toBe(true);
   });
 
-  it('shows multiple lose channels (hp and storm at minimum)', () => {
-    const { hp, energy, storm, stuck } = summary.loseReasons;
+  it('shows multiple lose channels (hp and energy at minimum)', () => {
+    const { hp, energy, stuck } = summary.loseReasons;
     expect(summary.losses).toBeGreaterThan(0);
-    expect(hp + energy + storm + stuck).toBe(summary.losses);
+    expect(hp + energy + stuck).toBe(summary.losses);
     expect(hp, 'expected some HP losses').toBeGreaterThan(0);
-    expect(storm, 'expected some storm/window losses').toBeGreaterThan(0);
+    expect(energy, 'expected some Power losses').toBeGreaterThan(0);
   });
 
   it('wins always have nav core and finish on final sector', () => {

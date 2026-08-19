@@ -13,7 +13,7 @@ import type { GameState } from './types';
 export const SKILL_FORKS: Partial<Record<number, [SkillId, SkillId]>> = {
   3: ['triage', 'scavenger'],
   5: ['overcharge', 'ion_skin'],
-  7: ['deep_reserve', 'last_window'],
+  7: ['deep_reserve', 'scavenger'],
 };
 
 export function hasSkill(state: GameState, id: SkillId): boolean {

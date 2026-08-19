@@ -369,16 +369,16 @@ function drawShearLegGlyphs(
   _animFrame: number,
   corrosion: number,
 ): void {
-  const stormX = x;
+  const emX = x;
   const busX = x + 52;
-  const stormHot = leg === 'storm' || leg === 'both';
+  const emHot = leg === 'em' || leg === 'both';
   const busHot = leg === 'bus' || leg === 'both';
   const bite = 0.55 + corrosion * 0.4;
 
-  // Window / storm tick marks — static stencil, no breathing pulse.
-  g.lineStyle(1, Theme.arc, (stormHot ? 0.9 : 0.28) * bite);
+  // EM scan tick marks — static stencil, no breathing pulse.
+  g.lineStyle(1, Theme.arc, (emHot ? 0.9 : 0.28) * bite);
   for (let i = 0; i < 3; i++) {
-    const tx = stormX + i * 4;
+    const tx = emX + i * 4;
     g.beginPath();
     g.moveTo(tx, y + 1);
     g.lineTo(tx, y + 4);
@@ -394,7 +394,7 @@ function drawShearLegGlyphs(
   }
 }
 
-export type ShearLegGlyph = 'storm' | 'bus' | 'both';
+export type ShearLegGlyph = 'em' | 'bus' | 'both';
 
 export function drawHudStripChrome(
   g: Phaser.GameObjects.Graphics,

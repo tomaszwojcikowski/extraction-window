@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORM_TURNS } from '../../src/campaign/spine';
+import { EM_HIGH } from '../../src/sim/emStress';
 import { pressureRevealAt } from '../../src/game/presenters/PressureReveal';
 import { computeShearPressure, shearReadoutLabel } from '../../src/game/presenters/ShearPressure';
 import { wouldNoticeEnemy } from '../../src/sim/notice';
@@ -22,7 +22,6 @@ function stubState(over: Partial<GameState> & { enemies?: Enemy[] }): GameState 
     visible,
     explored,
     turn: 1,
-    stormTurns: STORM_TURNS,
     player: {
       x: 5,
       y: 5,
@@ -83,48 +82,48 @@ function stubEnemy(kind: Enemy['kind'], x: number, y: number, extra: Partial<Ene
 }
 
 describe('computeShearPressure', () => {
-  it('starts Calm at full window and bus', () => {
+  it('starts Calm at full Power and low EM', () => {
     const spec = computeShearPressure(stubState({}));
     expect(spec.value).toBe(0);
     expect(spec.state).toBe('Calm');
     expect(spec.drainingLeg).toBe('both');
   });
 
-  it('maps 62/38 blend to named thresholds', () => {
+  it('maps Power + EM blend to named thresholds', () => {
     const charged = computeShearPressure(
-      stubState({ stormTurns: Math.floor(STORM_TURNS * 0.55), player: { ...stubState({}).player, energy: 70 } }),
+      stubState({ emStress: 40, player: { ...stubState({}).player, energy: 70 } }),
     );
     expect(charged.state).toBe('Charged');
     expect(charged.value).toBeGreaterThanOrEqual(0.25);
     expect(charged.value).toBeLessThan(0.5);
 
     const breaching = computeShearPressure(
-      stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
+      stubState({ emStress: EM_HIGH, player: { ...stubState({}).player, energy: 5 } }),
     );
     expect(breaching.state).toBe('Breaching');
     expect(breaching.value).toBeGreaterThanOrEqual(0.75);
-    expect(breaching.drainingLeg).toBe('storm');
+    expect(breaching.drainingLeg).toBe('bus');
   });
 
-  it('names bus as draining leg when window is full and reserve low', () => {
+  it('names EM as draining leg when Power is full and scan pressure high', () => {
     const spec = computeShearPressure(
-      stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
+      stubState({ emStress: EM_HIGH, player: { ...stubState({}).player, energy: 100 } }),
     );
-    expect(spec.drainingLeg).toBe('bus');
+    expect(spec.drainingLeg).toBe('em');
   });
 });
 
 describe('shearReadoutLabel', () => {
   it('names the leading clock and severity, not a Shear resource', () => {
     const busLed = computeShearPressure(
-      stubState({ stormTurns: STORM_TURNS, player: { ...stubState({}).player, energy: 10 } }),
+      stubState({ player: { ...stubState({}).player, energy: 10 } }),
     );
     expect(shearReadoutLabel(busLed)).toBe('POWER  LOW');
 
-    const windowLed = computeShearPressure(
-      stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
+    const emLed = computeShearPressure(
+      stubState({ emStress: EM_HIGH, player: { ...stubState({}).player, energy: 100 } }),
     );
-    expect(shearReadoutLabel(windowLed)).toBe('WINDOW  CRITICAL');
+    expect(shearReadoutLabel(emLed)).toBe('EM  LOW');
   });
 });
 
@@ -174,11 +173,10 @@ describe('pressureRevealAt', () => {
 
   it('returns visible crack params at Arcing+ for explored visible optional tiles', () => {
     const st = questTileState();
-    st.stormTurns = Math.floor(STORM_TURNS * 0.35);
-    st.player.energy = 25;
+    st.emStress = 35;
+    st.player.energy = 45;
     const arcing = computeShearPressure(st);
     expect(arcing.state).toBe('Arcing');
-    // Flicker gate: (animFrame + x + y) % 3 === 0 at Arcing
     const reveal = pressureRevealAt(st, arcing, 7, 3, 2);
     expect(reveal).not.toBeNull();
     expect(reveal!.visible).toBe(true);
@@ -189,9 +187,9 @@ describe('pressureRevealAt', () => {
   it('skips unseen or unexplored tiles — no ESP reveal', () => {
     const st = questTileState();
     const arcing = computeShearPressure(
-      stubState({ stormTurns: 0, player: { ...stubState({}).player, energy: 5 } }),
+      stubState({ emStress: EM_HIGH, player: { ...stubState({}).player, energy: 5 } }),
     );
-    st.stormTurns = 0;
+    st.emStress = EM_HIGH;
     st.player.energy = 5;
     st.visible[3]![7] = false;
     expect(pressureRevealAt(st, arcing, 7, 3, 0)).toBeNull();
@@ -200,7 +198,7 @@ describe('pressureRevealAt', () => {
   it('returns null for exit tiles at all shear states — mandatory path stays stable', () => {
     const st = stubState({});
     st.tiles[3]![7] = { kind: 'exit', walkable: true, transparent: true };
-    st.stormTurns = 0;
+    st.emStress = EM_HIGH;
     st.player.energy = 5;
     const breaching = computeShearPressure(st);
     expect(breaching.state).toBe('Breaching');
@@ -211,7 +209,7 @@ describe('pressureRevealAt', () => {
 
   it('marks Breaching cracks urgent so the hot motif holds', () => {
     const st = questTileState();
-    st.stormTurns = 0;
+    st.emStress = EM_HIGH;
     st.player.energy = 5;
     const breaching = computeShearPressure(st);
     expect(breaching.state).toBe('Breaching');

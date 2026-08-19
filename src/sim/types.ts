@@ -175,7 +175,7 @@ export interface GroundItem {
 }
 
 export type GameStatus = 'playing' | 'won' | 'lost';
-export type LoseReason = 'hp' | 'energy' | 'storm' | 'stuck' | null;
+export type LoseReason = 'hp' | 'energy' | 'stuck' | null;
 
 export interface LogEntry {
   loreId: LoreId;
@@ -230,7 +230,7 @@ export interface BeaconHandshake {
 }
 
 /** One optional room-quest payoff that changes the route to extraction. */
-export type ExtractFavorKind = 'storm_shelter' | 'hazard_pass' | 'pattern_fail_safe';
+export type ExtractFavorKind = 'hazard_pass' | 'pattern_fail_safe';
 
 export interface ExtractFavor {
   kind: ExtractFavorKind;
@@ -255,7 +255,6 @@ export interface GameState {
   status: GameStatus;
   loseReason: LoseReason;
   turn: number;
-  stormTurns: number;
   /** Power hit 0 this run and has not been restored — next end-turn at 0 is death. */
   busFailing: boolean;
   sectorIndex: number;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STORM_TURNS, PLAYER_BASE, CAMPAIGN_LENGTH } from '../../src/campaign/spine';
+import { PLAYER_BASE, CAMPAIGN_LENGTH } from '../../src/campaign/spine';
 import {
   applyAction,
   assertLegalWin,
@@ -20,7 +20,6 @@ describe('sim bootstrap', () => {
     expect(st.sectorIndex).toBe(0);
     expect(st.sectorId).toBe('plains');
     expect(st.seed).toBe(42);
-    expect(st.stormTurns).toBe(STORM_TURNS);
     expect(st.player.hp).toBe(PLAYER_BASE.hp);
     expect(st.player.energy).toBe(PLAYER_BASE.energy);
     expect(st.inventory.some((s) => s.kind === 'energy')).toBe(true);
@@ -37,13 +36,15 @@ describe('sim bootstrap', () => {
 });
 
 describe('sim actions', () => {
-  it('wait advances turn and drains storm window', () => {
+  it('wait advances turn and drains Power on taxed sectors', () => {
     const st = createGame(99);
-    const storm = st.stormTurns;
+    st.sectorIndex = 9;
+    st.sectorId = 'ash';
+    const energy = st.player.energy;
     const turn = st.turn;
     applyAction(st, { type: 'wait' });
     expect(st.turn).toBe(turn + 1);
-    expect(st.stormTurns).toBeLessThan(storm);
+    expect(st.player.energy).toBeLessThan(energy);
   });
 
   it('move into wall does not relocate player', () => {
@@ -123,10 +124,8 @@ describe('mechanics registry', () => {
 });
 
 describe('campaign constants', () => {
-  it('campaign has fifteen sectors and storm budget', () => {
+  it('campaign has fifteen sectors', () => {
     expect(CAMPAIGN_LENGTH).toBe(15);
-    expect(STORM_TURNS).toBeGreaterThanOrEqual(650);
-    expect(STORM_TURNS).toBeLessThanOrEqual(750);
   });
 });
 
@@ -317,15 +316,14 @@ describe('kit pressure', () => {
     while (st.inventory.length < 16) {
       st.inventory.push({ kind: 'plate', count: 1 });
     }
-    const storm0 = st.stormTurns;
+    const energy0 = st.player.energy;
     const to = { x: st.player.x + 1, y: st.player.y };
     st.tiles[to.y]![to.x] = { kind: 'floor', walkable: true, transparent: true };
     st.items = [{ id: st.nextEntityId++, kind: 'salvage', x: to.x, y: to.y }];
 
     applyAction(st, { type: 'move', dx: 1, dy: 0 });
 
-    // A full kit is a full kit — no hidden conversion into Window time.
-    expect(st.stormTurns).toBeLessThanOrEqual(storm0);
+    expect(st.player.energy).toBeLessThanOrEqual(energy0);
     expect(st.items.some((i) => i.kind === 'salvage' && i.x === st.player.x && i.y === st.player.y)).toBe(
       true,
     );
@@ -333,7 +331,7 @@ describe('kit pressure', () => {
 });
 
 describe('field NPCs', () => {
-  it('hails archive holo once and grants storm', () => {
+  it('hails archive holo once and grants a Power Cell', () => {
     const st = createGame(42);
     st.npcs = [
       {
@@ -344,10 +342,11 @@ describe('field NPCs', () => {
         talked: false,
       },
     ];
-    const storm0 = st.stormTurns;
+    const cellsBefore = st.inventory.find((s) => s.kind === 'energy')?.count ?? 0;
     applyAction(st, { type: 'exit' });
     expect(st.npcs[0]!.talked).toBe(true);
-    expect(st.stormTurns).toBeGreaterThan(storm0);
+    const cellsAfter = st.inventory.find((s) => s.kind === 'energy')?.count ?? 0;
+    expect(cellsAfter).toBeGreaterThan(cellsBefore);
     expect(st.codexLog).toContain('CODEX-HOLO');
     const pages = st.codexPages;
     applyAction(st, { type: 'exit' });

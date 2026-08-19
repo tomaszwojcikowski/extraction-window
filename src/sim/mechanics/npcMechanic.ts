@@ -4,7 +4,6 @@ import { XP_NPC_AGENDA } from '../../data/progression';
 import { addItem, hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { gainXp } from '../progression';
-import { randInt } from '../rng';
 import { allyAt, enemyAt, manhattan, npcAt } from '../spatial';
 import type { Action, Ally, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
@@ -143,11 +142,10 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
     return true;
   }
 
-  const storm = randInt(state.rng, 4, 8);
-  state.stormTurns += storm;
   gainXp(state, XP_NPC_AGENDA, 'agenda');
   npc.agendaDone = true;
-  pushLog(state, 'LOG-AGENDA-DONE', `+${storm}`);
+  addItem(state, 'energy');
+  pushLog(state, 'LOG-AGENDA-DONE');
   return true;
 }
 
@@ -161,9 +159,8 @@ function hailNpc(state: GameState, npc: FieldNpc): boolean {
   grantNpcCodex(state, def.codex);
 
   if (npc.kind === 'archive_holo') {
-    const storm = randInt(state.rng, 4, 8);
-    state.stormTurns += storm;
-    pushLog(state, 'LOG-NPC-HOLO', `+${storm}`);
+    addItem(state, 'energy');
+    pushLog(state, 'LOG-NPC-HOLO');
   } else if (npc.kind === 'stranded_ensign') {
     addItem(state, 'med');
     addItem(state, 'energy');

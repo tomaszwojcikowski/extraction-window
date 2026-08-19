@@ -52,8 +52,7 @@ function applyPressureWave(state: GameState): void {
     return;
   }
   state.player.energy = Math.max(1, state.player.energy - 4);
-  state.stormTurns = Math.max(1, state.stormTurns - 3);
-  pushLog(state, 'LOG-UPLINK-WAVE-HIT', '-4 Power / -3 Window');
+  pushLog(state, 'LOG-UPLINK-WAVE-HIT', '-4 Power');
 }
 
 /** Three-turn final-pad uplink with a single, telegraphed pressure wave. */

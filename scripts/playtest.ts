@@ -34,7 +34,7 @@ function sweepPersonas(): void {
     const lose = s.loseReasons;
     console.log(
       `${persona.padEnd(9)} WR ${(s.winRate * 100).toFixed(0).padStart(3)}%  ` +
-        `hp=${lose.hp} storm=${lose.storm} energy=${lose.energy} stuck=${lose.stuck}  ` +
+        `hp=${lose.hp} energy=${lose.energy} stuck=${lose.stuck}  ` +
         `dominant=${(s.dominantLoseShare * 100).toFixed(0)}%  ` +
         `emPeak avg=${s.avgEmPeak.toFixed(0)} max=${s.maxEmPeak}  ` +
         `ids=${s.avgIdentified.toFixed(1)}`,
@@ -77,7 +77,7 @@ function main(): void {
   );
   const lose = summary.loseReasons;
   console.log(
-    `Lose mix: hp=${lose.hp} storm=${lose.storm} energy=${lose.energy} stuck=${lose.stuck} · channels=${summary.loseChannels} dominant=${(summary.dominantLoseShare * 100).toFixed(0)}%`,
+    `Lose mix: hp=${lose.hp} energy=${lose.energy} stuck=${lose.stuck} · channels=${summary.loseChannels} dominant=${(summary.dominantLoseShare * 100).toFixed(0)}%`,
   );
   console.log(
     `Pressure: emPeak avg=${summary.avgEmPeak.toFixed(0)} max=${summary.maxEmPeak} · ids=${summary.avgIdentified.toFixed(1)} backlash=${summary.avgBacklash.toFixed(1)}`,

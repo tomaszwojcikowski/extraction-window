@@ -102,12 +102,10 @@ export function enemyAttack(
   variance: number,
   opts?: { bonusAtk?: number },
 ): boolean {
-  const lastWindow = hasSkill(state, 'last_window') && state.stormTurns <= 80 ? 1 : 0;
   const def =
     state.player.def +
     armorDefBonus(state) +
-    (hasEscortCover(state) ? 1 : 0) +
-    lastWindow -
+    (hasEscortCover(state) ? 1 : 0) -
     flankPenalty(state);
   const prefer = lightPreferAtkBonus(state, enemy);
   const stance = enemyAttackStance(state, prefer > 0);

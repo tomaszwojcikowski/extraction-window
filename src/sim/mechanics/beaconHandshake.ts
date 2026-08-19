@@ -3,7 +3,7 @@ import { hasItem, removeOne, syncObjectiveFlags } from '../inventory';
 import { pushLog, recordLoreEvent } from '../log';
 import { gainXp } from '../progression';
 import { addEmStress } from '../emStress';
-import { spendWindow } from '../window';
+import { POWER_TAX_HEAVY, taxPower } from '../bus';
 import type { Action, GameState } from '../types';
 import type { Mechanic } from './types';
 import type { LoreId } from '../../data/lore';
@@ -73,10 +73,9 @@ export const beaconHandshakeMechanic: Mechanic = {
 
     if (!onBeacon(state)) {
       state.handshake = null;
-      spendWindow(state, 8);
+      taxPower(state, POWER_TAX_HEAVY, 'LOG-PAY-PRICE');
       addEmStress(state, 12, 'handshake interrupt');
       pushLog(state, 'LOG-HS-INTERRUPT');
-      pushLog(state, 'LOG-PAY-PRICE');
       return;
     }
 

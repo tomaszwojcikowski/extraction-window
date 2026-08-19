@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { applyAction, createGame, describeObjective, finishTutorial } from '../../src/sim';
-import { STORM_TURNS } from '../../src/campaign/spine';
 import { contextHint } from '../../src/game/presenters/ContextHints';
 import { presentActionFeedback } from '../../src/game/presenters/ActionFeedback';
 import { mechanicsAutopilotHint } from '../../src/sim/mechanics';
@@ -70,12 +69,10 @@ describe('drill bay tutorial', () => {
     expect(st.tiles[10]![12]!.kind).toBe('floor');
   });
 
-  it('storm and bus drip pause while tutorialActive', () => {
+  it('Power drip pauses while tutorialActive', () => {
     const st = drill(7);
-    const storm = st.stormTurns;
     const energy = st.player.energy;
     applyAction(st, { type: 'wait' });
-    expect(st.stormTurns).toBe(storm);
     expect(st.player.energy).toBe(energy);
   });
 
@@ -202,7 +199,6 @@ describe('drill bay tutorial', () => {
   it('exit hatch finishes tutorial into real plains without XP_SECTOR', () => {
     const st = drill(42);
     const xpBefore = st.xp;
-    const stormBefore = st.stormTurns;
     expect(st.exitPos).not.toBeNull();
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
@@ -216,9 +212,6 @@ describe('drill bay tutorial', () => {
     expect(st.log.some((l) => l.loreId === 'LOG-TUT-DONE')).toBe(true);
     expect(st.log.some((l) => l.loreId === 'LOG-SEC-PLAINS')).toBe(true);
     expect(st.log.some((l) => l.loreId === 'LOG-EVT-AFTERGLOW')).toBe(true);
-    // +2 cheer, then finishSectorTransition −1
-    expect(st.stormTurns).toBe(stormBefore + 2 - 1);
-    expect(st.stormTurns).toBeLessThanOrEqual(STORM_TURNS + 2);
     expect(describeObjective(st).local).not.toBe('OBJ-TUT-HATCH');
     expect(describeObjective(st).campaign).not.toBe('OBJ-TUT-BRIEF');
   });
@@ -255,14 +248,16 @@ describe('drill bay tutorial', () => {
     expect(st.log.length).toBe(logLen);
   });
 
-  it('resumes storm clock after leaving the drill bay', () => {
+  it('resumes Power drip after leaving the drill bay', () => {
     const st = drill(11);
     st.player.x = st.exitPos!.x;
     st.player.y = st.exitPos!.y;
     applyAction(st, { type: 'exit' });
-    const storm = st.stormTurns;
+    st.sectorIndex = 9;
+    st.sectorId = 'ash';
+    const energy = st.player.energy;
     applyAction(st, { type: 'wait' });
-    expect(st.stormTurns).toBeLessThan(storm);
+    expect(st.player.energy).toBeLessThan(energy);
   });
 
   it('fires plains afterglow only once when the real drop loads', () => {

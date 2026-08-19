@@ -24,6 +24,7 @@ import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
 import { cancelOverwatch } from './ai';
 import { fieldPosition } from './stance';
+import { canSpendPower, KIT_POWER_COST, spendPower } from './bus';
 
 const PLATE_REPAIR = 12;
 
@@ -236,15 +237,17 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-JAM-BLOCK');
         return false;
       }
+      if (!canSpendPower(state, KIT_POWER_COST.probe)) return false;
       state.player.probeTurns = Math.max(state.player.probeTurns, 25);
       removeOne(state, kind);
+      spendPower(state, KIT_POWER_COST.probe, 'LOG-USE-PROBE');
       addEmStress(state, 4, 'array pulse');
-      pushLog(state, 'LOG-USE-PROBE');
       break;
     case 'stim':
+      if (!canSpendPower(state, KIT_POWER_COST.stim)) return false;
       state.player.stimTurns = Math.max(state.player.stimTurns, 15);
       removeOne(state, kind);
-      pushLog(state, 'LOG-USE-STIM');
+      spendPower(state, KIT_POWER_COST.stim, 'LOG-USE-STIM');
       break;
     case 'plate':
       state.player.armor = Math.min(state.player.maxArmor, state.player.armor + PLATE_REPAIR);
@@ -252,10 +255,11 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-PLATE');
       break;
     case 'filter': {
+      if (!canSpendPower(state, KIT_POWER_COST.filter)) return false;
       const filterDur = 50 + state.paddMods.filterBonus;
       state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
-      pushLog(state, 'LOG-USE-FILTER');
+      spendPower(state, KIT_POWER_COST.filter, 'LOG-USE-FILTER');
       break;
     }
     case 'mapper':
@@ -268,6 +272,7 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
+      if (!canSpendPower(state, KIT_POWER_COST.flare)) return false;
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
       cancelOverwatch(state);
@@ -295,7 +300,12 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-ION-DAMPEN');
       }
       rebuildIllumination(state);
-      pushLog(state, 'LOG-USE-FLARE', hits ? `x${hits}` : undefined);
+      spendPower(
+        state,
+        KIT_POWER_COST.flare,
+        'LOG-USE-FLARE',
+        hits ? `x${hits} · -${KIT_POWER_COST.flare} Power` : `-${KIT_POWER_COST.flare} Power`,
+      );
       // Hunter notice: flaring while already in shadow
       if (shadowed && state.rng() < 0.22) {
         addPlayerMarked(state, 3);

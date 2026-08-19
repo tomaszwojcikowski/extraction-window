@@ -601,7 +601,7 @@ export function playActionSfx(
     flash(Theme.safe, 0.35);
     return;
   }
-  if (has('LOG-STORM-WARN') || has('LOG-BUS-WARN') || has('LOG-BUS-FAILING')) {
+  if (has('LOG-BUS-WARN') || has('LOG-BUS-FAILING')) {
     sfx.play('warn');
   }
   if (has('LOG-TELE-BEAM')) sfx.play('telegraph_beam');

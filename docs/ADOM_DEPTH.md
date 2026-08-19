@@ -311,3 +311,26 @@ Still out: first-contact ATK, Quiet, brace/shove.
 — hp still ~76% of losses. Smoke 6/8; full playtest 23/30 (77%). Unit 316.
 
 **Exit gate:** unit + smoke + playtest + 300-seed band gate green; no new combat verbs.
+
+---
+
+## Waves 11–13 — Power-only clock (2026)
+
+**Design shift:** dual clocks (Window + Power) → **Power is the only death clock**. Exploration is allowed; pressure comes from Power management (sector drip, hazards, kit spends) and exploration tax (EM, wake/fauna, optional quests billing HP/kit — not time).
+
+### Wave 11 — Remove Window
+
+- Deleted `stormTurns`, `src/sim/window.ts`, storm lose channel, Window HUD bar, `storm_shelter` favor, `last_window` skill.
+- Handshake / pattern fail → **Power tax** (−8). Salvage quest pays **kit/XP only**.
+- Shear dial → Power reserve + EM (`ShearPressure.ts`); music mood from sector depth + combat + Power critical.
+
+### Wave 12 — Power as real clock
+
+- Kit spends: probe −3, flare −2, filter −1, stim −2, phaser −4 (existing).
+- Late-spine sector drip +1 (brine, vault, fissure, approach). Autopilot respects `rechargeAt` before kit burns.
+
+### Wave 13 — Exploration without rush
+
+- Optional quests and mapping viable — no hard turn cap.
+- Persona sweep targets **hp vs energy** only; storm channel = 0.
+- Docs: `V1.md` pillar shift; this section.

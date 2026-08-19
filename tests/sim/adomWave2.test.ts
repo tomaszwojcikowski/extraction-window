@@ -18,12 +18,9 @@ describe('ADOM Wave 2 — sealed hatch', () => {
     st.tiles[sy]![sx] = { kind: 'sealed', walkable: false, transparent: true };
     st.inventory = [{ kind: 'sealant', count: 1 }];
     st.ui.selectedSlot = 0;
-    const storm = st.stormTurns;
     expect(tryOpenAdjacentSealed(st)).toBe(true);
     expect(st.tiles[sy]![sx]!.kind).toBe('floor');
     expect(st.log.some((e) => e.loreId === 'LOG-SEALED-OPEN')).toBe(true);
-    expect(st.stormTurns).toBe(storm + 6);
-    expect(st.log.some((e) => e.loreId === 'LOG-SEALED-CACHE')).toBe(true);
   });
 
   it('pry opens sealed with pulse baton via exit', () => {
@@ -154,10 +151,9 @@ describe('ADOM Wave 2 — npc agenda', () => {
       },
     ];
     addItem(st, 'med');
-    const storm0 = st.stormTurns;
     applyAction(st, { type: 'exit' });
     expect(st.npcs[0]!.agendaDone).toBe(true);
-    expect(st.stormTurns).toBeGreaterThan(storm0);
+    expect(st.inventory.some((s) => s.kind === 'energy')).toBe(true);
     expect(st.log.some((e) => e.loreId === 'LOG-AGENDA-DONE')).toBe(true);
   });
 });

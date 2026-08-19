@@ -78,7 +78,13 @@ class MusicEngine {
    * Field sync: combat > storm critical/storm > biome field bed.
    * Combat uses multi-turn hysteresis so beds don’t flicker on step-away.
    */
-  syncField(opts: { sectorId: SectorId; stormTurns: number; inCombat: boolean }): void {
+  syncField(opts: {
+    sectorId: SectorId;
+    sectorIndex: number;
+    playerEnergy: number;
+    maxEnergy: number;
+    inCombat: boolean;
+  }): void {
     if (this.mood === 'title' || this.mood === 'end_win' || this.mood === 'end_lose') return;
 
     this.currentSector = opts.sectorId;
@@ -89,16 +95,18 @@ class MusicEngine {
       this.setMood('combat');
       return;
     }
-    if (opts.stormTurns <= 20) this.setMood('critical');
-    else if (opts.stormTurns <= 50) this.setMood('storm');
+    if (opts.playerEnergy <= 8) this.setMood('critical');
+    else if (opts.playerEnergy <= 20 || opts.sectorIndex >= 10) this.setMood('storm');
     else this.setMood('field');
   }
 
   /** @deprecated Prefer syncField — kept for title/end safety wrappers. */
-  syncStorm(stormTurns: number): void {
+  syncStorm(_legacy?: number): void {
     this.syncField({
       sectorId: this.currentSector,
-      stormTurns,
+      sectorIndex: 0,
+      playerEnergy: 100,
+      maxEnergy: 100,
       inCombat: false,
     });
   }

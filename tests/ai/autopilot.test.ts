@@ -150,15 +150,15 @@ describe('summarize death-mix diversity', () => {
   }
 
   it('flags a single dominant channel', () => {
-    const s = summarize([loss('hp'), loss('hp'), loss('hp'), loss('storm')]);
+    const s = summarize([loss('hp'), loss('hp'), loss('hp'), loss('energy')]);
     expect(s.loseChannels).toBe(2);
     expect(s.dominantLoseShare).toBeCloseTo(0.75, 5);
   });
 
   it('reads an even spread as diverse', () => {
-    const s = summarize([loss('hp'), loss('storm'), loss('energy'), loss('stuck')]);
-    expect(s.loseChannels).toBe(4);
-    expect(s.dominantLoseShare).toBeCloseTo(0.25, 5);
+    const s = summarize([loss('hp'), loss('energy'), loss('stuck')]);
+    expect(s.loseChannels).toBe(3);
+    expect(s.dominantLoseShare).toBeCloseTo(1 / 3, 5);
   });
 
   it('stays at zero with no losses', () => {

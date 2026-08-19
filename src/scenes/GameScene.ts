@@ -555,7 +555,9 @@ export class GameScene extends Phaser.Scene {
     void force;
     music.syncField({
       sectorId: this.state.sectorId,
-      stormTurns: this.state.stormTurns,
+      sectorIndex: this.state.sectorIndex,
+      playerEnergy: this.state.player.energy,
+      maxEnergy: this.state.player.maxEnergy,
       inCombat: this.threatNearby(),
     });
   }
@@ -1120,7 +1122,9 @@ export class GameScene extends Phaser.Scene {
 
     music.syncField({
       sectorId: this.state.sectorId,
-      stormTurns: this.state.stormTurns,
+      sectorIndex: this.state.sectorIndex,
+      playerEnergy: this.state.player.energy,
+      maxEnergy: this.state.player.maxEnergy,
       inCombat: this.threatNearby(),
     });
 

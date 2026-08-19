@@ -1,8 +1,6 @@
 import { ENEMY_DROPS, dropChance } from '../data/drops';
 import { ENEMIES } from '../data/enemies';
 import {
-  STORM_BOSS_KILL,
-  STORM_ELITE_KILL,
   XP_BOSS,
   XP_ELITE,
   XP_KILL_BASE,
@@ -75,15 +73,11 @@ export function killEnemy(state: GameState, enemy: Enemy): void {
     XP_KILL_BASE + Math.floor(enemy.maxHp / 2) + (windupInterrupt ? XP_KILL_BASE : 0);
   if (enemy.tier === 'elite') {
     xp = Math.max(xp, XP_ELITE);
-    const storm = randInt(state.rng, STORM_ELITE_KILL[0], STORM_ELITE_KILL[1]);
-    state.stormTurns += storm;
-    pushLog(state, 'LOG-ELITE-DOWN', `+${storm}`);
+    pushLog(state, 'LOG-ELITE-DOWN');
   } else if (enemy.tier === 'boss') {
     xp = Math.max(xp, XP_BOSS);
-    const storm = randInt(state.rng, STORM_BOSS_KILL[0], STORM_BOSS_KILL[1]);
-    state.stormTurns += storm;
     state.scriptedFired[`boss_cleared_${state.sectorId}`] = true;
-    pushLog(state, 'LOG-BOSS-DOWN', `+${storm}`);
+    pushLog(state, 'LOG-BOSS-DOWN');
   }
   gainXp(state, xp);
   if (windupInterrupt) pushLog(state, 'LOG-WINDUP-KILL');

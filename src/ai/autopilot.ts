@@ -3,6 +3,7 @@ import {
   bfsPath,
   currentObjectivePos,
   hasItem,
+  KIT_POWER_COST,
   mechanicsAutopilotHint,
   type Action,
   type GameState,
@@ -11,6 +12,12 @@ import { INVENTORY_SLOTS } from '../data/items';
 import type { SkillId } from '../data/progression';
 import { EM_WARN, EM_HIGH } from '../sim/emStress';
 import { inShadow, isLit } from '../sim/light';
+
+/** Optional kit spends keep headroom above the persona recharge floor. */
+function canBurnKit(state: GameState, cost: number, persona: Persona): boolean {
+  const reserve = state.player.maxEnergy * Math.max(persona.rechargeAt, 0.45);
+  return state.player.energy >= reserve + cost;
+}
 
 /**
  * Playtest personas — the oracle needs to exercise each mastery path, because a
@@ -52,7 +59,7 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     rechargeAt: 0.7,
     pushProbe: false,
     useFlare: false,
-    skillPrefer: ['deep_reserve', 'triage', 'last_window'],
+    skillPrefer: ['deep_reserve', 'triage'],
   },
   /** Probe doctrine: buys clarity with scan pressure. */
   probe: {
@@ -61,7 +68,7 @@ export const PERSONAS: Record<PersonaId, Persona> = {
     rechargeAt: 0.65,
     pushProbe: true,
     useFlare: true,
-    skillPrefer: ['overcharge', 'scavenger', 'last_window'],
+    skillPrefer: ['overcharge', 'scavenger'],
   },
   /** Kinetic greed: fights at low vitals, heals late. */
   reckless: {
@@ -227,7 +234,7 @@ export function chooseAction(
     state.player.filterTurns <= 0
   ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'filter');
-    if (fIdx >= 0) {
+    if (fIdx >= 0 && canBurnKit(state, KIT_POWER_COST.filter, persona)) {
       state.ui.selectedSlot = fIdx;
       return { type: 'use' };
     }
@@ -247,7 +254,7 @@ export function chooseAction(
   // is the point, so this is where scan pressure actually accumulates.
   if (persona.pushProbe && state.player.probeTurns <= 0 && state.emStress < EM_HIGH) {
     const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
-    if (probeIdx >= 0) {
+    if (probeIdx >= 0 && canBurnKit(state, KIT_POWER_COST.probe, persona)) {
       state.ui.selectedSlot = probeIdx;
       return { type: 'use' };
     }
@@ -282,7 +289,7 @@ export function chooseAction(
       (playerDark && nearHostile))
   ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'flare');
-    if (fIdx >= 0) {
+    if (fIdx >= 0 && canBurnKit(state, KIT_POWER_COST.flare, persona)) {
       state.ui.selectedSlot = fIdx;
       return { type: 'use' };
     }
@@ -301,7 +308,12 @@ export function chooseAction(
   if (state.sectorIndex >= 4 && state.player.probeTurns <= 0 && state.player.stimTurns <= 0) {
     const stimIdx = state.inventory.findIndex((s) => s.kind === 'stim');
     const probeIdx = state.inventory.findIndex((s) => s.kind === 'probe');
-    const idx = stimIdx >= 0 ? stimIdx : probeIdx;
+    const idx =
+      stimIdx >= 0 && canBurnKit(state, KIT_POWER_COST.stim, persona)
+        ? stimIdx
+        : probeIdx >= 0 && canBurnKit(state, KIT_POWER_COST.probe, persona)
+          ? probeIdx
+          : -1;
     if (idx >= 0 && state.player.hp > state.player.maxHp * 0.5) {
       state.ui.selectedSlot = idx;
       return { type: 'use' };

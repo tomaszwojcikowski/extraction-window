@@ -1,6 +1,6 @@
 import { xpToNextForLevel } from '../data/progression';
 import { getSector, type SectorId } from '../data/encounters';
-import { PLAYER_BASE, STORM_TURNS } from '../campaign/spine';
+import { PLAYER_BASE } from '../campaign/spine';
 import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
 import { generateTutorialMap } from '../map/tutorialMap';
@@ -11,7 +11,6 @@ import { syncObjectiveFlags } from './inventory';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
 import { refreshVision } from './vision';
-import { applyStormShelterOnSectorEntry } from './extractFavor';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   plains: 'LOG-SEC-PLAINS',
   flood: 'LOG-SEC-FLOOD',
@@ -57,7 +56,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     status: 'playing',
     loseReason: null,
     turn: 0,
-    stormTurns: STORM_TURNS,
     busFailing: false,
     sectorIndex: 0,
     sectorId: sector.id,
@@ -170,7 +168,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
 export function finishTutorial(state: GameState): void {
   if (!state.tutorialActive) return;
   state.tutorialActive = false;
-  state.stormTurns += 2;
   loadSector(state, 0);
   pushLog(state, 'LOG-TUT-DONE');
   refreshVision(state);
@@ -233,7 +230,6 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   if (sectorIndex > 0 && hasSkill(state, 'triage')) {
     state.player.hp = Math.min(state.player.maxHp, state.player.hp + 6);
   }
-  applyStormShelterOnSectorEntry(state);
   pushLog(state, 'LOG-SECTOR');
   const entry = SECTOR_ENTRY_LOG[sector.id];
   if (entry) pushLog(state, entry);
