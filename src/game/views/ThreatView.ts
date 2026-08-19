@@ -53,6 +53,32 @@ function hatchTile(
   }
 }
 
+/** BEAM intent tiles are a strict cardinal lane — use a straight streak. */
+function drawBeamLane(
+  g: Phaser.GameObjects.Graphics,
+  left: number,
+  top: number,
+  size: number,
+  color: number,
+  alpha: number,
+  vertical: boolean,
+  endCap: boolean,
+): void {
+  g.fillStyle(color, alpha);
+  const mid = size / 2;
+  // Center spine.
+  if (vertical) {
+    g.fillRect(left + mid - 1, top + 4, 2, size - 8);
+  } else {
+    g.fillRect(left + 4, top + mid - 1, size - 8, 2);
+  }
+
+  // End-cap on the furthest tile so the player reads "lane distance".
+  if (endCap) {
+    g.fillRect(mid - 3 + left, mid - 3 + top, 6, 6);
+  }
+}
+
 /**
  * Paint threatened ground for every visible enemy holding a windup,
  * plus the contact seats a pack is actually taking.
@@ -76,6 +102,21 @@ export function drawThreatZones(
 
     const style = STYLES[en.intent];
     const tiles = enemyThreatTiles(st, en);
+    const isBeam = en.intent === 'beam';
+
+    // `enemyThreatTiles()` for BEAM is a strict axis-aligned lane, so we can
+    // draw straight markings based on the enemy→player axis.
+    const beamDx = Math.sign(st.player.x - en.x);
+    const beamDy = Math.sign(st.player.y - en.y);
+    const beamVertical = beamDy !== 0; // dx==0 for cardinal lanes; dy encodes axis.
+
+    let maxBeamStep = 0;
+    if (isBeam) {
+      for (const t of tiles) {
+        const d = Math.abs(t.x - en.x) + Math.abs(t.y - en.y);
+        if (d > maxBeamStep) maxBeamStep = d;
+      }
+    }
 
     for (const t of tiles) {
       if (!(st.visible[t.y]?.[t.x] ?? false)) continue;
@@ -83,9 +124,20 @@ export function drawThreatZones(
       const top = t.y * tileDraw;
       const standingHere = st.player.x === t.x && st.player.y === t.y;
 
-      g.fillStyle(style.color, style.alpha * pulse * (standingHere ? 1.5 : 1));
-      g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
-      hatchTile(g, left + 1, top + 1, tileDraw - 2, style.color, 0.28 * pulse);
+      if (isBeam) {
+        // BEAM tiles: no diagonal crosshatch. A lane streak reads directionally.
+        const step = Math.abs(t.x - en.x) + Math.abs(t.y - en.y);
+        const endCap = step === maxBeamStep;
+        const baseAlpha = style.alpha * pulse * (standingHere ? 0.95 : 0.55);
+        const spineAlpha = style.alpha * pulse * (standingHere ? 1.65 : 1.1);
+        g.fillStyle(style.color, baseAlpha);
+        g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
+        drawBeamLane(g, left, top, tileDraw, style.color, spineAlpha, beamVertical, endCap);
+      } else {
+        g.fillStyle(style.color, style.alpha * pulse * (standingHere ? 1.5 : 1));
+        g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
+        hatchTile(g, left + 1, top + 1, tileDraw - 2, style.color, 0.28 * pulse);
+      }
 
       // The tile under your feet gets a hard edge — you are in the blast.
       if (standingHere) {
