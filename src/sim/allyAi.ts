@@ -1,5 +1,5 @@
 import { ENEMIES } from '../data/enemies';
-import { ALLIES } from '../data/npcs';
+import { ALLIES, type AllyKind } from '../data/npcs';
 import { lore } from '../data/lore';
 import { bfsPath } from './fov';
 import { resolveHit } from './stance';
@@ -64,6 +64,36 @@ function stepAllyToward(state: GameState, ally: Ally, tx: number, ty: number): v
   if (step.x === tx && step.y === ty) return;
   ally.x = step.x;
   ally.y = step.y;
+}
+
+function followPlayer(state: GameState, ally: Ally): void {
+  if (manhattan(ally.x, ally.y, state.player.x, state.player.y) <= 1) return;
+  stepAllyToward(state, ally, state.player.x, state.player.y);
+}
+
+/** Bodyguard — stay on the player; only strike what's already in melee range. */
+function tickEscort(state: GameState, ally: Ally, def: (typeof ALLIES)['away_escort']): void {
+  const adjacentToPlayer = manhattan(ally.x, ally.y, state.player.x, state.player.y) === 1;
+  const target = nearestEnemy(state, ally, def.aggro);
+  if (target && manhattan(ally.x, ally.y, target.x, target.y) === 1) {
+    allyMelee(state, ally, target);
+  } else if (!adjacentToPlayer) {
+    followPlayer(state, ally);
+  }
+}
+
+function tickCombatAlly(state: GameState, ally: Ally, def: (typeof ALLIES)[AllyKind]): void {
+  const target = nearestEnemy(state, ally, def.aggro);
+  if (target) {
+    const dist = manhattan(ally.x, ally.y, target.x, target.y);
+    if (dist === 1) {
+      allyMelee(state, ally, target);
+    } else {
+      stepAllyToward(state, ally, target.x, target.y);
+      const d2 = manhattan(ally.x, ally.y, target.x, target.y);
+      if (d2 === 1) allyMelee(state, ally, target);
+    }
+  }
 }
 
 /** Apply damage to an ally from an enemy strike. */
@@ -134,16 +164,10 @@ export function moveAllies(state: GameState): void {
   for (const ally of state.allies) {
     if (!ally.alive) continue;
     const def = ALLIES[ally.kind];
-    const target = nearestEnemy(state, ally, def.aggro);
-    if (target) {
-      const dist = manhattan(ally.x, ally.y, target.x, target.y);
-      if (dist === 1) {
-        allyMelee(state, ally, target);
-      } else {
-        stepAllyToward(state, ally, target.x, target.y);
-        const d2 = manhattan(ally.x, ally.y, target.x, target.y);
-        if (d2 === 1) allyMelee(state, ally, target);
-      }
+    if (ally.kind === 'away_escort') {
+      tickEscort(state, ally, def);
+    } else {
+      tickCombatAlly(state, ally, def);
     }
 
     ally.turnsLeft -= 1;

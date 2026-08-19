@@ -7,6 +7,7 @@ import {
   moveAllies,
   tryEnemyMeleePreferPlayer,
 } from '../../src/sim/allyAi';
+import { manhattan } from '../../src/sim/spatial';
 import { combatArena, lastLog, makeAlly, makeEnemy } from './fixtures';
 
 describe('applyAllyDamage', () => {
@@ -36,7 +37,6 @@ describe('moveAllies', () => {
     const foe = makeEnemy({ kind: 'mite', x: 6, y: 5, hp: 2, maxHp: 3, def: 0 });
     st.allies = [ally];
     st.enemies = [foe];
-    // Keep path clear
     st.tiles[5]![5]!.walkable = true;
     st.tiles[5]![6]!.walkable = true;
     const xp = st.xp;
@@ -46,6 +46,32 @@ describe('moveAllies', () => {
     expect(st.log.some((l) => l.loreId === 'LOG-ALLY-HIT')).toBe(true);
     expect(st.log.some((l) => l.loreId === 'LOG-ALLY-KILL')).toBe(true);
     expect(st.log.some((l) => l.loreId === 'LOG-KILL')).toBe(false);
+  });
+
+  it('escort steps toward the player when not adjacent', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    const ally = makeAlly({ kind: 'away_escort', x: 7, y: 5, turnsLeft: 10 });
+    st.allies = [ally];
+    st.enemies = [];
+    for (let x = 5; x <= 7; x++) st.tiles[5]![x]!.walkable = true;
+    moveAllies(st);
+    expect(ally.x).toBe(6);
+    expect(ally.y).toBe(5);
+  });
+
+  it('escort stays adjacent instead of chasing distant hostiles', () => {
+    const st = combatArena();
+    st.player.x = 5;
+    st.player.y = 5;
+    const ally = makeAlly({ kind: 'away_escort', x: 6, y: 5, turnsLeft: 10 });
+    const foe = makeEnemy({ kind: 'mite', x: 10, y: 5, hp: 10, maxHp: 10 });
+    st.allies = [ally];
+    st.enemies = [foe];
+    moveAllies(st);
+    expect(manhattan(ally.x, ally.y, st.player.x, st.player.y)).toBe(1);
+    expect(foe.hp).toBe(10);
   });
 
   it('expires when turnsLeft hits zero', () => {
