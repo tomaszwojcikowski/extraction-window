@@ -65,6 +65,7 @@ import {
   type LightPreferenceHint,
 } from '../game/presenters/FieldChrome';
 import { pressureRevealAt } from '../game/presenters/PressureReveal';
+import { npcQuestMarker, npcQuestMarkerColor } from '../game/presenters/NpcMarkers';
 
 const TOP = HUD_TOP;
 const BAR_SLOTS = HUD_BAR_SLOTS;
@@ -1325,28 +1326,29 @@ export class GameScene extends Phaser.Scene {
       if (!view) {
         const img = this.add.image(0, 0, npcTextureKey(n.kind));
         img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
-        // Silhouette only — no letter glyphs over field contacts.
         const label = this.add.text(0, 0, '', {
           fontFamily: FONT_DATA,
-          fontSize: '11px',
-          color: ThemeCss.arcWhite,
+          fontSize: '14px',
+          color: ThemeCss.tape,
+          stroke: ThemeCss.groundDeep,
+          strokeThickness: 4,
         });
-        label.setVisible(false);
         label.setOrigin(0.5, 1);
+        label.setVisible(false);
         this.entityLayer.add(img);
         this.entityLayer.add(label);
         view = { img, label, gx: n.x, gy: n.y };
         this.npcViews.set(n.id, view);
         this.snapImg(img, n.x, n.y);
-        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 5);
+        label.setPosition(img.x, img.y - TILE_DRAW / 2 + 2);
       }
       const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
       view.img.setVisible(visible);
-      view.label.setVisible(false);
+      this.updateNpcQuestLabel(view, n, visible);
       view.img.setAlpha(n.talked ? 0.45 : 1);
       if (snapPositions) {
         this.snapImg(view.img, n.x, n.y);
-        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
+        view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 2);
         view.gx = n.x;
         view.gy = n.y;
       }
@@ -1445,6 +1447,21 @@ export class GameScene extends Phaser.Scene {
     view.label.setColor(color);
     view.label.setFontSize(marker.length > 4 ? 8 : 10);
     view.label.setVisible(view.img.visible);
+  }
+
+  private updateNpcQuestLabel(
+    view: EnemyView,
+    npc: GameState['npcs'][number],
+    visible: boolean,
+  ): void {
+    const mark = npcQuestMarker(npc);
+    if (!visible) {
+      view.label.setVisible(false);
+      return;
+    }
+    view.label.setText(mark);
+    view.label.setColor(npcQuestMarkerColor(mark));
+    view.label.setVisible(true);
   }
 
   private updateCamera(snap: boolean): void {
