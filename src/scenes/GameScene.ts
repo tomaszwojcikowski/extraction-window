@@ -968,6 +968,7 @@ export class GameScene extends Phaser.Scene {
       isAnimating: () => this.animating,
       isHelpOpen: () => this.helpOpen,
       isPagesOpen: () => this.pagesOpen,
+      isLogOpen: () => this.logOpen,
       queueAction: (action) => {
         this.queuedAction = action;
       },

@@ -5,6 +5,7 @@ import {
   actionFromKey,
   chromeFromKey,
   isHelpDismissKey,
+  isLogDismissKey,
   isPagesDismissKey,
   isQueueableAction,
   slotIndexFromKey,
@@ -19,6 +20,7 @@ export type InputHost = {
   isAnimating(): boolean;
   isHelpOpen(): boolean;
   isPagesOpen(): boolean;
+  isLogOpen(): boolean;
   queueAction(action: Action): void;
   getQueuedAction(): Action | null;
   clearQueuedAction(): void;
@@ -40,26 +42,49 @@ export type InputHost = {
  * Handle a keydown for the playing field.
  * Move is immediate (roguelike) — one press commits.
  */
+function isModalInput(host: InputHost, state: GameState): boolean {
+  return (
+    host.isHelpOpen() ||
+    host.isPagesOpen() ||
+    host.isLogOpen() ||
+    Boolean(state.skillPick?.length) ||
+    state.ui.inventoryOpen
+  );
+}
+
+/** Kit overlay — select, use, slot nav, close only. */
+function handleInventoryKey(e: KeyboardEvent, host: InputHost, state: GameState): void {
+  const slotIdx = slotIndexFromKey(e);
+  if (slotIdx !== null) {
+    host.clearQueuedAction();
+    applyAction(state, { type: 'select_slot', index: slotIdx });
+    sfx.play('ui');
+    host.afterUiChrome({ syncItems: true });
+    return;
+  }
+
+  const action = actionFromKey(e);
+  if (
+    action &&
+    (action.type === 'toggle_inventory' ||
+      action.type === 'close_ui' ||
+      action.type === 'use' ||
+      action.type === 'move')
+  ) {
+    host.clearQueuedAction();
+    applyAction(state, action);
+    sfx.play('ui');
+    host.afterUiChrome({ syncItems: action.type === 'use' });
+    return;
+  }
+}
+
 export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   sfx.unlock();
   music.prefetch();
 
-  // While tweens run, accept mute + one-deep gameplay queue — drop other input.
-  if (host.isAnimating()) {
-    const chrome = chromeFromKey(e);
-    if (chrome?.kind === 'mute') {
-      sfx.toggleMute();
-      host.syncFieldAudio(true);
-      return;
-    }
-    const queued = actionFromKey(e);
-    if (queued && isQueueableAction(queued)) {
-      host.queueAction(queued);
-    }
-    return;
-  }
-
   const chrome = chromeFromKey(e);
+
   if (chrome?.kind === 'mute') {
     sfx.toggleMute();
     host.syncFieldAudio(true);
@@ -68,8 +93,66 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   const state = host.getState();
+
+  // While tweens run, accept mute + one-deep gameplay queue — drop other input.
+  if (host.isAnimating()) {
+    if (isModalInput(host, state)) return;
+    const queued = actionFromKey(e);
+    if (queued && isQueueableAction(queued)) {
+      host.queueAction(queued);
+    }
+    return;
+  }
+
   if (state.status !== 'playing') {
     host.startEndScene();
+    return;
+  }
+
+  if (host.isHelpOpen()) {
+    if (isHelpDismissKey(e) || chrome?.kind === 'toggle_help') {
+      host.clearQueuedAction();
+      host.toggleHelp(false);
+      sfx.play('ui');
+    }
+    return;
+  }
+
+  if (host.isPagesOpen()) {
+    if (isPagesDismissKey(e) || chrome?.kind === 'toggle_pages') {
+      host.clearQueuedAction();
+      host.togglePages(false);
+      sfx.play('ui');
+    }
+    return;
+  }
+
+  if (host.isLogOpen()) {
+    if (isLogDismissKey(e) || chrome?.kind === 'toggle_log') {
+      host.clearQueuedAction();
+      host.toggleLog(false);
+      sfx.play('ui');
+    }
+    return;
+  }
+
+  if (state.skillPick && state.skillPick.length > 0) {
+    if (e.key === '1' || e.key === '2') {
+      const idx = parseInt(e.key, 10) - 1;
+      const id = state.skillPick[idx];
+      if (id) {
+        applyAction(state, { type: 'pick_skill', id });
+        sfx.play('ui');
+        host.afterUiChrome();
+      }
+      return;
+    }
+    host.showSkillHint();
+    return;
+  }
+
+  if (state.ui.inventoryOpen) {
+    handleInventoryKey(e, host, state);
     return;
   }
 
@@ -95,36 +178,6 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   if (chrome?.kind === 'toggle_minimap') {
     host.toggleMinimap();
     sfx.play('ui');
-    return;
-  }
-  if (host.isPagesOpen()) {
-    if (isPagesDismissKey(e)) {
-      host.togglePages(false);
-      sfx.play('ui');
-    }
-    return;
-  }
-  if (host.isHelpOpen()) {
-    if (isHelpDismissKey(e)) {
-      host.toggleHelp(false);
-      sfx.play('ui');
-    }
-    return;
-  }
-
-  if (state.skillPick) {
-    if (e.key === '1' || e.key === '2') {
-      const idx = parseInt(e.key, 10) - 1;
-      const id = state.skillPick[idx];
-      if (id) {
-        applyAction(state, { type: 'pick_skill', id });
-        sfx.play('ui');
-        host.afterUiChrome();
-      }
-      return;
-    }
-    // Movement / kit locked until a fork is chosen — keep the skill hint visible
-    host.showSkillHint();
     return;
   }
 

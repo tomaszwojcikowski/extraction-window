@@ -32,7 +32,12 @@ export function isHelpDismissKey(e: KeyboardEvent): boolean {
   return e.key === 'Escape' || e.key === '?' || e.key === 'Enter';
 }
 
-/** True when Escape / p / Enter should dismiss an open PADD overlay. */
+/** True when Escape / l / Enter should dismiss an open log strip. */
+export function isLogDismissKey(e: KeyboardEvent): boolean {
+  return e.key === 'Escape' || e.key === 'l' || e.key === 'L' || e.key === 'Enter';
+}
+
+/** True when p / Enter should dismiss an open PADD overlay. */
 export function isPagesDismissKey(e: KeyboardEvent): boolean {
   return e.key === 'Escape' || e.key === 'p' || e.key === 'P' || e.key === 'Enter';
 }

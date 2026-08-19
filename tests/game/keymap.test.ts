@@ -3,6 +3,7 @@ import {
   actionFromKey,
   chromeFromKey,
   isHelpDismissKey,
+  isLogDismissKey,
   isPagesDismissKey,
   isQueueableAction,
   slotIndexFromKey,
@@ -26,6 +27,7 @@ describe('Keymap', () => {
     expect(slotIndexFromKey(key('3'))).toBe(2);
     expect(slotIndexFromKey(key('0'))).toBeNull();
     expect(isHelpDismissKey(key('Escape'))).toBe(true);
+    expect(isLogDismissKey(key('l'))).toBe(true);
     expect(isPagesDismissKey(key('P'))).toBe(true);
   });
 
