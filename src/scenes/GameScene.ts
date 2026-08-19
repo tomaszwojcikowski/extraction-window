@@ -164,6 +164,8 @@ export class GameScene extends Phaser.Scene {
   private signalRailGfx!: Phaser.GameObjects.Graphics;
   private signalRailTexts: Phaser.GameObjects.Text[] = [];
   private recentSignals: ActionFloat[] = [];
+  /** World-space causal floats — tracked so a map rebuild can destroy orphans. */
+  private actionFloatTexts: Phaser.GameObjects.Text[] = [];
 
   private flash!: Phaser.GameObjects.Rectangle;
 
@@ -675,6 +677,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildMapSprites(): void {
+    this.clearActionFloats();
     this.tweens.killAll();
     this.windowPulseTween = null;
     this.goalPulseTween = null;
@@ -984,7 +987,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.playEventCamera(fb.newLogs);
     this.queueLightPreferenceHint();
-    this.showActionFloats(this.state.log.slice(prevLogLen), {
+    const floatOpts = {
       vitals: {
         hpDelta: this.state.player.hp - prevHp,
         energyDelta: this.state.player.energy - prevEnergy,
@@ -992,7 +995,7 @@ export class GameScene extends Phaser.Scene {
       },
       flankBefore: prevFlank,
       flankAfter: flankPenalty(this.state),
-    });
+    };
     if (this.state.player.hp < prevHp) {
       tintPlayerHurt(this.time, this.playerSprite);
     }
@@ -1009,11 +1012,15 @@ export class GameScene extends Phaser.Scene {
       this.updateCamera(true);
       this.syncFieldAudio(true);
       this.startFirstLight();
+      // Spawn after rebuild — killAll() would freeze hatch floats in the world.
+      this.showActionFloats(this.state.log.slice(prevLogLen), floatOpts);
       if (this.state.player.hp < prevHp) this.flashHit();
       this.maybeEnd();
       this.flushQueuedAction();
       return;
     }
+
+    this.showActionFloats(this.state.log.slice(prevLogLen), floatOpts);
 
     music.syncField({
       sectorId: this.state.sectorId,
@@ -1746,7 +1753,17 @@ export class GameScene extends Phaser.Scene {
 
   /** Hint line + signal rail — do not carry coaching from the prior sector. */
   private resetLevelTooltips(): void {
-    resetEphemeralFieldChrome(this.ephemeralFieldChrome());
+    const chrome = this.ephemeralFieldChrome();
+    resetEphemeralFieldChrome(chrome);
+    this.preferenceHint = chrome.preferenceHint;
+  }
+
+  private clearActionFloats(): void {
+    for (const text of this.actionFloatTexts) {
+      this.tweens.killTweensOf(text);
+      text.destroy();
+    }
+    this.actionFloatTexts = [];
   }
 
   private ephemeralFieldChrome(): EphemeralFieldChrome {
@@ -1800,6 +1817,7 @@ export class GameScene extends Phaser.Scene {
         .setScale(1.06);
       this.entityLayer.add(text);
       this.entityLayer.bringToTop(text);
+      this.actionFloatTexts.push(text);
       // Hold readable, then fade — Cubic.easeIn keeps alpha high early.
       this.tweens.add({
         targets: text,
@@ -1808,7 +1826,10 @@ export class GameScene extends Phaser.Scene {
         scale: 1,
         duration: ACTION_FLOAT_MS,
         ease: 'Cubic.easeIn',
-        onComplete: () => text.destroy(),
+        onComplete: () => {
+          text.destroy();
+          this.actionFloatTexts = this.actionFloatTexts.filter((t) => t !== text);
+        },
       });
     });
   }

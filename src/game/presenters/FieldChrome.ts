@@ -15,5 +15,6 @@ export type EphemeralFieldChrome = {
 export function resetEphemeralFieldChrome(chrome: EphemeralFieldChrome): void {
   chrome.lightPreferenceHints.clear();
   chrome.preferenceHint = null;
-  chrome.recentSignals = [];
+  // Mutate in place — GameScene holds the same array reference.
+  chrome.recentSignals.length = 0;
 }
