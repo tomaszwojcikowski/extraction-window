@@ -4,13 +4,15 @@ export const LORE = {
   // UI
   'UI-TITLE': 'EXTRACTION WINDOW',
   'UI-ORG': 'CSV HALCYON',
+  'UI-TITLE-CASE': 'SURVEY CASE 07',
+  'UI-TITLE-TAGLINE': 'Meridian Shelf · Halcyon Survey Corps',
   'UI-SUBTITLE': 'Halcyon Survey Corps · Meridian Shelf',
   'UI-SURVEY-TAG': 'Survey Team',
   'UI-BRIEF': 'Nav Lattice → drop skiff · Power hits 0 and you lose',
   'UI-BRIEF-TUT':
     'Drill first — Power drip paused here · then Key → beacon → Lattice → skiff',
   'UI-MISSION-STATUS': 'MISSION STATUS',
-  'UI-PRESS-START': 'ENTER — begin',
+  'UI-PRESS-START': 'ENTER / SPACE — begin survey',
   'UI-SEED': 'Mission ID',
   'UI-SEED-HINT': '← → adjust · R randomize',
   'UI-HP': 'HP',
@@ -109,6 +111,8 @@ export const LORE = {
     'Kit keeps you alive. Key and Lattice unlock extract. Optional sites grant extract rewards.',
   'UI-CONTROLS':
     'WASD move · . wait · i kit · n map · l log · ? help',
+  'UI-CONTROLS-TITLE':
+    'WASD move · . wait · i kit · u use · Enter act · ? help · m mute',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',
