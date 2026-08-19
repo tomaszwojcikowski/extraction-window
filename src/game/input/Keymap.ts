@@ -5,7 +5,8 @@ export type ChromeKey =
   | { kind: 'mute' }
   | { kind: 'toggle_help' }
   | { kind: 'toggle_pages' }
-  | { kind: 'toggle_log' };
+  | { kind: 'toggle_log' }
+  | { kind: 'toggle_minimap' };
 
 /**
  * Map a keydown to mute / help / PADD / log chrome — null if not a chrome key.
@@ -16,6 +17,7 @@ export function chromeFromKey(e: KeyboardEvent): ChromeKey | null {
   if (e.key === '?' || (e.key === '/' && e.shiftKey)) return { kind: 'toggle_help' };
   if (e.key === 'p' || e.key === 'P') return { kind: 'toggle_pages' };
   if (e.key === 'l' || e.key === 'L') return { kind: 'toggle_log' };
+  if (e.key === 'Tab') return { kind: 'toggle_minimap' };
   return null;
 }
 

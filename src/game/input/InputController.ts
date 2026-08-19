@@ -29,6 +29,7 @@ export type InputHost = {
   toggleHelp(force?: boolean): void;
   togglePages(force?: boolean): void;
   toggleLog(force?: boolean): void;
+  toggleMinimap(): void;
   /** After kit/chrome UI actions — redraw HUD (and items when needed). */
   afterUiChrome(opts?: { syncItems?: boolean }): void;
   showSkillHint(): void;
@@ -88,6 +89,11 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   if (chrome?.kind === 'toggle_log') {
     host.clearQueuedAction();
     host.toggleLog();
+    sfx.play('ui');
+    return;
+  }
+  if (chrome?.kind === 'toggle_minimap') {
+    host.toggleMinimap();
     sfx.play('ui');
     return;
   }

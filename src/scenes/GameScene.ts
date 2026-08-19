@@ -57,6 +57,7 @@ import { CameraKick } from '../game/presenters/CameraKick';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
 import { drawFovVignette } from '../game/views/MapView';
+import { MinimapView } from '../game/views/MinimapView';
 import { drawThreatZones } from '../game/views/ThreatView';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { drawPaddOverlay } from '../game/views/overlays/PaddOverlay';
@@ -166,6 +167,7 @@ export class GameScene extends Phaser.Scene {
   private helpOpen = false;
   /** Mission log strip — hidden by default; `l` toggles. */
   private logOpen = false;
+  private minimap = new MinimapView();
   private signalRailGfx!: Phaser.GameObjects.Graphics;
   private signalRailTexts: Phaser.GameObjects.Text[] = [];
   private recentSignals: ActionFloat[] = [];
@@ -458,6 +460,8 @@ export class GameScene extends Phaser.Scene {
       .setDepth(120);
 
     this.fovVignette = this.add.graphics().setScrollFactor(0).setDepth(80);
+
+    this.minimap.create(this);
 
     this.hud = new HudView({
       barsGfx: this.barsGfx,
@@ -917,6 +921,7 @@ export class GameScene extends Phaser.Scene {
       toggleHelp: (force) => this.toggleHelp(force),
       togglePages: (force) => this.togglePages(force),
       toggleLog: (force) => this.toggleLog(force),
+      toggleMinimap: () => this.minimap.toggle(),
       afterUiChrome: (opts) => {
         this.redrawTilesAndHud();
         if (opts?.syncItems) this.syncItems();
@@ -2211,5 +2216,6 @@ export class GameScene extends Phaser.Scene {
     const goal = describeObjective(st);
     this.syncGoalVisuals(goal.pos);
     this.syncOptionalSiteVisuals();
+    this.minimap.redraw(st);
   }
 }
