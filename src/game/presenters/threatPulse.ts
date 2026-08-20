@@ -16,5 +16,5 @@ export function tileHatchPulse(animFrame: number, x: number, y: number): number 
 /** Traveling beam spine — hotter on the step that matches the frame clock. */
 export function beamLaneHot(animFrame: number, step: number, maxStep: number): boolean {
   if (maxStep <= 0) return true;
-  return (animFrame + step) % (maxStep + 1) === 0 || step === maxStep;
+  return animFrame % (maxStep + 1) === step || step === maxStep;
 }
