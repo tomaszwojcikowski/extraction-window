@@ -117,6 +117,12 @@ export const LORE = {
   'UI-CHANGELOG': 'FIELD BULLETIN',
   'UI-CHANGELOG-HINT': 'c — bulletin',
   'UI-CHANGELOG-BODY':
+    'v1.7.0 — FIELD EAR\n' +
+    '· Music beds track Power / shear / ion — storm mood retired\n' +
+    '· Flare, ion pulse, handshake, and kit-spend each have a voice\n' +
+    '· Hatch-enter sting follows layout grammar (scatter→warren)\n' +
+    '· Biome drones pick up grammar overlays; room roles tilt by shape\n' +
+    '\n' +
     'v1.6.0 — FIELD READ\n' +
     '· Floor loot silhouettes: med, cell, flare, tool, wear\n' +
     '· Ion front tints the field, not only the HUD chip\n' +

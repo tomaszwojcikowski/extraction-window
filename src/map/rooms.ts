@@ -2,6 +2,7 @@ import type { SectorDef } from '../data/encounters';
 import { ENEMIES, type EnemyKind } from '../data/enemies';
 import { pick, randInt, shuffle, type Rng } from '../sim/rng';
 import type { Pos, RoomRole, Tile } from '../sim/types';
+import { layoutForSector, type LayoutKind } from './layoutKind';
 
 /**
  * Room identity.
@@ -40,7 +41,28 @@ export function midRooms(rooms: Room[]): Room[] {
  * hand-kept table per id — the same discipline the hostile silhouettes use.
  * A sector whose ground bites gets more rooms about ground; a sector stocked
  * with things that hold a line gets more rooms about sightlines.
+ *
+ * Layout grammar then tilts the mix so a warren and a scatter with the same
+ * hazard dial still feel like different places — denser collapse/nest vs more
+ * quiet/cache open ground — without changing hostile/loot totals.
  */
+function grammarRoleTilt(kind: LayoutKind): Partial<Record<RoomRole, number>> {
+  switch (kind) {
+    case 'scatter':
+      return { quiet: 2, cache: 1, nest: -1 };
+    case 'spine':
+      return { nest: 2, post: 1, quiet: -1 };
+    case 'hub':
+      return { quiet: 1, cache: 1, nest: -1 };
+    case 'lattice':
+      return { post: 2, nest: 1, thicket: -1 };
+    case 'branch':
+      return { thicket: 2, nest: 1, collapse: -1 };
+    case 'warren':
+      return { nest: 1, collapse: 2, hazard: 1, quiet: -1 };
+  }
+}
+
 function roleWeights(sector: SectorDef): Array<[RoomRole, number]> {
   // A weight of zero matters as much as a high one: the shelf sectors have no
   // caustic ground and nothing that can hold a line, so they must not be handed
@@ -53,7 +75,7 @@ function roleWeights(sector: SectorDef): Array<[RoomRole, number]> {
   });
   const overgrown = sector.scrubChance > 0.05;
   const fallingApart = sector.rubbleChance > 0.05;
-  return [
+  const base: Array<[RoomRole, number]> = [
     ['nest', 3],
     ['cache', 2],
     ['quiet', 2],
@@ -62,6 +84,12 @@ function roleWeights(sector: SectorDef): Array<[RoomRole, number]> {
     ['thicket', overgrown ? 3 : 0],
     ['collapse', fallingApart ? 3 : 0],
   ];
+  const tilt = grammarRoleTilt(layoutForSector(sector.id));
+  return base.map(([role, w]) => {
+    if (w <= 0) return [role, 0];
+    const next = w + (tilt[role] ?? 0);
+    return [role, Math.max(0, next)];
+  });
 }
 
 function weightedRole(weights: Array<[RoomRole, number]>, rng: Rng): RoomRole {
@@ -159,6 +187,10 @@ export function dressRoomRoles(
     tiles[p.y]![p.x] = tile;
   };
   const wet = sector.id === 'flood' || sector.id === 'brine' || sector.id === 'reef';
+  const grammar = layoutForSector(sector.id);
+  // Grammar densifies dressing without changing hostile/loot budgets.
+  const dens =
+    grammar === 'warren' ? 1.12 : grammar === 'branch' ? 1.08 : grammar === 'scatter' ? 0.92 : 1;
 
   for (const room of rooms) {
     const centre = { x: room.cx, y: room.cy };
@@ -168,7 +200,7 @@ export function dressRoomRoles(
         // walks into rather than a number read from the doorway.
         for (const p of inner(room)) {
           if (chebyshev(p, centre) <= 1) continue;
-          if (rng() < 0.34) paint(p, nest());
+          if (rng() < 0.34 * dens) paint(p, nest());
         }
         break;
       }
@@ -176,7 +208,7 @@ export function dressRoomRoles(
         // Something in the way: a broken lip around the payout, or standing
         // water if the sector has any to offer.
         for (const p of ring(room)) {
-          if (rng() < 0.4) paint(p, wet ? brinePool() : rubbleTile());
+          if (rng() < 0.4 * dens) paint(p, wet ? brinePool() : rubbleTile());
         }
         break;
       }
@@ -186,7 +218,7 @@ export function dressRoomRoles(
         for (const p of inner(room)) {
           const onLane = lane === 'x' ? p.y === room.cy : p.x === room.cx;
           if (onLane) continue;
-          if (rng() < 0.55) paint(p, wet ? brinePool() : hazardTile());
+          if (rng() < 0.55 * dens) paint(p, wet ? brinePool() : hazardTile());
         }
         break;
       }
@@ -194,7 +226,7 @@ export function dressRoomRoles(
         // Open in the middle so the shot is real, cover at the edges so the
         // answer is not simply to eat it.
         for (const p of ring(room)) {
-          if (rng() < 0.3) paint(p, rubbleTile());
+          if (rng() < 0.3 * dens) paint(p, rubbleTile());
         }
         break;
       }
@@ -202,7 +234,7 @@ export function dressRoomRoles(
         // Wall-to-wall growth. Nothing here is lethal on its own; the room is
         // about crossing ground that will not tell you what is on it.
         for (const p of inner(room)) {
-          if (rng() < 0.6) paint(p, blockingScrub());
+          if (rng() < 0.6 * dens) paint(p, blockingScrub());
         }
         break;
       }
@@ -212,7 +244,7 @@ export function dressRoomRoles(
         for (const p of inner(room)) {
           if ((p.x + p.y) % 2 !== 0) continue;
           if (chebyshev(p, centre) === 0) continue;
-          if (rng() < 0.7) paint(p, rubbleTile());
+          if (rng() < 0.7 * dens) paint(p, rubbleTile());
         }
         break;
       }

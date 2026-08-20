@@ -144,9 +144,11 @@ Statuses: stun, bleed, plasma burn, expose — tick on turns; HUD glyphs beside 
 ## Field audio
 
 Away gear listens to local EM / ion stress. **Sampled ambient music beds**
-(`public/audio/music/`) crossfade by mood (title / field / storm / combat / end).
-Procedural biome drones stay as a quiet underlayer. One-shot SFX are synthesized.
-`m` mutes all buses. See `public/audio/music/CREDITS.md` for track provenance.
+(`public/audio/music/`) crossfade by mood (title / field / shear / critical / combat / end).
+Procedural biome drones stay as a quiet underlayer, with layout-grammar overlays so
+scatter and warren do not share one voice. One-shot SFX are synthesized (flare, ion,
+handshake, kit spend, grammar hatch-enter). `m` mutes all buses. See
+`public/audio/music/CREDITS.md` for track provenance.
 
 ---
 

@@ -1,6 +1,7 @@
 /** Looping synthesized biome ambient beds — few oscillators, no assets. */
 
 import type { SectorId } from '../data/encounters';
+import { layoutForSector, type LayoutKind } from '../map/layoutKind';
 import { audioBus } from './bus';
 
 type Voice = {
@@ -26,6 +27,50 @@ type AmbientPreset = {
   /** Sparse EM / metal ticks (ducts, vaults, beacons). */
   tickHz?: number;
 };
+
+/**
+ * Grammar overlay — same biome paint, different skeleton voice.
+ * Applied on top of the sector preset so scatter/warren/lattice read apart.
+ */
+function grammarOverlay(kind: LayoutKind): Partial<AmbientPreset> {
+  switch (kind) {
+    case 'scatter':
+      return {
+        noise: { vol: 0.014, filterHz: 900, highpassHz: 220 },
+      };
+    case 'spine':
+      return {
+        drones: [{ freq: 64, type: 'sawtooth', vol: 0.007, filterHz: 240 }],
+      };
+    case 'hub':
+      return { tickHz: 0.32 };
+    case 'lattice':
+      return {
+        tickHz: 0.48,
+        noise: { vol: 0.012, filterHz: 380, highpassHz: 70 },
+      };
+    case 'branch':
+      return {
+        noise: { vol: 0.016, filterHz: 1400, highpassHz: 450 },
+        drones: [{ freq: 132, type: 'triangle', vol: 0.01, lfoHz: 0.25, lfoDepth: 9, filterHz: 1100 }],
+      };
+    case 'warren':
+      return {
+        tickHz: 0.2,
+        noise: { vol: 0.02, filterHz: 420, highpassHz: 50 },
+        drones: [{ freq: 38, type: 'sawtooth', vol: 0.008, filterHz: 200 }],
+      };
+  }
+}
+
+function mergePreset(base: AmbientPreset, overlay: Partial<AmbientPreset>): AmbientPreset {
+  return {
+    drones: [...base.drones, ...(overlay.drones ?? [])],
+    noise: overlay.noise ?? base.noise,
+    dripHz: overlay.dripHz ?? base.dripHz,
+    tickHz: overlay.tickHz ?? base.tickHz,
+  };
+}
 
 const PRESETS: Record<SectorId, AmbientPreset> = {
   plains: {
@@ -150,7 +195,10 @@ class AmbientEngine {
   }
 
   startSector(id: SectorId): void {
-    this.setPreset(id, PRESETS[id]);
+    const grammar = layoutForSector(id);
+    const merged = mergePreset(PRESETS[id], grammarOverlay(grammar));
+    // Key includes grammar so a biome remapped to another shape restarts the bed.
+    this.setPreset(`${id}:${grammar}`, merged);
   }
 
   stop(): void {

@@ -546,12 +546,15 @@ export class GameScene extends Phaser.Scene {
     sfx.unlock();
     ambient.startSector(this.state.sectorId);
     void force;
+    const shear = computeShearPressure(this.state);
     music.syncField({
       sectorId: this.state.sectorId,
       sectorIndex: this.state.sectorIndex,
       playerEnergy: this.state.player.energy,
       maxEnergy: this.state.player.maxEnergy,
       inCombat: this.threatNearby(),
+      shearState: shear.state,
+      ionFrontTurns: this.state.ionFrontTurns,
     });
   }
 

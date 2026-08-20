@@ -643,6 +643,19 @@ Loot/ally readability, ion-front and status field language, modal chrome parity,
 
 ---
 
+## Waves 59–60 — Field ear + sector identity (done)
+
+Audio honesty after the graphics pack, plus layout-grammar identity without new systems. No Notice Impact, peek, Window restore, or balance retune target — WR stays in band via existing gates.
+
+| Wave | Ticket | Status |
+|------|--------|--------|
+| 59 | Music moods: `storm` → `shear`; beds track Power / shear dial / ion front; pillar SFX (flare, ion pulse, handshake, kit spend); grammar hatch-enter stings | Done |
+| 60 | Ambient grammar overlays; room-role tilt + dress density by layout; wearable cache bait folds grammar cue; docs + `v1.7.0` | Done |
+
+**Tag:** `v1.7.0` — audio + sector identity.
+
+---
+
 ## Explicit defer (post-v1)
 
-Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.
+Art retheme, full audio asset rewrite (new beds beyond rename), campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

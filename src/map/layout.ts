@@ -1,7 +1,10 @@
-import type { SectorDef } from '../data/encounters';
 import { pick, randInt, shuffle, type Rng } from '../sim/rng';
 import type { Tile } from '../sim/types';
 import type { Room } from './rooms';
+import { layoutForSector, type LayoutKind } from './layoutKind';
+
+export type { LayoutKind } from './layoutKind';
+export { layoutForSector } from './layoutKind';
 
 /**
  * How a sector is put together — the skeleton under the rooms.
@@ -11,35 +14,6 @@ import type { Room } from './rooms';
  * so walking into the duct and walking into the plains are different shapes,
  * not the same shape with different paint.
  */
-
-export type LayoutKind = 'scatter' | 'spine' | 'hub' | 'lattice' | 'branch' | 'warren';
-
-export function layoutForSector(id: SectorDef['id']): LayoutKind {
-  switch (id) {
-    case 'ridge':
-      // Final approach is the only pure gauntlet — approach stays scatter so the
-      // campaign does not end on two linear maps in a row.
-      return 'spine';
-    case 'beacon':
-    case 'vault':
-      return 'hub';
-    case 'duct':
-    case 'trench':
-      return 'lattice';
-    case 'canopy':
-    case 'reef':
-    case 'spire':
-      return 'branch';
-    case 'ruin':
-    case 'ash':
-    case 'fissure':
-    case 'brine':
-      return 'warren';
-    default:
-      // plains, flood, approach — open country, the familiar chain.
-      return 'scatter';
-  }
-}
 
 export interface LayoutResult {
   rooms: Room[];

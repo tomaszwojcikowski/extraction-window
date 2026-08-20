@@ -264,7 +264,7 @@ describe('ActionFeedback', () => {
       flash,
     );
 
-    expect(play).toHaveBeenCalledWith('sector');
+    expect(play).toHaveBeenCalledWith('enter_scatter');
     expect(flash).not.toHaveBeenCalled();
     play.mockRestore();
   });

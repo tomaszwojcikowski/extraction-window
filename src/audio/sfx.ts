@@ -1,5 +1,6 @@
 /** Field-gear SFX — noise, sub thuds, and filter sweeps. No melodic arpeggios. */
 
+import type { LayoutKind } from '../map/layoutKind';
 import { audioBus } from './bus';
 
 export type SfxId =
@@ -12,7 +13,17 @@ export type SfxId =
   | 'pickup'
   | 'quest'
   | 'use'
+  | 'kit_spend'
+  | 'flare'
+  | 'ion_pulse'
+  | 'handshake'
   | 'sector'
+  | 'enter_scatter'
+  | 'enter_spine'
+  | 'enter_hub'
+  | 'enter_lattice'
+  | 'enter_branch'
+  | 'enter_warren'
   | 'beacon'
   | 'warn'
   | 'win'
@@ -33,6 +44,24 @@ export type SfxId =
   | 'player_beam'
   | 'shear'
   | 'shear_breach';
+
+/** Layout grammar → hatch-enter sting (one cue per shape family). */
+export function enterSfxForLayout(kind: LayoutKind): SfxId {
+  switch (kind) {
+    case 'spine':
+      return 'enter_spine';
+    case 'hub':
+      return 'enter_hub';
+    case 'lattice':
+      return 'enter_lattice';
+    case 'branch':
+      return 'enter_branch';
+    case 'warren':
+      return 'enter_warren';
+    default:
+      return 'enter_scatter';
+  }
+}
 
 const COMBAT: SfxId[] = [
   'hit',
@@ -124,6 +153,30 @@ class SfxBus {
         this.noiseBurst(ctx, t, { dur: 0.045, vol: 0.08, bp: 1400, Q: 1.5, attack: 0.003 });
         this.noiseBurst(ctx, t + 0.035, { dur: 0.07, vol: 0.05, bp: 600, Q: 0.9, attack: 0.01 });
         break;
+      case 'kit_spend':
+        // Bus tap — short grit + sub drop when Power leaves the pack.
+        this.noiseBurst(ctx, t, { dur: 0.04, vol: 0.09, bp: 1600, Q: 1.8, attack: 0.002 });
+        this.sub(ctx, t + 0.01, { freq: 88, dur: 0.09, vol: 0.08, slide: -22 });
+        this.noiseBurst(ctx, t + 0.04, { dur: 0.06, vol: 0.045, bp: 480, Q: 0.8, attack: 0.01 });
+        break;
+      case 'flare':
+        // Magnesium strike — bright scrape into hot sustain, not a chime.
+        this.noiseBurst(ctx, t, { dur: 0.04, vol: 0.13, bp: 2600, Q: 3.5, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.03, { dur: 0.16, vol: 0.08, bp: 900, Q: 1.0, attack: 0.02, sweep: 400 });
+        this.hum(ctx, t + 0.05, { freq: 118, dur: 0.2, vol: 0.05 });
+        break;
+      case 'ion_pulse':
+        // Front pulse — cold band wash + body tax.
+        this.noiseBurst(ctx, t, { dur: 0.14, vol: 0.1, bp: 420, Q: 0.7, attack: 0.02, sweep: 700 });
+        this.sub(ctx, t + 0.02, { freq: 52, dur: 0.16, vol: 0.09, slide: -12 });
+        this.hum(ctx, t + 0.04, { freq: 104, dur: 0.18, vol: 0.04 });
+        break;
+      case 'handshake':
+        // Sodium sync tick — latch + soft settle (matches beacon language).
+        this.noiseBurst(ctx, t, { dur: 0.035, vol: 0.1, bp: 2100, Q: 3.2, attack: 0.002 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.12, vol: 0.06, bp: 520, Q: 0.8, attack: 0.03 });
+        this.hum(ctx, t + 0.06, { freq: 90, dur: 0.22, vol: 0.055 });
+        break;
       case 'quest':
         // Flagging stamp — short hiss + low confirm, no scale climb.
         this.noiseBurst(ctx, t, { dur: 0.06, vol: 0.1, bp: 2000, Q: 1.8, attack: 0.004 });
@@ -131,7 +184,8 @@ class SfxBus {
         this.sub(ctx, t + 0.04, { freq: 98, dur: 0.14, vol: 0.07, slide: 8 });
         break;
       case 'sector':
-        // Shear peel — rising band-limited wash.
+      case 'enter_scatter':
+        // Open country peel — rising band-limited wash.
         this.noiseBurst(ctx, t, {
           dur: 0.28,
           vol: 0.1,
@@ -141,6 +195,34 @@ class SfxBus {
           sweep: 900,
         });
         this.sub(ctx, t + 0.05, { freq: 50, dur: 0.22, vol: 0.08, slide: 20 });
+        break;
+      case 'enter_spine':
+        // Gauntlet hatch — tighter, forward shove.
+        this.noiseBurst(ctx, t, { dur: 0.2, vol: 0.11, bp: 280, Q: 0.7, attack: 0.025, sweep: 700 });
+        this.sub(ctx, t + 0.03, { freq: 58, dur: 0.2, vol: 0.1, slide: 14 });
+        break;
+      case 'enter_hub':
+        // Crossing settle — sodium wash into a soft hold.
+        this.noiseBurst(ctx, t, { dur: 0.12, vol: 0.09, bp: 1100, Q: 1.3, attack: 0.02 });
+        this.hum(ctx, t + 0.06, { freq: 88, dur: 0.28, vol: 0.06 });
+        this.noiseBurst(ctx, t + 0.1, { dur: 0.14, vol: 0.05, bp: 400, Q: 0.6, attack: 0.04 });
+        break;
+      case 'enter_lattice':
+        // Conduit tick grid — metallic ticks into a duct hum.
+        this.noiseBurst(ctx, t, { dur: 0.03, vol: 0.1, bp: 2400, Q: 4, attack: 0.001 });
+        this.noiseBurst(ctx, t + 0.05, { dur: 0.028, vol: 0.08, bp: 1900, Q: 3.5, attack: 0.001 });
+        this.hum(ctx, t + 0.08, { freq: 72, dur: 0.22, vol: 0.055 });
+        break;
+      case 'enter_branch':
+        // Growth rustle — high scrape, less body.
+        this.noiseBurst(ctx, t, { dur: 0.18, vol: 0.09, bp: 1400, Q: 0.9, attack: 0.03, sweep: 500 });
+        this.noiseBurst(ctx, t + 0.06, { dur: 0.12, vol: 0.05, bp: 2200, Q: 1.4, attack: 0.02 });
+        break;
+      case 'enter_warren':
+        // Tight packing — denser low grind.
+        this.noiseBurst(ctx, t, { dur: 0.24, vol: 0.11, bp: 160, Q: 0.55, attack: 0.03, sweep: 450 });
+        this.sub(ctx, t + 0.04, { freq: 44, dur: 0.24, vol: 0.1, slide: 10 });
+        this.noiseBurst(ctx, t + 0.1, { dur: 0.1, vol: 0.05, bp: 600, Q: 0.8, attack: 0.02 });
         break;
       case 'shear':
         // One-line pressure escalate — short band wash, not a chord.

@@ -413,7 +413,7 @@ describe('drill bay tutorial', () => {
     expect(fb.sectorChanged).toBe(false);
     expect(fb.mapReloaded).toBe(true);
     expect(fb.newLogs).toContain('LOG-TUT-DONE');
-    expect(play).toHaveBeenCalledWith('sector');
+    expect(play).toHaveBeenCalledWith('enter_scatter');
     play.mockRestore();
   });
 });

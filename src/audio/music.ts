@@ -6,23 +6,64 @@ import { audioBus } from './bus';
 export type MusicMood =
   | 'title'
   | 'field'
-  | 'storm'
+  | 'shear'
   | 'critical'
   | 'combat'
   | 'end_win'
   | 'end_lose'
   | 'off';
 
+/** Mirrors ShearPressure dial states — kept local so audio never imports game/. */
+export type MusicShearState = 'Calm' | 'Charged' | 'Arcing' | 'Breaching';
+
 /** Mood → file under `public/audio/music/` (Vite `BASE_URL`). */
 const BEDS: Record<Exclude<MusicMood, 'off'>, string> = {
   title: 'title.ogg',
   field: 'field.ogg',
-  storm: 'storm.ogg',
-  critical: 'storm.ogg',
+  shear: 'shear.ogg',
+  critical: 'shear.ogg',
   combat: 'combat.ogg',
   end_win: 'end_win.mp3',
   end_lose: 'end_lose.mp3',
 };
+
+export type FieldMusicOpts = {
+  sectorId: SectorId;
+  sectorIndex: number;
+  playerEnergy: number;
+  maxEnergy: number;
+  inCombat: boolean;
+  /** Shear dial state — Power + EM pressure (not a death clock). */
+  shearState?: MusicShearState;
+  /** Active ion-front turns remaining. */
+  ionFrontTurns?: number;
+};
+
+/**
+ * Pure bed pick for the field. Combat > Power-critical > shear pressure > field.
+ * Shared by MusicEngine and unit tests — no AudioContext required.
+ */
+export function pickFieldMood(opts: FieldMusicOpts): Exclude<MusicMood, 'off' | 'title' | 'end_win' | 'end_lose'> {
+  const energyRatio = opts.playerEnergy / Math.max(1, opts.maxEnergy);
+  const shear = opts.shearState ?? 'Calm';
+  const ionHot = (opts.ionFrontTurns ?? 0) > 0;
+
+  if (opts.inCombat) return 'combat';
+  if (opts.playerEnergy <= 8 || energyRatio <= 0.12 || shear === 'Breaching') {
+    return 'critical';
+  }
+  if (
+    opts.playerEnergy <= 20 ||
+    energyRatio <= 0.28 ||
+    shear === 'Arcing' ||
+    shear === 'Charged' ||
+    ionHot ||
+    opts.sectorIndex >= 10
+  ) {
+    return 'shear';
+  }
+  return 'field';
+}
 
 type BedVoice = {
   source: AudioBufferSourceNode;
@@ -34,7 +75,6 @@ class MusicEngine {
   private fadeGain: GainNode | null = null;
   private voice: BedVoice | null = null;
   private currentFile: string | null = null;
-  private currentSector: SectorId = 'plains';
   private combatHold = 0;
   private buffers = new Map<string, AudioBuffer>();
   private loadPromise: Promise<void> | null = null;
@@ -44,7 +84,7 @@ class MusicEngine {
     if (mood === this.mood && (mood === 'off' || this.voice)) return;
 
     const nextFile = mood === 'off' ? null : BEDS[mood];
-    // storm ↔ critical share a bed — don't restart the loop.
+    // shear ↔ critical share a bed — don't restart the loop.
     if (
       mood !== 'off' &&
       nextFile !== null &&
@@ -75,40 +115,20 @@ class MusicEngine {
   }
 
   /**
-   * Field sync: combat > storm critical/storm > biome field bed.
+   * Field sync: combat > Power critical > shear pressure > biome field bed.
    * Combat uses multi-turn hysteresis so beds don’t flicker on step-away.
    */
-  syncField(opts: {
-    sectorId: SectorId;
-    sectorIndex: number;
-    playerEnergy: number;
-    maxEnergy: number;
-    inCombat: boolean;
-  }): void {
+  syncField(opts: FieldMusicOpts): void {
     if (this.mood === 'title' || this.mood === 'end_win' || this.mood === 'end_lose') return;
 
-    this.currentSector = opts.sectorId;
     if (opts.inCombat) this.combatHold = 5;
     else if (this.combatHold > 0) this.combatHold -= 1;
 
-    if (this.combatHold > 0) {
-      this.setMood('combat');
-      return;
-    }
-    if (opts.playerEnergy <= 8) this.setMood('critical');
-    else if (opts.playerEnergy <= 20 || opts.sectorIndex >= 10) this.setMood('storm');
-    else this.setMood('field');
-  }
-
-  /** @deprecated Prefer syncField — kept for title/end safety wrappers. */
-  syncStorm(_legacy?: number): void {
-    this.syncField({
-      sectorId: this.currentSector,
-      sectorIndex: 0,
-      playerEnergy: 100,
-      maxEnergy: 100,
-      inCombat: false,
+    const mood = pickFieldMood({
+      ...opts,
+      inCombat: this.combatHold > 0,
     });
+    this.setMood(mood);
   }
 
   stop(): void {
@@ -119,6 +139,11 @@ class MusicEngine {
   /** Warm the decode cache from a user gesture. */
   prefetch(): void {
     void this.ensureLoaded();
+  }
+
+  /** Test / debug aid — current logical mood. */
+  currentMood(): MusicMood {
+    return this.mood;
   }
 
   private bedUrl(file: string): string {
