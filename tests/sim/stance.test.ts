@@ -36,7 +36,7 @@ describe('resolveHit', () => {
 describe('player stances', () => {
   it('stim or overcharge is Enhanced; probe is not', () => {
     const st = combatArena();
-    const foe = makeEnemy({ kind: 'mite', def: 0 });
+    const foe = makeEnemy({ kind: 'mite', def: 0, alerted: true });
     expect(playerAttackStance(st, foe)).toBe('normal');
     st.player.probeTurns = 25;
     expect(playerAttackStance(st, foe)).toBe('normal');
@@ -48,7 +48,7 @@ describe('player stances', () => {
   it('helpless foe wins over Impaired', () => {
     const st = combatArena();
     st.player.statuses = { jam: 2 };
-    const foe = makeEnemy({ kind: 'mite' });
+    const foe = makeEnemy({ kind: 'mite', alerted: true });
     expect(playerAttackStance(st, foe)).toBe('impaired');
     addStatus(foe, 'stun', 2);
     expect(playerAttackStance(st, foe)).toBe('enhanced');
@@ -60,7 +60,7 @@ describe('player stances', () => {
       st.inventory.push({ kind: 'flare', count: 1 });
     }
     expect(encumbered(st)).toBe(true);
-    const foe = makeEnemy({ kind: 'mite' });
+    const foe = makeEnemy({ kind: 'mite', alerted: true });
     expect(playerAttackStance(st, foe)).toBe('impaired');
     addStatus(foe, 'expose', 2);
     expect(playerAttackStance(st, foe)).toBe('enhanced');
@@ -100,7 +100,7 @@ describe('wired attacks', () => {
   it('logs Impaired on a jammed bump', () => {
     const st = combatArena();
     st.player.statuses = { jam: 2 };
-    const foe = makeEnemy({ kind: 'mite', hp: 20, maxHp: 20, def: 0 });
+    const foe = makeEnemy({ kind: 'mite', hp: 20, maxHp: 20, def: 0, alerted: true });
     playerAttack(st, foe, 0);
     expect(lastLog(st, 'LOG-IMPAIRED')).toBeTruthy();
   });
@@ -121,7 +121,7 @@ describe('wired attacks', () => {
     st.visible[ty]![tx] = true;
     st.illumination[ty]![tx] = 0.9;
     st.tiles[ty]![tx] = { kind: 'floor', walkable: true, transparent: true };
-    const foe = makeEnemy({ kind: 'mite', hp: 40, maxHp: 40, def: 0, x: tx, y: ty });
+    const foe = makeEnemy({ kind: 'mite', hp: 40, maxHp: 40, def: 0, x: tx, y: ty, alerted: true });
     st.enemies = [foe];
     const dart = st.inventory.find((s) => s.kind === 'dart');
     if (dart) dart.count = 2;
@@ -148,5 +148,30 @@ describe('enemy Enhanced in SHADOW', () => {
     enemyAttack(st, makeEnemy({ kind: 'mite', atk: 5 }), 0);
     expect(lastLog(st, 'LOG-SHADOW-BITE')).toBeTruthy();
     expect(100 - st.player.hp).toBe(12);
+  });
+});
+
+describe('bump effects that keep WASD pace', () => {
+  it('first SHADOW strike on an unaware foe is Enhanced ambush, then they wake', () => {
+    const st = combatArena();
+    st.illumination[st.player.y]![st.player.x] = 0.2;
+    const foe = makeEnemy({ kind: 'mite', hp: 40, maxHp: 40, def: 0, alerted: false });
+    expect(playerAttackStance(st, foe)).toBe('enhanced');
+    playerAttack(st, foe, 0);
+    expect(lastLog(st, 'LOG-SHADOW-AMBUSH')).toBeTruthy();
+    expect(foe.alerted).toBe(true);
+    expect(playerAttackStance(st, foe)).toBe('normal');
+  });
+
+  it('LIT vs dark-prefer fauna is a Normal +1, not Enhanced', () => {
+    const st = combatArena();
+    st.illumination[st.player.y]![st.player.x] = 2;
+    st.player.equip.tool = null;
+    st.player.atk = 5;
+    const foe = makeEnemy({ kind: 'mite', hp: 40, maxHp: 40, def: 0, atk: 2, alerted: true });
+    expect(playerAttackStance(st, foe)).toBe('normal');
+    playerAttack(st, foe, 0);
+    expect(lastLog(st, 'LOG-LIGHT-MATCH')?.detail).toBe('LIT');
+    expect(lastLog(st, 'LOG-HIT')?.detail).toMatch(/-6/);
   });
 });

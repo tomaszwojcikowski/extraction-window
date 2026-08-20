@@ -6,13 +6,13 @@ import { killEnemy } from './death';
 import { formatCombatDetail, pushLog } from './log';
 import { inShadow } from './light';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
-import { hasSkill } from './progression';
 import { brandIonAttackPenalty } from './brands';
 import { applyPlayerDamage } from './playerDamage';
 import {
   enemyAttackStance,
   playerAttackStance,
   resolveHit,
+  shadowAmbush,
 } from './stance';
 import type { Enemy, GameState } from './types';
 
@@ -53,6 +53,29 @@ export function lightPreferAtkBonus(state: GameState, enemy: Enemy): number {
   return inShadow(state, state.player.x, state.player.y) ? 1 : 0;
 }
 
+/**
+ * Catch fauna on the lighting they do not want: dark-prefer in the open,
+ * lamp-hunters in SHADOW. Same +1 they get against you — not a new verb.
+ * Enhanced already ignores weapon, so this only applies on a Normal bump.
+ */
+export function playerLightAtkBonus(state: GameState, enemy: Enemy): number {
+  const prefer = ENEMIES[enemy.kind].lightPrefer;
+  if (!prefer) return 0;
+  const dark = inShadow(state, state.player.x, state.player.y);
+  if (prefer === 'dark' && !dark) return 1;
+  if (prefer === 'lit' && dark) return 1;
+  return 0;
+}
+
+/** Bumping a winding foe breaks the painted charge without a new key. */
+export function interruptArmedWindup(enemy: Enemy): boolean {
+  if (!enemy.alive) return false;
+  if (enemy.windup <= 0 && enemy.intent === undefined) return false;
+  enemy.windup = 0;
+  enemy.intent = undefined;
+  return true;
+}
+
 export function flankPenalty(state: GameState): number {
   const inContact = state.enemies.filter(
     (enemy) =>
@@ -72,17 +95,26 @@ function hasEscortCover(state: GameState): boolean {
 }
 
 export function playerAttack(state: GameState, enemy: Enemy, variance: number): void {
+  const ambush = shadowAmbush(state, enemy);
   const stance = playerAttackStance(state, enemy);
-  const weapon = state.player.atk + toolAtkBonus(state);
+  const light = stance === 'normal' ? playerLightAtkBonus(state, enemy) : 0;
+  const weapon = state.player.atk + toolAtkBonus(state) + light;
   const dmg = resolveHit(weapon, enemy.def, variance, stance, state.rng);
   if (stance === 'enhanced' && hasStatus(enemy, 'stun')) pushLog(state, 'LOG-PUNISH');
+  else if (stance === 'enhanced' && ambush) pushLog(state, 'LOG-SHADOW-AMBUSH');
   else if (stance === 'enhanced') pushLog(state, 'LOG-ENHANCED');
   else if (stance === 'impaired') pushLog(state, 'LOG-IMPAIRED');
+  if (light > 0) {
+    pushLog(state, 'LOG-LIGHT-MATCH', inShadow(state, state.player.x, state.player.y) ? 'SHADOW' : 'LIT');
+  }
   enemy.hp -= dmg;
   const rem = Math.max(0, enemy.hp);
   const name = lore(ENEMIES[enemy.kind].loreName);
   pushLog(state, 'LOG-HIT', formatCombatDetail(name, dmg, rem, enemy.maxHp));
-  if (enemy.alive && enemy.hp > 0) {
+  if (enemy.hp <= 0) {
+    killEnemy(state, enemy);
+  } else if (enemy.alive) {
+    if (interruptArmedWindup(enemy)) pushLog(state, 'LOG-CHARGE-BREAK');
     const stunTurns = equipOnHitStun(equippedTool(state));
     if (stunTurns > 0) {
       addStatus(enemy, 'stun', stunTurns);
@@ -92,9 +124,7 @@ export function playerAttack(state: GameState, enemy: Enemy, variance: number): 
     const bleedTurns = equipOnHitBleed(equippedTool(state));
     if (bleedTurns > 0) addStatus(enemy, 'bleed', bleedTurns);
   }
-  if (enemy.hp <= 0) {
-    killEnemy(state, enemy);
-  }
+  enemy.alerted = true;
 }
 
 export function enemyAttack(
@@ -118,6 +148,7 @@ export function enemyAttack(
   if (prefer > 0) pushLog(state, 'LOG-SHADOW-BITE');
   else if (stance === 'enhanced') pushLog(state, 'LOG-ENHANCED');
   const result = applyPlayerDamage(state, dmg, dtype, { source: name });
+  enemy.alerted = true;
 
   if (ENEMIES[enemy.kind].behavior === 'drain') {
     state.player.energy -= 2;

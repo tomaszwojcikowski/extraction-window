@@ -53,7 +53,18 @@ export {
   PHASER_RANGE_MAX,
   PHASER_RANGE_MIN,
 } from './phaser';
-export { toolAtkBonus, armorDefBonus, meleeDamage, applyPlayerDamage, playerAttack, enemyAttack, lightPreferAtkBonus, flankPenalty } from './combat';
+export {
+  toolAtkBonus,
+  armorDefBonus,
+  meleeDamage,
+  applyPlayerDamage,
+  playerAttack,
+  enemyAttack,
+  lightPreferAtkBonus,
+  playerLightAtkBonus,
+  interruptArmedWindup,
+  flankPenalty,
+} from './combat';
 export { pushLog, recordLoreEvent, formatCombatDetail } from './log';
 export { killEnemy, markEnemyDead } from './death';
 export { manhattan, enemyAt, allyAt, npcAt } from './spatial';

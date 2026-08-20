@@ -80,15 +80,16 @@ export const LORE = {
     'COMBAT\n' +
     'Walk into a hostile to hit it. Worn Survey Phaser: step toward a visible foe 2–3 tiles along that cardinal to fire a beam (−Power); adjacent is still melee.\n' +
     'Hits compare ATK to DEF.\n' +
-    'Impaired = weaker hits (jammed, blind, or kit full). Enhanced = stronger hits (stunned or exposed foe, stim, or overcharge).\n' +
-    'Windup paints the tiles it will strike next turn — leave those tiles or kill it.\n' +
+    'Impaired = weaker hits (jammed, blind, or kit full). Enhanced = stronger hits (stunned or exposed foe, stim, overcharge, or a first SHADOW strike on an unaware foe).\n' +
+    'Windup paints the tiles it will strike next turn — leave those tiles, bump it, or kill it.\n' +
+    'Catch fauna in the light they do not want: LIT vs shadow-hunters, SHADOW vs lamp-hunters, for +1.\n' +
     'Two+ hostiles touching you drop DEF — fight in a doorway or break contact.\n' +
     'Past 0 HP: you may stay up or go downed. Field Hypo (u) stabilizes. Extra hits while downed shorten the clock.\n' +
     'Painted side tiles show where a second hunter will touch you.\n' +
     '\n' +
     'LIGHT\n' +
     'LIT — safer read · SHADOW — ambush risk. Your lamp and flares change who notices you.\n' +
-    'Some fauna bite harder in SHADOW — step to LIT. Flare lights a dark fight.\n' +
+    'Some fauna bite harder in SHADOW — step to LIT. Fight them in the opposite light for +1. Flare lights a dark fight.\n' +
     '\n' +
     'EXTRACT (pink marker)\n' +
     '1 Splice Key · 2 beacon · 3 Nav Lattice · 4 drop skiff\n' +
@@ -199,7 +200,7 @@ export const LORE = {
   'UI-HINT-FLARE':
     'Dark fight — open kit (i), select Plasma Flare, press u',
   'UI-HINT-LIGHT':
-    'SHADOW — ambush risk · LIT safer · Flare (i → select → u) lights a dark fight',
+    'SHADOW — first unaware strike is Enhanced · LIT safer · Flare lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
   'UI-HINT-CLOCKS':
     'Power = kit charge — sector drip, hazards, and kit spends drain it. Empty Power = lose.',
@@ -213,20 +214,20 @@ export const LORE = {
     'Second hunter circling — doorway or break contact before they touch both sides',
   'UI-HINT-SKILL':
     'Choose a field skill — press 1 or 2 (move locked until then)',
-  'UI-HINT-TELE': 'Windup painted — leave those tiles or kill it',
-  'UI-HINT-TELE-REACH': 'Two-tile windup — kill it or step fully clear of the painted tiles',
+  'UI-HINT-TELE': 'Windup painted — leave those tiles, bump it, or kill it',
+  'UI-HINT-TELE-REACH': 'Two-tile windup — bump it, kill it, or step fully clear of the painted tiles',
   'UI-HINT-TELE-OVERWATCH':
     'Overwatch locked — do not step adjacent; Flare cancels or kill it',
-  'UI-HINT-TELE-BEAM': 'Beam charging — break line of sight or kill it',
-  'UI-HINT-TELE-ZONE': 'Pulse charging — leave the painted ring or kill it',
+  'UI-HINT-TELE-BEAM': 'Beam charging — break line of sight, bump it, or kill it',
+  'UI-HINT-TELE-ZONE': 'Pulse charging — leave the painted ring, bump it, or kill it',
   'UI-HINT-BEACON-NEED-KEY':
     'Beacon sealed — carry the Splice Key, then Enter / Space / >',
   'UI-HINT-BRAND':
     'Branded elite — optional; equip its drop (Prism / Weave / Lens) or counter with Flare, Pulse, Filter',
   'UI-HINT-ALLY-DRONE': 'Drone lamp nearby — can cancel one overwatch every few turns',
   'UI-HINT-ALLY-ESCORT': 'Escort beside you — +1 DEF while adjacent',
-  'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT',
-  'UI-HINT-PREFER-LIT': 'This hunter prefers light — break line of sight or find shadow',
+  'UI-HINT-PREFER-DARK': 'This fauna prefers shadow — stay in LIT for +1',
+  'UI-HINT-PREFER-LIT': 'This hunter prefers light — SHADOW is +1 and they notice you less',
   'UI-HINT-QUEST': 'Optional site — follow the amber OPT line',
   'UI-HINT-QUEST-REMOTE': 'Optional site — follow amber frame · see OPT line',
   'UI-HINT-NPC': 'Field contact — press Enter / Space / > to talk',
@@ -658,7 +659,7 @@ export const LORE = {
   'LOG-DRAIN': 'Power siphoned',
   'LOG-SPORE-BURST': 'Wash spore burst — power spike and burn.',
   'LOG-TELE-SWELL': 'Spore swelling — burst imminent.',
-  'LOG-TELE-POUNCE': 'Hostile windup — one-tile lunge. Clear the ring or kill it.',
+  'LOG-TELE-POUNCE': 'Hostile windup — one-tile lunge. Clear the ring, bump it, or kill it.',
   'LOG-TELE-REACH': 'Long windup — it can cover two tiles. Backing off will not break it.',
   'LOG-CHARGE-WINDED': 'Overcommitted charge — it lands winded and open.',
   'LOG-TELE-ZONE': 'Rift charging a standoff pulse — leave the ring, Shield will not hold.',
@@ -672,6 +673,9 @@ export const LORE = {
   'LOG-PUNISH': 'It is off balance — clean hit.',
   'LOG-ENHANCED': 'Strike lands Enhanced.',
   'LOG-IMPAIRED': 'Strike lands Impaired.',
+  'LOG-SHADOW-AMBUSH': 'SHADOW ambush — unaware, Enhanced.',
+  'LOG-LIGHT-MATCH': 'Wrong light for them — +1.',
+  'LOG-CHARGE-BREAK': 'Charge broken — the windup drops.',
   'LOG-CRIT-SAVE': 'Past 0 HP — you stay on your feet.',
   'LOG-DOWNED': 'Past 0 HP — you are downed. Use Field Hypo (u) before the clock runs out.',
   'LOG-DOWNED-TICK': 'Hit while downed — the clock shortens.',

@@ -2,6 +2,7 @@ import { ENEMIES } from '../data/enemies';
 import { ALLIES, type AllyKind } from '../data/npcs';
 import { lore } from '../data/lore';
 import { bfsPath } from './fov';
+import { interruptArmedWindup } from './combat';
 import { resolveHit } from './stance';
 import { markEnemyDead } from './death';
 import { formatCombatDetail, pushLog } from './log';
@@ -48,6 +49,8 @@ function allyMelee(state: GameState, ally: Ally, enemy: Enemy): void {
   if (enemy.hp <= 0) {
     markEnemyDead(enemy);
     pushLog(state, 'LOG-ALLY-KILL', `${allyName} → ${foeName}`);
+  } else if (interruptArmedWindup(enemy)) {
+    pushLog(state, 'LOG-CHARGE-BREAK');
   }
 }
 

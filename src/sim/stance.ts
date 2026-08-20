@@ -1,5 +1,6 @@
 import { INVENTORY_SLOTS } from '../data/items';
 import { meleeDamage } from './combatMath';
+import { inShadow } from './light';
 import { hasSkill } from './progression';
 import { randInt, type Rng } from './rng';
 import { hasStatus } from './status';
@@ -33,8 +34,14 @@ export function attackStance(opts: {
   return 'normal';
 }
 
+/** First bump from SHADOW against a foe that has not engaged yet. */
+export function shadowAmbush(state: GameState, enemy: Enemy): boolean {
+  return !enemy.alerted && inShadow(state, state.player.x, state.player.y);
+}
+
 export function playerAttackStance(state: GameState, enemy: Enemy): CombatStance {
-  const helpless = hasStatus(enemy, 'stun') || hasStatus(enemy, 'expose');
+  const helpless =
+    hasStatus(enemy, 'stun') || hasStatus(enemy, 'expose') || shadowAmbush(state, enemy);
   const boosted =
     state.player.stimTurns > 0 ||
     (hasSkill(state, 'overcharge') && state.player.hp <= state.player.maxHp * 0.5);

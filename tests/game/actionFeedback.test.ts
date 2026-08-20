@@ -32,6 +32,24 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats charge break, ambush, and light matchup', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-CHARGE-BREAK' }])).toEqual([
+      { label: 'CHARGE BREAK', color: ThemeCss.tape },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-SHADOW-AMBUSH' }])).toEqual([
+      { label: 'AMBUSH', color: ThemeCss.flag },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-LIGHT-MATCH', detail: 'LIT' }])).toEqual([
+      { label: 'LIT +1', color: ThemeCss.flag },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-ENHANCED' }])).toEqual([
+      { label: 'ENHANCED', color: ThemeCss.flag },
+    ]);
+    expect(actionFloatLabels([{ loreId: 'LOG-CHARGE-WINDED' }])).toEqual([
+      { label: 'WINDED · OPEN', color: ThemeCss.flag },
+    ]);
+  });
+
   it('uses Shield naming on armor absorb floats', () => {
     expect(actionFloatLabels([{ loreId: 'LOG-ARMOR-ABSORB', detail: '-2' }])).toEqual([
       { label: 'SHIELD -2', color: ThemeCss.inkBright },

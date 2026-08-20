@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ENEMIES, type EnemyKind } from '../../src/data/enemies';
 import { enemyThreatTiles, moveEnemies } from '../../src/sim/ai';
+import { playerAttack } from '../../src/sim/combat';
 import { manhattan } from '../../src/sim/spatial';
 import { hasStatus } from '../../src/sim/status';
 import { combatArena, lastLog, makeEnemy } from './fixtures';
@@ -103,6 +104,24 @@ describe('hunt styles pose different questions', () => {
 
     expect(st.player.hp).toBe(hp);
     expect(lastLog(st, 'LOG-ZONE-FIZZLE')).toBeTruthy();
+  });
+
+  it('bumping a winding hunter breaks the charge without a new verb', () => {
+    const { st, enemy } = arenaWith('serpent', 2);
+    moveEnemies(st);
+    expect(enemy.intent).toBe('pounce');
+    expect(enemy.windup).toBe(1);
+
+    st.player.x = enemy.x - 1;
+    st.player.y = enemy.y;
+    enemy.hp = 40;
+    enemy.maxHp = 40;
+    playerAttack(st, enemy, 0);
+
+    expect(enemy.alive).toBe(true);
+    expect(enemy.windup).toBe(0);
+    expect(enemy.intent).toBeUndefined();
+    expect(lastLog(st, 'LOG-CHARGE-BREAK')).toBeTruthy();
   });
 });
 

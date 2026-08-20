@@ -153,6 +153,30 @@ export function collectActionFloatLabels(
       case 'LOG-SHADOW-BITE':
         next = { label: 'SHADOW +1', color: ThemeCss.rust };
         break;
+      case 'LOG-SHADOW-AMBUSH':
+        next = { label: 'AMBUSH', color: ThemeCss.flag };
+        break;
+      case 'LOG-LIGHT-MATCH':
+        next = {
+          label: log.detail === 'SHADOW' ? 'DARK +1' : 'LIT +1',
+          color: ThemeCss.flag,
+        };
+        break;
+      case 'LOG-CHARGE-BREAK':
+        next = { label: 'CHARGE BREAK', color: ThemeCss.tape };
+        break;
+      case 'LOG-CHARGE-WINDED':
+        next = { label: 'WINDED · OPEN', color: ThemeCss.flag };
+        break;
+      case 'LOG-ENHANCED':
+        next = { label: 'ENHANCED', color: ThemeCss.flag };
+        break;
+      case 'LOG-IMPAIRED':
+        next = { label: 'IMPAIRED', color: ThemeCss.inkDim };
+        break;
+      case 'LOG-WINDUP-KILL':
+        next = { label: 'BREAK · SALVAGE', color: ThemeCss.tape };
+        break;
       case 'LOG-HURT':
         next = {
           label:
@@ -415,7 +439,7 @@ export function actionFloatLabels(
 
 /** Labels that deserve a world-anchored float — rail carries the rest. */
 const WORLD_FLOAT_RES =
-  /^(STOWED|HP [+-]|FLANK|SHADOW \+1|OPEN · CLEAN HIT|CACHE OPEN|EXTRACT LOCK|SEALED OPEN|HANDSHAKE BROKEN|UPLINK BROKEN|PHASER ·)|INCOMING|OVERWATCH|BEAM READY|PULSE RING|SWELL ·/;
+  /^(STOWED|HP [+-]|FLANK|SHADOW \+1|LIT \+1|DARK \+1|AMBUSH|CHARGE BREAK|WINDED|ENHANCED|OPEN · CLEAN HIT|CACHE OPEN|EXTRACT LOCK|SEALED OPEN|HANDSHAKE BROKEN|UPLINK BROKEN|PHASER ·)|INCOMING|OVERWATCH|BEAM READY|PULSE RING|SWELL ·/;
 
 /** Subset of causal floats to paint over the player — salient beats only. */
 export function worldActionFloats(
@@ -499,14 +523,15 @@ export function emitActionLights(
   }
 
   if (has('LOG-HIT') || has('LOG-KILL') || has('LOG-ALLY-HIT') || has('LOG-ALLY-KILL')) {
+    const interrupt = has('LOG-CHARGE-BREAK') || has('LOG-WINDUP-KILL');
     for (const t of hitTiles) {
       lights.addFxLight({
         x: t.x,
         y: t.y,
-        radius: 2,
-        color: 0xffffff,
-        intensity: 0.9,
-        life: 1,
+        radius: interrupt ? 3 : 2,
+        color: interrupt ? LightTemp.flare : 0xffffff,
+        intensity: interrupt ? 1 : 0.9,
+        life: interrupt ? 2 : 1,
       });
     }
   }
@@ -1244,7 +1269,7 @@ export function playCombatContactJuice(
       action.dy,
     );
   }
-  if (state.player.hp < prevHp) {
+  if ((action.type === 'move' && !playerMoved) || state.player.hp < prevHp) {
     bumpMeleeAttackers(tweens, { state, enemyViews, worldXY });
   }
 }
