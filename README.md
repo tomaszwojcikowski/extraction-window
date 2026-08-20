@@ -55,3 +55,8 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 - **Rules:** headless TypeScript `src/sim/` (no Phaser)
 - **Presentation:** Phaser **4.2.1** + Vite (see [docs/V1.md](./docs/V1.md))
 - Vite + Vitest; keyboard-only; seeded runs
+
+## Deploy
+
+- **GitHub Pages:** push to `main` or tag `v*` runs [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml). Vite `base: './'` keeps asset paths relative. Live: https://tomaszwojcikowski.github.io/extraction-window/
+- **itch.io / Playables:** upload the `dist/` folder from `npm run build` (same relative-asset build).

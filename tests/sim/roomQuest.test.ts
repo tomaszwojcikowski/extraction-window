@@ -82,14 +82,14 @@ describe('room quest readability', () => {
     expect(resolveHintLine(st)).toBe('UI-RQ-SALVAGE');
   });
 
-  it('idle quest tiles stay quiet so the OPT line owns the read', () => {
+  it('off-step optional sites coach remotely without stealing the mechanic hint', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 5, y: 5 }, { x: 4, y: 4, w: 3, h: 3 });
     placeOnQuest(st, 2, 2);
     st.tiles[2]![2]!.kind = 'quest';
 
     expect(roomQuestMechanic.contextHint?.(st)).toBeNull();
-    expect(resolveHintLine(st)).toBeNull();
+    expect(resolveHintLine(st)).toBe('UI-HINT-QUEST-REMOTE');
   });
 });
 
@@ -148,7 +148,7 @@ describe('room quest flows', () => {
     expect(st.roomQuest.stepIndex).toBe(1);
     expect(st.inventory.some((s) => s.kind === 'sealant')).toBe(false);
     expect(st.log.some((e) => e.loreId === 'LOG-RQ-VENT-SEALED')).toBe(true);
-    expect(resolveHintLine(st)).toBeNull();
+    expect(resolveHintLine(st)).toBe('UI-HINT-QUEST-REMOTE');
 
     placeOnQuest(st, 4, 2);
     expect(resolveHintLine(st)).toBe('UI-RQ-VENT-B');

@@ -53,17 +53,32 @@ export function syncShearReadout(
     shear.state === 'Breaching' ? Theme.arcWhite : shear.state === 'Arcing' ? Theme.arc : Theme.tape;
   refs.shearPlate.setVisible(true);
   drawHintPlate(refs.shearPlate, opts.screenW / 2, 7 + th / 2, tw, th, { originX: 0.5 });
-  const pw = Math.max(48, tw + 16);
-  const ph = Math.max(16, th + 8);
-  const px = Math.round(opts.screenW / 2 - pw / 2);
-  const py = Math.round(7 + th / 2 - ph / 2);
-  refs.shearPlate.fillStyle(accent, 0.9);
-  refs.shearPlate.fillRect(px + 1, py + 1, 3, ph - 3);
+  const strip = shearAccentStrip(opts.screenW, tw, th, shear.state);
+  refs.shearPlate.fillStyle(accent, shear.state === 'Breaching' ? 1 : 0.9);
+  refs.shearPlate.fillRect(strip.x, strip.y, strip.w, strip.h);
 
   return { stateChanged, enteredBreaching };
 }
 
+/**
+ * Hazard-tape strip sits left of the label so Charged+ reads as colour
+ * before the player has to parse POWER / EM text.
+ */
+export function shearAccentStrip(
+  screenW: number,
+  textW: number,
+  textH: number,
+  state: ShearPressureState,
+): { x: number; y: number; w: number; h: number } {
+  const pw = Math.max(48, Math.ceil(textW) + 16);
+  const ph = Math.max(16, Math.ceil(textH) + 8);
+  const px = Math.round(screenW / 2 - pw / 2);
+  const py = Math.round(7 + Math.ceil(textH) / 2 - ph / 2);
+  const w = state === 'Breaching' ? 5 : 4;
+  return { x: px - w - 1, y: py, w, h: ph };
+}
+
 /** Flash duration when shear state escalates. */
 export function shearFlashMs(state: ShearPressureState): number {
-  return state === 'Breaching' ? 280 : 200;
+  return state === 'Breaching' ? 420 : 200;
 }

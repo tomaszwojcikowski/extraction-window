@@ -190,7 +190,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 |------|-------|
 | LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
 | Per-sector crack-path art | Done — `drawPressureCrack` / `pressureRevealAt` overlay motifs at Arcing+ |
-| Breaching climax juice | Partial — hot crack motif + pinpricks at Breaching; full climax still deferred |
+| Breaching climax juice | Done — mote spike at Arcing/Breaching + hotter shear_breach cue |
 
 ## 9. Gates
 

@@ -1,5 +1,7 @@
 # Pass 2 QA — Preview Wakes, Engage Parity, Room-Economy
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Branch:** `feat/bold-experiment` · **Author:** QA · **Status:** complete  
 **Inputs:** [`PASS2_DESIGN.md`](./PASS2_DESIGN.md), [`PASS2_ART.md`](./PASS2_ART.md), [`PASS1_QA.md`](./PASS1_QA.md)
 

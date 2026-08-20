@@ -27,3 +27,27 @@ export function findClockLies(lore: Readonly<Record<string, string>>): string[] 
   }
   return hits;
 }
+
+/** Player lore must not teach Shift-peek / confirm-on-`.` — Wave 24 cut. */
+export const PEEK_LIE_PATTERNS: ReadonlyArray<RegExp> = [
+  /Shift\s*\+?\s*(peek|direction|dir)/i,
+  /Shift peek/i,
+  /hold Shift/i,
+  /peek wake/i,
+  /peek-teach/i,
+  /confirm-on-\./i,
+  /queue(?:s|d)? (?:the )?move/i,
+];
+
+export function findPeekLies(lore: Readonly<Record<string, string>>): string[] {
+  const hits: string[] = [];
+  for (const [id, text] of Object.entries(lore)) {
+    for (const pat of PEEK_LIE_PATTERNS) {
+      if (pat.test(text)) {
+        hits.push(`${id}: ${text.slice(0, 96)}`);
+        break;
+      }
+    }
+  }
+  return hits;
+}

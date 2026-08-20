@@ -149,8 +149,16 @@ export class EndScene extends Phaser.Scene {
       .filter(Boolean)
       .join('\n');
 
+    const summaryY = height * 0.54;
+    const kitPlate = this.add.graphics();
+    drawPlate(kitPlate, width / 2 - 168, summaryY - 36, 336, 88, {
+      fill: Theme.ground,
+      alpha: 0.88,
+    });
+    drawTapeStrip(kitPlate, width / 2 - 154, summaryY - 28, 72, 7, accent, 0.75);
+
     this.add
-      .text(width / 2, height * 0.54, summary, {
+      .text(width / 2, summaryY, summary, {
         fontFamily: FONT_DATA,
         fontSize: '12px',
         color: ThemeCss.inkMute,

@@ -121,8 +121,9 @@ If a feature doesn’t serve one of these (or a V1 pillar), it’s probably nois
 - WASD moves immediately; `.` waits.
 - Windup paint on the ground is the planning read — leave the tiles or kill mid-charge.
 - LIT / SHADOW badge + Flare coach light risk without predictive foot lines.
+- Live wake tells at the player's feet. **No Shift-peek, move-preview ghost, or confirm-on-`.`** — permanently cut.
 
-**Anti-pattern:** Reintroducing queue-on-WASD / confirm-on-`.` “for clarity.”
+**Anti-pattern:** Reintroducing queue-on-WASD / confirm-on-`.` “for clarity,” or a Shift planning layer.
 
 ---
 

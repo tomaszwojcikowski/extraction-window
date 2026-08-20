@@ -1,5 +1,7 @@
 # Pass 3 — Bold Design Finale Brief
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Author:** Game Designer · **Branch:** `feat/bold-experiment` · **Status:** design only, no code
 
 Inputs: [`PASS1_DESIGN.md`](./PASS1_DESIGN.md), [`PASS1_QA.md`](./PASS1_QA.md), [`PASS2_DESIGN.md`](./PASS2_DESIGN.md), [`PASS2_ART.md`](./PASS2_ART.md), [`PASS2_QA.md`](./PASS2_QA.md)

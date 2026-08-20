@@ -1,5 +1,7 @@
 # Pass 4 QA — Notice Impact, Peek Teach, Fluid Lock
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Branch:** `cursor/pass4-feel-polish-44bc` · **Author:** QA · **Status:** complete  
 **Inputs:** [`PASS4_DESIGN.md`](./PASS4_DESIGN.md), [`PASS4_ART.md`](./PASS4_ART.md), [`PASS3_QA.md`](./PASS3_QA.md)  
 **Art commit reviewed:** `9a37a97` (`feat: pass4 art — notice impact, peek teach, fluid-lock copy`)

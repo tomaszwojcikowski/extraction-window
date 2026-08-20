@@ -8,6 +8,7 @@ import { flankPenalty } from '../../sim/combat';
 import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
+import { activeQuestStep } from '../../sim/roomQuest';
 import { pillarCoachHint } from './PillarCoach';
 import { phaserContextHint } from './PhaserLanes';
 
@@ -98,9 +99,15 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-BEACON';
   }
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
-  // Active optional-site coaching comes from roomQuestMechanic (step prompt).
-  // Other quest tiles stay quiet — amber frame + OPT line carry the read.
-  if (tile.kind === 'quest') return null;
+  if (tile.kind === 'quest') {
+    const rq = st.roomQuest;
+    if (!rq || rq.done) return null;
+    const step = activeQuestStep(rq);
+    if (step && (st.player.x !== step.pos.x || st.player.y !== step.pos.y)) {
+      return 'UI-HINT-QUEST-REMOTE';
+    }
+    return null;
+  }
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
     return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
   }
@@ -166,6 +173,14 @@ export function contextHint(st: GameState): LoreId | null {
 
   const pillar = pillarCoachHint(st);
   if (pillar) return pillar;
+
+  const rq = st.roomQuest;
+  if (rq && !rq.done) {
+    const step = activeQuestStep(rq);
+    if (step && (st.player.x !== step.pos.x || st.player.y !== step.pos.y)) {
+      return 'UI-HINT-QUEST-REMOTE';
+    }
+  }
 
   return null;
 }

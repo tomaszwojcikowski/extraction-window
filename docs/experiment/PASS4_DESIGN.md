@@ -1,5 +1,7 @@
 # Pass 4 — Post-Merge Feel Brief (Fluid Move)
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Author:** Game Designer · **Branch:** `cursor/pass4-design-fluid-4e9e` · **Status:** design only, no code
 
 Inputs: [`PASS3_DESIGN.md`](./PASS3_DESIGN.md), [`PASS3_QA.md`](./PASS3_QA.md), [`PASS3_ART.md`](./PASS3_ART.md), current `InputController.ts`, `WakeTells.ts`, `ShearPressure.ts`, `PressureReveal.ts`, lore MOVE/PEEK strings.

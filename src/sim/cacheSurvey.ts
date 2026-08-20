@@ -4,11 +4,12 @@ import { pushLog } from './log';
 import { gainXp } from './progression';
 
 export function cacheRoomList(state: GameState): MapRoom[] {
-  return state.rooms.filter((r) => r.role === 'cache');
+  return (state.rooms ?? []).filter((r) => r.role === 'cache');
 }
 
 export function roomAt(state: GameState, x: number, y: number): MapRoom | null {
-  for (const r of state.rooms) {
+  const rooms = state.rooms ?? [];
+  for (const r of rooms) {
     if (x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h) return r;
   }
   return null;

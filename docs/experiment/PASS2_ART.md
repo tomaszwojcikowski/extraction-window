@@ -1,5 +1,7 @@
 # Pass 2 Art — Preview Wakes, Engage Parity, Shear Room-Economy
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Branch:** `feat/bold-experiment` · **Author:** Art · **Status:** shipped (Pass 2 vertical slice)
 
 Inputs: [`PASS2_DESIGN.md`](./PASS2_DESIGN.md), [`PASS1_QA.md`](./PASS1_QA.md)

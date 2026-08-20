@@ -1,5 +1,7 @@
 # Pass 3 Art — Confirm-on-Wait, Exit Stable, Commit Ghost
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Branch:** `feat/bold-experiment` · **Author:** Art · **Status:** shipped (Pass 3 vertical slice)
 
 Inputs: [`PASS3_DESIGN.md`](./PASS3_DESIGN.md), [`PASS2_ART.md`](./PASS2_ART.md)

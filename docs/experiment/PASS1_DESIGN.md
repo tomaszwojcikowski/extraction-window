@@ -1,5 +1,7 @@
 # Pass 1 — Bold Design Brief
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Author:** Game Designer · **Branch:** `feat/bold-experiment` · **Status:** design only, no code
 
 This is pass 1 of 3 on the experimental branch: **design → art → QA**. V1 conservatism is off. Balance band (55–85% WR) still matters *eventually*, but this pass optimizes for **feeling** and **decision quality**, not safety. Read alongside [`../V1.md`](../V1.md) (pillars), [`../WORLD.md`](../WORLD.md) (fiction), and [`../../src/sim/light.ts`](../../src/sim/light.ts) (the light math we're building on, not replacing).

@@ -3,7 +3,7 @@ import { TILE_DRAW } from '../../scenes/textures';
 import { Theme, crackTextureKey } from '../../scenes/theme';
 import { tileBrightness } from '../../sim/light';
 import type { GameState } from '../../sim/types';
-import { computeShearPressure } from './ShearPressure';
+import { computeShearPressure, type ShearPressureSpec } from './ShearPressure';
 import { pressureRevealAt } from './PressureReveal';
 import { drawThreatZones } from '../views/ThreatView';
 import { drawWakeTells } from './WakeTells';
@@ -43,22 +43,26 @@ export function drawFieldMotes(
   g: Phaser.GameObjects.Graphics,
   st: GameState,
   animFrame: number,
+  shear?: ShearPressureSpec,
 ): void {
   g.clear();
   let count = 0;
-  const maxMotes = 52;
+  const climax = shear?.state === 'Breaching';
+  const arcing = shear?.state === 'Arcing';
+  const maxMotes = climax ? 78 : arcing ? 62 : 52;
   const sector = st.sectorId;
 
   for (let y = 0; y < st.height && count < maxMotes; y++) {
     for (let x = 0; x < st.width && count < maxMotes; x++) {
       if (!st.visible[y]?.[x] || tileBrightness(st, x, y) < 0.22) continue;
       const hash = (x * 73856093) ^ (y * 19349663) ^ (st.seed * 83492791);
-      const dens =
+      const densBase =
         sector === 'ash' || sector === 'duct' || sector === 'brine' || sector === 'flood'
           ? 5
           : sector === 'canopy' || sector === 'reef'
             ? 6
             : 8;
+      const dens = climax ? Math.max(3, densBase - 2) : arcing ? Math.max(4, densBase - 1) : densBase;
       if (Math.abs(hash) % dens !== animFrame % Math.min(4, dens)) continue;
 
       const ox = 4 + (Math.abs(hash >> 7) % Math.max(1, TILE_DRAW - 8));
@@ -89,6 +93,10 @@ export function drawFieldMotes(
         const ion = (Math.abs(hash >> 4) + animFrame) % 6 === 0;
         g.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.45 : 0.26);
         g.fillRect(px, py, ion ? 2 : 1, ion ? 2 : 1);
+      }
+      if (climax && (hash & 7) === 0) {
+        g.fillStyle(Theme.arcWhite, 0.32);
+        g.fillRect(px + 1, py - 1, 1, 1);
       }
       count += 1;
     }
@@ -157,7 +165,7 @@ export function applyFieldLightingPass(host: FieldLightingHost, st: GameState): 
   );
   if (pending) return;
 
-  drawFieldMotes(host.fieldMotes, st, host.animFrame);
+  drawFieldMotes(host.fieldMotes, st, host.animFrame, shear);
   host.lightView.drawBloom(sources, st.visible, st.tiles, st.sectorId);
   host.lightView.drawDynamicShadows(st, host.shadowCasters(), sources, host.firstLight);
   host.applyAllActorLighting(sources);
