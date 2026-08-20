@@ -98,6 +98,47 @@ export class Px {
     }
   }
 
+  /** 1px ring — no AA, no fill. */
+  strokeDisc(cx: number, cy: number, r: number, color: number): void {
+    const r0 = (r - 0.55) * (r - 0.55);
+    const r1 = (r + 0.55) * (r + 0.55);
+    const x0 = Math.floor(cx - r - 1);
+    const y0 = Math.floor(cy - r - 1);
+    const x1 = Math.ceil(cx + r + 1);
+    const y1 = Math.ceil(cy + r + 1);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const dx = x + 0.5 - cx;
+        const dy = y + 0.5 - cy;
+        const d = dx * dx + dy * dy;
+        if (d >= r0 && d <= r1) this.set(x, y, color);
+      }
+    }
+  }
+
+  strokeEllipse(cx: number, cy: number, rx: number, ry: number, color: number): void {
+    if (rx <= 0 || ry <= 0) return;
+    const x0 = Math.floor(cx - rx - 1);
+    const y0 = Math.floor(cy - ry - 1);
+    const x1 = Math.ceil(cx + rx + 1);
+    const y1 = Math.ceil(cy + ry + 1);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const dx = (x + 0.5 - cx) / rx;
+        const dy = (y + 0.5 - cy) / ry;
+        const d = dx * dx + dy * dy;
+        if (d >= 0.78 && d <= 1.18) this.set(x, y, color);
+      }
+    }
+  }
+
+  /** Write only into empty cells — for contact plants after the body is drawn. */
+  setEmpty(x: number, y: number, color: number): void {
+    if (!this.in(x, y)) return;
+    if (this.data[this.i(x, y) + 3]! > 8) return;
+    this.set(x, y, color);
+  }
+
   fillEllipse(cx: number, cy: number, rx: number, ry: number, color: number, a = 255): void {
     if (rx <= 0 || ry <= 0) return;
     const x0 = Math.floor(cx - rx);
