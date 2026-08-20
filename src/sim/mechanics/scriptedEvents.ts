@@ -1,4 +1,5 @@
 import { activeQuestStep } from '../roomQuest';
+import { questBriefLogId } from './roomQuestMechanic';
 import { pushLog } from '../log';
 import { addEmStress } from '../emStress';
 import type { GameState } from '../types';
@@ -53,6 +54,7 @@ export const scriptedEventsMechanic: Mechanic = {
       markQuestOnMap(state);
       const step = activeQuestStep(state.roomQuest);
       if (step) revealRoomPulse(state, step.room);
+      pushLog(state, questBriefLogId(state.roomQuest.kind));
     }
 
     if (state.sectorId === 'approach') {

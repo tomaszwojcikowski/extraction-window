@@ -20,6 +20,10 @@ import { npcKindForSector } from '../data/npcs';
 import { canReach } from '../sim/fov';
 import { mulberry32, pick, randInt, shuffle, type Rng } from '../sim/rng';
 import {
+  rollCacheWearable,
+  rollHazardWearable,
+} from '../data/wearableLoot';
+import {
   buildVentSealQuest,
   buildSingleRoomQuest,
   isMultiSiteKind,
@@ -625,8 +629,21 @@ export function generateSectorMap(
   const lootN = randInt(rng, sector.lootCount[0], sector.lootCount[1]);
   for (const fill of planLoot(rooms, lootN, rng)) {
     const spots = openIn(fill.room);
+    const isCache = fill.room.role === 'cache';
+    const isHazard = fill.room.role === 'hazard';
     for (let i = 0; i < fill.count && i < spots.length; i++) {
-      const kind = pick(rng, sector.lootTable);
+      let kind: ItemKind;
+      if (isCache) {
+        kind =
+          rollCacheWearable(sector.index, sector.id, rng) ??
+          pick(rng, sector.lootTable);
+      } else if (isHazard) {
+        kind =
+          rollHazardWearable(sector.index, sector.id, rng) ??
+          pick(rng, sector.lootTable);
+      } else {
+        kind = pick(rng, sector.lootTable);
+      }
       items.push({ id: nextEntityId++, kind, x: spots[i]!.x, y: spots[i]!.y });
     }
   }

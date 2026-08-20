@@ -11,6 +11,7 @@ import {
 } from './atmosphere';
 import { ambient, music, sfx } from '../audio';
 import { SKILLS, type SkillId } from '../data/progression';
+import { shortEquipName, type ItemKind } from '../data/items';
 
 export class EndScene extends Phaser.Scene {
   private status: 'won' | 'lost' = 'lost';
@@ -20,6 +21,7 @@ export class EndScene extends Phaser.Scene {
   private level = 1;
   private skills: SkillId[] = [];
   private objective = '';
+  private loadout: ItemKind[] = [];
 
   constructor() {
     super('End');
@@ -33,6 +35,7 @@ export class EndScene extends Phaser.Scene {
     level?: number;
     skills?: SkillId[];
     objective?: string;
+    loadout?: ItemKind[];
   }): void {
     this.status = data.status;
     this.loseReason = data.loseReason;
@@ -41,6 +44,7 @@ export class EndScene extends Phaser.Scene {
     this.level = data.level ?? 1;
     this.skills = data.skills ?? [];
     this.objective = data.objective ?? '';
+    this.loadout = data.loadout ?? [];
   }
 
   create(): void {
@@ -132,9 +136,14 @@ export class EndScene extends Phaser.Scene {
     const skillNames = this.skills
       .map((id) => lore(SKILLS[id].loreName))
       .join(', ');
+    const worn =
+      this.loadout.length > 0
+        ? this.loadout.map((k) => shortEquipName(k)).join(' · ')
+        : null;
     const summary = [
       this.objective ? `OBJ  ${this.objective}` : null,
       `LVL  ${this.level}${skillNames ? `  /  ${skillNames}` : ''}`,
+      worn ? `KIT  ${worn}` : null,
       `MISSION ${this.seed}   /   turn ${this.turn}`,
     ]
       .filter(Boolean)

@@ -5,6 +5,7 @@ import { addItem, hasItem, removeOne } from '../inventory';
 import { pushLog } from '../log';
 import { gainXp } from '../progression';
 import { isItemWorn } from '../equip';
+import { nearestUnlootedCache } from '../cacheSurvey';
 import { allyAt, enemyAt, manhattan, npcAt } from '../spatial';
 import type { Action, Ally, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
@@ -214,6 +215,15 @@ export function tryHailNpc(state: GameState): boolean {
 
 export const npcMechanic: Mechanic = {
   id: 'field_npc',
+
+  onSectorEnter(state: GameState): void {
+    if (!commWorn(state)) return;
+    const key = `comm_cache_hint_${state.sectorIndex}`;
+    if (state.scriptedFired[key]) return;
+    if (!nearestUnlootedCache(state)) return;
+    state.scriptedFired[key] = true;
+    pushLog(state, 'LOG-COMM-CACHE-HINT');
+  },
 
   tryAction(state: GameState, action: Action): boolean {
     if (action.type !== 'exit') return false;

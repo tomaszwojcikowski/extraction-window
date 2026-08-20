@@ -4,6 +4,8 @@ import { extractTrack, type GameState } from '../../sim';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { questKindLabel } from '../../sim/mechanics/roomQuestMechanic';
+import { netLoadoutTagSummary, hasWornLoadout } from '../../sim/equipTagLines';
 import { encumbered, fieldPosition, playerHudStance } from '../../sim/stance';
 import { hasStatus, statusHud } from '../../sim/status';
 import { Theme } from '../../scenes/theme';
@@ -140,10 +142,20 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.roomQuest && !state.roomQuest.done) {
     const n = state.roomQuest.steps.length;
     const i = state.roomQuest.stepIndex + 1;
+    const kind = lore(questKindLabel(state.roomQuest.kind));
     chips.push({
-      label: n > 1 ? `${lore('UI-QUEST-BADGE')} ${i}/${n}` : lore('UI-QUEST-BADGE'),
+      label: n > 1 ? `${kind} ${i}/${n}` : kind,
       fill: Theme.tape,
     });
+  }
+  if (hasWornLoadout(state)) {
+    const tags = netLoadoutTagSummary(state);
+    if (tags.length > 0) {
+      chips.push({
+        label: `${lore('UI-LOADOUT-CHIP')} ${tags.slice(0, 2).join(' · ')}`,
+        fill: Theme.inkMute,
+      });
+    }
   }
   if (state.extractFavor) {
     chips.push({ label: FAVOR_LABEL[state.extractFavor.kind], fill: Theme.safe });

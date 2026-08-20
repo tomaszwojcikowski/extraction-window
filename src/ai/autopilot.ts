@@ -15,11 +15,41 @@ import { manhattan } from '../sim/spatial';
 import type { SkillId } from '../data/progression';
 import { EM_WARN, EM_HIGH } from '../sim/emStress';
 import { inShadow, isLit } from '../sim/light';
+import { cacheRoomList, cacheCenter } from '../sim/cacheSurvey';
+import { equipSlotsFor, isItemWorn } from '../sim/equip';
+import { wearableLootForSector } from '../data/wearableLoot';
 
 /** Optional kit spends keep headroom above the persona recharge floor. */
 function canBurnKit(state: GameState, cost: number, persona: Persona): boolean {
   const reserve = state.player.maxEnergy * Math.max(persona.rechargeAt, 0.45);
   return state.player.energy >= reserve + cost;
+}
+
+/** Empty equip slot could accept a sector-table wearable from cache loot. */
+function wantsCacheWearable(state: GameState): boolean {
+  if (state.sectorIndex < 8) return false;
+  const pool = wearableLootForSector(state.sectorId);
+  return pool.some((kind) => {
+    if (isItemWorn(state, kind)) return false;
+    if (state.inventory.some((s) => s.kind === kind)) return false;
+    const slots = equipSlotsFor(kind);
+    return slots.some((s) => state.player.equip[s] === null);
+  });
+}
+
+function nearestCacheDetour(state: GameState): { x: number; y: number } | null {
+  let best: { x: number; y: number } | null = null;
+  let bestD = Infinity;
+  for (const r of cacheRoomList(state)) {
+    if (r.cacheLooted) continue;
+    const pos = cacheCenter(r);
+    const d = manhattan(state.player.x, state.player.y, pos.x, pos.y);
+    if (d < bestD) {
+      bestD = d;
+      best = pos;
+    }
+  }
+  return best;
 }
 
 /**
@@ -499,6 +529,27 @@ export function chooseAction(
     }
     return false;
   };
+
+  if (
+    wantsCacheWearable(state) &&
+    state.sectorIndex >= 10 &&
+    state.player.energy > state.player.maxEnergy * 0.5 &&
+    state.player.hp > state.player.maxHp * 0.65
+  ) {
+    const cacheGoal = nearestCacheDetour(state);
+    if (cacheGoal) {
+      const direct = manhattan(x, y, goal.x, goal.y);
+      const via =
+        manhattan(x, y, cacheGoal.x, cacheGoal.y) +
+        manhattan(cacheGoal.x, cacheGoal.y, goal.x, goal.y);
+      if (via <= direct + 2) {
+        const cachePath = bfsPath(state.tiles, { x, y }, cacheGoal, blockedElites);
+        if (cachePath && cachePath[0]) {
+          return { type: 'move', dx: cachePath[0].x - x, dy: cachePath[0].y - y };
+        }
+      }
+    }
+  }
 
   const path = bfsPath(state.tiles, { x, y }, goal, blockedElites);
   if (path && path[0]) {

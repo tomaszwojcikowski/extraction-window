@@ -4,11 +4,13 @@ import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { scaleEnemyCombat } from '../data/difficulty';
 import { XP_ROOM_QUEST } from '../data/progression';
+import { addItem } from './inventory';
 import { pushLog } from './log';
 import { gainXp } from './progression';
 import { pick, randInt } from './rng';
 import { favorForQuest, grantExtractFavor } from './extractFavor';
 import { pickFactCodex } from './facts';
+import { pickWearableLoot } from '../data/wearableLoot';
 import type { GameState, Pos, QuestStep, RoomQuest, RoomQuestKind } from './types';
 
 const CODEX_BY_SECTOR: Partial<Record<string, LoreId>> = {
@@ -265,6 +267,9 @@ function finishQuestLoot(state: GameState, better: boolean): void {
     const c = pick(state.rng, ['energy', 'plate', 'probe'] as ItemKind[]);
     addLoot(state, c);
     names.push(lore(ITEMS[c].loreName));
+  } else if (state.sectorIndex >= 6 && state.rng() < 0.15) {
+    const wear = pickWearableLoot(state.sectorId, state.rng);
+    if (addItem(state, wear)) names.push(lore(ITEMS[wear].loreName));
   }
   pushLog(state, 'LOG-PICKUP', names.join(', '));
   grantQuestPayoff(state, better ? 'good' : 'basic');
@@ -352,7 +357,7 @@ export function tryRoomQuest(state: GameState): boolean {
   }
   if (rq.kind === 'purge') {
     if (rq.stage < 2) {
-      pushLog(state, 'LOG-RQ-NEED');
+      pushLog(state, rq.stage === 0 ? 'LOG-RQ-PURGE-NEED-WAKE' : 'LOG-RQ-PURGE-NEED-CLEAR');
       return true;
     }
     rq.done = true;
@@ -364,7 +369,7 @@ export function tryRoomQuest(state: GameState): boolean {
   }
   if (rq.kind === 'vent_seal') {
     if (rq.stepIndex === 0) {
-      pushLog(state, 'LOG-RQ-NEED');
+      pushLog(state, 'LOG-RQ-VENT-NEED-SEALANT');
       return true;
     }
     advanceStep(state);
@@ -399,6 +404,11 @@ export function isMultiSiteKind(kind: RoomQuestKind): boolean {
 
 export function questStepPrompt(rq: RoomQuest): LoreId | null {
   if (rq.done) return null;
+  if (rq.kind === 'purge') {
+    if (rq.stage <= 0) return 'UI-RQ-PURGE';
+    if (rq.stage === 1) return 'UI-RQ-PURGE-WAKE';
+    return 'UI-RQ-PURGE-CLAIM';
+  }
   const step = activeQuestStep(rq);
   return step?.prompt ?? null;
 }

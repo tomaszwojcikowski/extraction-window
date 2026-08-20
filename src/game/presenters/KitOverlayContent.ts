@@ -11,6 +11,7 @@ import {
 import { KIT_POWER_COST } from '../../sim/bus';
 import { equipSlotsFor, isItemWorn, resolveEquipTarget } from '../../sim/equip';
 import { wornTagMax } from '../../sim/equipTags';
+import { equipTagLines, hasWornLoadout, netLoadoutTagSummary } from '../../sim/equipTagLines';
 import type { GameState } from '../../sim/types';
 import { encumbered } from '../../sim/stance';
 import { kitUseFeedback } from './KitFeedback';
@@ -170,6 +171,11 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
     lines.push(SEP);
     lines.push(`${lore(def.loreName).toUpperCase()}  ×${selectedItem.count}`);
     pushWrapped(lines, lore(def.loreDesc));
+    if (equipSlotsFor(selectedItem.kind).length > 0) {
+      for (const tag of equipTagLines(selectedItem.kind)) {
+        lines.push(`${lore('UI-KIT-TAGS')}: ${tag}`);
+      }
+    }
     lines.push(itemActionHint(st, selectedItem.kind));
     const power = kitPowerCost(st, selectedItem.kind);
     if (power !== null) {
@@ -186,6 +192,14 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
   if (feedback) {
     lines.push(SEP);
     pushWrapped(lines, `${lore('UI-KIT-FEEDBACK')} ${feedback}`);
+  }
+
+  if (hasWornLoadout(st)) {
+    const net = netLoadoutTagSummary(st);
+    if (net.length > 0) {
+      lines.push(SEP);
+      lines.push(`${lore('UI-LOADOUT-NET')}: ${net.join(' · ')}`);
+    }
   }
 
   lines.push(SEP);

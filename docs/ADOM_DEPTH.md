@@ -105,7 +105,8 @@ Depth of *craft* rather than new systems: lock the filters, bind optional text t
 | Scope filter doc ([`GEM.md`](GEM.md)) + land [`DESIGN_PRINCIPLES.md`](DESIGN_PRINCIPLES.md) on main | Done |
 | Doc drift: PLAN harness-only + Phaser 4; V1 quest table matches `pickRoomQuestKind` | Done |
 | Locked look ([`art/ART_BIBLE.md`](art/ART_BIBLE.md)) — palette/emitter owners, chrome budget, rejects | Done |
-| Feel debt: peek-teach / Notice Impact (experiment branches) | **Out of scope** — not merged to main |
+| Feel debt: Shift-peek / peek-teach | **Cut** — not on main; see Wave 24 |
+| Notice Impact (experiment branch) | **Out of scope** — optional presentation only |
 | `GameScene` shrink — extract remaining orchestration to presenters | **Done** — `TurnPresenter.ts`, `FieldLighting.ts`, `ActorSync.ts` (~1,600 lines) |
 | Oracle telemetry: peak EM, IDs used, stuck reason codes | Done |
 | Reporting personas (`stable` / `quiet` / `probe` / `reckless`) via `playtest --personas` | Done |
@@ -489,6 +490,78 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 **GEM:** each branded wearable trades kit space for one readable brand-counter pressure.
 
 **Tag:** `v1.2.0` when `test:balance` green.
+
+---
+
+## Wave 24 — UI/doc sync (done)
+
+| Ticket | Status |
+|--------|--------|
+| Kit two-column overlay + scroll + equip detail | Done |
+| Title minimal chrome; dock legend; skills chip | Done |
+| Kit overflow fix (panel height from wrapped lines) | Done |
+| Peek purge — Shift-peek cut in canon + experiment README | Done |
+| ADOM / V1 / PLAN wave list sync | Done |
+
+**Tag:** `v1.2.1` — presentation-only.
+
+---
+
+## Wave 25 — Clearer optional quests (done)
+
+| Ticket | Status |
+|--------|--------|
+| Kind / cost / payoff on HUD quest line | Done |
+| Purge stage prompts (wake → clear → claim) | Done |
+| Remote coaching hint + sector-enter brief | Done |
+| Help: amber dashed frame = optional site | Done |
+
+---
+
+## Wave 29 — Loadout readout (done)
+
+| Ticket | Status |
+|--------|--------|
+| `equipTagLines` + net loadout summary in kit | Done |
+| HUD loadout chip (net tag tradeoffs) | Done |
+
+---
+
+## Wave 30 — Cache economy (done)
+
+| Ticket | Status |
+|--------|--------|
+| `wearableLootForSector` — biome cache/hazard bias | Done |
+| Sealed hatch depth gloves/boots roll | Done |
+
+---
+
+## Wave 31 — Sector survey (done)
+
+| Ticket | Status |
+|--------|--------|
+| Cache room looted tracking + sector clear log/XP | Done |
+| Mapper ping nearest unlooted cache | Done |
+
+---
+
+## Wave 32 — Quest & hunt payouts (done)
+
+| Ticket | Status |
+|--------|--------|
+| Salvage quest wearable roll (sector ≥ 6) | Done |
+| Comm worn → cache bearing hint once/sector | Done |
+| Elite minimap pip when explored | Done |
+
+---
+
+## Wave 26 — End screen polish (done)
+
+| Ticket | Status |
+|--------|--------|
+| EndScene loadout + skills summary | Done |
+
+**Suggested tag after Waves 25–32:** `v1.3.0` when balance green.
 
 ---
 

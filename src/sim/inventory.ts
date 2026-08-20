@@ -22,6 +22,12 @@ import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
+import {
+  cacheCenter,
+  markCacheRoomLooted,
+  nearestUnlootedCache,
+  roomAt,
+} from './cacheSurvey';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
 import { addLightSource, inShadow, isLit, LIGHT_TEMP, rebuildIllumination } from './light';
@@ -296,11 +302,14 @@ export function useSelected(state: GameState): boolean {
       spendPower(state, KIT_POWER_COST.filter, 'LOG-USE-FILTER');
       break;
     }
-    case 'mapper':
+    case 'mapper': {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
+      const cache = nearestUnlootedCache(state);
+      state.mapperPing = cache ? cacheCenter(cache) : null;
       removeOne(state, kind);
-      pushLog(state, 'LOG-USE-MAPPER');
+      pushLog(state, cache ? 'LOG-USE-MAPPER-CACHE' : 'LOG-USE-MAPPER');
       break;
+    }
     case 'flare': {
       if (tryUseUplinkAid(state, 'flare')) {
         removeOne(state, kind);
@@ -465,6 +474,8 @@ export function tryPickup(state: GameState): boolean {
   if (!addItem(state, item.kind)) return false;
   state.items = state.items.filter((i) => i.id !== item.id);
   state.lootTakenThisSector = true;
+  const cacheRoom = roomAt(state, state.player.x, state.player.y);
+  if (cacheRoom?.role === 'cache') markCacheRoomLooted(state, cacheRoom);
   pushLog(state, 'LOG-PICKUP', lore(ITEMS[item.kind].loreName));
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');
