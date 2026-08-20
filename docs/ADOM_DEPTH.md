@@ -584,6 +584,27 @@ Playtest after Wave 26 closeout: **21/30 (70%)**, stuck=1 (~11% of losses), hp+e
 
 ---
 
+## Waves 33–42 — Presentation wrap (done)
+
+Chrome honesty and glance readability after ART_BIBLE §8 closeout. No Notice Impact, peek, or balance retune.
+
+| Wave | Ticket | Status |
+|------|--------|--------|
+| 33 | Title/End `drawMenuPlate` parity + Title vignette | Done |
+| 34 | Shear hazard tape + pulsing leg glyphs | Done |
+| 35 | Quest vs cache pressure motifs; landmarks silent | Done |
+| 36 | HUD chip priority + `+N` overflow (`HUD_BADGE_SLOTS`) | Done |
+| 37 | Kit section plates + Power trough meter | Done |
+| 38 | Minimap kit chrome + quest/cache/elite pips | Done |
+| 39 | One-line shear escalate / breach stings (`m` mute) | Done |
+| 40 | Contact sheet chrome + pressure motif QA | Done |
+| 41 | Meridian hostile/note display names | Done |
+| 42 | Dead `hush` profile removed; Pages `base: './'` confirmed | Done |
+
+**Tag:** `v1.4.0` — presentation-only.
+
+---
+
 ## Explicit defer (post-v1)
 
 Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

@@ -6,6 +6,7 @@ import {
   addCameraAtmosphere,
   drawBolt,
   drawMenuChrome,
+  drawMenuPlate,
   drawPlate,
   drawTapeStrip,
 } from './atmosphere';
@@ -22,6 +23,8 @@ export class EndScene extends Phaser.Scene {
   private skills: SkillId[] = [];
   private objective = '';
   private loadout: ItemKind[] = [];
+  private muteText!: Phaser.GameObjects.Text;
+  private won = false;
 
   constructor() {
     super('End');
@@ -52,6 +55,7 @@ export class EndScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
 
     const won = this.status === 'won';
+    this.won = won;
     let titleId: LoreId = 'UI-WIN';
     let bodyId: LoreId = 'UI-WIN-BODY';
     let accent: number = Theme.safe;
@@ -151,11 +155,10 @@ export class EndScene extends Phaser.Scene {
 
     const summaryY = height * 0.54;
     const kitPlate = this.add.graphics();
-    drawPlate(kitPlate, width / 2 - 168, summaryY - 36, 336, 88, {
-      fill: Theme.ground,
-      alpha: 0.88,
+    drawMenuPlate(kitPlate, width / 2 - 168, summaryY - 36, 336, 88, {
+      tape: true,
+      accent,
     });
-    drawTapeStrip(kitPlate, width / 2 - 154, summaryY - 28, 72, 7, accent, 0.75);
 
     this.add
       .text(width / 2, summaryY, summary, {
@@ -165,15 +168,43 @@ export class EndScene extends Phaser.Scene {
         align: 'center',
         lineSpacing: 4,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
 
+    const ctaY = height * 0.72;
+    const ctaGfx = this.add.graphics();
+    drawMenuPlate(ctaGfx, width / 2 - 140, ctaY - 14, 280, 28, { accent: Theme.flag });
     const retry = this.add
-      .text(width / 2, height * 0.72, lore('UI-RETRY'), {
+      .text(width / 2, ctaY, lore('UI-RETRY'), {
         fontFamily: FONT_DATA,
         fontSize: '14px',
         color: ThemeCss.inkBright,
       })
+      .setOrigin(0.5)
+      .setDepth(2);
+
+    this.add
+      .text(width / 2, ctaY + 28, 'Esc · title', {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+      })
       .setOrigin(0.5);
+
+    this.muteText = this.add
+      .text(width - 52, height - 28, this.muteLabel(), {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+      })
+      .setOrigin(1, 0.5);
+    this.add
+      .text(52, height - 28, lore('UI-ORG'), {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+      })
+      .setOrigin(0, 0.5);
 
     this.time.addEvent({
       delay: 700,
@@ -197,8 +228,9 @@ export class EndScene extends Phaser.Scene {
       sfx.unlock();
       if (e.key === 'm' || e.key === 'M') {
         sfx.toggleMute();
+        this.muteText.setText(this.muteLabel());
         if (sfx.isMuted()) music.stop();
-        else music.setMood(won ? 'end_win' : 'end_lose');
+        else music.setMood(this.won ? 'end_win' : 'end_lose');
         return;
       }
       if (e.key === 'Enter') {
@@ -209,5 +241,9 @@ export class EndScene extends Phaser.Scene {
         this.scene.start('Title');
       }
     });
+  }
+
+  private muteLabel(): string {
+    return sfx.isMuted() ? `m ${lore('UI-MUTE-ON')}` : `m ${lore('UI-MUTE-OFF')}`;
   }
 }

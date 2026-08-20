@@ -14,6 +14,13 @@ describe('titleLayout', () => {
     expect(layout.beginY).toBeGreaterThan(layout.seedY);
   });
 
+  it('anchors plated strips for seed and begin CTAs', () => {
+    const layout = computeTitleLayout(960, 640);
+    expect(layout.seedPlate.w).toBeGreaterThan(0);
+    expect(layout.beginPlate.y).toBe(layout.beginY - 14);
+    expect(layout.footerY).toBe(600);
+  });
+
   it('formats seed as zero-padded digits', () => {
     expect(formatMissionSeed(42)).toBe('00042');
   });

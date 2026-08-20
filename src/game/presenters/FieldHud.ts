@@ -102,6 +102,7 @@ export function formatHudMeta(
 /**
  * Signal-rail chips. Extract boxes replace KEY/CORE/BEACON OPEN.
  * Enhanced/Impaired is this bump (adjacent helpless foe wins).
+ * Order is priority — critical chips first so overflow keeps them.
  */
 export function fieldHudChips(state: GameState): HudChip[] {
   const chips: HudChip[] = [];
@@ -136,9 +137,6 @@ export function fieldHudChips(state: GameState): HudChip[] {
       fill: state.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
     });
   }
-  if (state.player.mapperTurns > 0) {
-    chips.push({ label: `${lore('UI-MAPPER')} ${state.player.mapperTurns}`, fill: Theme.tape });
-  }
   if (state.roomQuest && !state.roomQuest.done) {
     const n = state.roomQuest.steps.length;
     const i = state.roomQuest.stepIndex + 1;
@@ -163,10 +161,25 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.uplink?.active && state.uplink.progress === 1 && !state.uplink.repelled) {
     chips.push({ label: lore('UI-WAVE-NEXT'), fill: Theme.rust });
   }
+  if (state.player.mapperTurns > 0) {
+    chips.push({ label: `${lore('UI-MAPPER')} ${state.player.mapperTurns}`, fill: Theme.tape });
+  }
   if (state.codexPages > 0) {
     chips.push({ label: `${lore('UI-CODEX')} ${state.codexPages}`, fill: Theme.inkMute });
   }
   const skills = formatSkillsChip(state);
   if (skills) chips.push({ label: skills, fill: Theme.biolum });
   return chips;
+}
+
+/** Fit chips into the badge rail — keep head, collapse tail into +N. */
+export function fitHudChips(chips: HudChip[], maxSlots: number): HudChip[] {
+  if (chips.length <= maxSlots) return chips;
+  if (maxSlots <= 1) {
+    return [{ label: `+${chips.length}`, fill: Theme.inkMute }];
+  }
+  const kept = chips.slice(0, maxSlots - 1);
+  const overflow = chips.length - kept.length;
+  kept.push({ label: `+${overflow}`, fill: Theme.inkMute });
+  return kept;
 }

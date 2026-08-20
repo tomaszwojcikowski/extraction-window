@@ -655,6 +655,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private syncShearPresentation(shear = computeShearPressure(this.state)): void {
+    const prevForAudio = this.lastShearState;
     const sync = syncShearReadout(
       { shearReadout: this.shearReadout, shearPlate: this.shearPlate },
       {
@@ -669,6 +670,14 @@ export class GameScene extends Phaser.Scene {
       this.lastShearState = shear.state;
       if (shear.state !== 'Calm') {
         this.shearFlashUntil = this.time.now + shearFlashMs(shear.state);
+        if (sync.enteredBreaching) {
+          sfx.play('shear_breach');
+        } else {
+          const order = ['Calm', 'Charged', 'Arcing', 'Breaching'] as const;
+          const prevI = prevForAudio ? order.indexOf(prevForAudio) : -1;
+          const nextI = order.indexOf(shear.state);
+          if (nextI > prevI) sfx.play('shear');
+        }
       } else {
         this.shearFlashUntil = 0;
       }
@@ -1421,7 +1430,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Event camera — one ranked cue per turn (profiles: punch/snap/pressure/bloom/reward/hush).
+   * Event camera — one ranked cue per turn (profiles: punch/snap/pressure/bloom/reward).
    * Cosmetic only; never delays input. World layers zoom; HUD stays 1:1.
    */
   private playEventCamera(logs: readonly LoreId[]): void {

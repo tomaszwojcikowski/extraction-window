@@ -238,7 +238,7 @@ export function drawMenuChrome(
 
 /**
  * Title hero — recessed survey glass in the case lid.
- * Static frame; no scan tick, biolum flecks, or hazard dressing.
+ * Optional scan tick when `phase` advances (0–1 cycle).
  */
 export function drawTitleWindow(
   g: G,
@@ -246,7 +246,7 @@ export function drawTitleWindow(
   y: number,
   w: number,
   h: number,
-  _phase = 0,
+  phase = 0,
 ): void {
   g.clear();
   drawPlate(g, x, y, w, h, { fill: Theme.panel, alpha: 0.98 });
@@ -274,6 +274,11 @@ export function drawTitleWindow(
   const horizon = vy + Math.floor(vh * 0.64);
   g.fillStyle(Theme.ground, 0.4);
   g.fillRect(vx + 8, horizon, vw - 16, 1);
+
+  // Stepped scan tick — slow crawl across the glass.
+  const tickX = vx + 4 + ((phase % 1) * (vw - 8));
+  g.fillStyle(Theme.biolum, 0.14);
+  g.fillRect(Math.floor(tickX), vy + 4, 2, vh - 8);
 
   const arm = 10;
   g.lineStyle(1, Theme.inkMute, 0.45);
@@ -330,7 +335,7 @@ function drawShearLegGlyphs(
   y: number,
   leg: ShearLegGlyph,
   accent: number,
-  _animFrame: number,
+  animFrame: number,
   corrosion: number,
 ): void {
   const emX = x;
@@ -338,24 +343,27 @@ function drawShearLegGlyphs(
   const emHot = leg === 'em' || leg === 'both';
   const busHot = leg === 'bus' || leg === 'both';
   const bite = 0.55 + corrosion * 0.4;
+  const pulse = 0.72 + (animFrame % 4) * 0.09;
 
-  // EM scan tick marks — static stencil, no breathing pulse.
-  g.lineStyle(1, Theme.arc, (emHot ? 0.9 : 0.28) * bite);
+  // EM scan tick marks — breathe when that leg leads.
+  g.lineStyle(1, Theme.arc, (emHot ? 0.9 * pulse : 0.28) * bite);
   for (let i = 0; i < 3; i++) {
     const tx = emX + i * 4;
+    const lift = emHot ? ((animFrame + i) % 3 === 0 ? 1 : 0) : 0;
     g.beginPath();
-    g.moveTo(tx, y + 1);
-    g.lineTo(tx, y + 4);
+    g.moveTo(tx, y + 1 - lift);
+    g.lineTo(tx, y + 4 + lift);
     g.strokePath();
   }
 
   // Bus reserve capsule
-  g.lineStyle(1, Theme.tape, (busHot ? 0.9 : 0.28) * bite);
+  g.lineStyle(1, Theme.tape, (busHot ? 0.9 * pulse : 0.28) * bite);
   g.strokeRect(busX, y, 10, 5);
   if (busHot) {
-    g.fillStyle(Theme.tape, 0.45 * bite);
+    g.fillStyle(Theme.tape, 0.45 * bite * pulse);
     g.fillRect(busX + 1, y + 1, 8, 3);
   }
+  void accent;
 }
 
 export type ShearLegGlyph = 'em' | 'bus' | 'both';

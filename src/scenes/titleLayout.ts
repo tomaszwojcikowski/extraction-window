@@ -1,4 +1,4 @@
-/** Title screen layout — text positions only, no menu plates. */
+/** Title screen layout — hero window + plated strip anchors. */
 
 export type TitleLayout = {
   window: { x: number; y: number; w: number; h: number };
@@ -6,6 +6,12 @@ export type TitleLayout = {
   beginY: number;
   briefY: number;
   controlsY: number;
+  /** Plated strip behind mission seed. */
+  seedPlate: { x: number; y: number; w: number; h: number };
+  /** Plated strip behind begin CTA. */
+  beginPlate: { x: number; y: number; w: number; h: number };
+  /** Footer mute / org strip height. */
+  footerY: number;
 };
 
 export function computeTitleLayout(width: number, height: number): TitleLayout {
@@ -13,13 +19,30 @@ export function computeTitleLayout(width: number, height: number): TitleLayout {
   const windowH = 152;
   const windowX = Math.round((width - windowW) / 2);
   const windowY = 88;
+  const seedY = windowY + windowH + 36;
+  const beginY = windowY + windowH + 72;
+  const seedPlateW = Math.min(360, width - 120);
+  const beginPlateW = Math.min(280, width - 160);
 
   return {
     window: { x: windowX, y: windowY, w: windowW, h: windowH },
-    seedY: windowY + windowH + 36,
-    beginY: windowY + windowH + 72,
+    seedY,
+    beginY,
     briefY: height - 72,
     controlsY: height - 50,
+    seedPlate: {
+      x: Math.round((width - seedPlateW) / 2),
+      y: seedY - 14,
+      w: seedPlateW,
+      h: 28,
+    },
+    beginPlate: {
+      x: Math.round((width - beginPlateW) / 2),
+      y: beginY - 14,
+      w: beginPlateW,
+      h: 28,
+    },
+    footerY: height - 40,
   };
 }
 

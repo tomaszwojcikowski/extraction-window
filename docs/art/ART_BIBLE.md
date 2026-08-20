@@ -160,7 +160,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
   Mid-hop lamp wash only tints cells that change; bloom/shadows step ~8×/hop.
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
-- Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward / hush ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
+- Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.
 
@@ -191,6 +191,15 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | LCARS / silhouette audit | Hostiles (§4a), terrain (§4), and HUD meters/badges (§5) done |
 | Per-sector crack-path art | Done — `drawPressureCrack` / `pressureRevealAt` overlay motifs at Arcing+ |
 | Breaching climax juice | Done — mote spike at Arcing/Breaching + hotter shear_breach cue |
+| Title/End kit-case chrome parity | Done — Wave 33 |
+| Shear glance (tape + pulsing legs) | Done — Wave 34 |
+| Quest vs cache pressure motifs | Done — Wave 35 |
+| HUD chip overflow (+N) | Done — Wave 36 |
+| Kit trough + plated detail | Done — Wave 37 |
+| Minimap kit chrome + pips | Done — Wave 38 |
+| Shear escalate audio stings | Done — Wave 39 |
+| Contact sheet motif QA | Done — Wave 40 |
+| Meridian hostile display names | Done — Wave 41 |
 
 ## 9. Gates
 

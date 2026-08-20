@@ -10,7 +10,7 @@ import { CAMPAIGN_LENGTH } from '../../campaign/spine';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { drawMeter, drawStencilBadge, drawHintPlate } from '../../scenes/atmosphere';
 import { resolveHintLine } from '../presenters/ContextHints';
-import { fieldHudChips, formatHudMeta } from '../presenters/FieldHud';
+import { fieldHudChips, fitHudChips, formatHudMeta } from '../presenters/FieldHud';
 import { lightBadgeSpec } from '../presenters/HudBadges';
 import { drawKitOverlay } from './overlays/KitOverlay';
 import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
@@ -197,7 +197,7 @@ export class HudView {
     }
     this.setReadout(r.sectorText, sectorLine, opts, tintToCss(opts.biomeAccent ?? Theme.inkDim), 'sector');
 
-    const badgeSpecs = fieldHudChips(st).slice(0, HUD_BADGE_SLOTS);
+    const badgeSpecs = fitHudChips(fieldHudChips(st), HUD_BADGE_SLOTS);
     this.drawQuestBadges(badgeSpecs, opts.screenW, opts);
 
     const desc = describeObjective(st);

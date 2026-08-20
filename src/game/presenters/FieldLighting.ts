@@ -128,6 +128,14 @@ export function syncPressureCracks(
       }
       spr.setVisible(reveal.visible);
       spr.setAlpha(reveal.alpha);
+      // Cache pockets tint cooler (tape); quest sites stay flag-warm under Breaching.
+      if (reveal.motif === 'cache') {
+        spr.setTint(Theme.tape);
+      } else if (reveal.urgent) {
+        spr.setTint(Theme.flag);
+      } else {
+        spr.clearTint();
+      }
       if (reveal.urgent) {
         const pulse = 1 + 0.05 * Math.sin((host.animFrame + x + y) * 0.9);
         spr.setDisplaySize(TILE_DRAW * pulse, TILE_DRAW * pulse);

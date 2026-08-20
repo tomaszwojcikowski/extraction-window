@@ -4,6 +4,7 @@ import { lore } from '../../src/data/lore';
 import {
   buildKitOverlayContent,
   bagScrollStart,
+  kitPowerTrough,
   wrapKitLine,
 } from '../../src/game/presenters/KitOverlayContent';
 import { pushLog } from '../../src/sim/log';
@@ -19,6 +20,13 @@ describe('bagScrollStart', () => {
 
   it('shows all rows when the bag is short', () => {
     expect(bagScrollStart(2, 5)).toBe(0);
+  });
+});
+
+describe('kitPowerTrough', () => {
+  it('renders a filled trough for Power spend', () => {
+    expect(kitPowerTrough(2, 12)).toBe(`[${'█'.repeat(2)}${'░'.repeat(10)}]`);
+    expect(kitPowerTrough(0)).toContain('░');
   });
 });
 
@@ -45,6 +53,7 @@ describe('buildKitOverlayContent', () => {
     const { lines, panelH } = buildKitOverlayContent(st);
     expect(lines.some((l) => l.includes(lore('UI-KIT-USE')))).toBe(true);
     expect(lines.some((l) => l.includes(`${lore('UI-KIT-POWER')} 2`))).toBe(true);
+    expect(lines.some((l) => l.includes(kitPowerTrough(2)))).toBe(true);
     expect(panelH).toBeGreaterThanOrEqual(36 + lines.length * 17 - 4);
   });
 

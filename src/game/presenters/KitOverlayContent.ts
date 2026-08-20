@@ -76,9 +76,18 @@ function kitPowerCost(state: GameState, kind: ItemKind): number | null {
       return KIT_POWER_COST.filter;
     case 'flare':
       return Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction'));
+    case 'phaser':
+      return KIT_POWER_COST.phaser;
     default:
       return null;
   }
+}
+
+/** ASCII trough meter for kit Power spends — readable without a Phaser bar. */
+export function kitPowerTrough(cost: number, maxCost = 12): string {
+  const filled = Math.max(0, Math.min(maxCost, cost));
+  const empty = Math.max(0, maxCost - filled);
+  return `[${'█'.repeat(filled)}${'░'.repeat(empty)}]`;
 }
 
 function itemActionHint(state: GameState, kind: ItemKind): string {
@@ -138,14 +147,13 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
   const scrollEnd = Math.min(bagCount, scrollStart + BAG_VISIBLE_ROWS);
 
   const lines: string[] = [];
-  const SEP = '─'.repeat(62);
 
   const bagLabel = encumbered(st)
     ? `${lore('UI-INV')} ${bagCount}/${INVENTORY_SLOTS} · ${lore('UI-ENCUMBERED')}`
     : `${lore('UI-INV')} ${bagCount}/${INVENTORY_SLOTS}`;
 
   lines.push(`${lore('UI-LOADOUT').padEnd(22)}${bagLabel}`);
-  lines.push(SEP);
+  lines.push(`┌${'─'.repeat(60)}┐`);
 
   for (let row = 0; row < BAG_VISIBLE_ROWS; row++) {
     const slotId = EQUIP_SLOT_ORDER[row]!;
@@ -157,30 +165,32 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
         : bagIndex < scrollEnd
           ? formatBagRow(st, bagIndex, selected)
           : '';
-    lines.push(`${left.padEnd(22)}${right}`);
+    lines.push(`│${left.padEnd(22)}${right.padEnd(38)}│`);
   }
 
   if (bagCount > BAG_VISIBLE_ROWS) {
     lines.push(
-      `${''.padEnd(22)}${lore('UI-INV-SCROLL')} ${scrollStart + 1}–${scrollEnd} / ${bagCount}`,
+      `│${''.padEnd(22)}${lore('UI-INV-SCROLL')} ${scrollStart + 1}–${scrollEnd} / ${bagCount}`.padEnd(61) +
+        '│',
     );
   }
+  lines.push(`└${'─'.repeat(60)}┘`);
 
   if (selectedItem) {
     const def = ITEMS[selectedItem.kind];
-    lines.push(SEP);
-    lines.push(`${lore(def.loreName).toUpperCase()}  ×${selectedItem.count}`);
+    lines.push(`┌ ${lore(def.loreName).toUpperCase()}  ×${selectedItem.count}`);
     pushWrapped(lines, lore(def.loreDesc));
     if (equipSlotsFor(selectedItem.kind).length > 0) {
       for (const tag of equipTagLines(selectedItem.kind)) {
-        lines.push(`${lore('UI-KIT-TAGS')}: ${tag}`);
+        lines.push(`│ ${lore('UI-KIT-TAGS')}: ${tag}`);
       }
     }
-    lines.push(itemActionHint(st, selectedItem.kind));
+    lines.push(`│ ${itemActionHint(st, selectedItem.kind)}`);
     const power = kitPowerCost(st, selectedItem.kind);
     if (power !== null) {
-      lines.push(`${lore('UI-KIT-POWER')} ${power}`);
+      lines.push(`│ ${lore('UI-KIT-POWER')} ${power}  ${kitPowerTrough(power)}`);
     }
+    lines.push(`└${'─'.repeat(60)}┘`);
   }
 
   const phaserStatus = phaserKitStatus(st, selectedItem?.kind);
@@ -190,19 +200,20 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
 
   const feedback = kitUseFeedback(st);
   if (feedback) {
-    lines.push(SEP);
-    pushWrapped(lines, `${lore('UI-KIT-FEEDBACK')} ${feedback}`);
+    lines.push(`┌ ${lore('UI-KIT-FEEDBACK')}`);
+    pushWrapped(lines, feedback);
+    lines.push(`└${'─'.repeat(60)}┘`);
   }
 
   if (hasWornLoadout(st)) {
     const net = netLoadoutTagSummary(st);
     if (net.length > 0) {
-      lines.push(SEP);
-      lines.push(`${lore('UI-LOADOUT-NET')}: ${net.join(' · ')}`);
+      lines.push(`┌ ${lore('UI-LOADOUT-NET')}`);
+      lines.push(`│ ${net.join(' · ')}`);
+      lines.push(`└${'─'.repeat(60)}┘`);
     }
   }
 
-  lines.push(SEP);
   lines.push(lore('UI-INV-HINT'));
 
   const panelH = KIT_PANEL_PAD + lines.length * KIT_LINE_H;

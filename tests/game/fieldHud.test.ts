@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { INVENTORY_SLOTS } from '../../src/data/items';
 import { lore } from '../../src/data/lore';
-import { fieldHudChips, formatExtractBoxes, formatHudMeta, formatPositionWord } from '../../src/game/presenters/FieldHud';
+import { fieldHudChips, fitHudChips, formatExtractBoxes, formatHudMeta, formatPositionWord } from '../../src/game/presenters/FieldHud';
+import { Theme } from '../../src/scenes/theme';
 import { addStatus } from '../../src/sim/status';
 import { combatArena, makeEnemy } from '../sim/fixtures';
 
@@ -92,5 +93,28 @@ describe('field HUD chips', () => {
     expect(labels).toContain(lore('UI-ENCUMBERED'));
     expect(labels.some((l) => l.startsWith(lore('UI-FRITZ')))).toBe(true);
     expect(labels).not.toContain(lore('UI-QUEST-KEY'));
+  });
+});
+
+describe('fitHudChips', () => {
+  it('collapses overflow into a +N cue instead of silent drop', () => {
+    const chips = Array.from({ length: 11 }, (_, i) => ({
+      label: `chip-${i}`,
+      fill: Theme.inkMute,
+    }));
+    const fitted = fitHudChips(chips, 8);
+    expect(fitted).toHaveLength(8);
+    expect(fitted[7]!.label).toBe('+4');
+    expect(fitted.slice(0, 7).map((c) => c.label)).toEqual(
+      chips.slice(0, 7).map((c) => c.label),
+    );
+  });
+
+  it('passes through when under the slot budget', () => {
+    const chips = [
+      { label: 'a', fill: Theme.tape },
+      { label: 'b', fill: Theme.arc },
+    ];
+    expect(fitHudChips(chips, 8)).toEqual(chips);
   });
 });
