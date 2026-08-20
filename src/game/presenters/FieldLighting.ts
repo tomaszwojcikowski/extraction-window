@@ -128,14 +128,10 @@ export function syncPressureCracks(
       live.add(id);
       let spr = host.crackSprites.get(id);
       if (!spr) {
-        spr = host.addCrackSprite(
-          x,
-          y,
-          crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent),
-        );
+        spr = host.addCrackSprite(x, y, crackTextureKey(reveal.urgent));
         host.crackSprites.set(id, spr);
       } else {
-        const key = crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent);
+        const key = crackTextureKey(reveal.urgent);
         if (spr.texture.key !== key) spr.setTexture(key);
       }
       spr.setVisible(reveal.visible);

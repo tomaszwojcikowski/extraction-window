@@ -1,13 +1,17 @@
 import Phaser from 'phaser';
-import { registerTextures } from './textures';
+import { loadFieldArt, promoteFieldArt } from './atlasLoad';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
   }
 
+  preload(): void {
+    loadFieldArt(this);
+  }
+
   create(): void {
-    registerTextures(this);
+    promoteFieldArt(this);
     this.scene.start('Title');
   }
 }

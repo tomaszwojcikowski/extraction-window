@@ -16,10 +16,12 @@ The locked look: **Halcyon field kit on the Meridian Shelf.** Material story, no
 
 Add a colour only by adding a **named material, role, or emitter** in those tables.
 No ad-hoc hex anywhere in the painting layer — `src/scenes`, `src/game/views`,
-`src/game/presenters`. A surface shown under different light is that material
+`src/game/presenters`, `src/art`. A surface shown under different light is that material
 times `shade`/`mix` from [`tex/color.ts`](../../src/scenes/tex/color.ts), never a
-second hex. [`palette.test.ts`](../../tests/game/palette.test.ts) fails the build
-on an inline colour, so this is a rule the reviewer no longer has to police.
+second hex. Field sprites are authored 48×48 PNG sheets in [`public/art/`](../../public/art);
+pixels must snap to the named palette (or a hostile `def.color` shade).
+[`palette.test.ts`](../../tests/game/palette.test.ts) fails the build
+on an inline colour or a stray PNG pixel, so this is a rule the reviewer no longer has to police.
 
 ---
 
@@ -69,10 +71,10 @@ Roles say what a colour *means*; materials say what a surface *is*. Wet basalt
 each have a name. The two vocabularies stay disjoint — a material that duplicates
 a role gives the drawing code two ways to say one thing, and the test rejects it.
 
-Wall faces are per-sector (`t_wall_<sector>_<role>_<wear>`): cliff / bulkhead / conduit
-families with grit, fasteners, and a sparse biome accent — not three stamped
-blocks tinted by lighting. Role (0–3) is neighbor mass; wear (0–2) is a seed-stable
-2×2 patch so a corridor weathers together without wallpaper tiling.
+Wall faces are three family sheets (`t_wall_<cliff|bulkhead|conduit>_<role>_<wear>`)
+with a biome lift at light time — not 180 per-sector stamps. Role (0–3) is neighbor
+mass; wear (0–2) is a seed-stable 2×2 patch so a corridor weathers together without
+wallpaper tiling.
 Corridors also get weak wall sconces (permanent `lightSources` with
 `fixture: 'sconce'`) so work lights exist beyond POIs; ambush rooms stay dark by role.
 
@@ -91,9 +93,10 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 
 ## 4. Tiles and space
 
-- 24×24 procedural pixel art, `pixelArt: true`, `roundPixels: true`.
+- 48×48 authored pixel sprites (`public/art/*.png`), `pixelArt: true`, `roundPixels: true`.
+  Boot loads atlas sheets; runtime does not `generateTexture` from Graphics.
 - **Pattern carries identity; tint is secondary** — a biome must read from floor pattern with tint removed. `BIOME_FLOOR_TINT` is a lift, not a costume.
-- **Every sector owns its motif.** `FLOOR_DECAL` in [`tex/deluxe.ts`](../../src/scenes/tex/deluxe.ts)
+- **Every sector owns its motif.** Floor painters in [`src/art/paint/floors.ts`](../../src/art/paint/floors.ts)
   keys one ground story per `SectorId`, and no two may be palette swaps of each
   other: grit scatter (plains), stepped ledges (ridge), leaf litter over a root
   run (canopy), ripple rings (flood), crust cells (brine), calcified spurs
@@ -112,7 +115,7 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
 ## 4a. Hostiles
 
 - **Silhouette is the behaviour, not the species.** `silhouetteFor` in
-  [`tex/deluxe.ts`](../../src/scenes/tex/deluxe.ts) derives the body plan from the
+  [`src/art/silhouette.ts`](../../src/art/silhouette.ts) derives the body plan from the
   `EnemyDef` behaviour fields — never from `kind`. Adding a hostile that reuses an
   existing family should reuse its shape; a genuinely new question earns a new shape.
 - Twelve plans: scuttler, bloom, darter, crouched, annelid, bulwark, turret, emitter,
@@ -161,7 +164,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
-- Hostile deluxe frames: 0 patrol idle, 1 stride/alert, 2 windup. `setTexture` only when the key changes.
+- Hostile PNG frames: 0 patrol idle, 1 stride/alert, 2 windup. `setTexture` only when the key changes.
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.
 
@@ -225,6 +228,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | Wake Breaching weight + goal instrument pulse | Done — Wave 56 |
 | Handshake pad stages + mapper memory wash | Done — Wave 57 |
 | Sheet QA + ship `v1.6.0` | Done — Wave 58 |
+| Authored PNG field sheets | Done — Wave 61: atlas load, 48px sprites, family walls, crack overlay |
 
 ## 9. Gates
 
@@ -234,10 +238,11 @@ An art or chrome change ships when:
 2. No new hex outside `theme.ts` / `light.ts`; `npm run test:unit` enforces it.
 3. Chrome budget respected — no new always-on element without removing one.
 4. Art changes are eyeballed on the contact sheet — `npm run dev`, open `/sheet.html`.
-   It bakes the real textures for every hostile, every sector floor (in colour and
+   It shows the real PNG atlas frames for every hostile, every sector floor (in colour and
    desaturated), every rule-changing tile, every wall family, every telegraph, and
    the field-kit meters/badges, so a silhouette collision, a palette-swap biome, an
    unpainted threat, or a flat UI bar shows up there before it reaches a run. If the
    browser cannot reach the dev server, start it as `npx vite --host 127.0.0.1` —
    the default binding is IPv6-only.
+   After painting, `npm run art:export` rewrites `public/art/*.png`.
 5. `npm run build` and `npm run playtest:smoke` pass; presentation-only changes must not move sim legality.

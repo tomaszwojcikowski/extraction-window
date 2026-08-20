@@ -64,7 +64,7 @@ flowchart TB
 | `sim/mechanics/` | Multi-step systems (hooks into action/turn) |
 | `ai/` | Headless policy over `GameState` |
 | `game/` | Input, HUD/map/overlays, feedback presenters |
-| `scenes/` | Boot / Title (aperture + plated strips) / End + textures/theme/atmosphere |
+| `scenes/` | Boot (PNG atlas load) / Title / End + theme/atmosphere |
 | `audio/` | Web Audio buses |
 
 ## Mechanic contract

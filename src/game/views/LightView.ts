@@ -421,8 +421,8 @@ export class LightView {
       const d = rays[i]!.hit * scale * rayWobble(i, seed);
       pts.push(
         new Phaser.Math.Vector2(
-          (cx + Math.cos(a) * d) * TILE_DRAW,
-          (cy + Math.sin(a) * d) * TILE_DRAW,
+          Math.round((cx + Math.cos(a) * d) * TILE_DRAW),
+          Math.round((cy + Math.sin(a) * d) * TILE_DRAW),
         ),
       );
     }
@@ -465,8 +465,8 @@ export class LightView {
         cx = mountX + 0.5 + (s.x - mountX) * into;
         cy = mountY + 0.5 + (s.y - mountY) * into;
       }
-      const wx = cx * TILE_DRAW;
-      const wy = cy * TILE_DRAW;
+      const wx = Math.round(cx * TILE_DRAW);
+      const wy = Math.round(cy * TILE_DRAW);
       const seed = poolSeed(cx, cy, s.radius);
 
       const personal =
@@ -491,15 +491,17 @@ export class LightView {
         }
       } else {
         this.lightsGfx.fillStyle(s.color, aCore * 0.08);
-        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.5);
+        this.lightsGfx.fillCircle(wx, wy, Math.round(s.radius * TILE_DRAW * 0.5));
         this.lightsGfx.fillStyle(s.color, aCore * 0.14);
-        this.lightsGfx.fillCircle(wx, wy, s.radius * TILE_DRAW * 0.3);
+        this.lightsGfx.fillCircle(wx, wy, Math.round(s.radius * TILE_DRAW * 0.3));
       }
 
       // One soft core — no nested white spark competing with tile wash.
-      const core = Math.max(
-        personal ? 4 : 5,
-        TILE_DRAW * (isSconce ? 0.16 : personal ? 0.16 : 0.2) * gain,
+      const core = Math.round(
+        Math.max(
+          personal ? 4 : 5,
+          TILE_DRAW * (isSconce ? 0.16 : personal ? 0.16 : 0.2) * gain,
+        ),
       );
       this.lightsGfx.fillStyle(s.color, aCore * (isSconce ? 0.32 : personal ? 0.26 : 0.28));
       this.lightsGfx.fillCircle(wx, wy, core);
@@ -917,7 +919,8 @@ export class LightView {
           kind === 'scrub_nest' ||
           kind === 'rubble' ||
           kind === 'tripwire';
-        let tint = isTerrain ? floorTint : 0xffffff;
+        const isWallFace = kind === 'wall' || kind === 'sealed';
+        let tint = isTerrain ? floorTint : isWallFace ? multiplyTint(0xffffff, floorTint, 0.22) : 0xffffff;
         tint = multiplyTint(tint, ambientTint, 0.22);
         if (colorPull > 0.04) {
           tint = multiplyTint(tint, colorAcc, Math.min(0.55, colorPull * 0.48));

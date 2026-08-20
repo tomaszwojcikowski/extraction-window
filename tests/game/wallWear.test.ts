@@ -19,7 +19,7 @@ describe('wallWearAt', () => {
 
 describe('wallTextureKey', () => {
   it('keeps role and wear in the key so a level can pick both', () => {
-    expect(wallTextureKey('plains', 0, 1)).toBe('t_wall_plains_0_1');
-    expect(wallTextureKey('vault', 3, 2)).toBe('t_wall_vault_3_2');
+    expect(wallTextureKey('plains', 0, 1)).toBe('t_wall_cliff_0_1');
+    expect(wallTextureKey('vault', 3, 2)).toBe('t_wall_bulkhead_3_2');
   });
 });
