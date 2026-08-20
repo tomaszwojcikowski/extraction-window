@@ -2,7 +2,13 @@ import Phaser from 'phaser';
 import { lore } from '../data/lore';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
-import { drawMenuChrome, drawTitleWindow } from './atmosphere';
+import {
+  addCameraAtmosphere,
+  drawMenuChrome,
+  drawMenuPlate,
+  drawTitleWindow,
+  type CameraAtmosphere,
+} from './atmosphere';
 import {
   computeTitleLayout,
   formatMissionSeed,
@@ -16,8 +22,11 @@ export class TitleScene extends Phaser.Scene {
   private seed = (Date.now() % 90000) + 1000;
   private helpOpen = false;
   private audioPrimed = false;
+  private scanPhase = 0;
+  private cameraAtmosphere: CameraAtmosphere | null = null;
 
   private windowGfx!: Phaser.GameObjects.Graphics;
+  private plateGfx!: Phaser.GameObjects.Graphics;
   private helpPanel!: Phaser.GameObjects.Graphics;
   private helpText!: Phaser.GameObjects.Text;
 
@@ -38,11 +47,14 @@ export class TitleScene extends Phaser.Scene {
     this.layout = computeTitleLayout(width, height);
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
     this.chrome = [];
+    this.cameraAtmosphere = addCameraAtmosphere(this, 0.05);
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
 
     this.windowGfx = this.add.graphics();
+    this.plateGfx = this.add.graphics().setDepth(1);
+    this.drawPlates();
     this.drawHero(width);
 
     this.seedText = this.add
@@ -51,7 +63,8 @@ export class TitleScene extends Phaser.Scene {
         fontSize: '13px',
         color: ThemeCss.ink,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
     this.chrome.push(this.seedText);
 
     this.beginText = this.add
@@ -60,7 +73,8 @@ export class TitleScene extends Phaser.Scene {
         fontSize: '14px',
         color: ThemeCss.inkBright,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(2);
     this.chrome.push(this.beginText);
 
     this.add
@@ -83,21 +97,23 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.muteText = this.add
-      .text(width - 52, height - 28, this.muteLabel(), {
+      .text(width - 52, this.layout.footerY, this.muteLabel(), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
         color: ThemeCss.inkMute,
       })
-      .setOrigin(1, 0.5);
+      .setOrigin(1, 0.5)
+      .setDepth(2);
     this.chrome.push(this.muteText);
 
     this.add
-      .text(52, height - 28, lore('UI-ORG'), {
+      .text(52, this.layout.footerY, lore('UI-ORG'), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
         color: ThemeCss.inkMute,
       })
-      .setOrigin(0, 0.5);
+      .setOrigin(0, 0.5)
+      .setDepth(2);
 
     this.time.addEvent({
       delay: 720,
@@ -108,15 +124,40 @@ export class TitleScene extends Phaser.Scene {
       },
     });
 
+    this.time.addEvent({
+      delay: 48,
+      loop: true,
+      callback: () => {
+        if (this.helpOpen) return;
+        this.scanPhase = (this.scanPhase + 0.008) % 1;
+        const { window: win } = this.layout;
+        drawTitleWindow(this.windowGfx, win.x, win.y, win.w, win.h, this.scanPhase);
+      },
+    });
+
     this.input.keyboard!.on('keydown', this.keyHandler);
     this.events.once('shutdown', () => {
       this.input.keyboard?.off('keydown', this.keyHandler);
+      this.cameraAtmosphere?.destroy();
+      this.cameraAtmosphere = null;
+    });
+  }
+
+  private drawPlates(): void {
+    const { seedPlate, beginPlate } = this.layout;
+    this.plateGfx.clear();
+    drawMenuPlate(this.plateGfx, seedPlate.x, seedPlate.y, seedPlate.w, seedPlate.h, {
+      tape: true,
+      accent: Theme.tape,
+    });
+    drawMenuPlate(this.plateGfx, beginPlate.x, beginPlate.y, beginPlate.w, beginPlate.h, {
+      accent: Theme.flag,
     });
   }
 
   private drawHero(width: number): void {
     const { window: win } = this.layout;
-    drawTitleWindow(this.windowGfx, win.x, win.y, win.w, win.h);
+    drawTitleWindow(this.windowGfx, win.x, win.y, win.w, win.h, this.scanPhase);
 
     const title = this.add
       .text(width / 2, win.y + 46, lore('UI-TITLE'), {
@@ -146,6 +187,7 @@ export class TitleScene extends Phaser.Scene {
       }
     }
     this.windowGfx.setVisible(visible);
+    this.plateGfx.setVisible(visible);
     if (visible) this.beginText.setVisible(true);
   }
 

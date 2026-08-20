@@ -30,7 +30,9 @@ export type SfxId =
   | 'telegraph_pulse'
   | 'enemy_beam'
   | 'enemy_pulse'
-  | 'player_beam';
+  | 'player_beam'
+  | 'shear'
+  | 'shear_breach';
 
 const COMBAT: SfxId[] = [
   'hit',
@@ -139,6 +141,16 @@ class SfxBus {
           sweep: 900,
         });
         this.sub(ctx, t + 0.05, { freq: 50, dur: 0.22, vol: 0.08, slide: 20 });
+        break;
+      case 'shear':
+        // One-line pressure escalate — short band wash, not a chord.
+        this.noiseBurst(ctx, t, { dur: 0.12, vol: 0.09, bp: 320, Q: 0.7, attack: 0.02, sweep: 500 });
+        this.sub(ctx, t + 0.02, { freq: 48, dur: 0.14, vol: 0.07, slide: 12 });
+        break;
+      case 'shear_breach':
+        this.noiseBurst(ctx, t, { dur: 0.16, vol: 0.12, bp: 180, Q: 0.5, attack: 0.01, sweep: 1100 });
+        this.noiseBurst(ctx, t + 0.04, { dur: 0.1, vol: 0.07, bp: 900, Q: 1.1, attack: 0.01 });
+        this.sub(ctx, t, { freq: 42, dur: 0.2, vol: 0.1, slide: 18 });
         break;
       case 'beacon':
         // Sodium relay settle — soft radio wash into a hum, not tones.

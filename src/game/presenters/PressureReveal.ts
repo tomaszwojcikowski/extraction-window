@@ -3,12 +3,16 @@ import type { ShearPressureSpec } from './ShearPressure';
 import type { GameState } from '../../sim/types';
 import { roomAt } from '../../sim/cacheSurvey';
 
+/** Quest sites fracture; landmarks (ex-POI) stay silent by policy. */
 const REVEAL_KINDS = new Set(['quest']);
+
+export type PressureRevealMotif = 'quest' | 'cache';
 
 export type PressureReveal = {
   sectorId: SectorId;
   variant: number;
   urgent: boolean;
+  motif: PressureRevealMotif;
   /** Arcing flickers; Breaching holds so the path stays readable under stress. */
   visible: boolean;
   /** Overlay opacity — Breaching holds hotter than Arcing flicker. */
@@ -17,7 +21,7 @@ export type PressureReveal = {
 
 /**
  * Arcing+ stress-fracture on optional paths — presentation-only, no loot sim changes.
- * Returns crack overlay params; callers draw sector motifs instead of washing the tile tint.
+ * Quest vs unlooted cache use different motif/variant so detour reads apart from hold.
  */
 export function pressureRevealAt(
   st: GameState,
@@ -35,21 +39,30 @@ export function pressureRevealAt(
   if (!kind) return null;
   if (!REVEAL_KINDS.has(kind) && !unlootedCache) return null;
 
+  const motif: PressureRevealMotif = unlootedCache ? 'cache' : 'quest';
   const urgent = shear.state === 'Breaching';
-  const flicker = (animFrame + x + y) % (urgent ? 2 : 3) === 0;
+  // Cache: slower flicker (pocket you hunt). Quest: faster hold-corridor pulse.
+  const flickerMod = motif === 'cache' ? (urgent ? 3 : 4) : urgent ? 2 : 3;
+  const flicker = (animFrame + x + y) % flickerMod === 0;
   const visible = urgent || flicker;
-  const alpha = unlootedCache
-    ? urgent
-      ? 0.96 + 0.04 * ((animFrame + x) % 2)
-      : 0.88
-    : urgent
-      ? 0.92 + 0.08 * ((animFrame + x) % 2)
-      : 0.78;
+  const alpha =
+    motif === 'cache'
+      ? urgent
+        ? 0.96 + 0.04 * ((animFrame + x) % 2)
+        : 0.88
+      : urgent
+        ? 0.92 + 0.08 * ((animFrame + x) % 2)
+        : 0.78;
+
+  // Cache offsets variant so crack texture family differs from quest sites.
+  const baseVariant = (x + y * 3 + st.seed) % 3;
+  const variant = motif === 'cache' ? (baseVariant + 1) % 3 : baseVariant;
 
   return {
     sectorId: st.sectorId,
-    variant: (x + y * 3 + st.seed) % 3,
+    variant,
     urgent,
+    motif,
     visible,
     alpha,
   };

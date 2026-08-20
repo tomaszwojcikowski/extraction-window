@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { drawHintPlate } from '../../scenes/atmosphere';
+import { drawMenuPlate, drawTapeStrip } from '../../scenes/atmosphere';
 import { Theme, ThemeCss } from '../../scenes/theme';
 import { shearReadoutLabel, type ShearPressureSpec, type ShearPressureState } from './ShearPressure';
 
@@ -13,7 +13,7 @@ export type ShearReadoutSyncResult = {
   enteredBreaching: boolean;
 };
 
-/** Center shear readout + hint plate — extracted from GameScene. */
+/** Center shear readout + instrument plate — colour tape before POWER/EM text. */
 export function syncShearReadout(
   refs: ShearReadoutRefs,
   opts: {
@@ -52,12 +52,28 @@ export function syncShearReadout(
   const accent =
     shear.state === 'Breaching' ? Theme.arcWhite : shear.state === 'Arcing' ? Theme.arc : Theme.tape;
   refs.shearPlate.setVisible(true);
-  drawHintPlate(refs.shearPlate, opts.screenW / 2, 7 + th / 2, tw, th, { originX: 0.5 });
+  refs.shearPlate.clear();
+  const plate = shearInstrumentPlate(opts.screenW, tw, th);
+  drawMenuPlate(refs.shearPlate, plate.x, plate.y, plate.w, plate.h, { accent });
   const strip = shearAccentStrip(opts.screenW, tw, th, shear.state);
-  refs.shearPlate.fillStyle(accent, shear.state === 'Breaching' ? 1 : 0.9);
-  refs.shearPlate.fillRect(strip.x, strip.y, strip.w, strip.h);
+  drawTapeStrip(refs.shearPlate, strip.x, strip.y, strip.w, strip.h, accent, 0.95);
 
   return { stateChanged, enteredBreaching };
+}
+
+export function shearInstrumentPlate(
+  screenW: number,
+  textW: number,
+  textH: number,
+): { x: number; y: number; w: number; h: number } {
+  const pw = Math.max(56, Math.ceil(textW) + 28);
+  const ph = Math.max(18, Math.ceil(textH) + 10);
+  return {
+    x: Math.round(screenW / 2 - pw / 2),
+    y: Math.round(7 + Math.ceil(textH) / 2 - ph / 2),
+    w: pw,
+    h: ph,
+  };
 }
 
 /**
@@ -70,12 +86,14 @@ export function shearAccentStrip(
   textH: number,
   state: ShearPressureState,
 ): { x: number; y: number; w: number; h: number } {
-  const pw = Math.max(48, Math.ceil(textW) + 16);
-  const ph = Math.max(16, Math.ceil(textH) + 8);
-  const px = Math.round(screenW / 2 - pw / 2);
-  const py = Math.round(7 + Math.ceil(textH) / 2 - ph / 2);
-  const w = state === 'Breaching' ? 5 : 4;
-  return { x: px - w - 1, y: py, w, h: ph };
+  const plate = shearInstrumentPlate(screenW, textW, textH);
+  const w = state === 'Breaching' ? 18 : 14;
+  return {
+    x: plate.x - w - 2,
+    y: plate.y + 4,
+    w,
+    h: Math.max(6, plate.h - 8),
+  };
 }
 
 /** Flash duration when shear state escalates. */

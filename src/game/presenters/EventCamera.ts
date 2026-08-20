@@ -6,14 +6,14 @@ import type { LoreId } from '../../data/lore';
  * DESIGN_PRINCIPLES §7 (juice with a budget):
  * - Amplify meaningful state changes; silence routine motion / status ticks.
  * - ≤ ~200ms for notice/combat punches; climaxes may linger slightly.
- * - Prefer one lead channel per beat (punch ≠ bloom ≠ pressure ≠ hush).
+ * - Prefer one lead channel per beat (punch ≠ bloom ≠ pressure ≠ reward).
  * - Never delays input; world-layer zoom only (HUD stays 1:1).
  */
 
 export type CameraIgnite = 'scan' | 'flare' | 'fauna';
 
 /** Lead feel for the cue — keeps channels from all shouting at once. */
-export type CameraProfile = 'punch' | 'snap' | 'pressure' | 'bloom' | 'reward' | 'hush';
+export type CameraProfile = 'punch' | 'snap' | 'pressure' | 'bloom' | 'reward';
 
 export type CameraCue = {
   id: string;
@@ -43,10 +43,9 @@ function cue(
  * Profile recipes (tuned once; per-event overrides stay rare):
  * - punch: threat to the operator (shake + zoom lead)
  * - snap: brief combat/notice resolve (short budget)
- * - pressure: shelf/Window stress (vignette lead; soft zoom)
+ * - pressure: shelf stress (vignette lead; soft zoom)
  * - bloom: player power / milestone (zoom + vignette; little shake)
  * - reward: kill resolve (soft zoom; no trauma stack)
- * - hush: reserved soft vignette (unused after Quiet cut)
  */
 const CUES: Record<string, CameraCue> = {
   extract: cue('extract', 100, 'bloom', {

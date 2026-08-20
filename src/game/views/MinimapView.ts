@@ -1,19 +1,23 @@
 import Phaser from 'phaser';
 import type { GameState } from '../../sim';
 import { Theme } from '../../scenes/theme';
-import { drawBolt, drawPlate } from '../../scenes/atmosphere';
+import { drawBolt, drawMenuPlate, drawTapeStrip } from '../../scenes/atmosphere';
 import { HUD_TOP } from '../GameHost';
+import { activeQuestStep } from '../../sim/roomQuest';
+import { cacheRoomList } from '../../sim/cacheSurvey';
 
 /** Map cell size in pixels on the minimap. */
 const CELL = 2;
 /** Inner map canvas size. Supports maps up to 64×64. */
 const MAP_W = 128;
 const MAP_H = 128;
-/** Outer panel padding around the map canvas. */
-const PAD = 8;
+/** Inner map canvas padding; tape strip sits above. */
+const PAD = 10;
+/** Extra top for kit tape. */
+const TAPE_H = 8;
 /** Total panel size including padding and bolt clearance. */
 const PANEL_W = MAP_W + PAD * 2;
-const PANEL_H = MAP_H + PAD * 2;
+const PANEL_H = MAP_H + PAD * 2 + TAPE_H;
 
 /**
  * Field-sketch minimap overlay — toggle with `n`.
@@ -36,11 +40,11 @@ export class MinimapView {
     this.panelX = px;
     this.panelY = py;
 
-    // Static chrome — drawn once.
+    // Static chrome — bolted kit plate + hazard tape.
     this.panel = scene.add.graphics().setScrollFactor(0).setDepth(95);
     this.panel.setVisible(false);
-    drawPlate(this.panel, px, py, PANEL_W, PANEL_H, { fill: Theme.panel, alpha: 0.72 });
-    // Corner bolts.
+    drawMenuPlate(this.panel, px, py, PANEL_W, PANEL_H, { accent: Theme.tape });
+    drawTapeStrip(this.panel, px + 8, py + 5, Math.min(56, PANEL_W - 16), 5, Theme.tape, 0.8);
     drawBolt(this.panel, px + 4, py + 4);
     drawBolt(this.panel, px + PANEL_W - 5, py + 4);
     drawBolt(this.panel, px + 4, py + PANEL_H - 5);
@@ -62,7 +66,7 @@ export class MinimapView {
 
     this.mapGfx.clear();
     const mapX = this.panelX + PAD;
-    const mapY = this.panelY + PAD;
+    const mapY = this.panelY + PAD + TAPE_H;
     this.mapGfx.fillStyle(Theme.fog, 0.72);
     this.mapGfx.fillRect(mapX, mapY, MAP_W, MAP_H);
 
@@ -89,7 +93,34 @@ export class MinimapView {
       }
     }
 
-    // Entity dots — drawn on top of tiles.
+    // Optional quest step — flag pink pip.
+    const rq = state.roomQuest;
+    if (rq && !rq.done) {
+      const step = activeQuestStep(rq);
+      if (step && explored[step.pos.y]?.[step.pos.x]) {
+        this.mapGfx.fillStyle(Theme.flag, 1);
+        this.mapGfx.fillRect(
+          mapX + offX + step.pos.x * cellW,
+          mapY + offY + step.pos.y * cellH,
+          Math.max(2, cellW),
+          Math.max(2, cellH),
+        );
+      }
+    }
+
+    // Unlooted explored caches — tape pips (calm sectors stay quiet via no Arcing cue).
+    for (const room of cacheRoomList(state)) {
+      if (room.cacheLooted) continue;
+      if (!explored[room.cy]?.[room.cx]) continue;
+      this.mapGfx.fillStyle(Theme.tape, 0.95);
+      this.mapGfx.fillRect(
+        mapX + offX + room.cx * cellW,
+        mapY + offY + room.cy * cellH,
+        Math.max(2, cellW),
+        Math.max(2, cellH),
+      );
+    }
+
     // Player.
     this.mapGfx.fillStyle(Theme.flag, 1);
     this.mapGfx.fillRect(
@@ -99,10 +130,14 @@ export class MinimapView {
       Math.max(2, cellH),
     );
 
-    // Visible enemies.
+    // Visible enemies — elite brands read hotter.
     for (const enemy of enemies) {
-      if (!visible[enemy.y]![enemy.x]) continue;
-      this.mapGfx.fillStyle(Theme.rust, 1);
+      if (!enemy.alive) continue;
+      if (!explored[enemy.y]?.[enemy.x]) continue;
+      const onScreen = visible[enemy.y]![enemy.x];
+      const elite = enemy.tier === 'elite' || enemy.tier === 'boss';
+      if (!onScreen && !elite) continue;
+      this.mapGfx.fillStyle(elite ? Theme.arcWhite : Theme.rust, onScreen ? 1 : 0.7);
       this.mapGfx.fillRect(
         mapX + offX + enemy.x * cellW,
         mapY + offY + enemy.y * cellH,

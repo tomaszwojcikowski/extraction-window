@@ -211,9 +211,16 @@ export function applyAction(state: GameState, action: Action): GameState {
       }
       return state;
 
-    case 'toggle_inventory':
+    case 'toggle_inventory': {
       state.ui.inventoryOpen = !state.ui.inventoryOpen;
+      if (state.ui.inventoryOpen && state.inventory.length > 0) {
+        state.ui.selectedSlot = Math.max(
+          0,
+          Math.min(state.ui.selectedSlot, state.inventory.length - 1),
+        );
+      }
       return state;
+    }
 
     case 'select_slot':
       state.ui.selectedSlot = action.index;

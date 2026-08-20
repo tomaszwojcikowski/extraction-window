@@ -132,8 +132,8 @@ describe('shearAccentStrip', () => {
   it('sits left of the label plate so colour reads before text', () => {
     const strip = shearAccentStrip(960, 80, 12, 'Charged');
     expect(strip.x).toBeLessThan(960 / 2 - 40);
-    expect(strip.w).toBe(4);
-    expect(shearAccentStrip(960, 80, 12, 'Breaching').w).toBe(5);
+    expect(strip.w).toBe(14);
+    expect(shearAccentStrip(960, 80, 12, 'Breaching').w).toBe(18);
     expect(shearFlashMs('Breaching')).toBeGreaterThan(shearFlashMs('Arcing'));
   });
 });
@@ -229,5 +229,27 @@ describe('pressureRevealAt', () => {
     expect(reveal!.urgent).toBe(true);
     expect(reveal!.visible).toBe(true);
     expect(reveal!.alpha).toBeGreaterThan(0.9);
+    expect(reveal!.motif).toBe('quest');
+  });
+
+  it('tags unlooted cache rooms as cache motif with offset variant', () => {
+    const st = stubState({});
+    st.rooms = [{ x: 6, y: 2, w: 3, h: 3, cx: 7, cy: 3, role: 'cache' }];
+    st.emStress = 35;
+    st.player.energy = 45;
+    const arcing = computeShearPressure(st);
+    expect(arcing.state).toBe('Arcing');
+    const reveal = pressureRevealAt(st, arcing, 7, 3, 0);
+    expect(reveal).not.toBeNull();
+    expect(reveal!.motif).toBe('cache');
+  });
+
+  it('keeps landmark (ex-POI) tiles silent under Arcing+', () => {
+    const st = stubState({});
+    st.tiles[3]![7] = { kind: 'landmark', walkable: true, transparent: true };
+    st.emStress = EM_HIGH;
+    st.player.energy = 5;
+    const breaching = computeShearPressure(st);
+    expect(pressureRevealAt(st, breaching, 7, 3, 0)).toBeNull();
   });
 });

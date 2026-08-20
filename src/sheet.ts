@@ -8,8 +8,9 @@ import {
   wallStyleForSector,
   wallTextureKey,
 } from './scenes/textures';
-import { drawMeter, drawStencilBadge } from './scenes/atmosphere';
+import { drawMeter, drawMenuPlate, drawStencilBadge, drawTapeStrip } from './scenes/atmosphere';
 import { Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
+import { lore } from './data/lore';
 import { drawThreatZones } from './game/views/ThreatView';
 import { paintPhaserBeamFrame } from './game/presenters/ActionFeedback';
 import { drawPhaserLanes } from './game/presenters/PhaserLanes';
@@ -79,6 +80,7 @@ class SheetScene extends Phaser.Scene {
     this.buildTerrainGrid('terrain');
     this.buildTerrainGrid('terrainFlat');
     this.buildCrackGrid();
+    this.buildPressureMotifGrid();
     this.buildStructureGrid();
     this.buildChromeGrid();
     this.buildPhaserArtifacts();
@@ -113,6 +115,24 @@ class SheetScene extends Phaser.Scene {
       {
         label: 'badge LIT',
         draw: (g) => drawStencilBadge(g, 18, 22, 92, 18, Theme.tape),
+      },
+      {
+        label: 'menu plate',
+        draw: (g) => drawMenuPlate(g, 8, 12, 124, 40, { accent: Theme.tape }),
+      },
+      {
+        label: 'shear tape · Charged',
+        draw: (g) => {
+          drawMenuPlate(g, 28, 16, 96, 28, { accent: Theme.tape });
+          drawTapeStrip(g, 10, 20, 14, 20, Theme.tape, 0.95);
+        },
+      },
+      {
+        label: 'shear tape · Breaching',
+        draw: (g) => {
+          drawMenuPlate(g, 28, 16, 96, 28, { accent: Theme.arcWhite });
+          drawTapeStrip(g, 8, 18, 18, 24, Theme.arcWhite, 0.95);
+        },
       },
     ];
 
@@ -180,8 +200,8 @@ class SheetScene extends Phaser.Scene {
       this.cell(
         'sheet',
         [0, 1, 2].map((frame) => enemyTextureKey(kind, frame)),
-        kind,
-        `${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
+        lore(def.loreName),
+        `${kind} · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
         def.color,
       );
     }
@@ -226,6 +246,67 @@ class SheetScene extends Phaser.Scene {
       sub.className = 'meta';
       sub.textContent = 'Arcing / Breaching';
       sub.style.color = ThemeCss.arc;
+      cell.append(label, sub);
+      host.appendChild(cell);
+    }
+  }
+
+  /**
+   * Quest vs cache pressure motifs side-by-side — variant + tint language
+   * must read apart without the HUD label.
+   */
+  private buildPressureMotifGrid(): void {
+    const host = document.getElementById('pressureMotifs');
+    if (!host) return;
+    const samples: Array<{
+      label: string;
+      meta: string;
+      variant: number;
+      urgent: boolean;
+      tint?: number;
+    }> = [
+      { label: 'quest · Arcing', meta: 'hold corridor', variant: 0, urgent: false },
+      { label: 'quest · Breaching', meta: 'flag-warm tint', variant: 0, urgent: true, tint: Theme.flag },
+      { label: 'cache · Arcing', meta: 'pocket hunt', variant: 1, urgent: false, tint: Theme.tape },
+      {
+        label: 'cache · Breaching',
+        meta: 'tape pocket',
+        variant: 1,
+        urgent: true,
+        tint: Theme.tape,
+      },
+    ];
+    const sector = 'ash';
+    for (const sample of samples) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const canvas = document.createElement('canvas');
+      canvas.width = 46;
+      canvas.height = 46;
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      const floor = this.textures.get(floorTextureKey(sector, 0)).getSourceImage();
+      const crack = this.textures
+        .get(crackTextureKey(sector, sample.variant, sample.urgent))
+        .getSourceImage();
+      ctx.drawImage(floor as CanvasImageSource, 0, 0, 46, 46);
+      ctx.drawImage(crack as CanvasImageSource, 0, 0, 46, 46);
+      if (sample.tint !== undefined) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.fillStyle = `#${sample.tint.toString(16).padStart(6, '0')}88`;
+        ctx.fillRect(0, 0, 46, 46);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      cell.appendChild(canvas);
+      const label = document.createElement('div');
+      label.className = 'name';
+      label.textContent = sample.label;
+      const sub = document.createElement('div');
+      sub.className = 'meta';
+      sub.textContent = sample.meta;
+      sub.style.color = sample.tint !== undefined
+        ? `#${sample.tint.toString(16).padStart(6, '0')}`
+        : ThemeCss.arc;
       cell.append(label, sub);
       host.appendChild(cell);
     }
