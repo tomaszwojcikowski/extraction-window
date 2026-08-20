@@ -9,6 +9,7 @@ import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
+import { resolveQuestOffer } from './questOffer';
 import { isAdjacentSealed } from './mechanics/sealedHatch';
 import { livingAllyAt } from './allyAi';
 import { enemyAt, npcAt } from './spatial';
@@ -115,6 +116,8 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 function tryExit(state: GameState): void {
   // Mechanics first (room quest, future beacon handshake, …)
   if (mechanicsTryAction(state, { type: 'exit' })) {
+    // Opening an accept/decline offer is UI-only — do not spend the turn.
+    if (state.questOffer) return;
     endPlayerTurn(state);
     return;
   }
@@ -182,6 +185,20 @@ function tryExit(state: GameState): void {
 export function applyAction(state: GameState, action: Action): GameState {
   if (state.status !== 'playing') return state;
 
+  // Accept/decline modal — must resolve before other field input.
+  if (state.questOffer) {
+    if (action.type === 'quest_offer') {
+      resolveQuestOffer(state, action.accept);
+      return state;
+    }
+    if (action.type === 'close_ui') {
+      resolveQuestOffer(state, false);
+      return state;
+    }
+    pushLog(state, 'LOG-QUEST-NEED');
+    return state;
+  }
+
   // ADOM talent fork — must choose before continuing
   if (state.skillPick) {
     if (action.type === 'pick_skill') {
@@ -201,6 +218,7 @@ export function applyAction(state: GameState, action: Action): GameState {
 
   switch (action.type) {
     case 'pick_skill':
+    case 'quest_offer':
       return state;
 
     case 'close_ui':

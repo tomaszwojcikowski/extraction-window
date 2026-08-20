@@ -5,9 +5,10 @@ export type NpcQuestMark = '?' | '!';
 
 /**
  * Overhead quest ping for field contacts.
- * `?` while they still have a hail or open agenda; `!` after the job is done.
+ * `?` while they still have a hail, open offer, or open agenda; `!` after done/declined.
  */
-export function npcQuestMarker(npc: FieldNpc): NpcQuestMark {
+export function npcQuestMarker(npc: FieldNpc, offerNpcId?: number | null): NpcQuestMark {
+  if (offerNpcId !== undefined && offerNpcId !== null && npc.id === offerNpcId) return '?';
   if (npc.agendaDone || (npc.talked && !npc.agendaOpen)) return '!';
   return '?';
 }

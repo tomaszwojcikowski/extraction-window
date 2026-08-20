@@ -365,6 +365,8 @@ describe('field NPCs', () => {
       },
     ];
     applyAction(st, { type: 'exit' });
+    expect(st.questOffer?.source).toBe('npc');
+    applyAction(st, { type: 'quest_offer', accept: true });
     expect(st.allies.some((a) => a.alive && a.kind === 'away_escort')).toBe(true);
     const ally = st.allies.find((a) => a.alive)!;
     const ax = ally.x;

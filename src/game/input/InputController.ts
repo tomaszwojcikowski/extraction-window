@@ -49,6 +49,7 @@ function isModalInput(host: InputHost, state: GameState): boolean {
     host.isPagesOpen() ||
     host.isLogOpen() ||
     Boolean(state.skillPick?.length) ||
+    Boolean(state.questOffer) ||
     state.ui.inventoryOpen
   );
 }
@@ -99,6 +100,23 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   const state = host.getState();
+
+  // Quest accept/decline — same priority band as skill pick.
+  if (state.questOffer) {
+    if (e.key === '1' || e.key === 'Enter') {
+      applyAction(state, { type: 'quest_offer', accept: true });
+      sfx.play('ui');
+      host.afterUiChrome();
+      return;
+    }
+    if (e.key === '2' || e.key === 'Escape') {
+      applyAction(state, { type: 'quest_offer', accept: false });
+      sfx.play('ui');
+      host.afterUiChrome();
+      return;
+    }
+    return;
+  }
 
   // Skill pick must work during move tweens — the overlay blocks everything else.
   if (state.skillPick && state.skillPick.length > 0) {

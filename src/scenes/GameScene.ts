@@ -70,6 +70,11 @@ import {
   drawSkillPickOverlay,
   hideSkillPickOverlay,
 } from '../game/views/overlays/SkillPickOverlay';
+import {
+  createQuestOfferObjects,
+  drawQuestOfferOverlay,
+  hideQuestOfferOverlay,
+} from '../game/views/overlays/QuestOfferOverlay';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
 import { drawHudChrome } from '../game/presenters/HudChrome';
 import { shearFlashMs, syncShearReadout } from '../game/presenters/ShearReadout';
@@ -181,6 +186,11 @@ export class GameScene extends Phaser.Scene {
   private skillPickPanel!: Phaser.GameObjects.Graphics;
   private skillPickText!: Phaser.GameObjects.Text;
   private skillPickBadgeGfx!: Phaser.GameObjects.Graphics;
+
+  private questOfferBg!: Phaser.GameObjects.Rectangle;
+  private questOfferPanel!: Phaser.GameObjects.Graphics;
+  private questOfferText!: Phaser.GameObjects.Text;
+  private questOfferBadgeGfx!: Phaser.GameObjects.Graphics;
   /** Mission log strip — hidden by default; `l` toggles. */
   private logOpen = false;
   private minimap = new MinimapView();
@@ -485,6 +495,12 @@ export class GameScene extends Phaser.Scene {
     this.skillPickPanel = skillPickObjs.panel;
     this.skillPickText = skillPickObjs.text;
     this.skillPickBadgeGfx = skillPickObjs.badgeGfx;
+
+    const questOfferObjs = createQuestOfferObjects(this);
+    this.questOfferBg = questOfferObjs.bg;
+    this.questOfferPanel = questOfferObjs.panel;
+    this.questOfferText = questOfferObjs.text;
+    this.questOfferBadgeGfx = questOfferObjs.badgeGfx;
 
     this.flash = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, Theme.rust, 0)
@@ -1603,6 +1619,24 @@ export class GameScene extends Phaser.Scene {
         this.skillPickPanel,
         this.skillPickText,
         this.skillPickBadgeGfx,
+      );
+    }
+    if (st.questOffer) {
+      drawQuestOfferOverlay(
+        this.questOfferPanel,
+        this.questOfferText,
+        this.questOfferBadgeGfx,
+        this.questOfferBg,
+        this.scale.width,
+        this.scale.height,
+        st.questOffer,
+      );
+    } else {
+      hideQuestOfferOverlay(
+        this.questOfferBg,
+        this.questOfferPanel,
+        this.questOfferText,
+        this.questOfferBadgeGfx,
       );
     }
     // Preference tip fills an empty hint line only — never stomps tele/vitals/context.

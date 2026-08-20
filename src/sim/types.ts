@@ -221,6 +221,22 @@ export interface RoomQuest {
   stage: number;
   done: boolean;
   spawnedIds: number[];
+  /**
+   * Accept/decline gate. Pending until the surveyor opens the offer modal on
+   * the site (or an NPC hands it off). Declined sites stay optional forever.
+   */
+  offer: 'pending' | 'accepted' | 'declined';
+}
+
+/** Pending accept/decline modal — room site or NPC agenda. */
+export interface QuestOffer {
+  source: 'room' | 'npc';
+  /** Set when source === 'npc'. */
+  npcId?: number;
+  title: LoreId;
+  body: LoreId;
+  costLine: LoreId | null;
+  payoffLine: LoreId | null;
 }
 
 /** Beacon multi-turn authorization progress. */
@@ -301,6 +317,8 @@ export interface GameState {
   shuttlePos: Pos | null;
   beaconPos: Pos | null;
   roomQuest: RoomQuest | null;
+  /** Accept/decline modal for a room site or NPC agenda (null when closed). */
+  questOffer: QuestOffer | null;
   /** Sector room layout for quest pulse (reset each sector). */
   rooms: MapRoom[];
   /** Field NPCs already logged as sighted this run. */
@@ -381,4 +399,5 @@ export type Action =
   | { type: 'aim'; dx: number; dy: number }
   | { type: 'exit' }
   | { type: 'close_ui' }
-  | { type: 'pick_skill'; id: SkillId };
+  | { type: 'pick_skill'; id: SkillId }
+  | { type: 'quest_offer'; accept: boolean };

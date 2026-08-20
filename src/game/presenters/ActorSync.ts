@@ -90,8 +90,9 @@ function updateNpcQuestLabel(
   view: EnemyView,
   npc: GameState['npcs'][number],
   visible: boolean,
+  offerNpcId: number | null,
 ): void {
-  const mark = npcQuestMarker(npc);
+  const mark = npcQuestMarker(npc, offerNpcId);
   if (!visible) {
     view.label.setVisible(false);
     return;
@@ -213,6 +214,8 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     beginActorDeath(host, host.enemyViews, id, view);
   }
 
+  const offerNpcId =
+    st.questOffer?.source === 'npc' ? (st.questOffer.npcId ?? null) : null;
   const npcIds = new Set<number>();
   for (const n of st.npcs) {
     npcIds.add(n.id);
@@ -239,7 +242,7 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     }
     const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
     view.img.setVisible(visible);
-    updateNpcQuestLabel(view, n, visible);
+    updateNpcQuestLabel(view, n, visible, offerNpcId);
     view.img.setAlpha(n.talked ? 0.45 : 1);
     const npcMoving = !snapPositions && (view.gx !== n.x || view.gy !== n.y);
     bindTexture(view.img, npcTextureKey(n.kind, contactAnimFrame(npcMoving, host.animFrame)));
@@ -393,7 +396,7 @@ export function syncGoalVisuals(
 export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): void {
   host.optionalSiteGfx.clear();
   const rq = st.roomQuest;
-  if (!rq || rq.done) return;
+  if (!rq || rq.done || rq.offer === 'declined') return;
   const step = activeQuestStep(rq);
   if (!step) return;
 
@@ -403,10 +406,11 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
   if (!explored && !visible && !mapperReveal) return;
 
   const onPlayer = st.player.x === step.pos.x && st.player.y === step.pos.y;
+  const pending = rq.offer === 'pending';
   const wx = step.pos.x * TILE_DRAW;
   const wy = step.pos.y * TILE_DRAW;
   const flash = st.ui.questFlash > 0;
-  const a = flash ? 1 : onPlayer ? 0.95 : 0.88;
+  const a = flash ? 1 : onPlayer ? 0.95 : pending ? 0.75 : 0.88;
 
   const inset = 2;
   const x0 = wx + inset;
