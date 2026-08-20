@@ -1,4 +1,4 @@
-import { NPCS } from '../../data/npcs';
+import { ALLIES, NPCS, type AllyKind } from '../../data/npcs';
 import { lore, type LoreId } from '../../data/lore';
 import { XP_NPC_AGENDA } from '../../data/progression';
 import { addItem, hasItem, removeOne } from '../inventory';
@@ -8,8 +8,9 @@ import { isItemWorn } from '../equip';
 import { nearestUnlootedCache } from '../cacheSurvey';
 import { openNpcQuestOffer } from '../questOffer';
 import { spawnAlly } from '../allySpawn';
+import { grantExtractFavor } from '../extractFavor';
 import { manhattan } from '../spatial';
-import type { Action, FieldNpc, GameState } from '../types';
+import type { Action, FieldNpc, GameState, Pos } from '../types';
 import type { Mechanic } from './types';
 
 const COMM_HAIL_RANGE = 2;
@@ -49,6 +50,56 @@ function npcWithOpenAgendaInRange(state: GameState): FieldNpc | null {
 
 export { spawnAlly };
 
+/** First open, unfinished contact job — for HUD / autopilot. */
+export function openAgendaNpc(state: GameState): FieldNpc | null {
+  return state.npcs.find((n) => n.agendaOpen && !n.agendaDone) ?? null;
+}
+
+export function agendaChipLore(npc: FieldNpc): LoreId {
+  switch (npc.kind) {
+    case 'stranded_ensign':
+      return 'UI-AGENDA-CHIP-ENSIGN';
+    case 'field_tech':
+      return 'UI-AGENDA-CHIP-TECH';
+    case 'survey_contact':
+      return 'UI-AGENDA-CHIP-SURVEY';
+    default:
+      return 'UI-AGENDA-CHIP-ENSIGN';
+  }
+}
+
+/** True when the kit can pay this contact's turn-in. */
+export function canFulfillAgenda(state: GameState, npc: FieldNpc): boolean {
+  if (!npc.agendaOpen || npc.agendaDone) return false;
+  if (npc.kind === 'stranded_ensign') return hasItem(state, 'med');
+  if (npc.kind === 'field_tech') return hasItem(state, 'sealant') || hasItem(state, 'filter');
+  if (npc.kind === 'survey_contact') return hasItem(state, 'mapper');
+  return false;
+}
+
+/** Walkable tile adjacent to the contact (NPCs block standing on their cell). */
+export function agendaApproachPos(state: GameState, npc: FieldNpc): Pos | null {
+  const dirs: Pos[] = [
+    { x: npc.x + 1, y: npc.y },
+    { x: npc.x - 1, y: npc.y },
+    { x: npc.x, y: npc.y + 1 },
+    { x: npc.x, y: npc.y - 1 },
+  ];
+  let best: Pos | null = null;
+  let bestD = 99;
+  for (const p of dirs) {
+    if (p.x < 0 || p.y < 0 || p.x >= state.width || p.y >= state.height) continue;
+    if (!state.tiles[p.y]![p.x]!.walkable) continue;
+    if (state.enemies.some((e) => e.alive && e.x === p.x && e.y === p.y)) continue;
+    const d = manhattan(state.player.x, state.player.y, p.x, p.y);
+    if (d < bestD) {
+      best = p;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
 function grantNpcCodex(state: GameState, page: LoreId): void {
   if (!state.codexLog.includes(page)) {
     state.codexLog.push(page);
@@ -77,6 +128,44 @@ function agendaWantLog(npc: FieldNpc): LoreId {
       return 'LOG-AGENDA-WANT-SURVEY';
     default:
       return 'LOG-AGENDA-NONE';
+  }
+}
+
+function refreshAgendaAlly(state: GameState, kind: AllyKind): boolean {
+  const ally = state.allies.find((a) => a.alive && a.kind === kind);
+  if (!ally) return false;
+  const full = ALLIES[kind].turns;
+  if (ally.turnsLeft >= full) return false;
+  ally.turnsLeft = full;
+  pushLog(state, 'LOG-AGENDA-ALLY', lore(ALLIES[kind].loreName));
+  return true;
+}
+
+function grantAgendaExtras(state: GameState, npc: FieldNpc): void {
+  if (npc.kind === 'stranded_ensign') {
+    refreshAgendaAlly(state, 'away_escort');
+    if (state.player.hp < state.player.maxHp) {
+      const heal = Math.min(2, state.player.maxHp - state.player.hp);
+      state.player.hp += heal;
+      pushLog(state, 'LOG-AGENDA-HEAL', `+${heal} HP`);
+    }
+    return;
+  }
+  if (npc.kind === 'field_tech') {
+    refreshAgendaAlly(state, 'probe_drone');
+    if (!state.extractFavor) {
+      grantExtractFavor(state, 'hazard_pass');
+    }
+    return;
+  }
+  if (npc.kind === 'survey_contact') {
+    const rq = state.roomQuest;
+    if (rq && rq.offer === 'accepted' && !rq.done) {
+      rq.payoffBoost = true;
+      pushLog(state, 'LOG-AGENDA-BOOST');
+    } else if (!state.extractFavor) {
+      grantExtractFavor(state, 'pattern_fail_safe');
+    }
   }
 }
 
@@ -116,6 +205,7 @@ function tryCompleteAgenda(state: GameState, npc: FieldNpc): boolean {
   gainXp(state, XP_NPC_AGENDA, 'agenda');
   npc.agendaDone = true;
   addItem(state, 'energy');
+  grantAgendaExtras(state, npc);
   pushLog(state, 'LOG-AGENDA-DONE');
   return true;
 }
@@ -181,6 +271,12 @@ export const npcMechanic: Mechanic = {
       if (n.talked) continue;
       const d = manhattan(state.player.x, state.player.y, n.x, n.y);
       if (d <= 1) return { type: 'exit' };
+    }
+    // Turn in an open agenda when the kit already has the bill.
+    for (const n of state.npcs) {
+      if (!canFulfillAgenda(state, n)) continue;
+      const d = manhattan(state.player.x, state.player.y, n.x, n.y);
+      if (d <= hailRange(state, true)) return { type: 'exit' };
     }
     return null;
   },

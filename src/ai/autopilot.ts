@@ -18,6 +18,11 @@ import { inShadow, isLit } from '../sim/light';
 import { cacheRoomList, cacheCenter } from '../sim/cacheSurvey';
 import { equipSlotsFor, isItemWorn } from '../sim/equip';
 import { wearableLootForSector } from '../data/wearableLoot';
+import {
+  agendaApproachPos,
+  canFulfillAgenda,
+  openAgendaNpc,
+} from '../sim/mechanics/npcMechanic';
 
 /** Optional kit spends keep headroom above the persona recharge floor. */
 function canBurnKit(state: GameState, cost: number, persona: Persona): boolean {
@@ -534,6 +539,32 @@ export function chooseAction(
     }
     return false;
   };
+
+  // Pay an open contact job when the kit already holds the bill — short detour only.
+  const agendaNpc = openAgendaNpc(state);
+  if (
+    agendaNpc &&
+    canFulfillAgenda(state, agendaNpc) &&
+    state.player.hp > state.player.maxHp * 0.55 &&
+    state.player.energy > state.player.maxEnergy * 0.35
+  ) {
+    const approach = agendaApproachPos(state, agendaNpc);
+    if (approach) {
+      const direct = manhattan(x, y, goal.x, goal.y);
+      const via =
+        manhattan(x, y, approach.x, approach.y) +
+        manhattan(approach.x, approach.y, goal.x, goal.y);
+      if (via <= direct + 6) {
+        if (x === approach.x && y === approach.y) {
+          return { type: 'exit' };
+        }
+        const agendaPath = bfsPath(state.tiles, { x, y }, approach, blockedElites);
+        if (agendaPath && agendaPath[0]) {
+          return { type: 'move', dx: agendaPath[0].x - x, dy: agendaPath[0].y - y };
+        }
+      }
+    }
+  }
 
   if (
     wantsCacheWearable(state) &&

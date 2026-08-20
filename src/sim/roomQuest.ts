@@ -257,7 +257,8 @@ function purgeCleared(state: GameState): boolean {
 }
 
 function finishQuestLoot(state: GameState, better: boolean): void {
-  const loot: ItemKind[] = better
+  const boosted = better || Boolean(state.roomQuest?.payoffBoost);
+  const loot: ItemKind[] = boosted
     ? ['plate', 'energy', 'med', 'filter', 'mapper']
     : ['energy', 'med', 'dart', 'sealant', 'med'];
   const a = pick(state.rng, loot);
@@ -265,7 +266,7 @@ function finishQuestLoot(state: GameState, better: boolean): void {
   addLoot(state, a);
   addLoot(state, b);
   const names = [lore(ITEMS[a].loreName), lore(ITEMS[b].loreName)];
-  if (better) {
+  if (boosted) {
     const c = pick(state.rng, ['energy', 'plate', 'probe'] as ItemKind[]);
     addLoot(state, c);
     names.push(lore(ITEMS[c].loreName));
@@ -274,7 +275,7 @@ function finishQuestLoot(state: GameState, better: boolean): void {
     if (addItem(state, wear)) names.push(lore(ITEMS[wear].loreName));
   }
   pushLog(state, 'LOG-PICKUP', names.join(', '));
-  grantQuestPayoff(state, better ? 'good' : 'basic');
+  grantQuestPayoff(state, boosted ? 'good' : 'basic');
   grantCodex(state);
   const favor = favorForQuest(state);
   if (favor) grantExtractFavor(state, favor);
