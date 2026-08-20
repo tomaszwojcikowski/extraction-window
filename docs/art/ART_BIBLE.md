@@ -161,8 +161,17 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
+- Hostile deluxe frames: 0 patrol idle, 1 stride/alert, 2 windup. `setTexture` only when the key changes.
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.
+
+**Perf (do not tighten):**
+
+- Actor/prop `setTexture` and FOV mote/threat redraw: once per `animFrame` (~420ms), not every Phaser `update`.
+- Mid-hop lamp wash tints **dirty cells only**; bloom/shadows step ~8×/hop. Skip motes mid-hop.
+- Field motes capped at 52 / 62 / 78 (Calm / Arcing / Breaching). Spike alpha/size, not uncapped count.
+- Live `LightView.ignite` Graphics: at most one (reuse/restart). First-light front is one ADD circle, not a second full-grid lighting pass.
+- No per-hostile idle tweens. No per-tile landmark scale tweens. No full-screen overlay that redraws every frame.
 
 ---
 
@@ -200,6 +209,14 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | Shear escalate audio stings | Done — Wave 39 |
 | Contact sheet motif QA | Done — Wave 40 |
 | Meridian hostile display names | Done — Wave 41 |
+| Light-as-matter ignite + first-light front | Done — Wave 43 |
+| Behavior-linked hostile frames | Done — Wave 44 |
+| Windup-synced telegraphs | Done — Wave 45 |
+| Combat/phaser contact juice | Done — Wave 46 |
+| Arcing/Breaching field crush (no scanline) | Done — Wave 47 |
+| Prop 4-frame + bloom pulse | Done — Wave 48 |
+| Sector-enter bloom + handshake ignite | Done — Wave 49 |
+| Animation sheet + motion/perf rules | Done — Wave 50 |
 
 ## 9. Gates
 

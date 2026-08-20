@@ -1235,6 +1235,10 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
         g.fillStyle(Theme.biolum, 0.45);
         g.fillRect(q(12 + pulse), q(y + 2), q(10), q(1));
       }
+      // Steam lift — four frames read as a pulse, not a static grate.
+      g.fillStyle(Theme.biolum, 0.18 + pulse * 0.08);
+      g.fillRect(q(16), q(4 - (pulse % 2)), q(16), q(2));
+      g.fillRect(q(20 + pulse), q(2), q(8), q(1));
       break;
     case 'hazard':
       // Corroded deck stain + blistered plate — material burn, not a warning glyph.
@@ -1537,6 +1541,8 @@ export function drawDeluxeProp(g: G, T: number, kind: DeluxePropKind, frame = 0)
       // Pulse as a thin scan line on the plaque, not a ring.
       g.fillStyle(Theme.inkBright, 0.45 + pulse * 0.1);
       g.fillRect(q(16), q(15 + pulse), q(16), q(1));
+      g.fillStyle(Theme.tape, 0.5 + pulse * 0.18);
+      g.fillRect(q(18 + (pulse % 2)), q(8), q(10), q(2));
       g.fillStyle(Theme.panelEdge, 1);
       for (const [bx, by] of [
         [12, 32],

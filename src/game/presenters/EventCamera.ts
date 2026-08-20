@@ -197,7 +197,29 @@ const CUES: Record<string, CameraCue> = {
     zoomScale: 1.04,
     zoomMs: 180,
   }),
+  phaser: cue('phaser', 67, 'snap', {
+    shakeMs: 50,
+    shakeIntensity: 0.0018,
+    vignette: 0.1,
+    vignetteMs: 120,
+    nudgePx: 2,
+    zoomScale: 1.05,
+    zoomMs: 160,
+  }),
 };
+
+/** Sector-enter wonder — bloom only; first-light sweep is the lead channel. */
+export function sectorEnterCue(): CameraCue {
+  return cue('sector_enter', 50, 'bloom', {
+    shakeMs: 0,
+    shakeIntensity: 0,
+    vignette: 0.14,
+    vignetteMs: 220,
+    nudgePx: 0,
+    zoomScale: 1.04,
+    zoomMs: 240,
+  });
+}
 
 /**
  * Lore → cue. Intentionally omits routine ticks:
@@ -219,6 +241,7 @@ const LOG_TO_CUE: ReadonlyArray<readonly [LoreId, keyof typeof CUES]> = [
   ['LOG-TELE-POUNCE', 'tele'],
   ['LOG-BOSS-TELE', 'tele'],
   ['LOG-KILL', 'kill'],
+  ['LOG-USE-PHASER', 'phaser'],
   ['LOG-ELITE-DOWN', 'elite'],
   ['LOG-BOSS-DOWN', 'elite'],
   ['LOG-EVT-SHEAR', 'approach_shear'],
@@ -249,4 +272,28 @@ export function pickCameraCue(logs: readonly LoreId[]): CameraCue | null {
 /** Breaching state-edge climax — vignette + soft kick; not selected from lore logs. */
 export function shearBreachCue(): CameraCue {
   return CUES.shear_breach!;
+}
+
+export type IgniteOriginState = {
+  player: { x: number; y: number };
+  lightSources: ReadonlyArray<{ x: number; y: number; color?: number; life?: number }>;
+  beaconPos?: { x: number; y: number } | null;
+};
+
+/**
+ * Ignition beat origin — flare landing / handshake pad, not always the surveyor.
+ */
+export function igniteTileForCue(cue: CameraCue, st: IgniteOriginState): { x: number; y: number } {
+  if (cue.ignite === 'flare') {
+    for (let i = st.lightSources.length - 1; i >= 0; i--) {
+      const src = st.lightSources[i]!;
+      if (src.life !== undefined && src.life > 0) {
+        return { x: src.x, y: src.y };
+      }
+    }
+  }
+  if (cue.id === 'handshake' && st.beaconPos) {
+    return { x: st.beaconPos.x, y: st.beaconPos.y };
+  }
+  return { x: st.player.x, y: st.player.y };
 }

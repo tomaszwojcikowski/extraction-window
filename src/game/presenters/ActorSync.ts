@@ -5,6 +5,7 @@ import { activeQuestStep } from '../../sim/roomQuest';
 import type { GameState } from '../../sim/types';
 import { playActorDeath, type EnemyView } from './ActionFeedback';
 import { npcQuestMarker, npcQuestMarkerColor } from './NpcMarkers';
+import { enemyAnimFrame } from './enemyAnimFrame';
 
 export type ActorSyncHost = {
   addImage(x: number, y: number, texture: string): Phaser.GameObjects.Image;
@@ -98,13 +99,18 @@ function updateNpcQuestLabel(
   view.label.setVisible(true);
 }
 
+function bindTexture(img: Phaser.GameObjects.Image, key: string): void {
+  if (img.texture.key !== key) img.setTexture(key);
+}
+
 /** Enemy texture + windup label refresh on anim frame tick. */
 export function refreshEnemyAnimFrame(host: ActorSyncHost, st: GameState): void {
   for (const en of st.enemies) {
     if (!en.alive) continue;
     const view = host.enemyViews.get(en.id);
     if (!view) continue;
-    view.img.setTexture(enemyTextureKey(en.kind, host.animFrame % 3));
+    const moving = view.gx !== en.x || view.gy !== en.y;
+    bindTexture(view.img, enemyTextureKey(en.kind, enemyAnimFrame(en, host.animFrame, moving)));
     updateEnemyIntentLabel(view, en);
   }
 }
@@ -157,7 +163,7 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     const destVis = visAt(en.x, en.y);
     let view = host.enemyViews.get(en.id);
     if (!view) {
-      const img = host.addImage(0, 0, enemyTextureKey(en.kind, host.animFrame % 3));
+      const img = host.addImage(0, 0, enemyTextureKey(en.kind, enemyAnimFrame(en, host.animFrame, false)));
       const bulk = en.tier === 'boss' ? 6 : en.tier === 'elite' ? 3 : 0;
       img.setDisplaySize(TILE_DRAW - 2 + bulk, TILE_DRAW - 2 + bulk);
       const label = host.addText(0, 0, '', {
@@ -179,7 +185,8 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
     view.img.setVisible(visible);
     view.label.setVisible(visible);
-    view.img.setTexture(enemyTextureKey(en.kind, host.animFrame % 3));
+    const moving = !snapPositions && (view.gx !== en.x || view.gy !== en.y);
+    bindTexture(view.img, enemyTextureKey(en.kind, enemyAnimFrame(en, host.animFrame, moving)));
     updateEnemyIntentLabel(view, en);
     if (snapPositions) {
       host.snapImg(view.img, en.x, en.y);
@@ -412,14 +419,16 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
     const len = Math.hypot(dx, dy) || 1;
     const ux = dx / len;
     const uy = dy / len;
-    let d = 0;
+    let d = (host.animFrame * 2) % (dash + gap);
     host.optionalSiteGfx.lineStyle(2, Theme.tape, a);
     while (d < len) {
       const seg = Math.min(dash, len - d);
-      host.optionalSiteGfx.beginPath();
-      host.optionalSiteGfx.moveTo(ax + ux * d, ay + uy * d);
-      host.optionalSiteGfx.lineTo(ax + ux * (d + seg), ay + uy * (d + seg));
-      host.optionalSiteGfx.strokePath();
+      if (d + seg > 0) {
+        host.optionalSiteGfx.beginPath();
+        host.optionalSiteGfx.moveTo(ax + ux * Math.max(0, d), ay + uy * Math.max(0, d));
+        host.optionalSiteGfx.lineTo(ax + ux * (d + seg), ay + uy * (d + seg));
+        host.optionalSiteGfx.strokePath();
+      }
       d += dash + gap;
     }
   };

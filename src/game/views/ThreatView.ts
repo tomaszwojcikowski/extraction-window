@@ -3,6 +3,7 @@ import { enemyThreatTiles, flankBoxTiles, incomingFlankSeats } from '../../sim/a
 import { Theme } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import type { Enemy, GameState } from '../../sim/types';
+import { beamLaneHot, tileHatchPulse, windupThreatPulse } from '../presenters/threatPulse';
 
 /**
  * Ground marking for armed telegraphs and pack seats.
@@ -91,9 +92,8 @@ export function drawThreatZones(
   tileDraw = TILE_DRAW,
 ): void {
   g.clear();
-  const pulse = 0.72 + (animFrame % 4) * 0.09;
 
-  drawFlankGround(g, st, pulse, tileDraw);
+  drawFlankGround(g, st, animFrame, tileDraw);
 
   for (const en of st.enemies) {
     if (!en.alive || en.windup <= 0 || !en.intent) continue;
@@ -103,12 +103,14 @@ export function drawThreatZones(
     const style = STYLES[en.intent];
     const tiles = enemyThreatTiles(st, en);
     const isBeam = en.intent === 'beam';
+    const pulse = windupThreatPulse(animFrame, en.windup);
 
     // `enemyThreatTiles()` for BEAM is a strict axis-aligned lane, so we can
     // draw straight markings based on the enemy→player axis.
     const beamDx = Math.sign(st.player.x - en.x);
     const beamDy = Math.sign(st.player.y - en.y);
     const beamVertical = beamDy !== 0; // dx==0 for cardinal lanes; dy encodes axis.
+    void beamDx;
 
     let maxBeamStep = 0;
     if (isBeam) {
@@ -123,20 +125,22 @@ export function drawThreatZones(
       const left = t.x * tileDraw;
       const top = t.y * tileDraw;
       const standingHere = st.player.x === t.x && st.player.y === t.y;
+      const local = tileHatchPulse(animFrame, t.x, t.y);
 
       if (isBeam) {
         // BEAM tiles: no diagonal crosshatch. A lane streak reads directionally.
         const step = Math.abs(t.x - en.x) + Math.abs(t.y - en.y);
         const endCap = step === maxBeamStep;
+        const hot = beamLaneHot(animFrame, step, maxBeamStep) || standingHere;
         const baseAlpha = style.alpha * pulse * (standingHere ? 0.95 : 0.55);
-        const spineAlpha = style.alpha * pulse * (standingHere ? 1.65 : 1.1);
+        const spineAlpha = style.alpha * pulse * (hot ? 1.65 : 0.85);
         g.fillStyle(style.color, baseAlpha);
         g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
         drawBeamLane(g, left, top, tileDraw, style.color, spineAlpha, beamVertical, endCap);
       } else {
-        g.fillStyle(style.color, style.alpha * pulse * (standingHere ? 1.5 : 1));
+        g.fillStyle(style.color, style.alpha * pulse * local * (standingHere ? 1.5 : 1));
         g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
-        hatchTile(g, left + 1, top + 1, tileDraw - 2, style.color, 0.28 * pulse);
+        hatchTile(g, left + 1, top + 1, tileDraw - 2, style.color, 0.28 * pulse * local);
       }
 
       // The tile under your feet gets a hard edge — you are in the blast.
@@ -171,7 +175,7 @@ function strokeTile(
 function drawFlankGround(
   g: Phaser.GameObjects.Graphics,
   st: GameState,
-  pulse: number,
+  animFrame: number,
   tileDraw: number,
 ): void {
   const incoming = incomingFlankSeats(st);
@@ -180,6 +184,7 @@ function drawFlankGround(
   for (const t of incoming) {
     const left = t.x * tileDraw;
     const top = t.y * tileDraw;
+    const pulse = tileHatchPulse(animFrame, t.x, t.y);
     g.fillStyle(Theme.rust, 0.12 * pulse);
     g.fillRect(left + 1, top + 1, tileDraw - 2, tileDraw - 2);
     hatchTile(g, left + 1, top + 1, tileDraw - 2, Theme.rust, 0.2 * pulse);
@@ -188,10 +193,12 @@ function drawFlankGround(
 
   for (const t of boxed) {
     if (!(st.visible[t.y]?.[t.x] ?? false)) continue;
+    const pulse = tileHatchPulse(animFrame, t.x, t.y);
     strokeTile(g, t.x, t.y, tileDraw, Theme.rust, 0.9 * pulse, 2);
   }
 
   if (boxed.length > 0) {
+    const pulse = tileHatchPulse(animFrame, st.player.x, st.player.y);
     strokeTile(g, st.player.x, st.player.y, tileDraw, Theme.rust, 0.95 * pulse, 2);
   }
 }

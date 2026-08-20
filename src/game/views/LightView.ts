@@ -4,7 +4,6 @@ import type { FieldLightSource, GameState } from '../../sim/types';
 import {
   collectLightSources,
   floodAddLight,
-  irradiance,
   SHADOW_THRESHOLD,
   tileBrightness,
   toneMap,
@@ -146,8 +145,15 @@ function biomeBloomGain(sectorId: SectorId): number {
 export class LightView {
   private fx: LightSource[] = [];
   private lastTurn = -1;
+  private readonly scene: Phaser.Scene;
+  private readonly lightParent: Phaser.GameObjects.Container;
   private readonly lightsGfx: Phaser.GameObjects.Graphics;
   private readonly shadowGfx: Phaser.GameObjects.Graphics | null;
+  /** Single reusable ignition Graphic — never stack overlapping ADD circles. */
+  private igniteGfx: Phaser.GameObjects.Graphics | null = null;
+  private igniteTween: Phaser.Tweens.Tween | null = null;
+  /** One ADD ring at the first-light front — not a second full-grid walk. */
+  private sweepFrontGfx: Phaser.GameObjects.Graphics | null = null;
   /** Cached per-tile presentation so sweeps/gates avoid a full relight. */
   private alphaGrid: number[][] = [];
   private tintGrid: number[][] = [];
@@ -180,6 +186,8 @@ export class LightView {
     parent: Phaser.GameObjects.Container,
     shadowParent?: Phaser.GameObjects.Container,
   ) {
+    this.scene = scene;
+    this.lightParent = parent;
     this.lightsGfx = scene.add.graphics();
     this.lightsGfx.setDepth(1);
     // Additive: light is energy landing on a surface, not paint over it.
@@ -195,6 +203,12 @@ export class LightView {
 
   destroy(): void {
     this.fx = [];
+    this.igniteTween?.stop();
+    this.igniteTween = null;
+    this.igniteGfx?.destroy();
+    this.igniteGfx = null;
+    this.sweepFrontGfx?.destroy();
+    this.sweepFrontGfx = null;
     this.lightsGfx.destroy();
     this.shadowGfx?.destroy();
   }
@@ -615,31 +629,47 @@ export class LightView {
   /**
    * Flare / beacon ignition beat: a hard-edged front leaving the source, plus
    * a bloom-out. Matches `irradiance()`'s windowed falloff rather than a fade.
+   * Reuses one Graphics object so handshake ticks cannot stack ADD circles.
    */
   ignite(
-    scene: Phaser.Scene,
+    _scene: Phaser.Scene,
     parent: Phaser.GameObjects.Container,
     x: number,
     y: number,
     radiusTiles: number,
     color: number,
+    durationMs = 420,
   ): void {
-    const g = scene.add.graphics();
-    g.setBlendMode(Phaser.BlendModes.ADD);
-    parent.add(g);
+    if (!this.igniteGfx || !this.igniteGfx.active) {
+      this.igniteGfx = this.scene.add.graphics();
+      this.igniteGfx.setBlendMode(Phaser.BlendModes.ADD);
+      parent.add(this.igniteGfx);
+    } else if (this.igniteGfx.parentContainer !== parent) {
+      this.igniteGfx.parentContainer?.remove(this.igniteGfx, false);
+      parent.add(this.igniteGfx);
+    }
+    const g = this.igniteGfx;
+    g.setAlpha(1);
+    this.igniteTween?.stop();
     const wx = x * TILE_DRAW + TILE_DRAW / 2;
     const wy = y * TILE_DRAW + TILE_DRAW / 2;
     const maxR = radiusTiles * TILE_DRAW;
     const state = { t: 0 };
-    scene.tweens.add({
+    this.igniteTween = this.scene.tweens.add({
       targets: state,
       t: 1,
-      duration: 420,
+      duration: durationMs,
       ease: 'Cubic.easeOut',
       onUpdate: () => {
         const t = state.t;
         const r = maxR * t;
+        const window = (1 - t) * (1 - t);
         g.clear();
+        // Filled disc tracks the irradiance window — hard edge, soft core.
+        g.fillStyle(color, 0.16 * window);
+        g.fillCircle(wx, wy, r);
+        g.fillStyle(blendTowardWhite(color, 0.35), 0.22 * (1 - t));
+        g.fillCircle(wx, wy, Math.min(r, TILE_DRAW * 1.05));
         g.lineStyle(Math.max(1, 4 * (1 - t)), blendTowardWhite(color, 0.6), 1 - t);
         g.strokeCircle(wx, wy, r);
         g.lineStyle(1, color, (1 - t) * 0.7);
@@ -647,8 +677,33 @@ export class LightView {
         g.fillStyle(blendTowardWhite(color, 0.75), Math.max(0, 0.9 - t * 1.1));
         g.fillCircle(wx, wy, TILE_DRAW * 0.5 * (1 - t * 0.4));
       },
-      onComplete: () => g.destroy(),
+      onComplete: () => {
+        g.clear();
+        this.igniteTween = null;
+      },
     });
+  }
+
+  /**
+   * One ADD circle at the first-light front. Radius is tiles from the player;
+   * pass null to hide. Does not walk the tile grid.
+   */
+  drawSweepFront(gx: number, gy: number, radiusTiles: number | null): void {
+    if (!this.sweepFrontGfx || !this.sweepFrontGfx.active) {
+      this.sweepFrontGfx = this.scene.add.graphics();
+      this.sweepFrontGfx.setBlendMode(Phaser.BlendModes.ADD);
+      this.lightParent.add(this.sweepFrontGfx);
+    }
+    const g = this.sweepFrontGfx;
+    g.clear();
+    if (radiusTiles === null || radiusTiles <= 0) return;
+    const wx = gx * TILE_DRAW + TILE_DRAW / 2;
+    const wy = gy * TILE_DRAW + TILE_DRAW / 2;
+    const r = radiusTiles * TILE_DRAW;
+    g.lineStyle(3, Theme.inkBright, 0.28);
+    g.strokeCircle(wx, wy, r);
+    g.lineStyle(1, Theme.arcWhite, 0.18);
+    g.strokeCircle(wx, wy, Math.max(0, r - 6));
   }
 
   /**
@@ -673,6 +728,7 @@ export class LightView {
           ? { ...colored, x: carry.x, y: carry.y }
           : colored;
       // Living / unstable emitters breathe; engineered ones hold steady.
+      // Vent / hazard / brine share fauna temp; beacons already pulse here.
       if (
         s.life === undefined &&
         (s.color === LightTemp.fauna || s.color === LightTemp.marker || s.color === LightTemp.beacon)
@@ -773,9 +829,10 @@ export class LightView {
     tileSprites: Phaser.GameObjects.Image[][],
     tileKey: (kind: string, x: number, y: number) => string,
     sources: LightSource[],
-    opts: { paintSprites?: boolean } = {},
+    opts: { paintSprites?: boolean; crush?: number } = {},
   ): void {
     const paint = opts.paintSprites !== false;
+    const crush = Math.min(1, Math.max(0, opts.crush ?? 0));
     const biome = BIOME_AMBIENT[st.sectorId];
     const floorTint = BIOME_FLOOR_TINT[st.sectorId];
     const fogTint = multiplyTint(Theme.fog, floorTint, 0.35);
@@ -873,6 +930,10 @@ export class LightView {
         if (st.emStress >= EM_HIGH) {
           // Sickly scan wash — intensity already in sim ambient; hue is present-only.
           tint = multiplyTint(tint, LightTemp.scan, 0.12);
+        }
+        if (crush > 0) {
+          tint = desaturate(tint, crush * 0.42);
+          tint = multiplyTint(tint, Theme.arc, crush * 0.22);
         }
 
         const occlusion = 1 - Math.min(0.55, this.contactOcclusion(st, x, y) * 0.07);
