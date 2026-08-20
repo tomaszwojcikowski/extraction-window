@@ -22,9 +22,7 @@ import { lore, type LoreId } from '../data/lore';
 import { createGame, describeObjective, type Action, type GameState } from '../sim';
 import {
   addCameraAtmosphere,
-  createArcSweep,
   drawHintPlate,
-  type ArcSweep,
   type CameraAtmosphere,
 } from './atmosphere';
 import { sfx } from '../audio/sfx';
@@ -113,7 +111,6 @@ export class GameScene extends Phaser.Scene {
   private playerDying = false;
   /** One-deep input buffer while move tweens run — latest wins. */
   private queuedAction: Action | null = null;
-  private arcSweep: ArcSweep | null = null;
   private cameraAtmosphere: CameraAtmosphere | null = null;
   private animFrame = 0;
   private animAccum = 0;
@@ -533,8 +530,6 @@ export class GameScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       ambient.stop();
       music.stop();
-      this.arcSweep?.destroy();
-      this.arcSweep = null;
       this.cameraAtmosphere?.destroy();
       this.cameraAtmosphere = null;
       this.lightView?.destroy();
@@ -687,12 +682,6 @@ export class GameScene extends Phaser.Scene {
         this.flashFx(Theme.arcWhite, 0.16);
       }
     }
-    this.arcSweep?.setPressure(shear.value, shear.accent);
-  }
-
-  private rebuildAtmosphere(): void {
-    this.arcSweep?.destroy();
-    this.arcSweep = createArcSweep(this, 85);
   }
 
   private buildMapSprites(): void {
@@ -776,7 +765,6 @@ export class GameScene extends Phaser.Scene {
     // Quest furniture lives on propLayer — frame must sit above it, not under the console.
     this.optionalSiteGfx.setDepth(81);
     this.propLayer.add(this.optionalSiteGfx);
-    this.rebuildAtmosphere();
   }
 
   /** Wall fixtures — sprite on the mount wall, nudged toward the lit floor. */
