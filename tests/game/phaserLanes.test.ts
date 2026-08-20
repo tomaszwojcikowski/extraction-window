@@ -5,6 +5,7 @@ import {
   phaserKitStatus,
   phaserLiveLaneCount,
   phaserNeedsRangeCoach,
+  phaserTrackMarks,
 } from '../../src/game/presenters/PhaserLanes';
 import { combatArena, makeEnemy } from '../sim/fixtures';
 
@@ -88,6 +89,38 @@ describe('phaserNeedsRangeCoach', () => {
     openLane(st, 1);
     st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 1, y: st.player.y })];
     expect(phaserNeedsRangeCoach(st)).toBe(true);
+  });
+});
+
+describe('phaserTrackMarks', () => {
+  it('is empty until the phaser is worn', () => {
+    const st = combatArena();
+    openLane(st, 2);
+    st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y })];
+    expect(phaserTrackMarks(st)).toEqual([]);
+  });
+
+  it('ticks range-band tiles, not the melee step', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 40;
+    openLane(st, 3);
+    const marks = phaserTrackMarks(st);
+    expect(marks.every((m) => m.role === 'band' && !m.live)).toBe(true);
+    expect(marks.some((m) => m.x === st.player.x + 1 && m.y === st.player.y)).toBe(false);
+    expect(marks.some((m) => m.x === st.player.x + 2 && m.y === st.player.y)).toBe(true);
+    expect(marks.some((m) => m.x === st.player.x + 3 && m.y === st.player.y)).toBe(true);
+  });
+
+  it('marks the live target tile when a 2–3 shot is ready', () => {
+    const st = combatArena();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 40;
+    openLane(st, 2);
+    st.enemies = [makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y })];
+    const marks = phaserTrackMarks(st);
+    expect(marks.some((m) => m.role === 'target' && m.live && m.x === st.player.x + 2)).toBe(true);
+    expect(marks.filter((m) => m.role === 'target')).toHaveLength(1);
   });
 });
 
