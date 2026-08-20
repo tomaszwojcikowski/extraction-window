@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
+import { GAME_VERSION } from '../data/version';
 import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
+import { drawChangelogOverlay } from '../game/views/overlays/ChangelogOverlay';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
 import {
   addCameraAtmosphere,
@@ -12,6 +14,8 @@ import {
 import {
   computeTitleLayout,
   formatMissionSeed,
+  isTitleChangelogDismissKey,
+  isTitleChangelogKey,
   isTitleHelpDismissKey,
   isTitleHelpKey,
   isTitleStartKey,
@@ -21,6 +25,7 @@ import { ambient, music, sfx } from '../audio';
 export class TitleScene extends Phaser.Scene {
   private seed = (Date.now() % 90000) + 1000;
   private helpOpen = false;
+  private changelogOpen = false;
   private audioPrimed = false;
   private scanPhase = 0;
   private cameraAtmosphere: CameraAtmosphere | null = null;
@@ -29,6 +34,8 @@ export class TitleScene extends Phaser.Scene {
   private plateGfx!: Phaser.GameObjects.Graphics;
   private helpPanel!: Phaser.GameObjects.Graphics;
   private helpText!: Phaser.GameObjects.Text;
+  private changelogPanel!: Phaser.GameObjects.Graphics;
+  private changelogText!: Phaser.GameObjects.Text;
 
   private beginText!: Phaser.GameObjects.Text;
   private seedText!: Phaser.GameObjects.Text;
@@ -107,7 +114,7 @@ export class TitleScene extends Phaser.Scene {
     this.chrome.push(this.muteText);
 
     this.add
-      .text(52, this.layout.footerY, lore('UI-ORG'), {
+      .text(52, this.layout.footerY, this.footerLeft(), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
         color: ThemeCss.inkMute,
@@ -119,7 +126,7 @@ export class TitleScene extends Phaser.Scene {
       delay: 720,
       loop: true,
       callback: () => {
-        if (!this.beginText?.active || this.helpOpen) return;
+        if (!this.beginText?.active || this.modalOpen()) return;
         this.beginText.setVisible(!this.beginText.visible);
       },
     });
@@ -128,7 +135,7 @@ export class TitleScene extends Phaser.Scene {
       delay: 48,
       loop: true,
       callback: () => {
-        if (this.helpOpen) return;
+        if (this.modalOpen()) return;
         this.scanPhase = (this.scanPhase + 0.008) % 1;
         const { window: win } = this.layout;
         drawTitleWindow(this.windowGfx, win.x, win.y, win.w, win.h, this.scanPhase);
@@ -141,6 +148,14 @@ export class TitleScene extends Phaser.Scene {
       this.cameraAtmosphere?.destroy();
       this.cameraAtmosphere = null;
     });
+  }
+
+  private modalOpen(): boolean {
+    return this.helpOpen || this.changelogOpen;
+  }
+
+  private footerLeft(): string {
+    return `${lore('UI-ORG')}  ·  ${GAME_VERSION}  ·  ${lore('UI-CHANGELOG-HINT')}`;
   }
 
   private drawPlates(): void {
@@ -191,26 +206,57 @@ export class TitleScene extends Phaser.Scene {
     if (visible) this.beginText.setVisible(true);
   }
 
+  private ensureHelpObjects(): void {
+    if (this.helpPanel) return;
+    this.helpPanel = this.add.graphics().setDepth(20);
+    this.helpText = this.add
+      .text(0, 0, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '12px',
+        color: ThemeCss.ink,
+      })
+      .setDepth(21);
+  }
+
+  private ensureChangelogObjects(): void {
+    if (this.changelogPanel) return;
+    this.changelogPanel = this.add.graphics().setDepth(20);
+    this.changelogText = this.add
+      .text(0, 0, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '12px',
+        color: ThemeCss.ink,
+      })
+      .setDepth(21);
+  }
+
   private openHelp(open: boolean): void {
-    if (!this.helpPanel) {
-      this.helpPanel = this.add.graphics().setDepth(20);
-      this.helpText = this.add
-        .text(0, 0, '', {
-          fontFamily: FONT_DATA,
-          fontSize: '12px',
-          color: ThemeCss.ink,
-        })
-        .setDepth(21);
-    }
+    this.ensureHelpObjects();
+    if (open && this.changelogOpen) this.openChangelog(false);
     this.helpOpen = open;
     this.helpPanel.setVisible(open);
     this.helpText.setVisible(open);
     if (!open) {
-      this.setChromeVisible(true);
+      if (!this.changelogOpen) this.setChromeVisible(true);
       return;
     }
     const { width, height } = this.scale;
     drawHelpOverlay(this.helpPanel, this.helpText, width, height, false);
+    this.setChromeVisible(false);
+  }
+
+  private openChangelog(open: boolean): void {
+    this.ensureChangelogObjects();
+    if (open && this.helpOpen) this.openHelp(false);
+    this.changelogOpen = open;
+    this.changelogPanel.setVisible(open);
+    this.changelogText.setVisible(open);
+    if (!open) {
+      if (!this.helpOpen) this.setChromeVisible(true);
+      return;
+    }
+    const { width, height } = this.scale;
+    drawChangelogOverlay(this.changelogPanel, this.changelogText, width, height);
     this.setChromeVisible(false);
   }
 
@@ -261,9 +307,24 @@ export class TitleScene extends Phaser.Scene {
       return;
     }
 
+    if (this.changelogOpen) {
+      if (isTitleChangelogDismissKey(e)) {
+        this.openChangelog(false);
+        sfx.play('ui');
+      }
+      return;
+    }
+
     if (isTitleHelpKey(e)) {
       this.ensureBeds();
       this.openHelp(true);
+      sfx.play('ui');
+      return;
+    }
+
+    if (isTitleChangelogKey(e)) {
+      this.ensureBeds();
+      this.openChangelog(true);
       sfx.play('ui');
       return;
     }

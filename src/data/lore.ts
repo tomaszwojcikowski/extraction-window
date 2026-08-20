@@ -67,6 +67,7 @@ export const LORE = {
     'i — kit · u — use or equip · step onto kit to pick it up\n' +
     'Enter / Space / > — hatch, beacon, pad, optional site, hail\n' +
     'n — minimap · p — PADD · l — mission log · ? — help · m — mute · Esc — close\n' +
+    'Title only: c — field bulletin (ship notes)\n' +
     'Amber dashed frame on a tile — optional site (see OPT line in HUD)\n' +
     '1 / 2 — pick field skill when prompted\n' +
     '\n' +
@@ -111,7 +112,33 @@ export const LORE = {
     'Kit keeps you alive. Key and Lattice unlock extract. Optional sites grant extract rewards.',
   'UI-CONTROLS':
     'WASD move · . wait · i kit · n map · l log · ? help',
-  'UI-CONTROLS-TITLE': 'WASD move · i kit · ? help',
+  'UI-CONTROLS-TITLE': 'WASD move · i kit · ? help · c bulletin',
+  'UI-VERSION': 'Field build',
+  'UI-CHANGELOG': 'FIELD BULLETIN',
+  'UI-CHANGELOG-HINT': 'c — bulletin',
+  'UI-CHANGELOG-BODY':
+    'v1.5.0 — SIGHT AND MOTION\n' +
+    '· Flare and beacon light flash from the emitter, not a HUD blink\n' +
+    '· Sector entry sweeps light in behind a front; first room arrives\n' +
+    '· Hostiles hold windup poses; packs stride when they move\n' +
+    '· Beam lanes travel with the countdown; last turn reads hotter\n' +
+    '· Shear Arcing / Breaching crushes the field palette — no scanline\n' +
+    '· Vents, beacons, and handshake pads pulse as live kit\n' +
+    '\n' +
+    'v1.4.0 — FIELD KIT READ\n' +
+    '· Title / End screens match stamped kit plates\n' +
+    '· Shear dial: hazard tape + pulsing Power / EM legs\n' +
+    '· Optional sites: amber dashed frame above the console\n' +
+    '· Kit overlay: worn / bag columns; panel no longer jumps\n' +
+    '· Minimap: quest / cache / elite pips on kit chrome\n' +
+    '· Shear escalate and breach audio stings (m mute)\n' +
+    '\n' +
+    'v1.3.0 — WRAP\n' +
+    '· Clearer optional quest coaching · loadout readout\n' +
+    '· Pages / PADD deploy · Breaching field motes\n' +
+    '\n' +
+    'Still the same extract: Key → beacon → Lattice → skiff.\n' +
+    'Power empty = lose. No Window turn timer.',
   'UI-MUTE-ON': 'Audio muted',
   'UI-MUTE-OFF': 'Audio on',
   'UI-HINT-EXIT': 'On hatch — step onto it or press Enter / Space to leave',

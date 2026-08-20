@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   computeTitleLayout,
   formatMissionSeed,
+  isTitleChangelogKey,
   isTitleHelpKey,
   isTitleStartKey,
 } from '../../src/scenes/titleLayout';
+import { GAME_VERSION } from '../../src/data/version';
+import { lore } from '../../src/data/lore';
 
 describe('titleLayout', () => {
   it('keeps the hero window inside the frame', () => {
@@ -34,5 +37,20 @@ describe('titleLayout', () => {
   it('maps ? to title help', () => {
     expect(isTitleHelpKey({ key: '?', shiftKey: false } as KeyboardEvent)).toBe(true);
     expect(isTitleHelpKey({ key: '/', shiftKey: true } as KeyboardEvent)).toBe(true);
+  });
+
+  it('maps c to the field bulletin', () => {
+    expect(isTitleChangelogKey({ key: 'c' } as KeyboardEvent)).toBe(true);
+    expect(isTitleChangelogKey({ key: 'C' } as KeyboardEvent)).toBe(true);
+    expect(isTitleChangelogKey({ key: 'n' } as KeyboardEvent)).toBe(false);
+  });
+});
+
+describe('field bulletin lore', () => {
+  it('ships a versioned player-facing changelog body', () => {
+    expect(GAME_VERSION).toMatch(/^v\d+\.\d+\.\d+$/);
+    expect(lore('UI-CHANGELOG')).toContain('BULLETIN');
+    expect(lore('UI-CHANGELOG-BODY')).toContain(GAME_VERSION);
+    expect(lore('UI-CONTROLS-TITLE')).toContain('c bulletin');
   });
 });
