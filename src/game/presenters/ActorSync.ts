@@ -6,6 +6,8 @@ import type { GameState } from '../../sim/types';
 import { playActorDeath, type EnemyView } from './ActionFeedback';
 import { npcQuestMarker, npcQuestMarkerColor } from './NpcMarkers';
 import { enemyAnimFrame } from './enemyAnimFrame';
+import { contactAnimFrame } from './contactAnimFrame';
+import { itemTextureKey } from './itemTexture';
 
 export type ActorSyncHost = {
   addImage(x: number, y: number, texture: string): Phaser.GameObjects.Image;
@@ -88,8 +90,9 @@ function updateNpcQuestLabel(
   view: EnemyView,
   npc: GameState['npcs'][number],
   visible: boolean,
+  offerNpcId: number | null,
 ): void {
-  const mark = npcQuestMarker(npc);
+  const mark = npcQuestMarker(npc, offerNpcId);
   if (!visible) {
     view.label.setVisible(false);
     return;
@@ -103,7 +106,7 @@ function bindTexture(img: Phaser.GameObjects.Image, key: string): void {
   if (img.texture.key !== key) img.setTexture(key);
 }
 
-/** Enemy texture + windup label refresh on anim frame tick. */
+/** Enemy / ally / NPC texture refresh on anim frame tick. */
 export function refreshEnemyAnimFrame(host: ActorSyncHost, st: GameState): void {
   for (const en of st.enemies) {
     if (!en.alive) continue;
@@ -112,6 +115,22 @@ export function refreshEnemyAnimFrame(host: ActorSyncHost, st: GameState): void 
     const moving = view.gx !== en.x || view.gy !== en.y;
     bindTexture(view.img, enemyTextureKey(en.kind, enemyAnimFrame(en, host.animFrame, moving)));
     updateEnemyIntentLabel(view, en);
+  }
+  for (const a of st.allies) {
+    if (!a.alive) continue;
+    const view = host.allyViews.get(a.id);
+    if (!view) continue;
+    const moving = view.gx !== a.x || view.gy !== a.y;
+    // Escorts stay flat at rest — no surveyor idle hop (Wave 53).
+    const frame =
+      a.kind === 'away_escort' && !moving ? 0 : contactAnimFrame(moving, host.animFrame);
+    bindTexture(view.img, allyTextureKey(a.kind, frame));
+  }
+  for (const n of st.npcs) {
+    const view = host.npcViews.get(n.id);
+    if (!view) continue;
+    const moving = view.gx !== n.x || view.gy !== n.y;
+    bindTexture(view.img, npcTextureKey(n.kind, contactAnimFrame(moving, host.animFrame)));
   }
 }
 
@@ -126,8 +145,7 @@ export function syncFieldItems(host: ActorSyncHost, st: GameState): void {
     if (!seen) continue;
     const quest = item.kind === 'relay_key' || item.kind === 'nav_core';
     if (!vis && !quest) continue;
-    const tex =
-      item.kind === 'nav_core' ? 't_nav_core' : item.kind === 'relay_key' ? 't_key' : 't_item';
+    const tex = itemTextureKey(item.kind);
     const spr = host.addImage(
       item.x * TILE_DRAW + TILE_DRAW / 2,
       item.y * TILE_DRAW + TILE_DRAW / 2,
@@ -138,13 +156,8 @@ export function syncFieldItems(host: ActorSyncHost, st: GameState): void {
     if (!vis) spr.setTint(Theme.memoryWash);
     host.itemLayer.add(spr);
     if (quest && vis) {
-      host.tweens.add({
-        targets: spr,
-        alpha: 0.55,
-        duration: 500,
-        yoyo: true,
-        repeat: -1,
-      });
+      // Instrument pulse via animFrame on redraw — no forever tween.
+      spr.setAlpha(0.55 + (host.animFrame % 2) * 0.35);
     }
   }
   if (host.goalMarker?.active) {
@@ -201,13 +214,15 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     beginActorDeath(host, host.enemyViews, id, view);
   }
 
+  const offerNpcId =
+    st.questOffer?.source === 'npc' ? (st.questOffer.npcId ?? null) : null;
   const npcIds = new Set<number>();
   for (const n of st.npcs) {
     npcIds.add(n.id);
     const destVis = visAt(n.x, n.y);
     let view = host.npcViews.get(n.id);
     if (!view) {
-      const img = host.addImage(0, 0, npcTextureKey(n.kind));
+      const img = host.addImage(0, 0, npcTextureKey(n.kind, contactAnimFrame(false, host.animFrame)));
       img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
       const label = host.addText(0, 0, '', {
         fontFamily: FONT_DATA,
@@ -227,8 +242,10 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     }
     const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
     view.img.setVisible(visible);
-    updateNpcQuestLabel(view, n, visible);
+    updateNpcQuestLabel(view, n, visible, offerNpcId);
     view.img.setAlpha(n.talked ? 0.45 : 1);
+    const npcMoving = !snapPositions && (view.gx !== n.x || view.gy !== n.y);
+    bindTexture(view.img, npcTextureKey(n.kind, contactAnimFrame(npcMoving, host.animFrame)));
     if (snapPositions) {
       host.snapImg(view.img, n.x, n.y);
       view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 2);
@@ -251,7 +268,7 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     const destVis = visAt(a.x, a.y);
     let view = host.allyViews.get(a.id);
     if (!view) {
-      const img = host.addImage(0, 0, allyTextureKey(a.kind));
+      const img = host.addImage(0, 0, allyTextureKey(a.kind, contactAnimFrame(false, host.animFrame)));
       img.setDisplaySize(TILE_DRAW - 2, TILE_DRAW - 2);
       const label = host.addText(0, 0, '', {
         fontFamily: FONT_DATA,
@@ -272,7 +289,12 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
     const visible = snapPositions ? destVis : destVis || visAt(view.gx, view.gy);
     view.img.setVisible(visible);
     view.label.setVisible(false);
-    view.img.setTexture(allyTextureKey(a.kind));
+    const allyMoving = !snapPositions && (view.gx !== a.x || view.gy !== a.y);
+    const allyFrame =
+      a.kind === 'away_escort' && !allyMoving
+        ? 0
+        : contactAnimFrame(allyMoving, host.animFrame);
+    bindTexture(view.img, allyTextureKey(a.kind, allyFrame));
     if (snapPositions) {
       host.snapImg(view.img, a.x, a.y);
       view.label.setPosition(view.img.x, view.img.y - TILE_DRAW / 2 + 5);
@@ -318,18 +340,10 @@ export function syncGoalVisuals(
   const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
   host.goalMarker.setPosition(wx, wy);
   host.goalMarker.setTint(Theme.flag);
-  if (!host.getGoalPulseTween()) {
-    host.goalMarker.setAlpha(0.75);
-    host.setGoalPulseTween(
-      host.tweens.add({
-        targets: host.goalMarker,
-        alpha: 0.35,
-        duration: 520,
-        yoyo: true,
-        repeat: -1,
-      }),
-    );
-  }
+  // Instrument pulse on animFrame — stop any legacy forever tween.
+  host.getGoalPulseTween()?.stop();
+  host.setGoalPulseTween(null);
+  host.goalMarker.setAlpha(0.45 + (host.animFrame % 4) * 0.12);
 
   const top = host.topInset;
   const screenX = wx - host.camX;
@@ -382,7 +396,7 @@ export function syncGoalVisuals(
 export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): void {
   host.optionalSiteGfx.clear();
   const rq = st.roomQuest;
-  if (!rq || rq.done) return;
+  if (!rq || rq.done || rq.offer === 'declined') return;
   const step = activeQuestStep(rq);
   if (!step) return;
 
@@ -392,10 +406,11 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
   if (!explored && !visible && !mapperReveal) return;
 
   const onPlayer = st.player.x === step.pos.x && st.player.y === step.pos.y;
+  const pending = rq.offer === 'pending';
   const wx = step.pos.x * TILE_DRAW;
   const wy = step.pos.y * TILE_DRAW;
   const flash = st.ui.questFlash > 0;
-  const a = flash ? 1 : onPlayer ? 0.95 : 0.88;
+  const a = flash ? 1 : onPlayer ? 0.95 : pending ? 0.75 : 0.88;
 
   const inset = 2;
   const x0 = wx + inset;

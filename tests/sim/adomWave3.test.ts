@@ -59,6 +59,7 @@ describe('room quests', () => {
       { pos: { x: 2, y: 2 }, room },
       { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
     ]);
+    st.roomQuest.offer = 'accepted';
     st.player.x = 2;
     st.player.y = 2;
 
@@ -79,6 +80,7 @@ describe('room quests', () => {
   it('previews the extract favor before an optional quest is completed', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+    st.roomQuest.offer = 'accepted';
 
     expect(roomQuestHudLine(st)).toMatchObject({
       payoff: lore('UI-QUEST-PAYS-KIT'),
@@ -93,6 +95,7 @@ describe('room quest purge', () => {
     const st = combatArena();
     const room = { x: 1, y: 1, w: 5, h: 5 };
     st.roomQuest = buildSingleRoomQuest('purge', { x: 3, y: 3 }, room);
+    st.roomQuest.offer = 'accepted';
     st.player.x = 3;
     st.player.y = 3;
 

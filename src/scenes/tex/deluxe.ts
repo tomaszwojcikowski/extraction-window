@@ -2108,10 +2108,30 @@ export function drawDeluxeEnemy(g: G, T: number, kind: EnemyKind, frame: number)
   }
 }
 
-export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'): void {
+export function drawDeluxeItem(
+  g: G,
+  T: number,
+  kind: 'crate' | 'key' | 'core' | 'med' | 'energy' | 'flare' | 'tool' | 'wear',
+): void {
   const q = actorBase(g, T);
   // Salvage is taped and stencilled; objectives get surveyor's flagging pink.
-  g.fillStyle(kind === 'crate' ? Theme.tape : kind === 'key' ? Theme.flag : Theme.arcWhite, 0.4);
+  const wash =
+    kind === 'crate'
+      ? Theme.tape
+      : kind === 'key'
+        ? Theme.flag
+        : kind === 'core'
+          ? Theme.arcWhite
+          : kind === 'med'
+            ? Theme.safe
+            : kind === 'energy'
+              ? Theme.tape
+              : kind === 'flare'
+                ? Theme.arc
+                : kind === 'tool'
+                  ? Theme.biolum
+                  : Theme.inkDim;
+  g.fillStyle(wash, 0.35);
   g.fillCircle(q(24), q(24), q(17));
   if (kind === 'crate') {
     g.fillStyle(Theme.inkDim, 1);
@@ -2128,7 +2148,7 @@ export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'):
     g.fillStyle(Theme.inkBright, 1);
     g.fillRect(q(22), q(10), q(4), q(25));
     g.fillRect(q(16), q(19), q(16), q(4));
-  } else {
+  } else if (kind === 'core') {
     g.fillStyle(Theme.arcWhite, 1);
     g.fillTriangle(q(24), q(3), q(5), q(24), q(24), q(45));
     g.fillTriangle(q(24), q(3), q(43), q(24), q(24), q(45));
@@ -2136,6 +2156,53 @@ export function drawDeluxeItem(g: G, T: number, kind: 'crate' | 'key' | 'core'):
     g.fillCircle(q(24), q(24), q(9));
     g.fillStyle(Theme.inkBright, 1);
     g.fillCircle(q(24), q(24), q(5));
+  } else if (kind === 'med') {
+    // Soft pack with cross notch — heal silhouette.
+    g.fillStyle(Theme.inkBright, 1);
+    g.fillRect(q(12), q(14), q(24), q(22));
+    g.fillStyle(Theme.safe, 1);
+    g.fillRect(q(21), q(17), q(6), q(16));
+    g.fillRect(q(16), q(22), q(16), q(6));
+    g.fillStyle(Theme.groundDeep, 0.55);
+    g.fillRect(q(14), q(16), q(4), q(2));
+  } else if (kind === 'energy') {
+    // Capsule cell — Power silhouette.
+    g.fillStyle(Theme.panelEdge, 1);
+    g.fillRect(q(16), q(10), q(16), q(28));
+    g.fillStyle(Theme.tape, 1);
+    g.fillRect(q(18), q(14), q(12), q(18));
+    g.fillStyle(Theme.inkBright, 0.7);
+    g.fillRect(q(20), q(16), q(8), q(4));
+    g.fillStyle(Theme.groundDeep, 1);
+    g.fillRect(q(19), q(34), q(10), q(3));
+  } else if (kind === 'flare') {
+    // Stick flare — magnesium tube.
+    g.fillStyle(Theme.panelEdge, 1);
+    g.fillRect(q(21), q(8), q(6), q(30));
+    g.fillStyle(Theme.arc, 1);
+    g.fillRect(q(20), q(6), q(8), q(8));
+    g.fillStyle(Theme.arcWhite, 0.85);
+    g.fillCircle(q(24), q(8), q(5));
+    g.fillStyle(Theme.tape, 0.9);
+    g.fillRect(q(20), q(28), q(8), q(3));
+  } else if (kind === 'tool') {
+    // Field tool — shaft + head.
+    g.fillStyle(Theme.panelEdge, 1);
+    g.fillRect(q(21), q(10), q(6), q(26));
+    g.fillStyle(Theme.biolum, 1);
+    g.fillTriangle(q(24), q(6), q(12), q(16), q(36), q(16));
+    g.fillStyle(Theme.inkBright, 0.6);
+    g.fillRect(q(19), q(30), q(10), q(4));
+  } else {
+    // Wearable plate — folded kit tab.
+    g.fillStyle(Theme.inkDim, 1);
+    g.fillRect(q(11), q(14), q(26), q(22));
+    g.fillStyle(Theme.panel, 1);
+    g.fillRect(q(14), q(17), q(20), q(16));
+    g.fillStyle(Theme.tape, 0.95);
+    g.fillRect(q(14), q(17), q(20), q(3));
+    g.fillStyle(Theme.inkBright, 0.5);
+    g.fillRect(q(16), q(24), q(12), q(2));
   }
 }
 
@@ -2144,32 +2211,38 @@ export function drawDeluxeContact(
   T: number,
   role: 'npc' | 'ally',
   kind: string,
+  frame = 0,
 ): void {
   const q = actorBase(g, T);
   const ally = role === 'ally';
   const body = ally ? Material.allyShell : kind === 'archive_holo' ? Material.contactHolo : Material.contactSuit;
   const rim = ally ? Material.allyRim : Material.contactRim;
+  const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
+  const stride = frame === 1 ? 1 : frame === 2 ? -1 : 0;
   if (kind.includes('drone')) {
     g.fillStyle(rim, 1);
-    g.fillRect(q(8), q(14), q(32), q(22));
+    g.fillRect(q(8), q(14 + bob), q(32), q(22));
     g.fillStyle(body, 1);
-    g.fillRect(q(12), q(18), q(24), q(14));
+    g.fillRect(q(12), q(18 + bob), q(24), q(14));
+    // Rotor tick on stride / assist.
+    g.fillStyle(Theme.biolum, 0.55 + frame * 0.12);
+    g.fillRect(q(10 + stride), q(12 + bob), q(28), q(2));
   } else {
     g.fillStyle(rim, 1);
-    g.fillRect(q(13), q(7), q(22), q(34));
+    g.fillRect(q(13 + stride), q(7 + bob), q(22), q(34));
     g.fillStyle(body, kind === 'archive_holo' ? 0.8 : 1);
-    g.fillRect(q(17), q(10), q(14), q(27));
-    g.fillRect(q(10), q(18), q(8), q(16));
-    g.fillRect(q(30), q(18), q(8), q(16));
+    g.fillRect(q(17 + stride), q(10 + bob), q(14), q(27));
+    g.fillRect(q(10 + stride), q(18 + bob), q(8), q(16));
+    g.fillRect(q(30 + stride), q(18 + bob), q(8), q(16));
   }
   g.fillStyle(Theme.inkBright, 1);
-  g.fillRect(q(18), q(15), q(5), q(3));
-  g.fillRect(q(27), q(15), q(4), q(3));
+  g.fillRect(q(18 + stride), q(15 + bob), q(5), q(3));
+  g.fillRect(q(27 + stride), q(15 + bob), q(4), q(3));
   g.fillStyle(ally ? Theme.safe : Theme.biolum, 1);
-  g.fillRect(q(21), q(25), q(8), q(5));
+  g.fillRect(q(21 + stride), q(25 + bob), q(8), q(5));
   if (kind === 'archive_holo') {
     g.fillStyle(Theme.biolum, 0.5);
-    g.fillRect(q(10), q(12), q(28), q(1));
-    g.fillRect(q(12), q(28), q(24), q(1));
+    g.fillRect(q(10), q(12 + bob), q(28), q(1));
+    g.fillRect(q(12), q(28 + bob), q(24), q(1));
   }
 }

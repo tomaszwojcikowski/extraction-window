@@ -103,6 +103,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     shuttlePos: map.shuttlePos,
     beaconPos: map.beaconPos,
     roomQuest: map.roomQuest,
+    questOffer: null,
     rooms: map.rooms.map((r) => ({ ...r })),
     noticedNpcIds: [],
     noticedBrandIds: [],
@@ -203,6 +204,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.shuttlePos = map.shuttlePos;
   state.beaconPos = map.beaconPos;
   state.roomQuest = map.roomQuest;
+  state.questOffer = null;
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.lightSources = map.wallLights.map((s) => ({ ...s }));
   state.contamination = [];

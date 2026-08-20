@@ -137,12 +137,18 @@ export function fieldHudChips(state: GameState): HudChip[] {
       fill: state.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
     });
   }
-  if (state.roomQuest && !state.roomQuest.done) {
+  if (state.roomQuest && !state.roomQuest.done && state.roomQuest.offer !== 'declined') {
     const n = state.roomQuest.steps.length;
     const i = state.roomQuest.stepIndex + 1;
     const kind = lore(questKindLabel(state.roomQuest.kind));
+    const label =
+      state.roomQuest.offer === 'pending'
+        ? `${kind}?`
+        : n > 1
+          ? `${kind} ${i}/${n}`
+          : kind;
     chips.push({
-      label: n > 1 ? `${kind} ${i}/${n}` : kind,
+      label,
       fill: Theme.tape,
     });
   }

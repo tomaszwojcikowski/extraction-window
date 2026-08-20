@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
+import { getSector } from '../../data/encounters';
 import type { Action, Enemy, GameState } from '../../sim';
 import {
   findPhaserTarget,
   PHASER_RANGE_MAX,
   PHASER_RANGE_MIN,
 } from '../../sim/phaser';
-import { sfx } from '../../audio/sfx';
+import { enterSfxForLayout, sfx } from '../../audio/sfx';
+import { layoutForSector } from '../../map/layoutKind';
 import { LightTemp, Theme, ThemeCss } from '../../scenes/theme';
 import { TILE_DRAW } from '../../scenes/textures';
 import { MOVE_MS } from '../GameHost';
@@ -620,16 +622,25 @@ export function playActionSfx(
   if (state.status === 'lost') return;
 
   if (state.sectorIndex !== prev.prevSector) {
-    sfx.play('sector');
+    const sector = getSector(state.sectorIndex);
+    sfx.play(enterSfxForLayout(layoutForSector(sector.id)));
     return;
   }
   if (has('LOG-TUT-DONE')) {
-    sfx.play('sector');
+    sfx.play(enterSfxForLayout(layoutForSector(state.sectorId)));
     return;
   }
   if (has('LOG-USED-KEY')) {
     sfx.play('beacon');
     flash(Theme.flag, 0.28);
+    return;
+  }
+  if (has('LOG-HS-START') || has('LOG-HS-TICK')) {
+    sfx.play('handshake');
+    return;
+  }
+  if (has('LOG-ION-PULSE') || has('LOG-ION-FRONT')) {
+    sfx.play('ion_pulse');
     return;
   }
   if (has('LOG-GOT-KEY') || has('LOG-GOT-CORE')) {
@@ -674,27 +685,33 @@ export function playActionSfx(
     sfx.play('hit');
     return;
   }
-  if (
-    has('LOG-USE-PHASER')
-  ) {
+  if (has('LOG-USE-PHASER')) {
     sfx.play('player_beam');
+    return;
+  }
+  if (has('LOG-USE-FLARE')) {
+    sfx.play('flare');
+    return;
+  }
+  if (
+    has('LOG-USE-PROBE') ||
+    has('LOG-USE-STIM') ||
+    has('LOG-USE-FILTER') ||
+    has('LOG-USE-DART')
+  ) {
+    sfx.play('kit_spend');
     return;
   }
   if (
     has('LOG-USE-MED') ||
     has('LOG-USE-ENERGY') ||
-    has('LOG-USE-PROBE') ||
-    has('LOG-USE-STIM') ||
     has('LOG-USE-PLATE') ||
-    has('LOG-USE-FLARE') ||
-    has('LOG-USE-FILTER') ||
     has('LOG-USE-BLADE') ||
     has('LOG-USE-BATON') ||
     has('LOG-USE-PHASER-EQUIP') ||
     has('LOG-USE-HARNESS') ||
     has('LOG-USE-VEST') ||
     has('LOG-UNEQUIP') ||
-    has('LOG-USE-DART') ||
     has('LOG-USE-SEALANT')
   ) {
     sfx.play('use');

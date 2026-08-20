@@ -60,6 +60,7 @@ function makeSingleStep(
     stage: 0,
     done: false,
     spawnedIds: [],
+    offer: 'pending',
   };
 }
 
@@ -107,6 +108,7 @@ export function buildVentSealQuest(
     stage: 0,
     done: false,
     spawnedIds: [],
+    offer: 'pending',
   };
 }
 
@@ -310,7 +312,7 @@ function completeMultiQuest(state: GameState): void {
 /** Call after the player moves — purge is the only quest that wakes on entry. */
 export function tickRoomQuest(state: GameState): void {
   const rq = state.roomQuest;
-  if (!rq || rq.done) return;
+  if (!rq || rq.done || rq.offer !== 'accepted') return;
   syncQuestActive(rq);
 
   if (rq.kind === 'purge' && rq.stage === 0 && inRoom(rq.room, state.player.x, state.player.y)) {
@@ -321,7 +323,7 @@ export function tickRoomQuest(state: GameState): void {
   }
 }
 
-function clearAllQuestTiles(state: GameState): void {
+export function clearAllQuestTiles(state: GameState): void {
   const rq = state.roomQuest;
   if (!rq) return;
   const seen = new Set<string>();
@@ -346,6 +348,13 @@ export function tryRoomQuest(state: GameState): boolean {
   if (!rq || rq.done) return false;
   syncQuestActive(rq);
   if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
+
+  if (rq.offer === 'declined') {
+    pushLog(state, 'LOG-RQ-DECLINED-SITE');
+    return true;
+  }
+
+  if (rq.offer !== 'accepted') return false;
 
   if (rq.kind === 'salvage') {
     rq.done = true;
@@ -381,7 +390,7 @@ export function tryRoomQuest(state: GameState): boolean {
 /** Seal the first vent site with sealant — the kit cost that opens site B. */
 export function trySealVentSite(state: GameState): boolean {
   const rq = state.roomQuest;
-  if (!rq || rq.done) return false;
+  if (!rq || rq.done || rq.offer !== 'accepted') return false;
   syncQuestActive(rq);
   if (rq.kind !== 'vent_seal' || rq.stepIndex !== 0) return false;
   if (state.player.x !== rq.pos.x || state.player.y !== rq.pos.y) return false;
@@ -403,7 +412,8 @@ export function isMultiSiteKind(kind: RoomQuestKind): boolean {
 }
 
 export function questStepPrompt(rq: RoomQuest): LoreId | null {
-  if (rq.done) return null;
+  if (rq.done || rq.offer === 'declined') return null;
+  if (rq.offer === 'pending') return 'UI-RQ-OFFER-HINT';
   if (rq.kind === 'purge') {
     if (rq.stage <= 0) return 'UI-RQ-PURGE';
     if (rq.stage === 1) return 'UI-RQ-PURGE-WAKE';

@@ -2,7 +2,7 @@
 
 > **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (WR band, lose-mix gates, playtest commands); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
-**Status (v1.5.0):** Waves 43–50 graphics & animation (light-as-matter, hostile frames, telegraph pulse, combat juice, Breaching crush, prop cycles, sector wonder). Prior `v1.4.0`: Waves 33–42 presentation wrap. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
+**Status (v1.7.0):** Audio redesign + sector grammar identity (shear music mood, pillar SFX, layout enter stings, ambient/role tilts). Prior `v1.6.0`: Waves 51–58 graphical presentation. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 

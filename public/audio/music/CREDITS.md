@@ -7,10 +7,13 @@ Sampled ambient loops under `public/audio/music/`. All tracks are CC0
 |------|------|--------|
 | `title.ogg` | title | [Another Space Background Track](https://opengameart.org/content/another-space-background-track) |
 | `field.ogg` | field | [Loopable Dungeon Ambience](https://opengameart.org/content/loopable-dungeon-ambience) |
-| `storm.ogg` | storm / critical | [EmptyCity](https://opengameart.org/content/emptycity-background-music) |
+| `shear.ogg` | shear / critical (Power + EM pressure) | [EmptyCity](https://opengameart.org/content/emptycity-background-music) |
 | `combat.ogg` | combat | [I swear I saw it](https://opengameart.org/content/i-swear-i-saw-it-background-track) |
 | `end_win.mp3` | end_win | [Contemplation](https://opengameart.org/content/contemplation-0) |
 | `end_lose.mp3` | end_lose | [lost in the unknown](https://opengameart.org/content/lost-in-the-unknown) |
 
 Replace any file in place (same name) to swap the bed. Keep loops seamless when possible.
-Procedural biome drones in `ambient.ts` stay as a quiet underlayer; one-shots stay in `sfx.ts`.
+Procedural biome drones in `ambient.ts` stay as a quiet underlayer (plus layout-grammar overlays);
+`music.ts` colours field/shear beds per sector (rate, band, optional shear underlay) so hatch
+changes still read as a new place with only one field + one shear asset.
+One-shots stay in `sfx.ts`.

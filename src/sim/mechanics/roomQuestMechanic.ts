@@ -1,6 +1,7 @@
 import type { LoreId } from '../../data/lore';
 import type { Action, GameState, RoomQuestKind } from '../types';
 import { tryRoomQuest, tickRoomQuest, questStepPrompt, activeQuestStep } from '../roomQuest';
+import { openRoomQuestOffer } from '../questOffer';
 import { FAVOR_LABEL, favorForQuest } from '../extractFavor';
 import type { Mechanic } from './types';
 import { lore } from '../../data/lore';
@@ -8,13 +9,21 @@ import { lore } from '../../data/lore';
 /**
  * Optional side-room anomalies — interact via `>` on the quest tile
  * (vent-seal site A uses Sealant Foam instead).
- * When tryAction returns true, the action dispatcher must end the player turn.
+ * When tryAction returns true, the action dispatcher must end the player turn
+ * — except when a quest offer modal opens (UI-only, no turn).
  */
 export const roomQuestMechanic: Mechanic = {
   id: 'room_quest',
 
   tryAction(state: GameState, action: Action): boolean {
     if (action.type !== 'exit') return false;
+    const rq = state.roomQuest;
+    if (rq && !rq.done && rq.offer === 'pending') {
+      const step = activeQuestStep(rq);
+      if (step && state.player.x === step.pos.x && state.player.y === step.pos.y) {
+        return openRoomQuestOffer(state);
+      }
+    }
     return tryRoomQuest(state);
   },
 
@@ -25,7 +34,7 @@ export const roomQuestMechanic: Mechanic = {
 
   contextHint(state: GameState): LoreId | null {
     const rq = state.roomQuest;
-    if (!rq || rq.done) return null;
+    if (!rq || rq.done || rq.offer === 'declined') return null;
     const step = activeQuestStep(rq);
     if (!step) return null;
     if (state.player.x === step.pos.x && state.player.y === step.pos.y) {
@@ -65,7 +74,7 @@ export function roomQuestHudLine(
   state: GameState,
 ): { prompt: LoreId; index: number; total: number; payoff: string; kind: RoomQuestKind } | null {
   const rq = state.roomQuest;
-  if (!rq || rq.done) return null;
+  if (!rq || rq.done || rq.offer !== 'accepted') return null;
   const prompt = questStepPrompt(rq);
   if (!prompt) return null;
   const favor = favorForQuest(state);

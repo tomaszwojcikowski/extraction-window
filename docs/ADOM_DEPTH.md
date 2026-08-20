@@ -624,6 +624,38 @@ Motion and light-as-matter after the chrome wrap. No Notice Impact, peek, scanli
 
 ---
 
+## Waves 51–58 — Graphical presentation (done)
+
+Loot/ally readability, ion-front and status field language, modal chrome parity, wake/goal instruments, handshake/mapper spatial tells. No Notice Impact, peek, scanline restore, or balance retune. Perf stays on the 420ms tick, dirty hop wash, mote caps, and one live ignite Graphic.
+
+| Wave | Ticket | Status |
+|------|--------|--------|
+| 51 | Ground loot kind silhouettes + sheet row | Done |
+| 52 | Ion-front field tint/mote language | Done |
+| 53 | Ally/NPC 3-frame motion + setTexture-on-change | Done |
+| 54 | Blind/jam/marked diegetic wash | Done |
+| 55 | Help/PADD/Changelog plated modal parity | Done |
+| 56 | Wake Breaching weight + goal animFrame pulse | Done |
+| 57 | Handshake pad sync ticks + mapper memory wash | Done |
+| 58 | Sheet QA, docs, `GAME_VERSION`, tag `v1.6.0` | Done |
+
+**Tag:** `v1.6.0` — presentation-only.
+
+---
+
+## Waves 59–60 — Field ear + sector identity (done)
+
+Audio honesty after the graphics pack, plus layout-grammar identity without new systems. No Notice Impact, peek, Window restore, or balance retune target — WR stays in band via existing gates.
+
+| Wave | Ticket | Status |
+|------|--------|--------|
+| 59 | Music moods: `storm` → `shear`; beds track Power / shear dial / ion front; **per-biome bed colour** (rate/band/shear underlay); pillar SFX; grammar hatch-enter stings | Done |
+| 60 | Ambient grammar overlays; room-role tilt + dress density by layout; wearable cache bait folds grammar cue; docs + `v1.7.0` | Done |
+
+**Tag:** `v1.7.0` — audio + sector identity.
+
+---
+
 ## Explicit defer (post-v1)
 
-Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.
+Art retheme, full audio asset rewrite (new beds beyond rename), campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

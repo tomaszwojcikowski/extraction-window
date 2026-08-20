@@ -2,6 +2,7 @@ import type { LoreId } from '../../data/lore';
 import { music } from '../../audio/music';
 import { applyAction, type Action, type GameState } from '../../sim';
 import { flankPenalty } from '../../sim/combat';
+import { computeShearPressure } from './ShearPressure';
 import type { LightView } from '../views/LightView';
 import {
   PHASER_BEAM_MS,
@@ -157,6 +158,8 @@ export function runTurnCommit(host: TurnCommitHost, action: Action): void {
     playerEnergy: state.player.energy,
     maxEnergy: state.player.maxEnergy,
     inCombat: host.threatNearby(),
+    shearState: computeShearPressure(state).state,
+    ionFrontTurns: state.ionFrontTurns,
   });
 
   if (fb.playerMoved) {

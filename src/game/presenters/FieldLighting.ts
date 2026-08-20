@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { TILE_DRAW } from '../../scenes/textures';
-import { Theme, crackTextureKey } from '../../scenes/theme';
+import { LightTemp, Theme, crackTextureKey } from '../../scenes/theme';
 import { tileBrightness } from '../../sim/light';
 import type { GameState } from '../../sim/types';
 import { computeShearPressure, type ShearPressureSpec } from './ShearPressure';
@@ -8,6 +8,7 @@ import { pressureRevealAt } from './PressureReveal';
 import { drawThreatZones } from '../views/ThreatView';
 import { drawWakeTells } from './WakeTells';
 import { drawPhaserLanes } from './PhaserLanes';
+import { drawHandshakePad } from './HandshakePad';
 import type { LightView } from '../views/LightView';
 
 export type ShadowCaster = {
@@ -52,6 +53,9 @@ export function drawFieldMotes(
   const maxMotes = climax ? 78 : arcing ? 62 : 52;
   const boost = climax ? 1.35 : arcing ? 1.12 : 1;
   const sector = st.sectorId;
+  const ionFront = st.ionFrontTurns > 0;
+  const ionDamp = st.ionFrontDampened;
+  const ionBoost = ionFront ? (ionDamp ? 1.05 : 1.18) : 1;
 
   for (let y = 0; y < st.height && count < maxMotes; y++) {
     for (let x = 0; x < st.width && count < maxMotes; x++) {
@@ -73,10 +77,12 @@ export function drawFieldMotes(
 
       if (sector === 'ash' || sector === 'approach') {
         oy = (oy + animFrame * 2) % Math.max(1, TILE_DRAW - 6);
-        g.fillStyle(Theme.arc, 0.35 * boost);
+        const ashColor = ionFront ? LightTemp.scan : Theme.arc;
+        g.fillStyle(ashColor, 0.35 * boost * ionBoost);
         g.fillRect(px, y * TILE_DRAW + oy, 1, climax ? 3 : 2);
       } else if (sector === 'brine' || sector === 'flood' || sector === 'reef') {
-        g.fillStyle(Theme.biolum, 0.4 * boost);
+        const wetColor = ionFront ? LightTemp.scan : Theme.biolum;
+        g.fillStyle(wetColor, 0.4 * boost * ionBoost);
         g.fillRect(px, py, climax ? 3 : 2, 1);
         if ((hash & 3) === 0) {
           g.fillStyle(Theme.biolumDeep, 0.35);
@@ -84,15 +90,19 @@ export function drawFieldMotes(
         }
       } else if (sector === 'duct' || sector === 'spire' || sector === 'vault') {
         oy = (TILE_DRAW - 6 - ((oy + animFrame) % Math.max(1, TILE_DRAW - 6))) | 0;
-        g.fillStyle(Theme.inkDim, 0.32 * boost);
+        const ductColor = ionFront ? LightTemp.scan : Theme.inkDim;
+        g.fillStyle(ductColor, 0.32 * boost * ionBoost);
         g.fillRect(px, y * TILE_DRAW + oy, 1, climax ? 4 : 3);
       } else if (sector === 'canopy') {
-        g.fillStyle(Theme.safe, 0.38 * boost);
+        g.fillStyle(ionFront ? LightTemp.scan : Theme.safe, 0.38 * boost * ionBoost);
         g.fillRect(px, py, 2, 1);
         g.fillRect(px + 1, py + 1, 1, 1);
       } else {
-        const ion = (Math.abs(hash >> 4) + animFrame) % 6 === 0;
-        g.fillStyle(ion ? Theme.biolum : Theme.inkBright, (ion ? 0.45 : 0.26) * boost);
+        const ion = ionFront || (Math.abs(hash >> 4) + animFrame) % 6 === 0;
+        g.fillStyle(
+          ion ? (ionFront ? LightTemp.scan : Theme.biolum) : Theme.inkBright,
+          (ion ? 0.45 : 0.26) * boost * ionBoost,
+        );
         g.fillRect(px, py, ion ? 2 : 1, ion ? 2 : 1);
       }
       if (climax && (hash & 7) === 0) {
@@ -183,7 +193,8 @@ export function applyFieldLightingPass(host: FieldLightingHost, st: GameState): 
   host.applyAllActorLighting(sources);
 
   drawThreatZones(host.threatGfx, st, host.animFrame);
-  drawWakeTells(host.threatGfx, st, st.player.x, st.player.y, host.animFrame, TILE_DRAW);
+  drawWakeTells(host.threatGfx, st, st.player.x, st.player.y, host.animFrame, TILE_DRAW, shear);
+  drawHandshakePad(host.threatGfx, st, host.animFrame, TILE_DRAW);
   drawPhaserLanes(host.threatGfx, st, host.animFrame, TILE_DRAW);
 
   for (let y = 0; y < st.height; y++) {

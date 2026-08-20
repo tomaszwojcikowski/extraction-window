@@ -193,6 +193,11 @@ export function chooseAction(
 ): Action | null {
   if (state.status !== 'playing') return null;
 
+  // Quest accept/decline — always take optional jobs (oracle keeps WR in band).
+  if (state.questOffer) {
+    return { type: 'quest_offer', accept: true };
+  }
+
   // Talent fork — persona picks its own doctrine; stable prefers survival forks
   if (state.skillPick && state.skillPick.length > 0) {
     const prefer = persona.skillPrefer;

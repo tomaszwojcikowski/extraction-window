@@ -30,6 +30,7 @@ describe('room quest readability', () => {
   it('HUD line names salvage verb and kit payoff', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+    st.roomQuest.offer = 'accepted';
 
     expect(roomQuestHudLine(st)).toMatchObject({
       prompt: 'UI-RQ-SALVAGE',
@@ -49,6 +50,7 @@ describe('room quest readability', () => {
       { pos: { x: 2, y: 2 }, room },
       { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
     ]);
+    st.roomQuest.offer = 'accepted';
 
     expect(formatRoomQuestHudLine(st)).toBe(
       `${lore(questKindLabel('vent_seal'))} 1/2 — ${lore('UI-RQ-VENT-A')} · ${lore('UI-QUEST-BILLS')} ${lore(questCostLabel('vent_seal'))} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
@@ -67,6 +69,7 @@ describe('room quest readability', () => {
       { pos: { x: 2, y: 2 }, room },
       { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
     ]);
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
 
     expect(roomQuestMechanic.contextHint?.(st)).toBe('UI-RQ-VENT-A');
@@ -74,9 +77,19 @@ describe('room quest readability', () => {
     expect(resolveHintLine(st)).not.toBe('UI-HINT-QUEST');
   });
 
+  it('standing on pending site coaches offer review', () => {
+    const st = combatArena();
+    st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+    placeOnQuest(st, 2, 2);
+
+    expect(roomQuestMechanic.contextHint?.(st)).toBe('UI-RQ-OFFER-HINT');
+    expect(resolveHintLine(st)).toBe('UI-RQ-OFFER-HINT');
+  });
+
   it('standing on salvage console coaches Enter / Space / >', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
 
     expect(resolveHintLine(st)).toBe('UI-RQ-SALVAGE');
@@ -85,6 +98,7 @@ describe('room quest readability', () => {
   it('off-step optional sites coach remotely without stealing the mechanic hint', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 5, y: 5 }, { x: 4, y: 4, w: 3, h: 3 });
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
     st.tiles[2]![2]!.kind = 'quest';
 
@@ -97,6 +111,7 @@ describe('room quest flows', () => {
   it('salvage completes and pays kit/XP only — no extract favor', () => {
     const st = combatArena();
     st.roomQuest = buildSingleRoomQuest('salvage', { x: 2, y: 2 }, { x: 1, y: 1, w: 3, h: 3 });
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
 
     expect(tryRoomQuest(st)).toBe(true);
@@ -110,6 +125,7 @@ describe('room quest flows', () => {
     const st = combatArena();
     const room = { x: 1, y: 1, w: 5, h: 5 };
     st.roomQuest = buildSingleRoomQuest('purge', { x: 3, y: 3 }, room);
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 3, 3);
 
     tickRoomQuest(st);
@@ -137,6 +153,7 @@ describe('room quest flows', () => {
       { pos: { x: 2, y: 2 }, room },
       { pos: { x: 4, y: 2 }, room: { ...room, x: 3 } },
     ]);
+    st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
     st.inventory = [{ kind: 'sealant', count: 1 }];
     st.ui.selectedSlot = 0;

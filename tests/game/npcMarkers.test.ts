@@ -29,6 +29,10 @@ describe('npcQuestMarker', () => {
     expect(npcQuestMarker(npc({ talked: true }))).toBe('!');
   });
 
+  it('shows ? while an accept/decline offer is open for that contact', () => {
+    expect(npcQuestMarker(npc({ talked: false }), 1)).toBe('?');
+  });
+
   it('paints active pings tape-yellow and completed pings safe', () => {
     expect(npcQuestMarkerColor('?')).toBe(ThemeCss.tape);
     expect(npcQuestMarkerColor('!')).toBe(ThemeCss.safe);

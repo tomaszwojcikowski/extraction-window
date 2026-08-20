@@ -174,4 +174,24 @@ describe('a sector can only draw the rooms it has earned', () => {
     }
     expect(signatures.size).toBeGreaterThanOrEqual(5);
   });
+
+  it('tilts mid-room roles by layout grammar (scatter quieter than warren)', () => {
+    const countRole = (sectorIndex: number, role: RoomRole): number => {
+      let n = 0;
+      const sector = getSector(sectorIndex);
+      for (const seed of SEEDS) {
+        for (const room of generateSectorMap(sector, seed, sectorIndex).rooms) {
+          if (room.role === role) n++;
+        }
+      }
+      return n;
+    };
+    // plains = scatter, ash = warren — same campaign, different skeletons.
+    const plainsQuiet = countRole(0, 'quiet');
+    const ashQuiet = countRole(9, 'quiet');
+    const plainsCollapse = countRole(0, 'collapse');
+    const ashCollapse = countRole(9, 'collapse');
+    expect(plainsQuiet).toBeGreaterThanOrEqual(ashQuiet);
+    expect(ashCollapse).toBeGreaterThanOrEqual(plainsCollapse);
+  });
 });

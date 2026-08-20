@@ -70,6 +70,11 @@ import {
   drawSkillPickOverlay,
   hideSkillPickOverlay,
 } from '../game/views/overlays/SkillPickOverlay';
+import {
+  createQuestOfferObjects,
+  drawQuestOfferOverlay,
+  hideQuestOfferOverlay,
+} from '../game/views/overlays/QuestOfferOverlay';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
 import { drawHudChrome } from '../game/presenters/HudChrome';
 import { shearFlashMs, syncShearReadout } from '../game/presenters/ShearReadout';
@@ -181,6 +186,11 @@ export class GameScene extends Phaser.Scene {
   private skillPickPanel!: Phaser.GameObjects.Graphics;
   private skillPickText!: Phaser.GameObjects.Text;
   private skillPickBadgeGfx!: Phaser.GameObjects.Graphics;
+
+  private questOfferBg!: Phaser.GameObjects.Rectangle;
+  private questOfferPanel!: Phaser.GameObjects.Graphics;
+  private questOfferText!: Phaser.GameObjects.Text;
+  private questOfferBadgeGfx!: Phaser.GameObjects.Graphics;
   /** Mission log strip — hidden by default; `l` toggles. */
   private logOpen = false;
   private minimap = new MinimapView();
@@ -486,6 +496,12 @@ export class GameScene extends Phaser.Scene {
     this.skillPickText = skillPickObjs.text;
     this.skillPickBadgeGfx = skillPickObjs.badgeGfx;
 
+    const questOfferObjs = createQuestOfferObjects(this);
+    this.questOfferBg = questOfferObjs.bg;
+    this.questOfferPanel = questOfferObjs.panel;
+    this.questOfferText = questOfferObjs.text;
+    this.questOfferBadgeGfx = questOfferObjs.badgeGfx;
+
     this.flash = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, Theme.rust, 0)
       .setOrigin(0)
@@ -546,12 +562,15 @@ export class GameScene extends Phaser.Scene {
     sfx.unlock();
     ambient.startSector(this.state.sectorId);
     void force;
+    const shear = computeShearPressure(this.state);
     music.syncField({
       sectorId: this.state.sectorId,
       sectorIndex: this.state.sectorIndex,
       playerEnergy: this.state.player.energy,
       maxEnergy: this.state.player.maxEnergy,
       inCombat: this.threatNearby(),
+      shearState: shear.state,
+      ionFrontTurns: this.state.ionFrontTurns,
     });
   }
 
@@ -1433,12 +1452,15 @@ export class GameScene extends Phaser.Scene {
     if (cue) this.applyCameraCue(cue);
     if (logs.includes('LOG-HS-START') || logs.includes('LOG-HS-TICK')) {
       const pos = this.state.beaconPos ?? { x: this.state.player.x, y: this.state.player.y };
+      // Staged ignite radius tracks handshake progress — one Graphic (Wave 57).
+      const progress = this.state.handshake?.progress ?? 0;
+      const radius = logs.includes('LOG-HS-TICK') ? 3.2 + progress * 1.4 : 4;
       this.lightView.ignite(
         this,
         this.lightLayer,
         pos.x,
         pos.y,
-        5,
+        radius,
         LightTemp.beacon,
         logs.includes('LOG-HS-TICK') ? 280 : 420,
       );
@@ -1597,6 +1619,24 @@ export class GameScene extends Phaser.Scene {
         this.skillPickPanel,
         this.skillPickText,
         this.skillPickBadgeGfx,
+      );
+    }
+    if (st.questOffer) {
+      drawQuestOfferOverlay(
+        this.questOfferPanel,
+        this.questOfferText,
+        this.questOfferBadgeGfx,
+        this.questOfferBg,
+        this.scale.width,
+        this.scale.height,
+        st.questOffer,
+      );
+    } else {
+      hideQuestOfferOverlay(
+        this.questOfferBg,
+        this.questOfferPanel,
+        this.questOfferText,
+        this.questOfferBadgeGfx,
       );
     }
     // Preference tip fills an empty hint line only — never stomps tele/vitals/context.

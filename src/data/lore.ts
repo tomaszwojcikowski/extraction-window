@@ -117,6 +117,22 @@ export const LORE = {
   'UI-CHANGELOG': 'FIELD BULLETIN',
   'UI-CHANGELOG-HINT': 'c — bulletin',
   'UI-CHANGELOG-BODY':
+    'v1.7.0 — FIELD EAR\n' +
+    '· Music beds track Power / shear / ion — storm mood retired\n' +
+    '· Each biome colours the bed (rate / band / shear underlay)\n' +
+    '· Flare, ion pulse, handshake, and kit-spend each have a voice\n' +
+    '· Hatch-enter sting follows layout grammar (scatter→warren)\n' +
+    '· Biome drones pick up grammar overlays; room roles tilt by shape\n' +
+    '\n' +
+    'v1.6.0 — FIELD READ\n' +
+    '· Floor loot silhouettes: med, cell, flare, tool, wear\n' +
+    '· Ion front tints the field, not only the HUD chip\n' +
+    '· Allies and contacts stride like hostiles; escorts stay flat\n' +
+    '· Blind / jam / marked wash the suit — sticky, not a punch\n' +
+    '· Help, PADD, and bulletin share kit tape headers\n' +
+    '· Breaching wakes hit harder; goal marker pulses on the meter tick\n' +
+    '· Handshake pad shows sync stages; mapper memory ≠ fog\n' +
+    '\n' +
     'v1.5.0 — SIGHT AND MOTION\n' +
     '· Flare and beacon light flash from the emitter, not a HUD blink\n' +
     '· Sector entry sweeps light in behind a front; first room arrives\n' +
@@ -246,6 +262,26 @@ export const LORE = {
   'UI-RQ-COST-TIME': 'Power time',
   'UI-RQ-COST-HP': 'HP',
   'UI-RQ-COST-KIT': 'sealant',
+  'UI-RQ-OFFER-HINT': 'Optional site — Enter / Space / > to review',
+  'UI-RQ-OFFER-SALVAGE':
+    'Salvage console. Bills Power/EM opportunity while you work the site. Pays kit and a PADD page. Optional — extract never requires it.',
+  'UI-RQ-OFFER-PURGE':
+    'Purge nest. Stepping in wakes hostiles — bills HP. Clear them, then claim the crate. Pays kit and a hazard skip favor.',
+  'UI-RQ-OFFER-VENT':
+    'Vent seal. Use Sealant Foam on the vent, then lock the console. Bills kit. Pays skiff-lock favor. Two sites.',
+  'UI-QUEST-OFFER': 'OPTIONAL JOB',
+  'UI-QUEST-ACCEPT': '1 / Enter — Accept',
+  'UI-QUEST-DECLINE': '2 / Esc — Decline',
+  'UI-NPC-OFFER-ENSIGN':
+    'Stranded ensign. Accept: Hypo + Power Cell and an away escort. Later job: return a Field Hypo.',
+  'UI-NPC-OFFER-TECH':
+    'Field tech. Accept: probe drone escort. Later job: return Sealant Foam or an Ion Filter.',
+  'UI-NPC-OFFER-SURVEY':
+    'Survey contact. Accept: bearings and the sector optional site unlocks. Later job: return a Nav Ping.',
+  'UI-NPC-COST-MED': 'later: Field Hypo',
+  'UI-NPC-COST-SEALANT': 'later: sealant / filter',
+  'UI-NPC-COST-MAPPER': 'later: Nav Ping',
+  'UI-NPC-OFFER-PAYOFF': 'kit + escort / site',
   'UI-RQ-SALVAGE': 'Salvage console — Enter / Space / >',
   'UI-RQ-PURGE': 'Purge nest — step in to wake hostiles',
   'UI-RQ-PURGE-WAKE': 'Clear hostiles — then Enter / Space / >',
@@ -715,6 +751,14 @@ export const LORE = {
     'Optional PURGE — bills HP · pays Skip 1 hazard · follow amber frame.',
   'LOG-RQ-BRIEF-VENT':
     'Optional VENT SEAL — bills sealant · pays Block 1 skiff lock · two sites.',
+  'LOG-RQ-OFFER': 'Optional job offered — accept or decline.',
+  'LOG-RQ-ACCEPT': 'Optional job accepted.',
+  'LOG-RQ-DECLINE': 'Optional job declined — site left cold.',
+  'LOG-RQ-DECLINED-SITE': 'Declined site — no further work here.',
+  'LOG-NPC-OFFER': 'Contact offers a job — accept or decline.',
+  'LOG-AGENDA-ACCEPT': 'Contact job accepted.',
+  'LOG-AGENDA-DECLINE': 'Contact job declined.',
+  'LOG-QUEST-NEED': 'Resolve the job offer first (1 accept / 2 decline).',
   'LOG-RQ-SALVAGE': 'Optional salvage complete — kit and PADD page recovered.',
   'LOG-RQ-PURGE': 'Optional purge complete — hostiles cleared; crate unlocked.',
   'LOG-RQ-PURGE-WAKE': 'Optional purge — hostiles spawning.',

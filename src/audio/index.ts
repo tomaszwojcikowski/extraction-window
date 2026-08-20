@@ -1,4 +1,4 @@
 export { audioBus } from './bus';
-export { sfx, type SfxId } from './sfx';
+export { sfx, enterSfxForLayout, type SfxId } from './sfx';
 export { ambient } from './ambient';
-export { music, type MusicMood } from './music';
+export { music, pickFieldMood, biomeMusicColor, fieldBedKey, type MusicMood, type FieldMusicOpts } from './music';
