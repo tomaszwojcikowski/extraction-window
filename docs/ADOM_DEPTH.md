@@ -605,6 +605,25 @@ Chrome honesty and glance readability after ART_BIBLE §8 closeout. No Notice Im
 
 ---
 
+## Waves 43–50 — Graphics & animation (done)
+
+Motion and light-as-matter after the chrome wrap. No Notice Impact, peek, scanline restore, or balance retune. Perf stays on the 420ms tick, dirty hop wash, and ~8× bloom.
+
+| Wave | Ticket | Status |
+|------|--------|--------|
+| 43 | Flare/beacon ignite at emitter + first-light front bloom | Done |
+| 44 | Behavior-linked hostile deluxe frames | Done |
+| 45 | Windup-synced ThreatView pulse + beam travel + dashed site | Done |
+| 46 | Melee tint flash, phaser spine, phaser camera snap | Done |
+| 47 | Arcing/Breaching field crush in tile tint (no scanline) | Done |
+| 48 | Prop 4-frame deluxe + bloom pulse + crack flicker | Done |
+| 49 | Sector-enter bloom + handshake ignite (one live Graphic) | Done |
+| 50 | Sheet animation QA + ART_BIBLE motion/perf rules | Done |
+
+**Tag:** `v1.5.0` — presentation-only.
+
+---
+
 ## Explicit defer (post-v1)
 
 Art retheme, audio redesign, campaign-length change, Godot/Unity port, meta progression, towns/shops, cross-run unlocks, Window clock restoration.

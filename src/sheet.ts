@@ -201,7 +201,7 @@ class SheetScene extends Phaser.Scene {
         'sheet',
         [0, 1, 2].map((frame) => enemyTextureKey(kind, frame)),
         lore(def.loreName),
-        `${kind} · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
+        `${kind} · idle/stride/windup · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
         def.color,
       );
     }
@@ -327,8 +327,10 @@ class SheetScene extends Phaser.Scene {
       );
     }
     for (const [label, key] of STRUCTURE) {
-      const frames = this.textures.exists(`${key}_1`) ? [key, `${key}_1`, `${key}_2`] : [key];
-      this.cell('props', frames, label, 'rule-changing');
+      const frames = this.textures.exists(`${key}_1`)
+        ? [key, `${key}_1`, `${key}_2`, `${key}_3`].filter((k) => this.textures.exists(k))
+        : [key];
+      this.cell('props', frames, label, frames.length > 1 ? '4-frame' : 'rule-changing');
     }
   }
 

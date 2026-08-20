@@ -1094,15 +1094,21 @@ export function paintPhaserBeamFrame(
   g.lineBetween(a.x, a.y, x, y);
   g.lineStyle(5, Theme.arcWhite, 0.42);
   g.lineBetween(a.x, a.y, x, y);
-  g.lineStyle(2, 0xffffff, 0.98);
+  g.lineStyle(2, Theme.inkBright, 0.98);
   g.lineBetween(a.x, a.y, x, y);
+
+  // Leading core — the beam head, not a second overlay Graphic.
+  g.fillStyle(Theme.inkBright, 0.9);
+  g.fillCircle(x, y, 3 + progress * 2);
+  g.fillStyle(Theme.arcWhite, 0.55);
+  g.fillCircle(x, y, 2);
 
   const impactR = 4 + progress * 7;
   g.fillStyle(Theme.arcWhite, 0.55);
   g.fillCircle(b.x, b.y, impactR);
-  g.lineStyle(2, 0xffffff, 0.9);
+  g.lineStyle(2, Theme.inkBright, 0.9);
   g.strokeCircle(b.x, b.y, impactR * 0.72);
-  g.fillStyle(0xffffff, 0.95);
+  g.fillStyle(Theme.inkBright, 0.95);
   g.fillCircle(b.x, b.y, 2.5);
 }
 
@@ -1475,15 +1481,15 @@ export function playMoveAnims(
   });
 }
 
-/** Brief white tint on visible enemies after a player hit/kill. */
+/** Brief white-hot tint on visible enemies after a player hit/kill. */
 export function tintVisibleEnemies(
   time: Phaser.Time.Clock,
   enemyViews: Iterable<EnemyView>,
 ): void {
   for (const view of enemyViews) {
     if (!view.img.visible || view.dying) continue;
-    view.img.setTint(0xffffff);
-    time.delayedCall(80, () => {
+    view.img.setTint(Theme.arcWhite);
+    time.delayedCall(90, () => {
       if (view.img.active && !view.dying) view.img.clearTint();
     });
   }

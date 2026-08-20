@@ -50,6 +50,7 @@ export function drawFieldMotes(
   const climax = shear?.state === 'Breaching';
   const arcing = shear?.state === 'Arcing';
   const maxMotes = climax ? 78 : arcing ? 62 : 52;
+  const boost = climax ? 1.35 : arcing ? 1.12 : 1;
   const sector = st.sectorId;
 
   for (let y = 0; y < st.height && count < maxMotes; y++) {
@@ -72,31 +73,31 @@ export function drawFieldMotes(
 
       if (sector === 'ash' || sector === 'approach') {
         oy = (oy + animFrame * 2) % Math.max(1, TILE_DRAW - 6);
-        g.fillStyle(Theme.arc, 0.35);
-        g.fillRect(px, y * TILE_DRAW + oy, 1, 2);
+        g.fillStyle(Theme.arc, 0.35 * boost);
+        g.fillRect(px, y * TILE_DRAW + oy, 1, climax ? 3 : 2);
       } else if (sector === 'brine' || sector === 'flood' || sector === 'reef') {
-        g.fillStyle(Theme.biolum, 0.4);
-        g.fillRect(px, py, 2, 1);
+        g.fillStyle(Theme.biolum, 0.4 * boost);
+        g.fillRect(px, py, climax ? 3 : 2, 1);
         if ((hash & 3) === 0) {
           g.fillStyle(Theme.biolumDeep, 0.35);
           g.fillRect(px + 1, py + 2, 1, 1);
         }
       } else if (sector === 'duct' || sector === 'spire' || sector === 'vault') {
         oy = (TILE_DRAW - 6 - ((oy + animFrame) % Math.max(1, TILE_DRAW - 6))) | 0;
-        g.fillStyle(Theme.inkDim, 0.32);
-        g.fillRect(px, y * TILE_DRAW + oy, 1, 3);
+        g.fillStyle(Theme.inkDim, 0.32 * boost);
+        g.fillRect(px, y * TILE_DRAW + oy, 1, climax ? 4 : 3);
       } else if (sector === 'canopy') {
-        g.fillStyle(Theme.safe, 0.38);
+        g.fillStyle(Theme.safe, 0.38 * boost);
         g.fillRect(px, py, 2, 1);
         g.fillRect(px + 1, py + 1, 1, 1);
       } else {
         const ion = (Math.abs(hash >> 4) + animFrame) % 6 === 0;
-        g.fillStyle(ion ? Theme.biolum : Theme.inkBright, ion ? 0.45 : 0.26);
+        g.fillStyle(ion ? Theme.biolum : Theme.inkBright, (ion ? 0.45 : 0.26) * boost);
         g.fillRect(px, py, ion ? 2 : 1, ion ? 2 : 1);
       }
       if (climax && (hash & 7) === 0) {
-        g.fillStyle(Theme.arcWhite, 0.32);
-        g.fillRect(px + 1, py - 1, 1, 1);
+        g.fillStyle(Theme.arcWhite, 0.42);
+        g.fillRect(px + 1, py - 1, 1, 2);
       }
       count += 1;
     }
@@ -124,7 +125,8 @@ export function syncPressureCracks(
         );
         host.crackSprites.set(id, spr);
       } else {
-        spr.setTexture(crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent));
+        const key = crackTextureKey(reveal.sectorId, reveal.variant, reveal.urgent);
+        if (spr.texture.key !== key) spr.setTexture(key);
       }
       spr.setVisible(reveal.visible);
       spr.setAlpha(reveal.alpha);
@@ -164,12 +166,14 @@ export function applyFieldLightingPass(host: FieldLightingHost, st: GameState): 
   }
 
   const pending = host.lightView.hasPendingMoveBlend();
+  const crush =
+    shear.state === 'Breaching' ? 0.85 : shear.state === 'Arcing' ? 0.45 : 0;
   host.lightView.applyTileLighting(
     st,
     host.tileSprites,
     (kind, x, y) => host.tileKey(kind, x, y),
     sources,
-    { paintSprites: !pending },
+    { paintSprites: !pending, crush },
   );
   if (pending) return;
 

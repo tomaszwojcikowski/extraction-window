@@ -57,7 +57,7 @@ import {
 } from '../game/presenters/ActorSync';
 import { applyFieldLightingPass, type FieldLightingHost } from '../game/presenters/FieldLighting';
 import { runTurnCommit, type TurnCommitHost } from '../game/presenters/TurnPresenter';
-import { pickCameraCue, shearBreachCue, type CameraCue } from '../game/presenters/EventCamera';
+import { pickCameraCue, shearBreachCue, sectorEnterCue, igniteTileForCue, type CameraCue } from '../game/presenters/EventCamera';
 import { CameraKick } from '../game/presenters/CameraKick';
 import { HudView, HUD_BAR_SLOTS, HUD_BADGE_SLOTS } from '../game/views/HudView';
 import { LightView } from '../game/views/LightView';
@@ -525,6 +525,7 @@ export class GameScene extends Phaser.Scene {
     this.redrawTilesAndHud();
     this.updateCamera(true);
     this.syncFieldAudio(true);
+    this.startFirstLight();
     // Phaser may finish Title shutdown after create — re-assert beds next tick
     this.time.delayedCall(50, () => this.syncFieldAudio(true));
     this.events.once('shutdown', () => {
@@ -576,8 +577,10 @@ export class GameScene extends Phaser.Scene {
       this.animFrame = (this.animFrame + 1) % 4;
       this.tickAnimatedTiles();
       this.tickAnimatedActors();
-      // Pulse vent/hazard/beacon bloom with anim frame
-      if (this.state.status === 'playing') applyFieldLightingPass(this.fieldLightingHost(), this.state);
+      if (this.state.status === 'playing') {
+        applyFieldLightingPass(this.fieldLightingHost(), this.state);
+        syncOptionalSiteVisuals(this.actorSyncHost(), this.state);
+      }
     }
     if (!this.animating && !this.playerDying) {
       // Snappy 1px plotter redraw, not floaty bob
@@ -604,13 +607,15 @@ export class GameScene extends Phaser.Scene {
           continue;
         const img = this.tileSprites[y]?.[x];
         if (!img) continue;
-        img.setTexture(this.tileKey(kind, x, y));
+        const key = this.tileKey(kind, x, y);
+        if (img.texture.key !== key) img.setTexture(key);
       }
     }
   }
 
   private tickAnimatedActors(): void {
-    this.playerSprite.setTexture(playerTextureKey(this.animFrame % 3));
+    const playerKey = playerTextureKey(this.animating ? 1 : this.animFrame % 3);
+    if (this.playerSprite.texture.key !== playerKey) this.playerSprite.setTexture(playerKey);
     refreshEnemyAnimFrame(this.actorSyncHost(), this.state);
   }
 
@@ -1425,8 +1430,19 @@ export class GameScene extends Phaser.Scene {
    */
   private playEventCamera(logs: readonly LoreId[]): void {
     const cue = pickCameraCue(logs);
-    if (!cue) return;
-    this.applyCameraCue(cue);
+    if (cue) this.applyCameraCue(cue);
+    if (logs.includes('LOG-HS-START') || logs.includes('LOG-HS-TICK')) {
+      const pos = this.state.beaconPos ?? { x: this.state.player.x, y: this.state.player.y };
+      this.lightView.ignite(
+        this,
+        this.lightLayer,
+        pos.x,
+        pos.y,
+        5,
+        LightTemp.beacon,
+        logs.includes('LOG-HS-TICK') ? 280 : 420,
+      );
+    }
   }
 
   private applyCameraCue(cue: CameraCue): void {
@@ -1445,14 +1461,8 @@ export class GameScene extends Phaser.Scene {
             ? LightTemp.fauna
             : LightTemp.scan;
       const radius = cue.ignite === 'flare' ? 6 : cue.ignite === 'fauna' ? 4 : 7;
-      this.lightView.ignite(
-        this,
-        this.lightLayer,
-        this.state.player.x,
-        this.state.player.y,
-        radius,
-        color,
-      );
+      const at = igniteTileForCue(cue, this.state);
+      this.lightView.ignite(this, this.lightLayer, at.x, at.y, radius, color);
     }
   }
 
@@ -1517,6 +1527,7 @@ export class GameScene extends Phaser.Scene {
     const st = this.state;
     const reach = Math.hypot(st.width, st.height);
     this.firstLight = 0;
+    this.applyCameraCue(sectorEnterCue());
     this.firstLightTween = this.tweens.addCounter({
       from: 0,
       to: reach,
@@ -1525,11 +1536,13 @@ export class GameScene extends Phaser.Scene {
       onUpdate: (tw) => {
         this.firstLight = tw.getValue() ?? reach;
         this.lightView.applySweep(this.state, this.tileSprites, this.firstLight);
+        this.lightView.drawSweepFront(this.state.player.x, this.state.player.y, this.firstLight);
       },
       onComplete: () => {
         this.firstLight = null;
         this.firstLightTween = null;
         this.lightView.applySweep(this.state, this.tileSprites, null);
+        this.lightView.drawSweepFront(this.state.player.x, this.state.player.y, null);
       },
     });
   }
@@ -1540,6 +1553,7 @@ export class GameScene extends Phaser.Scene {
     this.firstLightTween = null;
     this.firstLight = null;
     this.lightView.applySweep(this.state, this.tileSprites, null);
+    this.lightView.drawSweepFront(this.state.player.x, this.state.player.y, null);
   }
 
   private redrawTilesAndHud(): void {
