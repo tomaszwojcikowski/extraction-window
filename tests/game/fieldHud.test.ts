@@ -67,6 +67,24 @@ describe('field HUD chips', () => {
     expect(labels.some((l) => l.includes(lore('SKILL-TRIAGE-NAME')))).toBe(true);
   });
 
+  it('shows an in-progress contact job chip while an agenda is open', () => {
+    const st = combatArena();
+    st.npcs = [
+      {
+        id: 1,
+        kind: 'stranded_ensign',
+        x: 4,
+        y: 4,
+        talked: true,
+        agendaOpen: true,
+        agendaDone: false,
+      },
+    ];
+    expect(fieldHudChips(st).some((c) => c.label === lore('UI-AGENDA-CHIP-ENSIGN'))).toBe(true);
+    st.npcs[0]!.agendaDone = true;
+    expect(fieldHudChips(st).some((c) => c.label === lore('UI-AGENDA-CHIP-ENSIGN'))).toBe(false);
+  });
+
   it('chips Enhanced for a helpless neighbour, Kit full, Downed, and Fritz', () => {
     const st = combatArena();
     st.player.statuses = { downed: 2 };

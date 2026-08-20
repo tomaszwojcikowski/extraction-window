@@ -226,6 +226,8 @@ export interface RoomQuest {
    * the site (or an NPC hands it off). Declined sites stay optional forever.
    */
   offer: 'pending' | 'accepted' | 'declined';
+  /** Survey-agenda turn-in bumps loot quality on completion. */
+  payoffBoost?: boolean;
 }
 
 /** Pending accept/decline modal — room site or NPC agenda. */

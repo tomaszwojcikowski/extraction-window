@@ -4,6 +4,7 @@ import { extractTrack, type GameState } from '../../sim';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { agendaChipLore, openAgendaNpc } from '../../sim/mechanics/npcMechanic';
 import { questKindLabel } from '../../sim/mechanics/roomQuestMechanic';
 import { netLoadoutTagSummary, hasWornLoadout } from '../../sim/equipTagLines';
 import { encumbered, fieldPosition, playerHudStance } from '../../sim/stance';
@@ -151,6 +152,10 @@ export function fieldHudChips(state: GameState): HudChip[] {
       label,
       fill: Theme.tape,
     });
+  }
+  const agendaNpc = openAgendaNpc(state);
+  if (agendaNpc) {
+    chips.push({ label: lore(agendaChipLore(agendaNpc)), fill: Theme.tape });
   }
   if (hasWornLoadout(state)) {
     const tags = netLoadoutTagSummary(state);
