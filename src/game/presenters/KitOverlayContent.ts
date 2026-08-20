@@ -60,13 +60,19 @@ export function bagScrollStart(
   return Math.max(0, Math.min(centered, maxStart));
 }
 
+/** Clamp bag selection into a legal index (empty bag → 0). */
+export function clampKitSelection(selected: number, bagCount: number): number {
+  if (bagCount <= 0) return 0;
+  return Math.max(0, Math.min(selected, bagCount - 1));
+}
+
 function slotHotkey(index: number): string {
   if (index < 9) return String(index + 1);
   if (index === 9) return '0';
   return '·';
 }
 
-function kitPowerCost(state: GameState, kind: ItemKind): number | null {
+export function kitPowerCost(state: GameState, kind: ItemKind): number | null {
   switch (kind) {
     case 'probe':
       return KIT_POWER_COST.probe;
@@ -90,6 +96,32 @@ export function kitPowerTrough(cost: number, maxCost = 12): string {
   return `[${'█'.repeat(filled)}${'░'.repeat(empty)}]`;
 }
 
+/** Power readiness for the selected kit spend — shown before the player presses u. */
+export function kitPowerReadiness(
+  state: GameState,
+  cost: number,
+): { ready: boolean; line: string } {
+  const have = state.player.energy;
+  if (have >= cost) {
+    return {
+      ready: true,
+      line: `${lore('UI-KIT-POWER')} ${cost}  ${kitPowerTrough(cost)}  ${lore('UI-KIT-POWER-HAVE')} ${have} · ${lore('UI-KIT-POWER-READY')}`,
+    };
+  }
+  const short = cost - have;
+  return {
+    ready: false,
+    line: `${lore('UI-KIT-POWER')} ${cost}  ${kitPowerTrough(cost)}  ${lore('UI-KIT-POWER-HAVE')} ${have} · ${lore('UI-KIT-POWER-SHORT')} ${short}`,
+  };
+}
+
+function wornSlotLabel(state: GameState, kind: ItemKind): string | null {
+  for (const slotId of EQUIP_SLOT_ORDER) {
+    if (state.player.equip[slotId] === kind) return lore(EQUIP_SLOT_LORE[slotId]);
+  }
+  return null;
+}
+
 function itemActionHint(state: GameState, kind: ItemKind): string {
   if (ITEMS[kind].quest) return lore('UI-KIT-QUEST');
   if (isItemWorn(state, kind)) return lore('UI-KIT-STOW');
@@ -110,7 +142,7 @@ function formatLoadoutRow(
 ): string {
   const label = lore(EQUIP_SLOT_LORE[slotId]);
   const worn = state.player.equip[slotId];
-  const mark = worn && worn === selectedKind ? '▸' : ' ';
+  const mark = worn && worn === selectedKind ? '▶' : ' ';
   const name = shortEquipName(worn);
   return `${mark}${label.padEnd(5)} ${name}`;
 }
@@ -118,78 +150,103 @@ function formatLoadoutRow(
 function formatBagRow(state: GameState, index: number, selected: number): string {
   const slot = state.inventory[index];
   if (!slot) return '';
-  const mark = index === selected ? '▸' : ' ';
+  const selectedRow = index === selected;
+  const mark = selectedRow ? '▶' : ' ';
   const key = slotHotkey(index);
   const name = lore(ITEMS[slot.kind].loreName);
   const def = ITEMS[slot.kind];
-  const tag = isItemWorn(state, slot.kind)
-    ? '◆'
-    : def.equipSlot || def.equipSlots?.length
-      ? '·'
-      : ' ';
-  return `${mark}${key.padStart(2)} ${name.padEnd(18).slice(0, 18)} ${tag} ×${slot.count}`;
+  let tag = ' ';
+  if (isItemWorn(state, slot.kind)) {
+    const worn = wornSlotLabel(state, slot.kind);
+    tag = worn ? `◆${worn.slice(0, 4)}` : '◆';
+  } else if (def.equipSlot || def.equipSlots?.length) {
+    tag = '·eq';
+  } else if (def.quest) {
+    tag = '·q';
+  }
+  const body = `${key.padStart(2)} ${name.padEnd(16).slice(0, 16)} ${tag.padEnd(6)} ×${slot.count}`;
+  return selectedRow ? `${mark}${body}` : ` ${body}`;
 }
 
 export type KitOverlayContent = {
   lines: string[];
   panelW: number;
   panelH: number;
+  /** Line index of the primary action CTA — for chrome accent. */
+  actionLine: number | null;
+  powerShort: boolean;
 };
 
 /** Pure kit panel copy — testable without Phaser. */
 export function buildKitOverlayContent(st: GameState): KitOverlayContent {
   const pw = 548;
-  const selected = st.ui.selectedSlot;
+  const bagCount = st.inventory.length;
+  const selected = clampKitSelection(st.ui.selectedSlot, bagCount);
   const selectedItem = st.inventory[selected];
   const selectedKind = selectedItem?.kind ?? null;
-  const bagCount = st.inventory.length;
   const scrollStart = bagScrollStart(selected, bagCount);
   const scrollEnd = Math.min(bagCount, scrollStart + BAG_VISIBLE_ROWS);
+  const moreAbove = scrollStart > 0;
+  const moreBelow = scrollEnd < bagCount;
 
   const lines: string[] = [];
+  let actionLine: number | null = null;
+  let powerShort = false;
 
   const bagLabel = encumbered(st)
-    ? `${lore('UI-INV')} ${bagCount}/${INVENTORY_SLOTS} · ${lore('UI-ENCUMBERED')}`
-    : `${lore('UI-INV')} ${bagCount}/${INVENTORY_SLOTS}`;
+    ? `${lore('UI-INV-BAG')} ${bagCount}/${INVENTORY_SLOTS} · ${lore('UI-ENCUMBERED')}`
+    : `${lore('UI-INV-BAG')} ${bagCount}/${INVENTORY_SLOTS}`;
 
   lines.push(`${lore('UI-LOADOUT').padEnd(22)}${bagLabel}`);
-  lines.push(`┌${'─'.repeat(60)}┐`);
+  lines.push(`┌${'─'.repeat(21)}┬${'─'.repeat(38)}┐`);
 
   for (let row = 0; row < BAG_VISIBLE_ROWS; row++) {
     const slotId = EQUIP_SLOT_ORDER[row]!;
     const left = formatLoadoutRow(st, slotId, selectedKind);
     const bagIndex = scrollStart + row;
-    const right =
-      bagCount === 0 && row === 0
-        ? lore('UI-EMPTY-INV')
-        : bagIndex < scrollEnd
-          ? formatBagRow(st, bagIndex, selected)
-          : '';
-    lines.push(`│${left.padEnd(22)}${right.padEnd(38)}│`);
+    let right = '';
+    if (bagCount === 0 && row === 0) {
+      right = lore('UI-EMPTY-INV');
+    } else if (bagIndex < scrollEnd) {
+      right = formatBagRow(st, bagIndex, selected);
+    } else if (row === 0 && moreAbove) {
+      right = lore('UI-KIT-SCROLL-UP');
+    }
+    lines.push(`│${left.padEnd(21)}│${right.padEnd(38)}│`);
   }
 
   if (bagCount > BAG_VISIBLE_ROWS) {
-    lines.push(
-      `│${''.padEnd(22)}${lore('UI-INV-SCROLL')} ${scrollStart + 1}–${scrollEnd} / ${bagCount}`.padEnd(61) +
-        '│',
-    );
+    const range = `${scrollStart + 1}–${scrollEnd} / ${bagCount}`;
+    const cue = moreBelow
+      ? `${lore('UI-KIT-SCROLL-DOWN')}  ${range}`
+      : moreAbove
+        ? `${lore('UI-KIT-SCROLL-UP')}  ${range}`
+        : `${lore('UI-INV-SCROLL')} ${range}`;
+    lines.push(`│${''.padEnd(21)}│${cue.padEnd(38)}│`);
   }
-  lines.push(`└${'─'.repeat(60)}┘`);
+  lines.push(`└${'─'.repeat(21)}┴${'─'.repeat(38)}┘`);
 
   if (selectedItem) {
     const def = ITEMS[selectedItem.kind];
     lines.push(`┌ ${lore(def.loreName).toUpperCase()}  ×${selectedItem.count}`);
+    actionLine = lines.length;
+    lines.push(`│ ▶ ${itemActionHint(st, selectedItem.kind)}`);
     pushWrapped(lines, lore(def.loreDesc));
     if (equipSlotsFor(selectedItem.kind).length > 0) {
       for (const tag of equipTagLines(selectedItem.kind)) {
         lines.push(`│ ${lore('UI-KIT-TAGS')}: ${tag}`);
       }
     }
-    lines.push(`│ ${itemActionHint(st, selectedItem.kind)}`);
     const power = kitPowerCost(st, selectedItem.kind);
     if (power !== null) {
-      lines.push(`│ ${lore('UI-KIT-POWER')} ${power}  ${kitPowerTrough(power)}`);
+      const readiness = kitPowerReadiness(st, power);
+      powerShort = !readiness.ready;
+      lines.push(`│ ${readiness.line}`);
     }
+    lines.push(`└${'─'.repeat(60)}┘`);
+  } else if (bagCount === 0) {
+    lines.push(`┌ ${lore('UI-EMPTY-INV')}`);
+    lines.push(`│ ${lore('UI-KIT-EMPTY-TIP')}`);
     lines.push(`└${'─'.repeat(60)}┘`);
   }
 
@@ -218,5 +275,5 @@ export function buildKitOverlayContent(st: GameState): KitOverlayContent {
 
   const panelH = KIT_PANEL_PAD + lines.length * KIT_LINE_H;
 
-  return { lines, panelW: pw, panelH };
+  return { lines, panelW: pw, panelH, actionLine, powerShort };
 }

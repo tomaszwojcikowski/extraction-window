@@ -4,6 +4,8 @@ import { lore } from '../../src/data/lore';
 import {
   buildKitOverlayContent,
   bagScrollStart,
+  clampKitSelection,
+  kitPowerReadiness,
   kitPowerTrough,
   wrapKitLine,
 } from '../../src/game/presenters/KitOverlayContent';
@@ -23,10 +25,33 @@ describe('bagScrollStart', () => {
   });
 });
 
+describe('clampKitSelection', () => {
+  it('keeps the cursor inside the bag', () => {
+    expect(clampKitSelection(0, 0)).toBe(0);
+    expect(clampKitSelection(9, 3)).toBe(2);
+    expect(clampKitSelection(-1, 4)).toBe(0);
+  });
+});
+
 describe('kitPowerTrough', () => {
   it('renders a filled trough for Power spend', () => {
     expect(kitPowerTrough(2, 12)).toBe(`[${'█'.repeat(2)}${'░'.repeat(10)}]`);
     expect(kitPowerTrough(0)).toContain('░');
+  });
+});
+
+describe('kitPowerReadiness', () => {
+  it('names ready vs short before the player spends', () => {
+    const st = combatArena();
+    st.player.energy = 40;
+    expect(kitPowerReadiness(st, 2).ready).toBe(true);
+    expect(kitPowerReadiness(st, 2).line).toContain(lore('UI-KIT-POWER-READY'));
+
+    st.player.energy = 1;
+    const short = kitPowerReadiness(st, 4);
+    expect(short.ready).toBe(false);
+    expect(short.line).toContain(lore('UI-KIT-POWER-SHORT'));
+    expect(short.line).toContain('3');
   });
 });
 
@@ -40,21 +65,34 @@ describe('buildKitOverlayContent', () => {
     const { lines } = buildKitOverlayContent(st);
     expect(lines[0]).toContain(lore('UI-LOADOUT'));
     expect(lines[0]).toContain(`2/${INVENTORY_SLOTS}`);
-    expect(lines.some((l) => l.includes('▸ 1') && l.includes('Field Hypo'))).toBe(true);
+    expect(lines.some((l) => l.includes('▶') && l.includes('Field Hypo'))).toBe(true);
   });
 
-  it('wraps long item descriptions and sizes the panel to fit', () => {
+  it('puts the action CTA before the description and sizes the panel to fit', () => {
     const desc = lore('ITEM-FLARE-DESC');
     expect(wrapKitLine(desc).length).toBeGreaterThan(1);
 
     const st = combatArena();
     st.inventory = [{ kind: 'flare', count: 2 }];
+    st.player.energy = 40;
     st.ui.selectedSlot = 0;
-    const { lines, panelH } = buildKitOverlayContent(st);
-    expect(lines.some((l) => l.includes(lore('UI-KIT-USE')))).toBe(true);
-    expect(lines.some((l) => l.includes(`${lore('UI-KIT-POWER')} 2`))).toBe(true);
+    const { lines, panelH, actionLine, powerShort } = buildKitOverlayContent(st);
+    expect(actionLine).not.toBeNull();
+    expect(lines[actionLine!]).toContain(lore('UI-KIT-USE'));
+    expect(lines.some((l) => l.includes(lore('UI-KIT-POWER-READY')))).toBe(true);
     expect(lines.some((l) => l.includes(kitPowerTrough(2)))).toBe(true);
+    expect(powerShort).toBe(false);
     expect(panelH).toBeGreaterThanOrEqual(36 + lines.length * 17 - 4);
+  });
+
+  it('flags short Power on the selected spend', () => {
+    const st = combatArena();
+    st.inventory = [{ kind: 'flare', count: 1 }];
+    st.player.energy = 0;
+    st.ui.selectedSlot = 0;
+    const { lines, powerShort } = buildKitOverlayContent(st);
+    expect(powerShort).toBe(true);
+    expect(lines.some((l) => l.includes(lore('UI-KIT-POWER-SHORT')))).toBe(true);
   });
 
   it('shows stow hint and loadout marker for worn items', () => {
@@ -63,7 +101,8 @@ describe('buildKitOverlayContent', () => {
     tryEquipItem(st, 'survey_visor');
     const { lines } = buildKitOverlayContent(st);
     expect(lines.some((l) => l.includes(lore('UI-KIT-STOW')))).toBe(true);
-    expect(lines.some((l) => l.includes('▸Head') || l.includes('▸Head '))).toBe(true);
+    expect(lines.some((l) => l.includes('▶Head') || l.includes('▶Head '))).toBe(true);
+    expect(lines.some((l) => l.includes('◆Head'))).toBe(true);
   });
 
   it('scrolls the bag list when more than eight items are packed', () => {
@@ -75,6 +114,9 @@ describe('buildKitOverlayContent', () => {
     st.ui.selectedSlot = 11;
     const { lines } = buildKitOverlayContent(st);
     expect(lines.some((l) => l.includes('5–12 / 12'))).toBe(true);
+    expect(lines.some((l) => l.includes(lore('UI-KIT-SCROLL-UP')) || l.includes(lore('UI-KIT-SCROLL-DOWN')))).toBe(
+      true,
+    );
   });
 
   it('shows only the latest use failure in the footer', () => {
@@ -93,5 +135,12 @@ describe('buildKitOverlayContent', () => {
     }
     const { lines } = buildKitOverlayContent(st);
     expect(lines[0]).toContain(lore('UI-ENCUMBERED'));
+  });
+
+  it('coaches an empty bag', () => {
+    const st = combatArena();
+    st.inventory = [];
+    const { lines } = buildKitOverlayContent(st);
+    expect(lines.some((l) => l.includes(lore('UI-KIT-EMPTY-TIP')))).toBe(true);
   });
 });
