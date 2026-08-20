@@ -65,6 +65,14 @@ export function isTitleHelpKey(e: KeyboardEvent): boolean {
   return e.key === '?' || (e.key === '/' && e.shiftKey);
 }
 
+export function isTitleChangelogKey(e: KeyboardEvent): boolean {
+  return e.key === 'c' || e.key === 'C';
+}
+
 export function isTitleHelpDismissKey(e: KeyboardEvent): boolean {
   return e.key === 'Escape' || isTitleHelpKey(e) || isTitleStartKey(e);
+}
+
+export function isTitleChangelogDismissKey(e: KeyboardEvent): boolean {
+  return e.key === 'Escape' || isTitleChangelogKey(e) || isTitleStartKey(e);
 }
