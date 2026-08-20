@@ -649,7 +649,7 @@ Audio honesty after the graphics pack, plus layout-grammar identity without new 
 
 | Wave | Ticket | Status |
 |------|--------|--------|
-| 59 | Music moods: `storm` → `shear`; beds track Power / shear dial / ion front; pillar SFX (flare, ion pulse, handshake, kit spend); grammar hatch-enter stings | Done |
+| 59 | Music moods: `storm` → `shear`; beds track Power / shear dial / ion front; **per-biome bed colour** (rate/band/shear underlay); pillar SFX; grammar hatch-enter stings | Done |
 | 60 | Ambient grammar overlays; room-role tilt + dress density by layout; wearable cache bait folds grammar cue; docs + `v1.7.0` | Done |
 
 **Tag:** `v1.7.0` — audio + sector identity.

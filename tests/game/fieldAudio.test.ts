@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { pickFieldMood } from '../../src/audio/music';
+import { biomeMusicColor, fieldBedKey, pickFieldMood } from '../../src/audio/music';
 import { enterSfxForLayout } from '../../src/audio/sfx';
 import { layoutForSector } from '../../src/map/layoutKind';
+import type { SectorId } from '../../src/data/encounters';
 
 describe('pickFieldMood', () => {
   const base = {
@@ -36,6 +37,39 @@ describe('pickFieldMood', () => {
 
   it('stays on field when calm and topped up early', () => {
     expect(pickFieldMood({ ...base, shearState: 'Calm' })).toBe('field');
+  });
+});
+
+describe('biomeMusicColor', () => {
+  it('gives every campaign biome a distinct bed colour key', () => {
+    const ids: SectorId[] = [
+      'plains',
+      'flood',
+      'canopy',
+      'reef',
+      'spire',
+      'ruin',
+      'beacon',
+      'trench',
+      'duct',
+      'ash',
+      'brine',
+      'vault',
+      'fissure',
+      'approach',
+      'ridge',
+    ];
+    const keys = new Set(ids.map((id) => fieldBedKey('field', id)));
+    expect(keys.size).toBe(ids.length);
+  });
+
+  it('makes wet / warren shelves darker and more charged than open flats', () => {
+    const plains = biomeMusicColor('plains');
+    const brine = biomeMusicColor('brine');
+    const canopy = biomeMusicColor('canopy');
+    expect(brine.lowpass).toBeLessThan(plains.lowpass);
+    expect(brine.shearUnder).toBeGreaterThan(plains.shearUnder);
+    expect(canopy.rate).toBeGreaterThan(plains.rate);
   });
 });
 

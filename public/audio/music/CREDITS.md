@@ -14,4 +14,6 @@ Sampled ambient loops under `public/audio/music/`. All tracks are CC0
 
 Replace any file in place (same name) to swap the bed. Keep loops seamless when possible.
 Procedural biome drones in `ambient.ts` stay as a quiet underlayer (plus layout-grammar overlays);
-one-shots stay in `sfx.ts`.
+`music.ts` colours field/shear beds per sector (rate, band, optional shear underlay) so hatch
+changes still read as a new place with only one field + one shear asset.
+One-shots stay in `sfx.ts`.

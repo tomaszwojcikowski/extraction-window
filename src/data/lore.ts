@@ -119,6 +119,7 @@ export const LORE = {
   'UI-CHANGELOG-BODY':
     'v1.7.0 — FIELD EAR\n' +
     '· Music beds track Power / shear / ion — storm mood retired\n' +
+    '· Each biome colours the bed (rate / band / shear underlay)\n' +
     '· Flare, ion pulse, handshake, and kit-spend each have a voice\n' +
     '· Hatch-enter sting follows layout grammar (scatter→warren)\n' +
     '· Biome drones pick up grammar overlays; room roles tilt by shape\n' +
