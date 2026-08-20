@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { SectorId } from '../../data/encounters';
+import { lore } from '../../data/lore';
 import { drawHudStripChrome } from '../../scenes/atmosphere';
 import { HUD_BOTTOM_DOCK } from '../GameHost';
 import type { ShearPressureSpec, ShearPressureState } from './ShearPressure';
@@ -69,7 +70,7 @@ export function drawHudChrome(
     accent: shear.accent,
     biomeAccent,
   });
-  const legendStr = '? help  i kit  p PADD  n map  l log  m mute';
+  const legendStr = lore('UI-DOCK-LEGEND');
   refs.dockLegendText.setText(legendStr);
   refs.dockLegendText.setPosition(w - refs.dockLegendText.width - 10, h - HUD_BOTTOM_DOCK + 3);
 }

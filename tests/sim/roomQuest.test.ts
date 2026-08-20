@@ -5,6 +5,8 @@ import { FAVOR_LABEL } from '../../src/sim/extractFavor';
 import { useSelected } from '../../src/sim/inventory';
 import {
   formatRoomQuestHudLine,
+  questCostLabel,
+  questKindLabel,
   roomQuestHudLine,
   roomQuestMechanic,
 } from '../../src/sim/mechanics/roomQuestMechanic';
@@ -36,7 +38,7 @@ describe('room quest readability', () => {
       payoff: lore('UI-QUEST-PAYS-KIT'),
     });
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT — ${lore('UI-RQ-SALVAGE')} · ${lore('UI-QUEST-PAYS')} ${lore('UI-QUEST-PAYS-KIT')}`,
+      `${lore(questKindLabel('salvage'))} — ${lore('UI-RQ-SALVAGE')} · ${lore('UI-QUEST-BILLS')} ${lore(questCostLabel('salvage'))} · ${lore('UI-QUEST-PAYS')} ${lore('UI-QUEST-PAYS-KIT')}`,
     );
   });
 
@@ -49,12 +51,12 @@ describe('room quest readability', () => {
     ]);
 
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT 1/2 — ${lore('UI-RQ-VENT-A')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
+      `${lore(questKindLabel('vent_seal'))} 1/2 — ${lore('UI-RQ-VENT-A')} · ${lore('UI-QUEST-BILLS')} ${lore(questCostLabel('vent_seal'))} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
     );
 
     st.roomQuest.stepIndex = 1;
     expect(formatRoomQuestHudLine(st)).toBe(
-      `OPT 2/2 — ${lore('UI-RQ-VENT-B')} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
+      `${lore(questKindLabel('vent_seal'))} 2/2 — ${lore('UI-RQ-VENT-B')} · ${lore('UI-QUEST-BILLS')} ${lore(questCostLabel('vent_seal'))} · ${lore('UI-QUEST-PAYS')} ${FAVOR_LABEL.pattern_fail_safe}`,
     );
   });
 
@@ -112,8 +114,8 @@ describe('room quest flows', () => {
 
     tickRoomQuest(st);
     expect(st.roomQuest.spawnedIds.length).toBeGreaterThan(0);
-    expect(formatRoomQuestHudLine(st)).toContain(lore('UI-RQ-PURGE'));
-    expect(resolveHintLine(st)).toBe('UI-RQ-PURGE');
+    expect(formatRoomQuestHudLine(st)).toContain(lore('UI-RQ-PURGE-WAKE'));
+    expect(resolveHintLine(st)).toBe('UI-RQ-PURGE-WAKE');
 
     expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(false);

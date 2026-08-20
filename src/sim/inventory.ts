@@ -22,6 +22,12 @@ import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
+import {
+  cacheCenter,
+  markCacheRoomLooted,
+  nearestUnlootedCache,
+  roomAt,
+} from './cacheSurvey';
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
 import { addLightSource, inShadow, isLit, LIGHT_TEMP, rebuildIllumination } from './light';
@@ -221,6 +227,10 @@ export function useSelected(state: GameState): boolean {
     pushLog(state, 'LOG-USE-EMPTY');
     return false;
   }
+  const failNoPower = (): false => {
+    pushLog(state, 'LOG-USE-NO-POWER');
+    return false;
+  };
   const idx = Math.max(0, Math.min(state.ui.selectedSlot, state.inventory.length - 1));
   const slot = state.inventory[idx]!;
   const kind = slot.kind;
@@ -267,14 +277,14 @@ export function useSelected(state: GameState): boolean {
         pushLog(state, 'LOG-JAM-BLOCK');
         return false;
       }
-      if (!canSpendPower(state, KIT_POWER_COST.probe)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.probe)) return failNoPower();
       state.player.probeTurns = Math.max(state.player.probeTurns, 25);
       removeOne(state, kind);
       spendPower(state, KIT_POWER_COST.probe, 'LOG-USE-PROBE');
       addEmStress(state, 4, 'array pulse');
       break;
     case 'stim':
-      if (!canSpendPower(state, KIT_POWER_COST.stim)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.stim)) return failNoPower();
       state.player.stimTurns = Math.max(state.player.stimTurns, 15);
       removeOne(state, kind);
       spendPower(state, KIT_POWER_COST.stim, 'LOG-USE-STIM');
@@ -285,25 +295,33 @@ export function useSelected(state: GameState): boolean {
       pushLog(state, 'LOG-USE-PLATE');
       break;
     case 'filter': {
-      if (!canSpendPower(state, KIT_POWER_COST.filter)) return false;
+      if (!canSpendPower(state, KIT_POWER_COST.filter)) return failNoPower();
       const filterDur = 50 + state.paddMods.filterBonus;
       state.player.filterTurns = Math.max(state.player.filterTurns, filterDur);
       removeOne(state, kind);
       spendPower(state, KIT_POWER_COST.filter, 'LOG-USE-FILTER');
       break;
     }
-    case 'mapper':
+    case 'mapper': {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
+      const cache = nearestUnlootedCache(state);
+      state.mapperPing = cache ? cacheCenter(cache) : null;
       removeOne(state, kind);
-      pushLog(state, 'LOG-USE-MAPPER');
+      pushLog(state, cache ? 'LOG-USE-MAPPER-CACHE' : 'LOG-USE-MAPPER');
       break;
+    }
     case 'flare': {
       if (tryUseUplinkAid(state, 'flare')) {
         removeOne(state, kind);
         break;
       }
-      if (!canSpendPower(state, Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction')))) {
-        return false;
+      if (
+        !canSpendPower(
+          state,
+          Math.max(1, KIT_POWER_COST.flare - wornTagMax(state, 'flarePowerReduction')),
+        )
+      ) {
+        return failNoPower();
       }
       const shadowed = inShadow(state, state.player.x, state.player.y);
       removeOne(state, kind);
@@ -456,6 +474,8 @@ export function tryPickup(state: GameState): boolean {
   if (!addItem(state, item.kind)) return false;
   state.items = state.items.filter((i) => i.id !== item.id);
   state.lootTakenThisSector = true;
+  const cacheRoom = roomAt(state, state.player.x, state.player.y);
+  if (cacheRoom?.role === 'cache') markCacheRoomLooted(state, cacheRoom);
   pushLog(state, 'LOG-PICKUP', lore(ITEMS[item.kind].loreName));
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');

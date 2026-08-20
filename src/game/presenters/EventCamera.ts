@@ -42,7 +42,7 @@ function cue(
 /**
  * Profile recipes (tuned once; per-event overrides stay rare):
  * - punch: threat to the operator (shake + zoom lead)
- * - snap: Notice Impact resolve (short, Pass 4 budget)
+ * - snap: brief combat/notice resolve (short budget)
  * - pressure: shelf/Window stress (vignette lead; soft zoom)
  * - bloom: player power / milestone (zoom + vignette; little shake)
  * - reward: kill resolve (soft zoom; no trauma stack)

@@ -3,6 +3,8 @@ import { hasItem, addItem } from '../inventory';
 import { pushLog } from '../log';
 import type { Action, GameState, Pos, Tile } from '../types';
 import type { Mechanic } from './types';
+import type { ItemKind } from '../../data/items';
+import { pickWearableLoot } from '../../data/wearableLoot';
 
 const FLOOR: Tile = { kind: 'floor', walkable: true, transparent: true };
 
@@ -29,7 +31,12 @@ function maybeSealedCacheDrop(state: GameState, x: number, y: number): void {
   if (state.sectorIndex < 4) return;
   if (state.rng() > 0.38) return;
   const roll = state.rng();
-  const kind = roll < 0.55 ? 'field_comm' : roll < 0.85 ? 'scan_band' : 'survey_visor';
+  let kind: ItemKind;
+  if (state.sectorIndex >= 10 && roll > 0.72) {
+    kind = pickWearableLoot(state.sectorId, state.rng);
+  } else {
+    kind = roll < 0.55 ? 'field_comm' : roll < 0.85 ? 'scan_band' : 'survey_visor';
+  }
   if (addItem(state, kind)) {
     pushLog(state, 'LOG-SEALED-CACHE');
   } else {

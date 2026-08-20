@@ -17,6 +17,7 @@ import {
   floorTextureKey,
 } from './theme';
 import { ENEMIES } from '../data/enemies';
+import { EQUIP_SLOT_ORDER } from '../data/items';
 import { lore, type LoreId } from '../data/lore';
 import { createGame, describeObjective, type Action, type GameState } from '../sim';
 import {
@@ -53,6 +54,7 @@ import {
   syncFieldItems,
   syncGoalVisuals,
   syncOptionalSiteVisuals,
+  syncEliteHuntPip,
   type ActorSyncHost,
 } from '../game/presenters/ActorSync';
 import { applyFieldLightingPass, type FieldLightingHost } from '../game/presenters/FieldLighting';
@@ -938,6 +940,9 @@ export class GameScene extends Phaser.Scene {
           level: this.state.level,
           skills: this.state.skills,
           objective: lore(describeObjective(this.state).campaign),
+          loadout: EQUIP_SLOT_ORDER.map((s) => this.state.player.equip[s]).filter(
+            (k): k is NonNullable<typeof k> => k !== null,
+          ),
         });
       },
       toggleHelp: (force) => this.toggleHelp(force),
@@ -1236,6 +1241,7 @@ export class GameScene extends Phaser.Scene {
       const host = this.actorSyncHost();
       syncGoalVisuals(host, this.state, describeObjective(this.state).pos);
       syncOptionalSiteVisuals(host, this.state);
+      syncEliteHuntPip(host, this.state);
     }
   }
 
@@ -1595,6 +1601,7 @@ export class GameScene extends Phaser.Scene {
     const host = this.actorSyncHost();
     syncGoalVisuals(host, st, goal.pos);
     syncOptionalSiteVisuals(host, st);
+    syncEliteHuntPip(host, st);
     this.minimap.redraw(st);
   }
 }

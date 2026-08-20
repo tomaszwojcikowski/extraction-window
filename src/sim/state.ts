@@ -137,6 +137,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     xpToNext: xpToNextForLevel(1),
     skills: [],
     lootTakenThisSector: false,
+    mapperPing: null,
     objectives: {
       hasRelayKey: false,
       usedRelayKey: false,
@@ -209,6 +210,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
     Array.from({ length: map.width }, () => 0),
   );
   state.lootTakenThisSector = false;
+  state.mapperPing = null;
   state.handshake = null;
   state.uplink = null;
   state.approachShearAcc = 0;

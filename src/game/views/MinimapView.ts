@@ -110,6 +110,16 @@ export class MinimapView {
         Math.max(2, cellH),
       );
     }
+
+    if (state.mapperPing) {
+      const { x, y } = state.mapperPing;
+      if (explored[y]?.[x]) {
+        this.mapGfx.lineStyle(1, Theme.tape, 1);
+        const px = mapX + offX + x * cellW;
+        const py = mapY + offY + y * cellH;
+        this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
+      }
+    }
   }
 
   toggle(): void {

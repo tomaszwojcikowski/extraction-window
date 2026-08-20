@@ -2,7 +2,7 @@
 
 > **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (WR band, lose-mix gates, playtest commands); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
-**Status (v1.2.0):** Wave 23 — elite-branded wearables (Flare Prism, Ward Weave, Shadow Lens) + equip tag refactor. Prior v1.1.0: paper doll loadout. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
+**Status (v1.3.0):** Waves 24–32 — UI doc sync, clearer quests, loadout readout, cache economy, sector survey, quest wearables. Prior v1.2.0: elite-branded wearables. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 
@@ -69,7 +69,7 @@ and the duct has all seven — the absence is the identity.
 - Combat answers: walk into a hostile to strike; leave painted windup tiles or kill mid-charge; Pulse Baton stuns on hit
 - Positional pressure: stunned / winded hostiles eat the next strike clean; each hostile in contact past the first costs a point of DEF (capped at 3), so doorways and breaking contact matter
 - HP, bus Power (sector drip + hazards + kit spends), ATK, DEF, personal Shields
-- Inventory **16** slots; quest items occupy slots; two equip slots (tool + armor); **18** item kinds, one clear tool per job
+- Inventory **16** slots; **8** paper-doll wear slots + bag; **26** item kinds (8 wearables), one clear tool per job
 - In-run XP/skills (levels 1–8); three room quests (salvage / purge / vent_seal) billing kit/Power opportunity, HP, and sealant; mission PADD panel
 - FOV + fog of war
 - 21 enemy kinds + elites/bosses; biome encounter tables; silhouette reads the behaviour family, and armed windups paint the ground they threaten (lunge / reach / zone / beam / overwatch / swell)

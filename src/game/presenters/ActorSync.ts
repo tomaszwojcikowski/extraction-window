@@ -470,3 +470,42 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
   host.chevronGfx.fillStyle(Theme.tape, 0.35);
   host.chevronGfx.fillRect(ex - 3, ey - 3, 6, 6);
 }
+
+/** Off-screen pip for explored elite hostiles (brand hunt). */
+export function syncEliteHuntPip(host: ActorSyncHost, st: GameState): void {
+  for (const en of st.enemies) {
+    if (!en.alive || en.tier !== 'elite') continue;
+    if (!st.explored[en.y]?.[en.x]) continue;
+    const wx = en.x * TILE_DRAW + TILE_DRAW / 2;
+    const wy = en.y * TILE_DRAW + TILE_DRAW / 2;
+    const top = host.topInset;
+    const screenX = wx - host.camX;
+    const screenY = wy - host.camY + top;
+    const pad = 18;
+    const onScreen =
+      screenX >= pad &&
+      screenX <= host.scale.width - pad &&
+      screenY >= top + pad &&
+      screenY <= host.scale.height - host.bottomInset() - pad;
+    if (onScreen) continue;
+    const scx = host.scale.width / 2;
+    const scy = top + (host.scale.height - top - host.bottomInset()) / 2;
+    const dx = screenX - scx;
+    const dy = screenY - scy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const left = pad;
+    const right = host.scale.width - pad;
+    const topEdge = top + pad;
+    const bottom = host.scale.height - host.bottomInset() - pad;
+    const edgeDistX = ux > 0 ? (right - scx) / ux : ux < 0 ? (left - scx) / ux : Infinity;
+    const edgeDistY = uy > 0 ? (bottom - scy) / uy : uy < 0 ? (topEdge - scy) / uy : Infinity;
+    const edgeDist = Math.min(Math.abs(edgeDistX), Math.abs(edgeDistY));
+    const ex = scx + ux * edgeDist;
+    const ey = scy + uy * edgeDist;
+    host.chevronGfx.lineStyle(2, Theme.rust, 0.9);
+    host.chevronGfx.strokeRect(ex - 4, ey - 4, 8, 8);
+    return;
+  }
+}

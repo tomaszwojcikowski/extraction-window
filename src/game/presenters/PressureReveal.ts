@@ -1,6 +1,7 @@
 import type { SectorId } from '../../data/encounters';
 import type { ShearPressureSpec } from './ShearPressure';
 import type { GameState } from '../../sim/types';
+import { roomAt } from '../../sim/cacheSurvey';
 
 const REVEAL_KINDS = new Set(['quest']);
 
@@ -29,13 +30,21 @@ export function pressureRevealAt(
   if (!st.explored[y]?.[x] || !st.visible[y]?.[x]) return null;
 
   const kind = st.tiles[y]?.[x]?.kind;
-  if (!kind || !REVEAL_KINDS.has(kind)) return null;
+  const room = roomAt(st, x, y);
+  const unlootedCache = room?.role === 'cache' && !room.cacheLooted;
+  if (!kind) return null;
+  if (!REVEAL_KINDS.has(kind) && !unlootedCache) return null;
 
   const urgent = shear.state === 'Breaching';
   const flicker = (animFrame + x + y) % (urgent ? 2 : 3) === 0;
   const visible = urgent || flicker;
-  // Breaching: magnesium hold with a soft frame pulse (not a tint wash).
-  const alpha = urgent ? 0.92 + 0.08 * ((animFrame + x) % 2) : 0.78;
+  const alpha = unlootedCache
+    ? urgent
+      ? 0.96 + 0.04 * ((animFrame + x) % 2)
+      : 0.88
+    : urgent
+      ? 0.92 + 0.08 * ((animFrame + x) % 2)
+      : 0.78;
 
   return {
     sectorId: st.sectorId,

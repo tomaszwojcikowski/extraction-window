@@ -42,7 +42,7 @@ describe('field HUD meta', () => {
 describe('field HUD chips', () => {
   it('puts extract boxes on the rail and skips them in the drill bay', () => {
     const st = combatArena();
-    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} ----`);
+    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} K- H- L- P-`);
     expect(fieldHudChips(st).some((c) => c.label.startsWith(lore('UI-EXTRACT')))).toBe(true);
     st.tutorialActive = true;
     expect(fieldHudChips(st).some((c) => c.label.startsWith(lore('UI-EXTRACT')))).toBe(false);
@@ -53,9 +53,17 @@ describe('field HUD chips', () => {
     st.objectives.hasRelayKey = true;
     st.objectives.beaconOpen = true;
     st.objectives.hasNavCore = true;
-    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} ###-`);
+    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} K# H# L# P-`);
     st.uplink = { progress: 1, active: true, accelerated: false, repelled: false };
-    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} ####`);
+    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} K# H# L# P#`);
+  });
+
+  it('shows unlocked skills on the chip rail', () => {
+    const st = combatArena();
+    st.skills = ['triage', 'scavenger'];
+    const labels = fieldHudChips(st).map((c) => c.label);
+    expect(labels.some((l) => l.startsWith(lore('UI-SKILL-CHIP')))).toBe(true);
+    expect(labels.some((l) => l.includes(lore('SKILL-TRIAGE-NAME')))).toBe(true);
   });
 
   it('chips Enhanced for a helpless neighbour, Kit full, Downed, and Fritz', () => {

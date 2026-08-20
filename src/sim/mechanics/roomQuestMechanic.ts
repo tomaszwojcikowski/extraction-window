@@ -1,8 +1,9 @@
-import type { Action, GameState } from '../types';
+import type { LoreId } from '../../data/lore';
+import type { Action, GameState, RoomQuestKind } from '../types';
 import { tryRoomQuest, tickRoomQuest, questStepPrompt, activeQuestStep } from '../roomQuest';
 import { FAVOR_LABEL, favorForQuest } from '../extractFavor';
 import type { Mechanic } from './types';
-import { lore, type LoreId } from '../../data/lore';
+import { lore } from '../../data/lore';
 
 /**
  * Optional side-room anomalies — interact via `>` on the quest tile
@@ -26,22 +27,43 @@ export const roomQuestMechanic: Mechanic = {
     const rq = state.roomQuest;
     if (!rq || rq.done) return null;
     const step = activeQuestStep(rq);
-    if (step && state.player.x === step.pos.x && state.player.y === step.pos.y) {
-      // Step prompt names the real verb (sealant vs Enter) — not a generic OPT tip.
-      return step.prompt;
+    if (!step) return null;
+    if (state.player.x === step.pos.x && state.player.y === step.pos.y) {
+      return questStepPrompt(rq);
     }
     return null;
   },
 
   autopilotHint(_state: GameState): Action | null {
-    // Optional quests are player-facing depth; autopilot stays on the causal chain
     return null;
   },
 };
 
+export function questKindLabel(kind: RoomQuestKind): LoreId {
+  switch (kind) {
+    case 'salvage':
+      return 'UI-RQ-KIND-SALVAGE';
+    case 'purge':
+      return 'UI-RQ-KIND-PURGE';
+    case 'vent_seal':
+      return 'UI-RQ-KIND-VENT';
+  }
+}
+
+export function questCostLabel(kind: RoomQuestKind): LoreId {
+  switch (kind) {
+    case 'salvage':
+      return 'UI-RQ-COST-TIME';
+    case 'purge':
+      return 'UI-RQ-COST-HP';
+    case 'vent_seal':
+      return 'UI-RQ-COST-KIT';
+  }
+}
+
 export function roomQuestHudLine(
   state: GameState,
-): { prompt: LoreId; index: number; total: number; payoff: string } | null {
+): { prompt: LoreId; index: number; total: number; payoff: string; kind: RoomQuestKind } | null {
   const rq = state.roomQuest;
   if (!rq || rq.done) return null;
   const prompt = questStepPrompt(rq);
@@ -53,16 +75,28 @@ export function roomQuestHudLine(
     index: rq.stepIndex + 1,
     total: rq.steps.length,
     payoff,
+    kind: rq.kind,
   };
 }
 
-/** Compact OPT tracker for the HUD — step verb + payoff preview. */
+/** Quest tracker — kind, step, cost, payoff. */
 export function formatRoomQuestHudLine(state: GameState): string | null {
   const line = roomQuestHudLine(state);
   if (!line) return null;
+  const kind = lore(questKindLabel(line.kind));
   const track =
-    line.total > 1
-      ? `${lore('UI-QUEST-BADGE')} ${line.index}/${line.total}`
-      : lore('UI-QUEST-BADGE');
-  return `${track} — ${lore(line.prompt)} · ${lore('UI-QUEST-PAYS')} ${line.payoff}`;
+    line.total > 1 ? `${kind} ${line.index}/${line.total}` : kind;
+  const cost = lore(questCostLabel(line.kind));
+  return `${track} — ${lore(line.prompt)} · ${lore('UI-QUEST-BILLS')} ${cost} · ${lore('UI-QUEST-PAYS')} ${line.payoff}`;
+}
+
+export function questBriefLogId(kind: RoomQuestKind): LoreId {
+  switch (kind) {
+    case 'salvage':
+      return 'LOG-RQ-BRIEF-SALVAGE';
+    case 'purge':
+      return 'LOG-RQ-BRIEF-PURGE';
+    case 'vent_seal':
+      return 'LOG-RQ-BRIEF-VENT';
+  }
 }

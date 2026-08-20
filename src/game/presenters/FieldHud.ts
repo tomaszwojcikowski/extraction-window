@@ -1,8 +1,11 @@
 import { lore } from '../../data/lore';
+import { SKILLS } from '../../data/progression';
 import { extractTrack, type GameState } from '../../sim';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { questKindLabel } from '../../sim/mechanics/roomQuestMechanic';
+import { netLoadoutTagSummary, hasWornLoadout } from '../../sim/equipTagLines';
 import { encumbered, fieldPosition, playerHudStance } from '../../sim/stance';
 import { hasStatus, statusHud } from '../../sim/status';
 import { Theme } from '../../scenes/theme';
@@ -12,13 +15,25 @@ export type HudChip = { label: string; fill: number };
 
 export function formatExtractBoxes(state: GameState): string {
   const boxes = extractTrack(state);
-  const keyCell = boxes.key ? '#' : '-';
-  let hsCell = '-';
-  if (boxes.handshake) hsCell = '#';
-  else if (state.handshake?.active) hsCell = state.handshake.progress >= 1 ? '1' : '·';
-  const latticeCell = boxes.lattice ? '#' : '-';
-  const padCell = boxes.pad || Boolean(state.uplink?.active) ? '#' : '-';
-  return `${lore('UI-EXTRACT')} ${keyCell}${hsCell}${latticeCell}${padCell}`;
+  const mark = (label: string, done: boolean, progress = false) => {
+    if (done) return `${label}#`;
+    if (progress) return `${label}·`;
+    return `${label}-`;
+  };
+  const keyCell = mark('K', boxes.key);
+  let hsCell = mark('H', boxes.handshake);
+  if (!boxes.handshake && state.handshake?.active) {
+    hsCell = state.handshake.progress >= 1 ? 'H#' : 'H·';
+  }
+  const latticeCell = mark('L', boxes.lattice);
+  const padCell = mark('P', boxes.pad || Boolean(state.uplink?.active));
+  return `${lore('UI-EXTRACT')} ${keyCell} ${hsCell} ${latticeCell} ${padCell}`;
+}
+
+export function formatSkillsChip(state: GameState): string | null {
+  if (state.skills.length === 0) return null;
+  const names = state.skills.map((id) => lore(SKILLS[id].loreName));
+  return `${lore('UI-SKILL-CHIP')} ${names.join('/')}`;
 }
 
 export function formatPositionWord(state: GameState): string {
@@ -127,10 +142,20 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.roomQuest && !state.roomQuest.done) {
     const n = state.roomQuest.steps.length;
     const i = state.roomQuest.stepIndex + 1;
+    const kind = lore(questKindLabel(state.roomQuest.kind));
     chips.push({
-      label: n > 1 ? `${lore('UI-QUEST-BADGE')} ${i}/${n}` : lore('UI-QUEST-BADGE'),
+      label: n > 1 ? `${kind} ${i}/${n}` : kind,
       fill: Theme.tape,
     });
+  }
+  if (hasWornLoadout(state)) {
+    const tags = netLoadoutTagSummary(state);
+    if (tags.length > 0) {
+      chips.push({
+        label: `${lore('UI-LOADOUT-CHIP')} ${tags.slice(0, 2).join(' · ')}`,
+        fill: Theme.inkMute,
+      });
+    }
   }
   if (state.extractFavor) {
     chips.push({ label: FAVOR_LABEL[state.extractFavor.kind], fill: Theme.safe });
@@ -141,5 +166,7 @@ export function fieldHudChips(state: GameState): HudChip[] {
   if (state.codexPages > 0) {
     chips.push({ label: `${lore('UI-CODEX')} ${state.codexPages}`, fill: Theme.inkMute });
   }
+  const skills = formatSkillsChip(state);
+  if (skills) chips.push({ label: skills, fill: Theme.biolum });
   return chips;
 }

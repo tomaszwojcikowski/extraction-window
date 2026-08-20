@@ -21,9 +21,10 @@ export function chromeFromKey(e: KeyboardEvent): ChromeKey | null {
   return null;
 }
 
-/** Inventory slot index 0–8 from digit keys 1–9, else null. */
+/** Inventory slot index from digit keys 1–9 and 0 (slot 10), else null. */
 export function slotIndexFromKey(e: KeyboardEvent): number | null {
   if (e.key >= '1' && e.key <= '9') return parseInt(e.key, 10) - 1;
+  if (e.key === '0') return 9;
   return null;
 }
 

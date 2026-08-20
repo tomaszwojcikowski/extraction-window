@@ -1,25 +1,33 @@
 import Phaser from 'phaser';
 import { lore } from '../data/lore';
+import { drawHelpOverlay } from '../game/views/overlays/HelpOverlay';
 import { FONT_DATA, FONT_DISPLAY, Theme, ThemeCss } from './theme';
+import { drawMenuChrome, drawTitleWindow } from './atmosphere';
 import {
-  addCameraAtmosphere,
-  drawMenuChrome,
-  drawMenuPlate,
-  drawTitleWindow,
-} from './atmosphere';
+  computeTitleLayout,
+  formatMissionSeed,
+  isTitleHelpDismissKey,
+  isTitleHelpKey,
+  isTitleStartKey,
+} from './titleLayout';
 import { ambient, music, sfx } from '../audio';
 
 export class TitleScene extends Phaser.Scene {
   private seed = (Date.now() % 90000) + 1000;
-  private pulse!: Phaser.GameObjects.Text;
+  private helpOpen = false;
+  private audioPrimed = false;
+
+  private windowGfx!: Phaser.GameObjects.Graphics;
+  private helpPanel!: Phaser.GameObjects.Graphics;
+  private helpText!: Phaser.GameObjects.Text;
+
+  private beginText!: Phaser.GameObjects.Text;
   private seedText!: Phaser.GameObjects.Text;
   private muteText!: Phaser.GameObjects.Text;
-  private windowGfx!: Phaser.GameObjects.Graphics;
-  private windowPhase = 0;
-  private windowX = 0;
-  private windowY = 0;
-  private windowW = 0;
-  private windowH = 0;
+  private chrome: Phaser.GameObjects.GameObject[] = [];
+
+  private layout = computeTitleLayout(960, 640);
+  private keyHandler = (e: KeyboardEvent) => this.onKey(e);
 
   constructor() {
     super('Title');
@@ -27,232 +35,208 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
+    this.layout = computeTitleLayout(width, height);
     this.cameras.main.setBackgroundColor(Theme.groundDeep);
-    const cameraAtmosphere = addCameraAtmosphere(this, 0.06);
+    this.chrome = [];
 
     const bg = this.add.graphics();
     drawMenuChrome(this, bg, width, height);
 
-    // Case serial — machined into the top rail, not a caption.
+    this.windowGfx = this.add.graphics();
+    this.drawHero(width);
+
+    this.seedText = this.add
+      .text(width / 2, this.layout.seedY, this.seedLine(), {
+        fontFamily: FONT_DATA,
+        fontSize: '13px',
+        color: ThemeCss.ink,
+      })
+      .setOrigin(0.5);
+    this.chrome.push(this.seedText);
+
+    this.beginText = this.add
+      .text(width / 2, this.layout.beginY, lore('UI-PRESS-START'), {
+        fontFamily: FONT_DATA,
+        fontSize: '14px',
+        color: ThemeCss.inkBright,
+      })
+      .setOrigin(0.5);
+    this.chrome.push(this.beginText);
+
     this.add
-      .text(52, 48, `${lore('UI-ORG')}  ·  SURVEY CASE 07`, {
+      .text(width / 2, this.layout.briefY, lore('UI-BRIEF'), {
+        fontFamily: FONT_DATA,
+        fontSize: '11px',
+        color: ThemeCss.inkDim,
+        align: 'center',
+        wordWrap: { width: width - 120 },
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(width / 2, this.layout.controlsY, lore('UI-CONTROLS-TITLE'), {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+        align: 'center',
+        wordWrap: { width: width - 120 },
+      })
+      .setOrigin(0.5);
+
+    this.muteText = this.add
+      .text(width - 52, height - 28, this.muteLabel(), {
+        fontFamily: FONT_DATA,
+        fontSize: '10px',
+        color: ThemeCss.inkMute,
+      })
+      .setOrigin(1, 0.5);
+    this.chrome.push(this.muteText);
+
+    this.add
+      .text(52, height - 28, lore('UI-ORG'), {
         fontFamily: FONT_DATA,
         fontSize: '10px',
         color: ThemeCss.inkMute,
       })
       .setOrigin(0, 0.5);
-    this.add
-      .text(width - 52, 48, lore('UI-CLOCKS-LIVE'), {
-        fontFamily: FONT_DATA,
-        fontSize: '10px',
-        color: ThemeCss.tape,
-      })
-      .setOrigin(1, 0.5);
 
-    // Hero aperture — the Extraction Window made literal.
-    this.windowW = 540;
-    this.windowH = 168;
-    this.windowX = Math.round((width - this.windowW) / 2);
-    this.windowY = 72;
-    this.windowGfx = this.add.graphics();
-    drawTitleWindow(this.windowGfx, this.windowX, this.windowY, this.windowW, this.windowH, 0);
+    this.time.addEvent({
+      delay: 720,
+      loop: true,
+      callback: () => {
+        if (!this.beginText?.active || this.helpOpen) return;
+        this.beginText.setVisible(!this.beginText.visible);
+      },
+    });
 
-    const winY = this.windowY;
-    const winH = this.windowH;
+    this.input.keyboard!.on('keydown', this.keyHandler);
+    this.events.once('shutdown', () => {
+      this.input.keyboard?.off('keydown', this.keyHandler);
+    });
+  }
 
-    this.add
-      .text(width / 2, winY + 38, lore('UI-TITLE'), {
+  private drawHero(width: number): void {
+    const { window: win } = this.layout;
+    drawTitleWindow(this.windowGfx, win.x, win.y, win.w, win.h);
+
+    const title = this.add
+      .text(width / 2, win.y + 46, lore('UI-TITLE'), {
         fontFamily: FONT_DISPLAY,
-        fontSize: '40px',
+        fontSize: '36px',
         color: ThemeCss.inkBright,
-        stroke: ThemeCss.groundDeep,
-        strokeThickness: 5,
       })
       .setOrigin(0.5)
       .setDepth(2);
 
-    this.add
-      .text(width / 2, winY + winH - 28, lore('UI-SUBTITLE'), {
+    const tagline = this.add
+      .text(width / 2, win.y + win.h - 20, lore('UI-TITLE-TAGLINE'), {
         fontFamily: FONT_DATA,
-        fontSize: '12px',
+        fontSize: '11px',
         color: ThemeCss.inkDim,
       })
       .setOrigin(0.5)
       .setDepth(2);
 
-    this.add
-      .text(width / 2, winY + winH - 12, `${lore('LOC-VIRE7')}  ·  ${lore('UI-SURVEY-TAG')}`, {
-        fontFamily: FONT_DATA,
-        fontSize: '10px',
-        color: ThemeCss.inkMute,
-      })
-      .setOrigin(0.5)
-      .setDepth(2);
+    this.chrome.push(title, tagline);
+  }
 
-    // Mission ID plate with physical chevrons.
-    const plates = this.add.graphics();
-    const midY = winY + winH + 28;
-    const seedW = 360;
-    const seedH = 52;
-    const seedX = Math.round((width - seedW) / 2);
-    drawMenuPlate(plates, seedX, midY, seedW, seedH, { accent: Theme.biolum });
+  private setChromeVisible(visible: boolean): void {
+    for (const obj of this.chrome) {
+      if ('setVisible' in obj && typeof obj.setVisible === 'function') {
+        obj.setVisible(visible);
+      }
+    }
+    this.windowGfx.setVisible(visible);
+    if (visible) this.beginText.setVisible(true);
+  }
 
-    this.add
-      .text(seedX + 22, midY + 14, '◀', {
-        fontFamily: FONT_DATA,
-        fontSize: '14px',
-        color: ThemeCss.inkMute,
-      })
-      .setOrigin(0.5);
-    this.add
-      .text(seedX + seedW - 22, midY + 14, '▶', {
-        fontFamily: FONT_DATA,
-        fontSize: '14px',
-        color: ThemeCss.inkMute,
-      })
-      .setOrigin(0.5);
+  private openHelp(open: boolean): void {
+    if (!this.helpPanel) {
+      this.helpPanel = this.add.graphics().setDepth(20);
+      this.helpText = this.add
+        .text(0, 0, '', {
+          fontFamily: FONT_DATA,
+          fontSize: '12px',
+          color: ThemeCss.ink,
+        })
+        .setDepth(21);
+    }
+    this.helpOpen = open;
+    this.helpPanel.setVisible(open);
+    this.helpText.setVisible(open);
+    if (!open) {
+      this.setChromeVisible(true);
+      return;
+    }
+    const { width, height } = this.scale;
+    drawHelpOverlay(this.helpPanel, this.helpText, width, height, false);
+    this.setChromeVisible(false);
+  }
 
-    this.seedText = this.add
-      .text(width / 2, midY + 14, this.seedLabel(), {
-        fontFamily: FONT_DATA,
-        fontSize: '15px',
-        color: ThemeCss.inkBright,
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(width / 2, midY + 34, lore('UI-SEED-HINT'), {
-        fontFamily: FONT_DATA,
-        fontSize: '10px',
-        color: ThemeCss.inkMute,
-      })
-      .setOrigin(0.5);
-
-    // Begin — bolted action plate; lamp blink is the only soft attention.
-    const beginW = 220;
-    const beginH = 36;
-    const beginX = Math.round((width - beginW) / 2);
-    const beginY = midY + 68;
-    drawMenuPlate(plates, beginX, beginY, beginW, beginH, { tape: true, accent: Theme.tape });
-
-    this.pulse = this.add
-      .text(width / 2, beginY + beginH / 2, lore('UI-PRESS-START'), {
-        fontFamily: FONT_DATA,
-        fontSize: '14px',
-        color: ThemeCss.inkBright,
-      })
-      .setOrigin(0.5);
-
-    this.time.addEvent({
-      delay: 640,
-      loop: true,
-      callback: () => {
-        if (this.pulse.active) this.pulse.setVisible(!this.pulse.visible);
-      },
-    });
-
-    // Footer dossier — controls + brief on one laminated strip.
-    const footW = 640;
-    const footH = 78;
-    const footX = Math.round((width - footW) / 2);
-    const footY = height - 128;
-    drawMenuPlate(plates, footX, footY, footW, footH, { accent: Theme.panelEdge });
-
-    this.add
-      .text(width / 2, footY + 22, lore('UI-CONTROLS'), {
-        fontFamily: FONT_DATA,
-        fontSize: '12px',
-        color: ThemeCss.inkDim,
-        align: 'center',
-        wordWrap: { width: footW - 40 },
-      })
-      .setOrigin(0.5);
-
-    this.add
-      .text(width / 2, footY + 48, lore('UI-BRIEF-TUT'), {
-        fontFamily: FONT_DATA,
-        fontSize: '12px',
-        color: ThemeCss.ink,
-        align: 'center',
-        wordWrap: { width: footW - 40 },
-      })
-      .setOrigin(0.5);
-
-    this.muteText = this.add
-      .text(width / 2, height - 42, this.muteLabel(), {
-        fontFamily: FONT_DATA,
-        fontSize: '10px',
-        color: ThemeCss.inkMute,
-      })
-      .setOrigin(0.5);
-
-    // Mechanical window tick — hard step, not a tweened glow.
-    this.time.addEvent({
-      delay: 160,
-      loop: true,
-      callback: () => {
-        if (!this.windowGfx?.active) return;
-        this.windowPhase = (this.windowPhase + 1) % 64;
-        drawTitleWindow(
-          this.windowGfx,
-          this.windowX,
-          this.windowY,
-          this.windowW,
-          this.windowH,
-          this.windowPhase,
-        );
-      },
-    });
-
-    // One pressure blink on open — kit waking up.
-    this.time.delayedCall(80, () => cameraAtmosphere?.pulse(0.11, 420));
-
-    this.input.keyboard!.on('keydown', (e: KeyboardEvent) => this.onKey(e));
-    this.events.once('shutdown', () => cameraAtmosphere?.destroy());
+  private seedLine(): string {
+    return `${formatMissionSeed(this.seed)}  ·  ${lore('UI-SEED-HINT')}`;
   }
 
   private muteLabel(): string {
-    return sfx.isMuted() ? `m — ${lore('UI-MUTE-ON')}` : `m — ${lore('UI-MUTE-OFF')}`;
-  }
-
-  private seedLabel(): string {
-    return `MISSION  ${String(this.seed).padStart(5, '0')}  /  ${lore('UI-SEED')}`;
+    return sfx.isMuted() ? `m ${lore('UI-MUTE-ON')}` : `m ${lore('UI-MUTE-OFF')}`;
   }
 
   private ensureBeds(): void {
+    if (this.audioPrimed) return;
+    this.audioPrimed = true;
     if (sfx.isMuted()) return;
     ambient.startTitle();
     music.setMood('title');
   }
 
+  private adjustSeed(delta: number): void {
+    this.seed = (this.seed + delta + 100000) % 100000;
+    this.seedText.setText(this.seedLine());
+    sfx.play('ui');
+  }
+
   private onKey(e: KeyboardEvent): void {
     sfx.unlock();
     music.prefetch();
+
     if (e.key === 'm' || e.key === 'M') {
       sfx.toggleMute();
       this.muteText.setText(this.muteLabel());
       if (sfx.isMuted()) {
         ambient.stop();
         music.stop();
+        this.audioPrimed = false;
       } else {
         this.ensureBeds();
       }
       return;
     }
+
+    if (this.helpOpen) {
+      if (isTitleHelpDismissKey(e)) {
+        this.openHelp(false);
+        sfx.play('ui');
+      }
+      return;
+    }
+
+    if (isTitleHelpKey(e)) {
+      this.ensureBeds();
+      this.openHelp(true);
+      sfx.play('ui');
+      return;
+    }
+
     this.ensureBeds();
+
     if (e.key === 'ArrowLeft') {
-      this.seed = (this.seed - 1 + 100000) % 100000;
-      this.seedText.setText(this.seedLabel());
-      sfx.play('ui');
+      this.adjustSeed(-1);
     } else if (e.key === 'ArrowRight') {
-      this.seed = (this.seed + 1) % 100000;
-      this.seedText.setText(this.seedLabel());
-      sfx.play('ui');
+      this.adjustSeed(1);
     } else if (e.key === 'r' || e.key === 'R') {
       this.seed = Math.floor(Math.random() * 100000);
-      this.seedText.setText(this.seedLabel());
+      this.seedText.setText(this.seedLine());
       sfx.play('ui');
-    } else if (e.key === 'Enter') {
+    } else if (isTitleStartKey(e)) {
       sfx.play('start');
       this.scene.start('Game', { seed: this.seed });
     }

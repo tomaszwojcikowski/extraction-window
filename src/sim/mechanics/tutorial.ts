@@ -55,7 +55,7 @@ export const tutorialMechanic: Mechanic = {
   contextHint(state: GameState): LoreId | null {
     if (!state.tutorialActive) return null;
 
-    // Until first turn resolves — teach movement + peek
+    // Until first turn resolves — teach movement + wait
     if (state.turn === 0) return 'UI-TUT-MOVE';
 
     // Once: hooded lamp / LIT·SHADOW — teach when SHADOW first matters (map already speaks LIT).

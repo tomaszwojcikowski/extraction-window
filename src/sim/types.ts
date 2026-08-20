@@ -89,6 +89,8 @@ export interface MapRoom {
   cx: number;
   cy: number;
   role: RoomRole;
+  /** Set when any loot is recovered inside this cache room. */
+  cacheLooted?: boolean;
 }
 
 export interface Tile {
@@ -354,6 +356,8 @@ export interface GameState {
   skills: SkillId[];
   /** Loot taken this sector — wakes guard crawlers */
   lootTakenThisSector: boolean;
+  /** Mapper ping target — nearest unlooted cache center. */
+  mapperPing: Pos | null;
   objectives: ObjectiveFlags;
   log: LogEntry[];
   ui: {

@@ -16,7 +16,7 @@ function once(state: GameState, id: string): boolean {
  * (DESIGN_PRINCIPLES §4: teach at the moment of need).
  *
  * Clocks / extract fire only after the drill bay (`tut_welcome`) so harness
- * runs and peek-teach tests are not stomped.
+ * runs and tutorial hint tests are not stomped.
  */
 export function pillarCoachHint(st: GameState): LoreId | null {
   if (st.tutorialActive) return null;
