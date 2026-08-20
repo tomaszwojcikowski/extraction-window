@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
 import {
-  findPhaserTarget,
   hasPhaserEquipped,
   PHASER_CARDINALS,
   PHASER_ENERGY_COST,
@@ -9,7 +8,6 @@ import {
   PHASER_RANGE_MIN,
   phaserAnyTarget,
   tracePhaserLane,
-  type PhaserLaneStep,
 } from '../../sim/phaser';
 import { hasItem } from '../../sim/inventory';
 import { hasStatus } from '../../sim/status';
@@ -91,22 +89,55 @@ export function phaserKitStatus(st: GameState, selectedKind: string | undefined)
   return 'UI-PHASER-WEAR';
 }
 
+export type PhaserTrackRole = 'band' | 'target';
+
+export type PhaserTrackMark = {
+  x: number;
+  y: number;
+  role: PhaserTrackRole;
+  live: boolean;
+};
+
+/** Range-band tiles the overlay should mark — idle ticks vs live target. */
+export function phaserTrackMarks(st: GameState): PhaserTrackMark[] {
+  if (!hasPhaserEquipped(st)) return [];
+  const ready = st.player.energy >= PHASER_ENERGY_COST;
+  const marks: PhaserTrackMark[] = [];
+  for (const [dx, dy] of PHASER_CARDINALS) {
+    const { steps, target } = tracePhaserLane(st, dx, dy);
+    const live = ready && target !== undefined;
+    for (const s of steps) {
+      if (s.step < PHASER_RANGE_MIN || s.step > PHASER_RANGE_MAX) continue;
+      const isTarget = target !== undefined && target.x === s.x && target.y === s.y;
+      marks.push({
+        x: s.x,
+        y: s.y,
+        role: isTarget && live ? 'target' : 'band',
+        live,
+      });
+    }
+  }
+  return marks;
+}
+
 function tileRect(x: number, y: number, tileDraw: number): { left: number; top: number; size: number } {
-  const pad = 2;
+  const pad = 3;
   return { left: x * tileDraw + pad, top: y * tileDraw + pad, size: tileDraw - pad * 2 };
 }
 
-/** Corner-bracket reticle on the tile that will eat the beam. */
-function drawTargetReticle(
+/** Short corner ticks — reads as kit flagging, not a HUD plate. */
+function drawCornerTicks(
   g: Phaser.GameObjects.Graphics,
   left: number,
   top: number,
   size: number,
+  color: number,
   alpha: number,
+  armScale: number,
 ): void {
-  const inset = 3;
-  const arm = Math.max(5, Math.floor(size * 0.28));
-  g.lineStyle(2, Theme.arcWhite, alpha);
+  const inset = 1;
+  const arm = Math.max(2, Math.floor(size * armScale));
+  g.lineStyle(1, color, alpha);
   const corners: [number, number, number, number][] = [
     [left + inset, top + inset, 1, 1],
     [left + size - inset, top + inset, -1, 1],
@@ -120,91 +151,27 @@ function drawTargetReticle(
     g.lineTo(cx + sx * arm, cy);
     g.strokePath();
   }
-  g.lineStyle(1, Theme.scanWash, alpha * 0.55);
-  g.strokeRect(left + 1, top + 1, size - 2, size - 2);
 }
 
-/** Step-1 tile — phaser band starts at 2; adjacent stays melee. */
-function drawMeleeBandTile(
-  g: Phaser.GameObjects.Graphics,
-  left: number,
-  top: number,
-  size: number,
-  alpha: number,
-): void {
-  g.lineStyle(1, Theme.arc, alpha * 0.55);
-  g.strokeRect(left, top, size, size);
-  g.lineStyle(1, Theme.rust, alpha * 0.35);
-  const inset = 4;
-  g.lineBetween(left + inset, top + inset, left + size - inset, top + size - inset);
-  g.lineBetween(left + size - inset, top + inset, left + inset, top + size - inset);
-}
-
-function drawBandTile(
-  g: Phaser.GameObjects.Graphics,
-  left: number,
-  top: number,
-  size: number,
-  ready: boolean,
-  alpha: number,
-  step: number,
-): void {
-  const inBand = step >= PHASER_RANGE_MIN && step <= PHASER_RANGE_MAX;
-  if (!inBand) return;
-  const fillA = (ready ? 0.22 : 0.1) * alpha;
-  g.fillStyle(Theme.scanWash, fillA);
-  g.fillRect(left + 1, top + 1, size - 2, size - 2);
-  g.lineStyle(ready ? 2 : 1, Theme.arc, (ready ? 0.72 : 0.32) * alpha);
-  g.strokeRect(left, top, size, size);
-  const cx = left + size / 2;
-  const cy = top + size / 2;
-  g.fillStyle(Theme.arcWhite, (ready ? 0.85 : 0.4) * alpha);
-  g.fillCircle(cx, cy, step === PHASER_RANGE_MIN ? 2 : 1.5);
-}
-
-function drawLaneBeam(
+/** Hairline spine on a live lane — no halo, no chevron. */
+function drawLaneSpine(
   g: Phaser.GameObjects.Graphics,
   fromX: number,
   fromY: number,
   target: Enemy,
   tileDraw: number,
   alpha: number,
-  live: boolean,
 ): void {
   const toX = target.x * tileDraw + tileDraw / 2;
   const toY = target.y * tileDraw + tileDraw / 2;
-  const halo = live ? 5 : 3;
-  g.lineStyle(halo, Theme.scanWash, (live ? 0.28 : 0.12) * alpha);
+  g.lineStyle(1, Theme.scanWash, 0.22 * alpha);
   g.beginPath();
   g.moveTo(fromX, fromY);
   g.lineTo(toX, toY);
   g.strokePath();
-  g.lineStyle(live ? 2 : 1, Theme.arcWhite, (live ? 0.82 : 0.35) * alpha);
-  g.beginPath();
-  g.moveTo(fromX, fromY);
-  g.lineTo(toX, toY);
-  g.strokePath();
-
-  const dx = Math.sign(target.x * tileDraw + tileDraw / 2 - fromX);
-  const dy = Math.sign(target.y * tileDraw + tileDraw / 2 - fromY);
-  const midX = fromX + dx * tileDraw * 0.55;
-  const midY = fromY + dy * tileDraw * 0.55;
-  const chev = tileDraw * 0.14;
-  g.lineStyle(1, Theme.arcWhite, (live ? 0.7 : 0.3) * alpha);
-  if (dx !== 0) {
-    g.lineBetween(midX - dx * chev, midY - chev, midX, midY);
-    g.lineBetween(midX - dx * chev, midY + chev, midX, midY);
-  } else {
-    g.lineBetween(midX - chev, midY - dy * chev, midX, midY);
-    g.lineBetween(midX + chev, midY - dy * chev, midX, midY);
-  }
 }
 
-function enemyOnStep(st: GameState, s: PhaserLaneStep): Enemy | undefined {
-  return st.enemies.find((e) => e.alive && e.x === s.x && e.y === s.y);
-}
-
-/** Paint cardinal lanes when the survey phaser is worn — range band, reticle, beam guide. */
+/** Paint cardinal tracking ticks when the survey phaser is worn. */
 export function drawPhaserLanes(
   g: Phaser.GameObjects.Graphics,
   st: GameState,
@@ -214,43 +181,32 @@ export function drawPhaserLanes(
   if (!hasPhaserEquipped(st)) return;
 
   const ready = st.player.energy >= PHASER_ENERGY_COST;
-  const pulse = 0.72 + (animFrame % 4) * 0.08;
+  const breathe = 0.86 + (animFrame % 6) * 0.02;
   const fromX = st.player.x * tileDraw + tileDraw / 2;
   const fromY = st.player.y * tileDraw + tileDraw / 2;
-  const liveCount = phaserLiveLaneCount(st);
-  const focusLive = ready && liveCount > 0;
+  const marks = phaserTrackMarks(st);
+  const focusLive = marks.some((m) => m.role === 'target');
+
+  for (const m of marks) {
+    const laneAlpha = focusLive ? (m.live ? 1 : 0.28) : 1;
+    const { left, top, size } = tileRect(m.x, m.y, tileDraw);
+    if (m.role === 'target') {
+      drawCornerTicks(g, left, top, size, Theme.arcWhite, 0.42 * laneAlpha * breathe, 0.18);
+    } else {
+      drawCornerTicks(
+        g,
+        left,
+        top,
+        size,
+        ready ? Theme.scanWash : Theme.inkMute,
+        (ready ? 0.2 : 0.12) * laneAlpha,
+        0.12,
+      );
+    }
+  }
 
   for (const [dx, dy] of PHASER_CARDINALS) {
-    const { steps, target } = tracePhaserLane(st, dx, dy);
-    const live = ready && target !== undefined;
-    const laneAlpha = focusLive ? (live ? 1 : 0.22) : pulse;
-
-    for (const s of steps) {
-      const { left, top, size } = tileRect(s.x, s.y, tileDraw);
-      const isTarget = target !== undefined && target.x === s.x && target.y === s.y;
-      const foe = enemyOnStep(st, s);
-
-      if (s.step === 1) {
-        if (foe && !isTarget) drawMeleeBandTile(g, left, top, size, laneAlpha);
-        continue;
-      }
-
-      if (isTarget && live) {
-        g.fillStyle(Theme.arcWhite, 0.18 * laneAlpha);
-        g.fillRect(left, top, size, size);
-        drawTargetReticle(g, left, top, size, 0.95 * laneAlpha);
-      } else {
-        drawBandTile(g, left, top, size, ready, laneAlpha, s.step);
-      }
-    }
-
-    if (target && ready) {
-      drawLaneBeam(g, fromX, fromY, target, tileDraw, laneAlpha, live);
-    } else if (steps.length > 0 && !focusLive) {
-      const last = steps[steps.length - 1]!;
-      const { left, top, size } = tileRect(last.x, last.y, tileDraw);
-      g.lineStyle(1, Theme.inkMute, 0.25 * pulse);
-      g.strokeRect(left, top, size, size);
-    }
+    const { target } = tracePhaserLane(st, dx, dy);
+    if (target && ready) drawLaneSpine(g, fromX, fromY, target, tileDraw, 1);
   }
 }
