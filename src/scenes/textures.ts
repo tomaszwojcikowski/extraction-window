@@ -31,12 +31,14 @@ export function playerTextureKey(frame = 0): string {
   return frame === 0 ? 't_player' : `t_player_${frame % 3}`;
 }
 
-export function npcTextureKey(kind: string): string {
-  return `t_npc_${kind}`;
+export function npcTextureKey(kind: string, frame = 0): string {
+  const f = frame % 3;
+  return f === 0 ? `t_npc_${kind}` : `t_npc_${kind}_${f}`;
 }
 
-export function allyTextureKey(kind: string): string {
-  return `t_ally_${kind}`;
+export function allyTextureKey(kind: string, frame = 0): string {
+  const f = frame % 3;
+  return f === 0 ? `t_ally_${kind}` : `t_ally_${kind}_${f}`;
 }
 
 /** Wall contour family per biome — cliff / bulkhead / conduit. */
@@ -254,6 +256,10 @@ export function registerTextures(scene: Phaser.Scene): void {
 
   drawDeluxeItem(g, T, 'crate');
   bake(g, 't_item', T);
+  for (const stamp of ['med', 'energy', 'flare', 'tool', 'wear'] as const) {
+    drawDeluxeItem(g, T, stamp);
+    bake(g, `t_item_${stamp}`, T);
+  }
   drawDeluxeItem(g, T, 'key');
   bake(g, 't_quest', T);
   bake(g, 't_key', T);
@@ -267,19 +273,19 @@ export function registerTextures(scene: Phaser.Scene): void {
     }
   }
 
-  // Field contacts
-  drawDeluxeContact(g, T, 'npc', 'archive_holo');
-  bake(g, npcTextureKey('archive_holo'), T);
-  drawDeluxeContact(g, T, 'npc', 'stranded_ensign');
-  bake(g, npcTextureKey('stranded_ensign'), T);
-  drawDeluxeContact(g, T, 'npc', 'field_tech');
-  bake(g, npcTextureKey('field_tech'), T);
-  drawDeluxeContact(g, T, 'npc', 'survey_contact');
-  bake(g, npcTextureKey('survey_contact'), T);
-  drawDeluxeContact(g, T, 'ally', 'probe_drone');
-  bake(g, allyTextureKey('probe_drone'), T);
-  drawDeluxeContact(g, T, 'ally', 'away_escort');
-  bake(g, allyTextureKey('away_escort'), T);
+  // Field contacts — three frames each (idle / stride / assist).
+  for (const kind of ['archive_holo', 'stranded_ensign', 'field_tech', 'survey_contact'] as const) {
+    for (let f = 0; f < 3; f++) {
+      drawDeluxeContact(g, T, 'npc', kind, f);
+      bake(g, npcTextureKey(kind, f), T);
+    }
+  }
+  for (const kind of ['probe_drone', 'away_escort'] as const) {
+    for (let f = 0; f < 3; f++) {
+      drawDeluxeContact(g, T, 'ally', kind, f);
+      bake(g, allyTextureKey(kind, f), T);
+    }
+  }
 
   g.destroy();
 }

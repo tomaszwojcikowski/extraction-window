@@ -3,6 +3,7 @@ import { lore } from '../../../data/lore';
 import { GAME_VERSION } from '../../../data/version';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
+import { drawModalTapeHeader } from './modalChrome';
 
 /** Halcyon field bulletin — player-facing ship notes on the title screen. */
 export function drawChangelogOverlay(
@@ -16,8 +17,9 @@ export function drawChangelogOverlay(
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
   drawFieldPanel(panel, x, y, w, h, Theme.tape);
+  drawModalTapeHeader(panel, x, y, w, Theme.tape);
   text.setWordWrapWidth(w - 48);
-  text.setPosition(x + 24, y + 22);
+  text.setPosition(x + 24, y + 28);
   text.setText(
     `${lore('UI-CHANGELOG')}\n` +
       `${GAME_VERSION}\n\n` +

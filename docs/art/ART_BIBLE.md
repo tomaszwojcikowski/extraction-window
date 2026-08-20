@@ -217,6 +217,14 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | Prop 4-frame + bloom pulse | Done — Wave 48 |
 | Sector-enter bloom + handshake ignite | Done — Wave 49 |
 | Animation sheet + motion/perf rules | Done — Wave 50 |
+| Ground loot family silhouettes | Done — Wave 51 |
+| Ion-front field tint / mote temperature | Done — Wave 52 |
+| Ally/NPC idle·stride·assist frames | Done — Wave 53 |
+| Blind/jam/marked diegetic wash | Done — Wave 54 |
+| Help/PADD/bulletin modal tape parity | Done — Wave 55 |
+| Wake Breaching weight + goal instrument pulse | Done — Wave 56 |
+| Handshake pad stages + mapper memory wash | Done — Wave 57 |
+| Sheet QA + ship `v1.6.0` | Done — Wave 58 |
 
 ## 9. Gates
 

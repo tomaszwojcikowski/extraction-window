@@ -117,6 +117,15 @@ export const LORE = {
   'UI-CHANGELOG': 'FIELD BULLETIN',
   'UI-CHANGELOG-HINT': 'c — bulletin',
   'UI-CHANGELOG-BODY':
+    'v1.6.0 — FIELD READ\n' +
+    '· Floor loot silhouettes: med, cell, flare, tool, wear\n' +
+    '· Ion front tints the field, not only the HUD chip\n' +
+    '· Allies and contacts stride like hostiles; escorts stay flat\n' +
+    '· Blind / jam / marked wash the suit — sticky, not a punch\n' +
+    '· Help, PADD, and bulletin share kit tape headers\n' +
+    '· Breaching wakes hit harder; goal marker pulses on the meter tick\n' +
+    '· Handshake pad shows sync stages; mapper memory ≠ fog\n' +
+    '\n' +
     'v1.5.0 — SIGHT AND MOTION\n' +
     '· Flare and beacon light flash from the emitter, not a HUD blink\n' +
     '· Sector entry sweeps light in behind a front; first room arrives\n' +

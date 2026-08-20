@@ -889,7 +889,13 @@ export class LightView {
           mem = desaturate(mem, isWall ? 0.85 : 0.72);
           mem = multiplyTint(mem, Theme.memoryWash, 0.42);
           mem = multiplyTint(mem, Theme.memory, 0.28);
-          const memoryAlpha = isWall ? 0.5 : 0.4;
+          // Mapper survey memory ≠ fog ≠ LIT — tape/scan hue, still flat (Wave 57).
+          const mapper = st.player.mapperTurns > 0;
+          if (mapper) {
+            mem = multiplyTint(mem, Theme.tape, 0.2);
+            mem = multiplyTint(mem, LightTemp.scan, 0.08);
+          }
+          const memoryAlpha = mapper ? (isWall ? 0.55 : 0.48) : isWall ? 0.5 : 0.4;
           if (paint) {
             img.setTint(mem);
             img.setAlpha(memoryAlpha);
@@ -930,6 +936,27 @@ export class LightView {
         if (st.emStress >= EM_HIGH) {
           // Sickly scan wash — intensity already in sim ambient; hue is present-only.
           tint = multiplyTint(tint, LightTemp.scan, 0.12);
+        }
+        // Ion front field language — same grid walk; soft when dampened (Wave 52).
+        if (st.ionFrontTurns > 0) {
+          const ionPull = st.ionFrontDampened ? 0.06 : 0.15;
+          tint = multiplyTint(tint, LightTemp.scan, ionPull);
+        }
+        // Impairment suit-edge wash — sticky tint only, never brightness lift (Wave 54).
+        {
+          const statuses = st.player.statuses;
+          const blind = (statuses.blind ?? 0) > 0;
+          const jam = (statuses.jam ?? 0) > 0;
+          const marked = (statuses.marked ?? 0) > 0;
+          if (blind || jam || marked) {
+            const d = Math.hypot(x - st.player.x, y - st.player.y);
+            if (d <= 3.2) {
+              const edge = 1 - d / 3.2;
+              if (blind) tint = multiplyTint(tint, Theme.scanWash, 0.12 * edge);
+              if (jam) tint = multiplyTint(tint, Theme.tape, 0.1 * edge);
+              if (marked) tint = multiplyTint(tint, Theme.flag, 0.1 * edge);
+            }
+          }
         }
         if (crush > 0) {
           tint = desaturate(tint, crush * 0.42);
@@ -1024,8 +1051,22 @@ export class LightView {
         playerSprite.setTint(LightTemp.pattern);
       } else {
         const tint = keyTint(playerLight.x, playerLight.y);
-        if (tint !== null) playerSprite.setTint(tint);
-        else playerSprite.clearTint();
+        // Sticky impairment suit wash for status duration — not punch-on-engage (Wave 54).
+        const statuses = st.player.statuses;
+        const blind = (statuses.blind ?? 0) > 0;
+        const jam = (statuses.jam ?? 0) > 0;
+        const marked = (statuses.marked ?? 0) > 0;
+        if (blind || jam || marked) {
+          let wash = tint ?? 0xffffff;
+          if (blind) wash = multiplyTint(wash, Theme.scanWash, 0.48);
+          if (jam) wash = multiplyTint(wash, Theme.tape, 0.36);
+          if (marked) wash = multiplyTint(wash, Theme.flag, 0.4);
+          playerSprite.setTint(wash);
+        } else if (tint !== null) {
+          playerSprite.setTint(tint);
+        } else {
+          playerSprite.clearTint();
+        }
       }
     }
 

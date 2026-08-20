@@ -4,6 +4,7 @@ import { wouldNoticeEnemy } from '../../sim/notice';
 import { manhattan } from '../../sim/spatial';
 import { Theme } from '../../scenes/theme';
 import type { GameState } from '../../sim/types';
+import type { ShearPressureSpec } from './ShearPressure';
 
 /** Cap live rings so dense packs stay readable. */
 export const MAX_WAKE_TELLS = 8;
@@ -67,8 +68,13 @@ export function drawWakeTells(
   py: number,
   animFrame: number,
   tileDraw: number,
+  shear?: Pick<ShearPressureSpec, 'state'>,
 ): void {
-  const pulse = 0.65 + (animFrame % 4) * 0.1;
+  // Wave 56 — Breaching hits harder; Calm stays soft.
+  const weight =
+    shear?.state === 'Breaching' ? 1.35 : shear?.state === 'Arcing' ? 1.12 : 1;
+  const lineW = shear?.state === 'Breaching' ? 2 : 1;
+  const pulse = (0.65 + (animFrame % 4) * 0.1) * weight;
   const tells = collectWakeTells(st, px, py);
   const fromX = px * tileDraw + tileDraw / 2;
   const fromY = py * tileDraw + tileDraw / 2;
@@ -79,16 +85,16 @@ export function drawWakeTells(
     const toY = tell.ey * tileDraw + tileDraw / 2;
     const onFeet = tell.ex === px && tell.ey === py;
 
-    g.lineStyle(1, color, 0.42 * pulse);
+    g.lineStyle(lineW, color, Math.min(1, 0.42 * pulse));
     g.beginPath();
     g.moveTo(fromX, fromY);
     g.lineTo(toX, toY);
     g.strokePath();
 
-    const r = tileDraw * (0.34 + 0.06 * pulse);
-    g.lineStyle(onFeet ? 2 : 1, color, (onFeet ? 0.95 : 0.72) * pulse);
+    const r = tileDraw * (0.34 + 0.06 * Math.min(1.2, pulse));
+    g.lineStyle(onFeet ? lineW + 1 : lineW, color, Math.min(1, (onFeet ? 0.95 : 0.72) * pulse));
     g.strokeCircle(toX, toY, r);
-    g.lineStyle(1, color, 0.35 * pulse);
+    g.lineStyle(1, color, Math.min(1, 0.35 * pulse));
     g.strokeCircle(toX, toY, r + 3);
   }
 }

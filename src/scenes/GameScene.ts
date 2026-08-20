@@ -1433,12 +1433,15 @@ export class GameScene extends Phaser.Scene {
     if (cue) this.applyCameraCue(cue);
     if (logs.includes('LOG-HS-START') || logs.includes('LOG-HS-TICK')) {
       const pos = this.state.beaconPos ?? { x: this.state.player.x, y: this.state.player.y };
+      // Staged ignite radius tracks handshake progress — one Graphic (Wave 57).
+      const progress = this.state.handshake?.progress ?? 0;
+      const radius = logs.includes('LOG-HS-TICK') ? 3.2 + progress * 1.4 : 4;
       this.lightView.ignite(
         this,
         this.lightLayer,
         pos.x,
         pos.y,
-        5,
+        radius,
         LightTemp.beacon,
         logs.includes('LOG-HS-TICK') ? 280 : 420,
       );

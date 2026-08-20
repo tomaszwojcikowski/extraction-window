@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { lore } from '../../../data/lore';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
+import { drawModalTapeHeader } from './modalChrome';
 
 /** Draw the field help modal into existing Phaser objects. */
 export function drawHelpOverlay(
@@ -16,8 +17,9 @@ export function drawHelpOverlay(
   const x = (screenW - w) / 2;
   const y = (screenH - h) / 2;
   drawFieldPanel(panel, x, y, w, h, Theme.biolum);
+  drawModalTapeHeader(panel, x, y, w, Theme.biolum);
   text.setWordWrapWidth(w - 48);
-  text.setPosition(x + 24, y + 22);
+  text.setPosition(x + 24, y + 28);
   if (tutorialActive) {
     text.setText(
       `${lore('UI-HELP')}\n\n${lore('UI-HELP-TUT')}\nESC or ? — close`,

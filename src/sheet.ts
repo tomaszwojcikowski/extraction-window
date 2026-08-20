@@ -2,21 +2,27 @@ import Phaser from 'phaser';
 import type { SectorId } from './data/encounters';
 import { ENEMIES, type EnemyKind } from './data/enemies';
 import {
+  allyTextureKey,
   enemyTextureKey,
+  npcTextureKey,
   registerTextures,
   TILE_DRAW,
   wallStyleForSector,
   wallTextureKey,
 } from './scenes/textures';
 import { drawMeter, drawMenuPlate, drawStencilBadge, drawTapeStrip } from './scenes/atmosphere';
-import { Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
+import { LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
 import { lore } from './data/lore';
 import { drawThreatZones } from './game/views/ThreatView';
 import { paintPhaserBeamFrame } from './game/presenters/ActionFeedback';
 import { drawPhaserLanes } from './game/presenters/PhaserLanes';
+import { drawHandshakePad } from './game/presenters/HandshakePad';
+import { drawWakeTells } from './game/presenters/WakeTells';
 import { createGame } from './sim/state';
 import { moveEnemies } from './sim/ai';
 import type { GameState } from './sim/types';
+import { HANDSHAKE_TURNS } from './sim/mechanics/beaconHandshake';
+import { drawModalTapeHeader } from './game/views/overlays/modalChrome';
 
 /**
  * Review harness for the art gates. It bakes the real textures — never a
@@ -77,12 +83,15 @@ class SheetScene extends Phaser.Scene {
   create(): void {
     registerTextures(this);
     this.buildSpriteGrid();
+    this.buildLootGrid();
+    this.buildContactGrid();
     this.buildTerrainGrid('terrain');
     this.buildTerrainGrid('terrainFlat');
     this.buildCrackGrid();
     this.buildPressureMotifGrid();
     this.buildStructureGrid();
     this.buildChromeGrid();
+    this.buildFieldLanguageGrid();
     this.buildPhaserArtifacts();
     this.buildTelegraphBoards();
   }
@@ -205,6 +214,213 @@ class SheetScene extends Phaser.Scene {
         def.color,
       );
     }
+  }
+
+  /** Ground loot families — silhouette before colour (Wave 51). */
+  private buildLootGrid(): void {
+    const host = document.getElementById('loot');
+    if (!host) return;
+    const families: Array<{ label: string; keys: string[]; meta: string }> = [
+      { label: 'salvage', keys: ['t_item'], meta: 'dull crate' },
+      { label: 'med', keys: ['t_item_med'], meta: 'heal pack' },
+      { label: 'energy', keys: ['t_item_energy'], meta: 'power cell' },
+      { label: 'flare', keys: ['t_item_flare'], meta: 'magnesium' },
+      { label: 'tool', keys: ['t_item_tool'], meta: 'dart / probe' },
+      { label: 'wear', keys: ['t_item_wear'], meta: 'plate tab' },
+      { label: 'key', keys: ['t_key'], meta: 'quest' },
+      { label: 'core', keys: ['t_nav_core'], meta: 'quest' },
+    ];
+    for (const fam of families) {
+      this.cell('loot', fam.keys, fam.label, fam.meta, Theme.tape);
+    }
+    // Desaturated row — families must still separate.
+    for (const fam of families) {
+      const cell = document.createElement('div');
+      cell.className = 'cell flat';
+      for (const key of fam.keys) cell.appendChild(this.tile(key));
+      const label = document.createElement('div');
+      label.className = 'name';
+      label.textContent = fam.label;
+      const sub = document.createElement('div');
+      sub.className = 'meta';
+      sub.textContent = 'tint removed';
+      cell.append(label, sub);
+      host.appendChild(cell);
+    }
+  }
+
+  /** Ally / NPC idle · stride · assist (Wave 53). */
+  private buildContactGrid(): void {
+    const host = document.getElementById('contacts');
+    if (!host) return;
+    for (const kind of ['probe_drone', 'away_escort'] as const) {
+      this.cell(
+        'contacts',
+        [0, 1, 2].map((f) => allyTextureKey(kind, f)),
+        kind,
+        kind === 'away_escort' ? 'flat idle' : 'idle/stride/assist',
+        Theme.safe,
+      );
+    }
+    for (const kind of [
+      'archive_holo',
+      'stranded_ensign',
+      'field_tech',
+      'survey_contact',
+    ] as const) {
+      this.cell(
+        'contacts',
+        [0, 1, 2].map((f) => npcTextureKey(kind, f)),
+        kind,
+        'idle/stride/assist',
+        Theme.biolum,
+      );
+    }
+  }
+
+  /**
+   * Ion-front mote language, impairment wash, handshake stages, modal tape (Waves 52–57).
+   */
+  private buildFieldLanguageGrid(): void {
+    const host = document.getElementById('fieldLang');
+    if (!host) return;
+
+    const samples: Array<{ label: string; meta: string; draw: (g: Phaser.GameObjects.Graphics) => void }> = [
+      {
+        label: 'ion front',
+        meta: 'scan mote temp',
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          for (let i = 0; i < 12; i++) {
+            g.fillStyle(LightTemp.scan, 0.35 + (i % 3) * 0.1);
+            g.fillRect(12 + i * 10, 20 + (i % 4) * 6, 2, 2);
+          }
+        },
+      },
+      {
+        label: 'status · blind',
+        meta: 'scanWash suit',
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          g.fillStyle(Theme.scanWash, 0.45);
+          g.fillCircle(70, 32, 22);
+          g.fillStyle(Theme.inkBright, 0.7);
+          g.fillRect(58, 20, 24, 24);
+        },
+      },
+      {
+        label: 'status · jam',
+        meta: 'tape suit',
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          g.fillStyle(Theme.tape, 0.4);
+          g.fillCircle(70, 32, 22);
+          g.fillStyle(Theme.inkBright, 0.7);
+          g.fillRect(58, 20, 24, 24);
+        },
+      },
+      {
+        label: 'status · marked',
+        meta: 'flag suit',
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          g.fillStyle(Theme.flag, 0.4);
+          g.fillCircle(70, 32, 22);
+          g.fillStyle(Theme.inkBright, 0.7);
+          g.fillRect(58, 20, 24, 24);
+        },
+      },
+      {
+        label: 'handshake pad',
+        meta: `stages 0→${HANDSHAKE_TURNS}`,
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          const st = openRoom(3);
+          st.beaconPos = { x: 1, y: 0 };
+          st.handshake = { active: true, progress: 1 };
+          st.visible[0]![1] = true;
+          st.explored[0]![1] = true;
+          drawHandshakePad(g, st, 1, 48);
+        },
+      },
+      {
+        label: 'wake · Breaching',
+        meta: 'heavier tell',
+        draw: (g) => {
+          g.fillStyle(Theme.ground, 1);
+          g.fillRect(0, 0, 140, 64);
+          const st = openRoom(5);
+          st.player.x = 0;
+          st.player.y = 0;
+          st.enemies = [
+            {
+              ...st.enemies[0]!,
+              x: 2,
+              y: 0,
+              alive: true,
+              alerted: true,
+            },
+          ];
+          st.visible[0]![0] = true;
+          st.visible[0]![2] = true;
+          drawWakeTells(g, st, 0, 0, 1, 40, { state: 'Breaching' });
+        },
+      },
+      {
+        label: 'modal tape',
+        meta: 'Help / PADD / bulletin',
+        draw: (g) => {
+          drawMenuPlate(g, 8, 8, 124, 48, { accent: Theme.tape });
+          drawModalTapeHeader(g, 8, 8, 124, Theme.tape);
+        },
+      },
+      {
+        label: 'mapper memory',
+        meta: '≠ fog ≠ LIT',
+        draw: (g) => {
+          g.fillStyle(Theme.fog, 1);
+          g.fillRect(8, 12, 36, 40);
+          g.fillStyle(Theme.memoryWash, 1);
+          g.fillRect(52, 12, 36, 40);
+          g.fillStyle(Theme.tape, 0.55);
+          g.fillRect(96, 12, 36, 40);
+          g.fillStyle(Theme.inkDim, 0.8);
+          g.fillRect(100, 16, 28, 32);
+        },
+      },
+    ];
+
+    samples.forEach((sample, i) => {
+      const key = `fieldlang_${i}`;
+      const g = this.make.graphics({ x: 0, y: 0 }, false);
+      sample.draw(g);
+      g.generateTexture(key, 140, 64);
+      g.destroy();
+
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.style.width = '156px';
+      const canvas = document.createElement('canvas');
+      canvas.width = 140;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this.textures.get(key).getSourceImage() as CanvasImageSource, 0, 0);
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = sample.label;
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = sample.meta;
+      meta.style.color = ThemeCss.inkDim;
+      cell.append(canvas, name, meta);
+      host.appendChild(cell);
+    });
   }
 
   private buildTerrainGrid(parent: string): void {
