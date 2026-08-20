@@ -5,6 +5,7 @@ import { drawFieldPanel, drawTapeStrip } from '../../../scenes/atmosphere';
 import {
   buildKitOverlayContent,
   KIT_LINE_H,
+  KIT_STABLE_PANEL_H,
 } from '../../presenters/KitOverlayContent';
 
 /** Draw the field kit / inventory modal into existing Phaser objects. */
@@ -15,17 +16,16 @@ export function drawKitOverlay(
   screenH: number,
   st: GameState,
 ): void {
-  const { lines, panelW, panelH: contentH, actionLine, powerShort } = buildKitOverlayContent(st);
-  const panelH = Math.min(contentH, screenH - 32);
-  const px = (screenW - panelW) / 2;
-  const py = (screenH - panelH) / 2;
+  const { lines, panelW, actionLine, powerShort } = buildKitOverlayContent(st);
+  // Fixed case size + pinned top — never recenters when selection/copy changes.
+  const panelH = Math.min(KIT_STABLE_PANEL_H, screenH - 32);
+  const px = Math.round((screenW - panelW) / 2);
+  const py = Math.max(16, Math.round((screenH - panelH) / 2));
   const accent = powerShort ? Theme.rust : Theme.tape;
   drawFieldPanel(panel, px, py, panelW, panelH, accent);
 
-  // Header tape — bag case language, rust if the selected spend is short Power.
   drawTapeStrip(panel, px + 14, py + 8, Math.min(96, panelW - 28), 5, accent, 0.85);
 
-  // Accent the primary action row so u is glanceable before the essay desc.
   if (actionLine !== null) {
     const rowY = py + 18 + actionLine * KIT_LINE_H;
     if (rowY + KIT_LINE_H < py + panelH - 10) {
