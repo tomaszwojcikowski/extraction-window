@@ -555,13 +555,32 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 
 ---
 
-## Wave 26 — End screen polish (done)
+## Wave 26 — Presentation depth (done)
 
 | Ticket | Status |
 |--------|--------|
-| EndScene loadout + skills summary | Done |
+| EndScene loadout + skills summary on title-kit plate | Done |
+| Shear accent strip left of POWER/EM text | Done |
+| Breaching mote spike + stronger breach camera cue | Done |
 
 **Suggested tag after Waves 25–32:** `v1.3.0` when balance green.
+
+---
+
+## Wave 27 — Balance hygiene (skipped)
+
+Playtest after Wave 26 closeout: **21/30 (70%)**, stuck=1 (~11% of losses), hp+energy both present, dominant channel 56%. Within band — **no retune**.
+
+---
+
+## Wave 28 — Ship (done)
+
+| Ticket | Status |
+|--------|--------|
+| Vite `base: './'` for Pages / itch relative assets | Done |
+| `.github/workflows/deploy.yml` on `main` + `v*` tags | Done |
+| Cohere item count lock (26) | Done |
+| Tag `v1.3.0` | Done |
 
 ---
 

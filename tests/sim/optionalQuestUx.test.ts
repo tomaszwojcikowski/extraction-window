@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeObjective } from '../../src/sim/objectives';
+import { resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { buildSingleRoomQuest } from '../../src/sim/roomQuest';
 import { combatArena } from './fixtures';
 
@@ -28,5 +29,17 @@ describe('describeObjective optional sites', () => {
 
     const desc = describeObjective(st);
     expect(desc.local).not.toBe('OBJ-LOCAL-ROOM');
+  });
+
+  it('remote hint names the optional site without becoming the extract marker', () => {
+    const st = combatArena();
+    st.tutorialActive = false;
+    st.roomQuest = buildSingleRoomQuest('salvage', { x: 8, y: 8 }, { x: 7, y: 7, w: 3, h: 3 });
+    st.player.x = 1;
+    st.player.y = 1;
+    st.player.armor = st.player.maxArmor;
+    st.inventory = [];
+    expect(resolveHintLine(st)).toBe('UI-HINT-QUEST-REMOTE');
+    expect(describeObjective(st).local).not.toBe('OBJ-LOCAL-ROOM');
   });
 });

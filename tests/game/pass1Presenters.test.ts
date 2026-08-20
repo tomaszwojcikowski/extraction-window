@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EM_HIGH } from '../../src/sim/emStress';
 import { pressureRevealAt } from '../../src/game/presenters/PressureReveal';
 import { computeShearPressure, shearReadoutLabel } from '../../src/game/presenters/ShearPressure';
+import { shearAccentStrip, shearFlashMs } from '../../src/game/presenters/ShearReadout';
 import { wouldNoticeEnemy } from '../../src/sim/notice';
 import type { Enemy, GameState } from '../../src/sim/types';
 
@@ -124,6 +125,16 @@ describe('shearReadoutLabel', () => {
       stubState({ emStress: EM_HIGH, player: { ...stubState({}).player, energy: 100 } }),
     );
     expect(shearReadoutLabel(emLed)).toBe('EM  LOW');
+  });
+});
+
+describe('shearAccentStrip', () => {
+  it('sits left of the label plate so colour reads before text', () => {
+    const strip = shearAccentStrip(960, 80, 12, 'Charged');
+    expect(strip.x).toBeLessThan(960 / 2 - 40);
+    expect(strip.w).toBe(4);
+    expect(shearAccentStrip(960, 80, 12, 'Breaching').w).toBe(5);
+    expect(shearFlashMs('Breaching')).toBeGreaterThan(shearFlashMs('Arcing'));
   });
 });
 

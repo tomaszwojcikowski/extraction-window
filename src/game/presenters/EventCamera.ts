@@ -163,13 +163,13 @@ const CUES: Record<string, CameraCue> = {
   }),
   /** Entering Breaching — short climax; not lore-picked (scene fires on state edge). */
   shear_breach: cue('shear_breach', 78, 'pressure', {
-    shakeMs: 70,
-    shakeIntensity: 0.0018,
-    vignette: 0.24,
-    vignetteMs: 260,
-    nudgePx: 3,
-    zoomScale: 1.07,
-    zoomMs: 280,
+    shakeMs: 90,
+    shakeIntensity: 0.0024,
+    vignette: 0.34,
+    vignetteMs: 340,
+    nudgePx: 4,
+    zoomScale: 1.1,
+    zoomMs: 320,
   }),
   elite: cue('elite', 68, 'reward', {
     shakeMs: 50,

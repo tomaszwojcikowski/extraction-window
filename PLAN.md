@@ -2,7 +2,7 @@
 
 > **Canon for first version:** [`docs/V1.md`](docs/V1.md) + [`docs/WORLD.md`](docs/WORLD.md). Use this file for **harness and balance numbers only** (WR band, lose-mix gates, playtest commands); scope, engine, and player-facing names are owned by V1 / WORLD / LORE.
 
-**Status (v1.3.0):** Waves 24–32 — UI doc sync, clearer quests, loadout readout, cache economy, sector survey, quest wearables. Prior v1.2.0: elite-branded wearables. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
+**Status (v1.3.0):** Waves 24–32 + Wave 26 presentation closeout + Wave 28 ship. Prior v1.2.0: elite-branded wearables. Detail: [`docs/V1.md`](docs/V1.md) · [`docs/ADOM_DEPTH.md`](docs/ADOM_DEPTH.md).
 
 Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Meridian Shelf** framing.
 

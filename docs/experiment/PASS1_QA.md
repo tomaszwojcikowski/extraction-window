@@ -1,5 +1,7 @@
 # Pass 1 QA — Adversarial Review (Wake + Shear)
 
+> **Historical.** Canonical input on main: WASD moves immediately, `.` waits, live wake tells at the player's feet. Shift-peek / move preview / confirm-on-`.` are permanently cut (Wave 24). Peek or confirm recommendations in this file are not current work.
+
 **Branch:** `feat/bold-experiment` · **Author:** QA · **Status:** complete  
 **Inputs:** [`PASS1_DESIGN.md`](./PASS1_DESIGN.md), [`PASS1_ART.md`](./PASS1_ART.md)
 

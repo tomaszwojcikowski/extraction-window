@@ -11,7 +11,7 @@ import { ENEMIES, type EnemyKind } from '../src/data/enemies';
 import { ITEMS, type ItemKind } from '../src/data/items';
 import { ENEMY_DROPS } from '../src/data/drops';
 import { LORE, type LoreId } from '../src/data/lore';
-import { findClockLies } from '../src/data/loreClockGuard';
+import { findClockLies, findPeekLies } from '../src/data/loreClockGuard';
 import { SKILLS, type SkillId } from '../src/data/progression';
 
 /** Enough seeds to see the optional terrain/POI variants without a full suite. */
@@ -145,9 +145,12 @@ function main(): void {
 
   checkFactCodex();
 
-  for (const hit of findClockLies(LORE)) {
-    fail(`player lore still teaches Window clock: ${hit}`);
+  for (const hit of findPeekLies(LORE)) {
+    fail(`player lore still teaches Shift-peek: ${hit}`);
   }
+
+  const itemCount = Object.keys(ITEMS).length;
+  if (itemCount !== 26) fail(`expected 26 item kinds, got ${itemCount}`);
 
   if (errors.length) {
     console.error('COHERE FAIL:');
