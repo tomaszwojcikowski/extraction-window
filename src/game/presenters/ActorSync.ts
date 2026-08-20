@@ -368,6 +368,9 @@ export function syncGoalVisuals(
 /**
  * Optional site language: amber tile frame + off-screen square pip.
  * Standing on it draws a small interact caret — no essay HUD line.
+ *
+ * Drawn on propLayer (above quest furniture). Dashed stroke + corner ticks so
+ * the frame survives console art and still reads as tape, not a HUD plate.
  */
 export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): void {
   host.optionalSiteGfx.clear();
@@ -385,14 +388,22 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
   const wx = step.pos.x * TILE_DRAW;
   const wy = step.pos.y * TILE_DRAW;
   const flash = st.ui.questFlash > 0;
-  const a = flash ? 0.95 : onPlayer ? 0.9 : 0.7;
+  const a = flash ? 1 : onPlayer ? 0.95 : 0.88;
 
-  host.optionalSiteGfx.lineStyle(2, Theme.tape, a);
-  const inset = 3;
+  const inset = 2;
   const x0 = wx + inset;
   const y0 = wy + inset;
-  const x1 = wx + TILE_DRAW - inset;
-  const y1 = wy + TILE_DRAW - inset;
+  const size = TILE_DRAW - inset * 2;
+  const x1 = x0 + size;
+  const y1 = y0 + size;
+
+  // Soft amber wash so the site reads even when the dashed stroke is thin.
+  host.optionalSiteGfx.fillStyle(Theme.tape, onPlayer ? 0.18 : 0.12);
+  host.optionalSiteGfx.fillRect(x0, y0, size, size);
+
+  host.optionalSiteGfx.lineStyle(2, Theme.tape, a);
+  host.optionalSiteGfx.strokeRect(x0 + 0.5, y0 + 0.5, size - 1, size - 1);
+
   const dash = 5;
   const gap = 3;
   const strokeDashed = (ax: number, ay: number, bx: number, by: number) => {
@@ -402,30 +413,36 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
     const ux = dx / len;
     const uy = dy / len;
     let d = 0;
+    host.optionalSiteGfx.lineStyle(2, Theme.tape, a);
     while (d < len) {
       const seg = Math.min(dash, len - d);
-      host.optionalSiteGfx.lineBetween(
-        ax + ux * d,
-        ay + uy * d,
-        ax + ux * (d + seg),
-        ay + uy * (d + seg),
-      );
+      host.optionalSiteGfx.beginPath();
+      host.optionalSiteGfx.moveTo(ax + ux * d, ay + uy * d);
+      host.optionalSiteGfx.lineTo(ax + ux * (d + seg), ay + uy * (d + seg));
+      host.optionalSiteGfx.strokePath();
       d += dash + gap;
     }
   };
-  strokeDashed(x0, y0, x1, y0);
-  strokeDashed(x1, y0, x1, y1);
-  strokeDashed(x1, y1, x0, y1);
-  strokeDashed(x0, y1, x0, y0);
+  // Inset dashed ring — help copy says "amber dashed frame".
+  strokeDashed(x0 + 2, y0 + 2, x1 - 2, y0 + 2);
+  strokeDashed(x1 - 2, y0 + 2, x1 - 2, y1 - 2);
+  strokeDashed(x1 - 2, y1 - 2, x0 + 2, y1 - 2);
+  strokeDashed(x0 + 2, y1 - 2, x0 + 2, y0 + 2);
 
-  host.optionalSiteGfx.fillStyle(Theme.tape, a);
-  for (const [cx, cy] of [
-    [x0, y0],
-    [x1 - 3, y0],
-    [x0, y1 - 3],
-    [x1 - 3, y1 - 3],
+  // Corner ticks — kit flagging language (same family as phaser track marks).
+  const arm = 6;
+  host.optionalSiteGfx.lineStyle(2, Theme.tape, Math.min(1, a + 0.08));
+  for (const [cx, cy, sx, sy] of [
+    [x0, y0, 1, 1],
+    [x1, y0, -1, 1],
+    [x0, y1, 1, -1],
+    [x1, y1, -1, -1],
   ] as const) {
-    host.optionalSiteGfx.fillRect(cx, cy, 3, 3);
+    host.optionalSiteGfx.beginPath();
+    host.optionalSiteGfx.moveTo(cx, cy + sy * arm);
+    host.optionalSiteGfx.lineTo(cx, cy);
+    host.optionalSiteGfx.lineTo(cx + sx * arm, cy);
+    host.optionalSiteGfx.strokePath();
   }
 
   if (onPlayer) {
@@ -433,7 +450,7 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
     const cy = wy + 6;
     host.optionalSiteGfx.fillStyle(Theme.inkBright, 0.95);
     host.optionalSiteGfx.fillTriangle(cx, cy - 5, cx - 5, cy + 3, cx + 5, cy + 3);
-    host.optionalSiteGfx.fillStyle(Theme.tape, 0.9);
+    host.optionalSiteGfx.fillStyle(Theme.tape, 0.95);
     host.optionalSiteGfx.fillRect(cx - 1.5, cy + 4, 3, 5);
   }
 

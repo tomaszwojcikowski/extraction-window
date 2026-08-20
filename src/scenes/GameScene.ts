@@ -347,8 +347,9 @@ export class GameScene extends Phaser.Scene {
     this.chevronGfx = this.add.graphics().setScrollFactor(0).setDepth(94);
 
     this.optionalSiteGfx = this.add.graphics();
+    // Quest furniture lives on propLayer — frame must sit above it, not under the console.
     this.optionalSiteGfx.setDepth(81);
-    this.mapLayer.add(this.optionalSiteGfx);
+    this.propLayer.add(this.optionalSiteGfx);
 
     // Ground marking sits over the floor but under items and actors.
     this.threatGfx = this.add.graphics();
@@ -772,8 +773,9 @@ export class GameScene extends Phaser.Scene {
     this.threatGfx.setDepth(80);
     this.mapLayer.add(this.threatGfx);
     this.optionalSiteGfx = this.add.graphics();
+    // Quest furniture lives on propLayer — frame must sit above it, not under the console.
     this.optionalSiteGfx.setDepth(81);
-    this.mapLayer.add(this.optionalSiteGfx);
+    this.propLayer.add(this.optionalSiteGfx);
     this.rebuildAtmosphere();
   }
 
