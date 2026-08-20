@@ -61,18 +61,6 @@ export function grit(
   }
 }
 
-/** Irregular edge chips so a tile doesn't stamp a ruler. */
-export function biteEdges(px: Px, dark: number, light: number, seed: number): void {
-  for (let i = 0; i < 5; i++) {
-    const along = 4 + ((i * 11 + seed * 7) % 38);
-    const span = 2 + ((i + seed) % 3);
-    px.fillRect(along, 0, span, 2, i % 2 === 0 ? dark : light);
-    px.fillRect(along + 1, px.h - 2, span, 2, i % 2 === 0 ? light : dark);
-    px.fillRect(0, along, 2, span, dark);
-    px.fillRect(px.w - 2, along + 1, 2, span, light);
-  }
-}
-
 /** Contact plant into leftover transparent cells — never outlined. */
 export function plantShadow(px: Px): void {
   for (let y = 38; y < 46; y++) {

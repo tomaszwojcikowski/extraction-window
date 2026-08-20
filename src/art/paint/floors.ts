@@ -4,7 +4,7 @@ import { BIOME_FLOOR_TINT, Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
 import type { Frame } from '../pack';
 import { Px, TILE } from '../px';
-import { biteEdges, grit } from '../shade';
+import { grit } from '../shade';
 
 const SECTORS: SectorId[] = [
   'plains',
@@ -48,6 +48,7 @@ function accentOf(sector: SectorId): number {
   return Theme.inkDim;
 }
 
+/** Continuous bedding — no perimeter chips or seam grid, or every tile stamps squares. */
 function paintBed(px: Px, sector: SectorId, variant: number): void {
   const tint = BIOME_FLOOR_TINT[sector];
   const family = familyOf(sector);
@@ -58,25 +59,18 @@ function paintBed(px: Px, sector: SectorId, variant: number): void {
     if (c === 0) px.fillTriangle(0, 0, TILE, 0, 0, 28, mix(bed, Theme.inkMute, 0.18));
     else if (c === 1) px.fillTriangle(TILE, 0, TILE, TILE, 18, 0, mix(bed, Theme.inkMute, 0.18));
     else px.fillTriangle(0, TILE, TILE, TILE, 26, 16, mix(bed, Theme.groundDeep, 0.2));
-    grit(px, Material.recess, 28, 11 + variant * 9);
-    biteEdges(px, mix(bed, Theme.groundDeep, 0.24), mix(bed, Theme.inkMute, 0.18), variant);
+    grit(px, Material.recess, 22, 11 + variant * 9);
   } else if (family === 'wet') {
     const wet = mix(Material.brine, tint, 0.35);
     px.fillRect(0, 0, TILE, TILE, wet);
     px.fillEllipse(22 + variant, 24, 18, 14, mix(Material.brine, accentOf(sector), 0.18));
-    px.fillRect(8, 12, 9, 1, Theme.inkBright);
-    grit(px, Theme.biolumDeep, 14, 30 + variant);
-    biteEdges(px, mix(wet, Theme.groundDeep, 0.2), mix(wet, Theme.inkBright, 0.12), variant + 3);
+    px.line(8, 12, 16, 12, Theme.inkBright);
+    grit(px, Theme.biolumDeep, 12, 30 + variant);
   } else {
     const deck = mix(Material.deck, tint, 0.16);
     px.fillRect(0, 0, TILE, TILE, deck);
-    px.fillRect(0, 0, TILE, 1, mix(deck, Theme.inkMute, 0.25));
-    px.fillRect(0, TILE - 2, TILE, 2, mix(deck, Theme.groundDeep, 0.28));
-    for (let y = 8; y < 42; y += 8) {
-      px.fillRect(2, y, TILE - 4, 1, Material.recess);
-    }
-    grit(px, Theme.panelEdge, 18, 50 + variant * 4);
-    biteEdges(px, Material.recess, Theme.inkMute, variant + 7);
+    px.fillTriangle(0, 0, TILE, 0, 8, 18, mix(deck, Theme.inkMute, 0.12));
+    grit(px, Theme.panelEdge, 10, 50 + variant * 4);
   }
 }
 
@@ -85,32 +79,29 @@ function motif(px: Px, sector: SectorId, variant: number): void {
   const accent = accentOf(sector);
   switch (sector) {
     case 'plains':
-      for (let i = 0; i < 22; i++) {
-        const x = 3 + ((i * 13 + variant * 7) % 42);
-        const y = 4 + ((i * 17 + variant * 11) % 40);
-        const big = i % 4 === 0;
-        px.fillRect(x, y, big ? 4 : 2, big ? 2 : 1, shade(tint, 0.55));
-        px.fillRect(x, y + (big ? 2 : 1), big ? 4 : 2, 1, Theme.groundDeep);
+      for (let i = 0; i < 10; i++) {
+        const x = 2 + ((i * 13 + variant * 7) % 44);
+        const y = 2 + ((i * 17 + variant * 11) % 44);
+        const r = i % 5 === 0 ? 2.2 : 1.2;
+        px.fillDisc(x, y, r, shade(tint, 0.55));
+        px.set(x, y + 1, Theme.groundDeep);
       }
-      px.fillRect(10 + variant * 2, 18, 3, 2, mix(Material.rock, tint, 0.25));
-      px.fillRect(28 - variant, 30, 4, 2, mix(Material.rock, tint, 0.25));
+      grit(px, mix(Material.rock, tint, 0.3), 16, 70 + variant);
       break;
     case 'ridge':
-      for (let i = 0; i < 4; i++) {
-        const y = 6 + i * 10;
-        const step = i * 3 + (variant % 3);
-        px.fillRect(2 + step, y, TILE - 6 - step, 7, mix(Material.rock, accent, 0.18));
-        px.fillRect(2 + step, y, TILE - 6 - step, 1, accent);
-        px.fillRect(2 + step, y + 6, TILE - 6 - step, 2, Theme.groundDeep);
-        px.fillRect(8 + i * 9 + variant + step, y + 2, 4, 2, Material.recess);
+      for (let i = 0; i < 3; i++) {
+        const y = 10 + i * 12;
+        const peak = 8 + i * 11 + (variant % 5);
+        px.fillTriangle(0, y + 8, TILE, y + 8, peak, y, mix(Material.rock, accent, 0.18));
+        px.line(0, y + 1, TILE - 1, y + 2, accent);
+        px.line(0, y + 7, TILE - 1, y + 8, Theme.groundDeep);
       }
       break;
     case 'canopy':
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 12; i++) {
         const x = 4 + ((i * 11 + variant * 4) % 38);
         const y = 5 + ((i * 13 + variant * 7) % 34);
         px.fillTriangle(x, y + 3, x + 4, y, x + 7, y + 4, mix(Material.foliage, accent, 0.3));
-        px.fillRect(x + 2, y + 3, 3, 1, Material.foliage);
       }
       px.line(3, 34 + variant, 20, 26, mix(Material.foliage, Theme.groundDeep, 0.35));
       px.line(20, 26, 45, 33 - variant, mix(Material.foliage, Theme.groundDeep, 0.35));
@@ -123,42 +114,41 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       for (let r = 3; r >= 0; r--) {
         px.strokeDisc(cx, cy, 6 + r * 5, r % 2 === 0 ? accent : mix(Material.brine, Theme.inkBright, 0.2));
       }
-      px.fillRect(cx - 7, cy - 9, 9, 1, Theme.inkBright);
-      px.fillRect(4, 38, TILE - 8, 2, accent);
-      px.fillRect(4, 40, TILE - 8, 1, Theme.groundDeep);
+      px.line(cx - 6, cy - 8, cx + 2, cy - 8, Theme.inkBright);
+      px.fillEllipse(24, 40, 16, 3, accent);
       break;
     }
     case 'brine':
       ;[
-        [4, 6, 20, 18],
-        [22, 4, 20, 16],
-        [6, 22, 16, 18],
-        [24, 20, 20, 20],
-        [14, 14, 14, 14],
-      ].forEach(([x, y, w, h], i) => {
+        [14, 14, 11, 9],
+        [32, 12, 10, 8],
+        [14, 32, 9, 9],
+        [34, 30, 11, 10],
+        [24, 22, 8, 7],
+      ].forEach(([cx, cy, rx, ry], i) => {
         const ox = ((i + variant) % 3) - 1;
-        px.strokeEllipse(x + w / 2 + ox, y + h / 2, w / 2, h / 2, mix(accent, Theme.inkMute, 0.25));
+        px.strokeEllipse(cx + ox, cy, rx, ry, mix(accent, Theme.inkMute, 0.25));
       });
-      px.fillRect(12 + variant, 12, 4, 3, accent);
-      px.fillRect(6, TILE - 9, TILE - 12, 2, Theme.biolumDeep);
+      px.fillDisc(16 + variant, 14, 2, accent);
+      px.fillEllipse(24, 42, 14, 2, Theme.biolumDeep);
       break;
     case 'reef':
-      for (let i = 0; i < 7; i++) {
-        const x = 5 + ((i * 11 + variant * 3) % 34);
-        const y = 6 + ((i * 7 + variant * 5) % 30);
-        px.fillRect(x + 1, y + 8, 6, 3, mix(Material.rock, accent, 0.3));
+      for (let i = 0; i < 6; i++) {
+        const x = 6 + ((i * 11 + variant * 3) % 34);
+        const y = 8 + ((i * 7 + variant * 5) % 28);
+        px.fillDisc(x + 4, y + 8, 2.4, mix(Material.rock, accent, 0.3));
         px.fillTriangle(x, y + 9, x + 4, y, x + 8, y + 9, accent);
-        px.fillRect(x + 3, y + 2, 1, 5, Theme.inkBright);
+        px.line(x + 4, y + 2, x + 4, y + 7, Theme.inkBright);
       }
       break;
     case 'ash':
-      for (let i = 0; i < 5; i++) {
-        const y = 6 + i * 8 + (variant % 2);
-        px.fillRect(1, y, 46, 4, mix(Material.debris, tint, 0.28));
-        px.fillRect(1, y, 46, 1, shade(tint, 0.7));
-        px.fillRect(3 + i * 9, y + 3, 10, 1, Theme.groundDeep);
+      for (let i = 0; i < 4; i++) {
+        const cx = 10 + i * 9 + (variant % 2);
+        const cy = 10 + i * 8;
+        px.fillEllipse(cx, cy, 16 - i, 4, mix(Material.debris, tint, 0.28));
+        px.line(cx - 12, cy - 2, cx + 10, cy - 3, shade(tint, 0.7));
       }
-      px.fillRect(16 + variant, 22, 14, 2, Theme.arc);
+      px.line(16 + variant, 22, 30 + variant, 24, Theme.arc);
       break;
     case 'fissure':
       px.line(5, 6, 18, 22, Theme.groundDeep);
@@ -168,66 +158,63 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       px.line(19, 22, 28, 36, Theme.groundDeep);
       px.line(6, 7, 18, 22, accent);
       px.line(18, 22, 34, 17 + variant, accent);
-      px.fillRect(16, 20, 4, 3, Theme.arc);
+      px.fillDisc(18, 22, 2, Theme.arc);
       break;
     case 'approach':
       for (let i = 0; i < 4; i++) {
-        px.fillRect(3 + i * 11 + (variant % 2), 4, 8, 40, mix(Material.debris, tint, 0.22));
-        px.fillRect(5 + i * 11 + (variant % 2), 6, 4, 36, Material.recess);
-        px.fillRect(4 + i * 11, 20, 6, 2, Theme.inkMute);
+        const x = 7 + i * 10 + (variant % 2);
+        const wobble = i % 2 === 0 ? 3 : -2;
+        px.line(x, 0, x + wobble, TILE - 1, mix(Material.debris, tint, 0.4));
+        px.line(x + 2, 2, x + wobble - 1, TILE - 2, Material.recess);
       }
+      grit(px, Theme.inkMute, 8, 40 + variant);
       break;
     case 'trench':
-      for (let i = 0; i < 5; i++) {
-        const y = 4 + i * 9;
-        px.fillRect(2, y, 44, 7, mix(Material.deck, tint, 0.22));
-        px.fillRect(2, y, 44, 1, Theme.inkMute);
-        px.fillRect(2, y + 6, 44, 1, Theme.groundDeep);
-        px.fillRect(7 + i * 8, y + 2, 2, 3, Material.recess);
+      for (let i = 0; i < 3; i++) {
+        const y = 10 + i * 11;
+        px.fillEllipse(24, y + 3, 24, 3, mix(Material.deck, tint, 0.22));
+        px.line(0, y + 1, TILE - 1, y + 1, Theme.inkMute);
+        px.line(0, y + 5, TILE - 1, y + 5, Theme.groundDeep);
       }
       break;
     case 'ruin':
-      px.fillRect(6 + variant, 8, 32, 26, mix(Material.debris, tint, 0.28));
-      px.fillRect(8 + variant, 10, 28, 22, Material.recess);
-      px.fillRect(10, 12, 3, 24, Theme.rust);
-      px.fillRect(32, 14, 3, 20, Theme.rust);
-      px.fillRect(16, 26, 14, 6, Material.debris);
-      px.fillRect(18, 28, 10, 2, Theme.inkMute);
-      grit(px, Theme.rust, 10, 90 + variant);
+      px.fillTriangle(8 + variant, 10, 40, 14, 12, 38, mix(Material.debris, tint, 0.28));
+      px.fillTriangle(40, 14, 36, 40, 12, 38, Material.recess);
+      px.line(12, 14, 14, 36, Theme.rust);
+      px.line(30, 16, 32, 34, Theme.rust);
+      grit(px, Theme.rust, 8, 90 + variant);
       break;
     case 'duct':
       for (let i = 0; i < 6; i++) {
-        px.fillRect(3, 3 + i * 8, 42, 5, mix(Material.conduit, tint, 0.18));
-        px.fillRect(3, 5 + i * 8, 42, 1, Theme.groundDeep);
-        px.fillRect(3, 3 + i * 8, 42, 1, Theme.inkMute);
+        const y = 6 + i * 7;
+        px.line(0, y, TILE - 1, y, mix(Material.conduit, tint, 0.28));
+        px.line(0, y + 1, TILE - 1, y + 1, Theme.groundDeep);
       }
       break;
     case 'spire':
-      for (let y = 5; y < 44; y += 7) {
-        for (let x = 5; x < 44; x += 7) {
-          px.fillRect(x, y, 4, 4, Theme.panelEdge);
-          px.fillRect(x + 1, y + 1, 2, 2, Theme.inkMute);
-          px.set(x + 1, y + 1, Theme.inkDim);
-        }
+      for (let i = 0; i < 8; i++) {
+        const col = i % 3;
+        const row = Math.floor(i / 3);
+        const x = 10 + col * 12 + ((row + variant) % 2) * 5;
+        const y = 10 + row * 12 + (col % 2);
+        px.fillDisc(x, y, 1.8, Theme.panelEdge);
+        px.set(x, y, Theme.inkDim);
       }
       break;
     case 'vault':
-      for (let i = 0; i < 5; i++) {
-        const y = 5 + i * 8;
-        px.fillRect(4, y, 40, 6, mix(Material.deck, Theme.arcWhite, 0.1));
-        px.fillRect(4, y, 40, 1, Theme.panelEdge);
-        px.fillTriangle(6, y + 1, 16, y + 5, 26, y + 1, Theme.panelEdge);
-        px.fillTriangle(22, y + 1, 32, y + 5, 42, y + 1, Theme.panelEdge);
+      for (let i = 0; i < 4; i++) {
+        const y = 8 + i * 9;
+        px.line(0, y + 2, 16, y + 5, Theme.panelEdge);
+        px.line(16, y + 5, 32, y, Theme.panelEdge);
+        px.line(32, y, TILE - 1, y + 3, Theme.panelEdge);
       }
       break;
     case 'beacon':
-      px.fillRect(3, 18, 42, 12, mix(Material.deck, Theme.tape, 0.18));
-      px.fillRect(18, 3, 12, 42, mix(Material.deck, Theme.tape, 0.18));
-      px.fillRect(5, 22, 38, 4, Theme.tape);
-      px.fillRect(22, 5, 4, 38, Theme.tape);
-      px.fillRect(5, 22, 38, 1, Theme.inkBright);
-      px.fillRect(22, 5, 1, 38, Theme.inkBright);
-      px.fillRect(21 + variant, 21, 6, 6, Theme.inkBright);
+      px.line(0, 24, TILE - 1, 24, Theme.tape);
+      px.line(0, 25, TILE - 1, 25, Theme.inkBright);
+      px.line(24, 0, 24, TILE - 1, Theme.tape);
+      px.line(25, 0, 25, TILE - 1, Theme.inkBright);
+      px.fillDisc(24, 24, 3, Theme.inkBright);
       break;
   }
 }
@@ -253,8 +240,8 @@ function paintCrack(urgent: boolean): Px {
   px.line(6, 9, 16, 20, hot);
   px.line(16, 20, 32, 17, hot);
   if (urgent) {
-    px.fillRect(15, 19, 3, 2, Theme.arcWhite);
-    px.fillRect(31, 15, 3, 2, Theme.arc);
+    px.fillDisc(16, 20, 1.6, Theme.arcWhite);
+    px.fillDisc(32, 16, 1.6, Theme.arc);
     px.set(22, 42, Theme.arcWhite);
   }
   px.snap(envPalette());
