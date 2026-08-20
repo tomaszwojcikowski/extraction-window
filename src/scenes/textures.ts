@@ -13,7 +13,7 @@ function floorScatterHash(x: number, y: number, seed: number): number {
   return Math.abs((x * 19 + y * 47 + (seed & 0xffff) * 13) | 0);
 }
 
-/** 1px lattice break + overlap pad so ground sits uneven without opening grout gaps. */
+/** 1px lattice break. Pad covers the worst neighbour offset so grout never opens. */
 export function floorScatter(
   x: number,
   y: number,
@@ -23,7 +23,7 @@ export function floorScatter(
   return {
     dx: (n % 3) - 1,
     dy: ((n >> 3) % 3) - 1,
-    pad: 1 + ((n >> 5) % 2),
+    pad: 3 + ((n >> 5) % 2),
   };
 }
 

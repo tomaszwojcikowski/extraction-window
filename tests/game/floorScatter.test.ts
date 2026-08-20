@@ -11,8 +11,12 @@ describe('floorScatter', () => {
           expect(s.dx).toBeLessThanOrEqual(1);
           expect(s.dy).toBeGreaterThanOrEqual(-1);
           expect(s.dy).toBeLessThanOrEqual(1);
-          expect(s.pad).toBeGreaterThanOrEqual(1);
-          expect(s.pad).toBeLessThanOrEqual(2);
+          expect(s.pad).toBeGreaterThanOrEqual(3);
+          expect(s.pad).toBeLessThanOrEqual(4);
+          const right = floorScatter(x + 1, y, seed);
+          const down = floorScatter(x, y + 1, seed);
+          expect(s.dx - right.dx + (s.pad + right.pad) / 2).toBeGreaterThanOrEqual(1);
+          expect(s.dy - down.dy + (s.pad + down.pad) / 2).toBeGreaterThanOrEqual(1);
         }
       }
     }
