@@ -310,7 +310,6 @@ export const LORE = {
   'UI-TAG-ON-HIT-STUN': 'On-hit stun +',
   'UI-TAG-HAZ-SKIP': 'Hazard ion skip',
   'UI-TAG-HAZ-DRAIN': 'Hazard Power −',
-  'UI-TAG-TRIP-EM': 'Tripwire EM −',
   'UI-PAGES': 'Mission PADD',
   'UI-PAGES-EMPTY': 'No PADD pages recovered this mission.',
   'UI-PAGES-HINT': 'p or Esc — close',
@@ -502,7 +501,7 @@ export const LORE = {
     'Wear on hands — hazard tiles skip ion burn on step. Use again to stow.',
   'ITEM-BOOTS': 'Mag Boots',
   'ITEM-BOOTS-DESC':
-    'Wear on feet — brine/hazard Power tax −1; tripwire EM spike −1. Use again to stow.',
+    'Wear on feet — brine/hazard Power tax −1. Use again to stow.',
   'ITEM-FLARE-PRISM': 'Flare Prism',
   'ITEM-FLARE-PRISM-DESC':
     'Branded ring — flare spends −1 Power; shadow-flares mark +1 turn. Elite flarebound drop. Stow with u.',
@@ -629,7 +628,7 @@ export const LORE = {
   'LOG-USE-SCAN-BAND': 'Scan band worn — salvage steadies at high EM.',
   'LOG-USE-VISOR': 'Survey visor mounted — blind/jam softened; vision capped.',
   'LOG-USE-GLOVES': 'Grip gloves worn — hazard ion contact muted.',
-  'LOG-USE-BOOTS': 'Mag boots locked — brine and wire tax eased.',
+  'LOG-USE-BOOTS': 'Mag boots locked — hazard Power tax eased.',
   'LOG-USE-FLARE-PRISM': 'Flare Prism seated — cheaper flares, harsher shadow marks.',
   'LOG-USE-WARD-WEAVE': 'Ward Weave worn — ion blunted; vents tax Power.',
   'LOG-USE-SHADOW-LENS': 'Shadow Lens mounted — hunters shrink in shadow; lit tiles bite longer.',
@@ -737,7 +736,6 @@ export const LORE = {
   'LOG-EXTRACT': 'Nav lock restored. Extraction complete.',
   'LOG-FAVOR-GRANT': 'Optional-site reward secured.',
   'LOG-FAVOR-CONSUME': 'Optional-site reward spent.',
-  'LOG-FAVOR-HAZARD': 'Hazard step skipped — reward spent.',
   'LOG-FAVOR-PATTERN': 'Skiff lock saved — reward spent.',
   'LOG-UPLINK-START': 'Nav Lattice uplink started — hold the ridge pad.',
   'LOG-UPLINK-HOLD': 'Uplink hold maintained.',
@@ -758,7 +756,7 @@ export const LORE = {
   'LOG-RQ-BRIEF-SALVAGE':
     'Optional SALVAGE — bills Power time · pays kit + XP · follow amber frame.',
   'LOG-RQ-BRIEF-PURGE':
-    'Optional PURGE — bills HP · pays Skip 1 hazard · follow amber frame.',
+    'Optional PURGE — bills HP · pays kit + XP · follow amber frame.',
   'LOG-RQ-BRIEF-VENT':
     'Optional VENT SEAL — bills sealant · pays Block 1 skiff lock · two sites.',
   'LOG-RQ-OFFER': 'Optional job offered — accept or decline.',

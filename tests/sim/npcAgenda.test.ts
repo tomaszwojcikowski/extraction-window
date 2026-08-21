@@ -37,7 +37,7 @@ describe('NPC agenda payoffs', () => {
     expect(st.log.some((e) => e.loreId === 'LOG-AGENDA-HEAL')).toBe(true);
   });
 
-  it('tech turn-in grants a hazard pass when none is held', () => {
+  it('tech turn-in refreshes a probe drone and skips extract favor', () => {
     const st = combatArena();
     st.npcs = [
       {
@@ -50,10 +50,12 @@ describe('NPC agenda payoffs', () => {
         agendaDone: false,
       },
     ];
+    st.allies = [makeAlly({ kind: 'probe_drone', turnsLeft: 3, x: st.player.x + 1, y: st.player.y })];
     addItem(st, 'sealant');
     applyAction(st, { type: 'exit' });
-    expect(st.extractFavor).toEqual({ kind: 'hazard_pass' });
-    expect(st.log.some((e) => e.loreId === 'LOG-FAVOR-GRANT')).toBe(true);
+    expect(st.extractFavor).toBeNull();
+    expect(st.allies[0]!.turnsLeft).toBe(19);
+    expect(st.log.some((e) => e.loreId === 'LOG-AGENDA-ALLY')).toBe(true);
   });
 
   it('survey turn-in boosts an accepted unfinished optional site', () => {

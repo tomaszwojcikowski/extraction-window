@@ -85,7 +85,7 @@ export const EQUIP_TAGS = {
   scan_band: { salvageFailReduction: 0.06 },
   survey_visor: { statusTurnReduction: 1, fovCap: 1, flareEmTax: 5 },
   grip_gloves: { hazardIonSkip: true },
-  mag_boots: { hazardDrainReduction: 1, tripwireEmReduction: 1 },
+  mag_boots: { hazardDrainReduction: 1 },
   flare_prism: { flarePowerReduction: 1, shadowFlareMarkBonus: 1 },
   ward_weave: { ionDamageReduction: 2, ventDrainExtra: 1 },
   shadow_lens: { darkNoticeReduction: 1, litStatusPenalty: 1 },

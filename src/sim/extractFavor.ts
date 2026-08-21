@@ -2,16 +2,12 @@ import { pushLog } from './log';
 import type { ExtractFavorKind, GameState } from './types';
 
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
-  hazard_pass: 'Skip 1 hazard',
   pattern_fail_safe: 'Block 1 skiff lock',
 };
 
-/** Purge and vent_seal pay extract favors; salvage pays kit/XP only. */
+/** Vent-seal pays a skiff-lock save; salvage and purge pay kit/XP only. */
 export function favorForQuest(state: GameState): ExtractFavorKind | null {
-  const kind = state.roomQuest?.kind;
-  if (kind === 'purge') return 'hazard_pass';
-  if (kind === 'vent_seal') return 'pattern_fail_safe';
-  return null;
+  return state.roomQuest?.kind === 'vent_seal' ? 'pattern_fail_safe' : null;
 }
 
 /** Replacing an old favor keeps the reward cap readable and deterministic. */

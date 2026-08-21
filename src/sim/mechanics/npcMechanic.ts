@@ -153,9 +153,6 @@ function grantAgendaExtras(state: GameState, npc: FieldNpc): void {
   }
   if (npc.kind === 'field_tech') {
     refreshAgendaAlly(state, 'probe_drone');
-    if (!state.extractFavor) {
-      grantExtractFavor(state, 'hazard_pass');
-    }
     return;
   }
   if (npc.kind === 'survey_contact') {

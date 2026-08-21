@@ -470,7 +470,7 @@ Sim rules are Power-only; this wave aligned lore, help, PADD, and float labels.
 | Ticket | Status |
 |--------|--------|
 | `grip_gloves` — hazard step skips ion burn | Done |
-| `mag_boots` — hazard/brine Power −1; tripwire EM −1 | Done |
+| `mag_boots` — hazard/brine Power −1 | Done |
 | Brine / duct / fissure loot bias | Done |
 
 **Tag:** `v1.1.0` when build + playtest green.

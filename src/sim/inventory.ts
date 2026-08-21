@@ -382,7 +382,7 @@ export function useSelected(state: GameState): boolean {
         purgeEmStress(state, 6);
       } else {
         removeOne(state, kind);
-        purgeEmStress(state, state.paddMods.brineSeal ? 28 : 20);
+        purgeEmStress(state, 20);
         pushLog(state, 'LOG-EM-PURGE', 'sealant flush');
       }
       break;

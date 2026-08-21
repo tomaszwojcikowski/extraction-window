@@ -56,7 +56,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 
 ### Room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Power opportunity, HP, kit — and each grants a different extraction favor. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
+Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Power opportunity, HP, kit. Salvage and purge pay kit/XP; vent_seal pays a skiff-lock save. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
 
 ### Hostiles (early food chain)
 

@@ -113,6 +113,6 @@ describe('room quest purge', () => {
     tickRoomQuest(st);
     expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(true);
-    expect(st.extractFavor).toEqual({ kind: 'hazard_pass' });
+    expect(st.extractFavor).toBeNull();
   });
 });

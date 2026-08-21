@@ -130,7 +130,6 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       filterBonus: 0,
       fovBonus: 0,
       quietVault: false,
-      brineSeal: false,
     },
     skillPick: null,
     level: 1,

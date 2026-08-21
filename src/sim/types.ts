@@ -250,7 +250,7 @@ export interface BeaconHandshake {
 }
 
 /** One optional room-quest payoff that changes the route to extraction. */
-export type ExtractFavorKind = 'hazard_pass' | 'pattern_fail_safe';
+export type ExtractFavorKind = 'pattern_fail_safe';
 
 export interface ExtractFavor {
   kind: ExtractFavorKind;
@@ -365,7 +365,6 @@ export interface GameState {
     filterBonus: number;
     fovBonus: number;
     quietVault: boolean;
-    brineSeal: boolean;
   };
   /** Pending skill fork choice (ADOM talent pick). */
   skillPick: SkillId[] | null;

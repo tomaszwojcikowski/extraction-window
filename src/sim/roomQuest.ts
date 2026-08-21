@@ -147,8 +147,7 @@ function applyPaddModifier(state: GameState, page: LoreId): void {
       break;
     case 'CODEX-BRINE':
       state.paddMods.filterBonus = Math.max(state.paddMods.filterBonus, 15);
-      state.paddMods.brineSeal = true;
-      pushLog(state, 'LOG-PADD-MOD', 'filter+/seal');
+      pushLog(state, 'LOG-PADD-MOD', 'filter+');
       break;
     case 'CODEX-VAULT':
       state.paddMods.quietVault = true;
