@@ -2,12 +2,15 @@ import {
   applyAction,
   bfsPath,
   currentObjectivePos,
+  findPhaserTarget,
   hasItem,
   KIT_POWER_COST,
   mechanicsAutopilotHint,
+  PHASER_ENERGY_COST,
   type Action,
   type GameState,
 } from '../sim';
+import { hasPhaserEquipped, PHASER_CARDINALS } from '../sim/phaser';
 import { INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES, type EnemyBrand } from '../data/enemies';
 import { effectiveAggro } from '../sim/notice';
@@ -144,6 +147,82 @@ function nearestDartTarget(state: GameState) {
     if (!best || d < best.d) best = { x: en.x, y: en.y, d, ...aim };
   }
   return best;
+}
+
+/** Cardinal step that fires a worn phaser (2–3 tile clear lane). */
+function phaserShotDir(state: GameState): { dx: number; dy: number } | null {
+  for (const [dx, dy] of PHASER_CARDINALS) {
+    if (findPhaserTarget(state, dx, dy)) return { dx, dy };
+  }
+  return null;
+}
+
+function walkableEmpty(state: GameState, x: number, y: number): boolean {
+  if (x < 0 || y < 0 || x >= state.width || y >= state.height) return false;
+  if (!state.tiles[y]![x]!.walkable) return false;
+  if (state.enemies.some((e) => e.alive && e.x === x && e.y === y)) return false;
+  if (state.npcs.some((n) => n.x === x && n.y === y)) return false;
+  return true;
+}
+
+/** Sidestep onto a cardinal 2–3 lane vs a visible foe. */
+function phaserAlignDir(state: GameState): { dx: number; dy: number } | null {
+  const { x, y } = state.player;
+  let best: { dx: number; dy: number; d: number } | null = null;
+  for (const en of state.enemies) {
+    if (!en.alive || !(state.visible[en.y]?.[en.x] ?? false)) continue;
+    const adx = en.x - x;
+    const ady = en.y - y;
+    const dist = Math.abs(adx) + Math.abs(ady);
+    if (dist < 2 || dist > 4) continue;
+    if (adx === 0 || ady === 0) continue;
+    const candidates: Array<[number, number]> =
+      Math.abs(ady) <= Math.abs(adx)
+        ? [
+            [0, Math.sign(ady)],
+            [Math.sign(adx), 0],
+          ]
+        : [
+            [Math.sign(adx), 0],
+            [0, Math.sign(ady)],
+          ];
+    for (const [dx, dy] of candidates) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!walkableEmpty(state, nx, ny)) continue;
+      const ndx = Math.abs(en.x - nx);
+      const ndy = Math.abs(en.y - ny);
+      const nd = ndx + ndy;
+      if ((ndx === 0 || ndy === 0) && nd >= 2 && nd <= 3) {
+        if (!best || dist < best.d) best = { dx, dy, d: dist };
+        break;
+      }
+    }
+  }
+  return best ? { dx: best.dx, dy: best.dy } : null;
+}
+
+function tryPhaserAction(state: GameState, persona: Persona): Action | null {
+  const inKit = state.inventory.some((s) => s.kind === 'phaser');
+  const worn = hasPhaserEquipped(state);
+  if (!inKit && !worn) return null;
+  if (!canBurnKit(state, PHASER_ENERGY_COST, persona)) return null;
+
+  const shot = phaserShotDir(state);
+  if (shot) {
+    if (!worn) {
+      const idx = state.inventory.findIndex((s) => s.kind === 'phaser');
+      if (idx < 0) return null;
+      state.ui.selectedSlot = idx;
+      return { type: 'use' };
+    }
+    return { type: 'move', dx: shot.dx, dy: shot.dy };
+  }
+  if (worn) {
+    const align = phaserAlignDir(state);
+    if (align) return { type: 'move', dx: align.dx, dy: align.dy };
+  }
+  return null;
 }
 
 function randomStep(state: GameState): Action {
@@ -322,6 +401,9 @@ export function chooseAction(
     }
   }
 
+  const phaserAct = tryPhaserAction(state, persona);
+  if (phaserAct) return phaserAct;
+
   // Flare when adjacent hostiles, or standing dark with hostiles nearby
   const adjHostile = state.enemies.some(
     (e) =>
@@ -381,14 +463,18 @@ export function chooseAction(
     if (action) return action;
   }
 
-  const batonIdx = state.inventory.findIndex((s) => s.kind === 'pulse_baton');
-  if (batonIdx >= 0 && state.player.equip.tool !== 'pulse_baton') {
-    state.ui.selectedSlot = batonIdx;
-    return { type: 'use' };
-  }
   const phaserIdx = state.inventory.findIndex((s) => s.kind === 'phaser');
   if (phaserIdx >= 0 && !state.player.equip.tool) {
     state.ui.selectedSlot = phaserIdx;
+    return { type: 'use' };
+  }
+  const batonIdx = state.inventory.findIndex((s) => s.kind === 'pulse_baton');
+  if (
+    batonIdx >= 0 &&
+    state.player.equip.tool !== 'pulse_baton' &&
+    state.player.equip.tool !== 'phaser'
+  ) {
+    state.ui.selectedSlot = batonIdx;
     return { type: 'use' };
   }
   const bladeIdx = state.inventory.findIndex((s) => s.kind === 'blade');

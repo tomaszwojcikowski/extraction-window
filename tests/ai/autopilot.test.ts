@@ -3,6 +3,39 @@ import { chooseAction, PERSONAS, runAutopilot, unstickAction } from '../../src/a
 import { applyAction, createGame, hasItem } from '../../src/sim';
 import { summarize, type SeedReport } from '../harness';
 import { makeEnemy } from '../sim/fixtures';
+import type { GameState } from '../../src/sim/types';
+
+function openEast(st: GameState, dist: number): void {
+  const py = st.player.y;
+  const px = Math.min(st.player.x, st.width - dist - 2);
+  st.player.x = px;
+  for (let step = 0; step <= dist; step++) {
+    const x = px + step;
+    st.tiles[py]![x] = { kind: 'floor', walkable: true, transparent: true };
+    st.visible[py]![x] = true;
+  }
+}
+
+function phaserLane(seed = 7): GameState {
+  const st = createGame(seed, { skipTutorial: true });
+  st.enemies = [];
+  st.npcs = [];
+  st.allies = [];
+  st.handshake = null;
+  st.uplink = null;
+  st.questOffer = null;
+  st.player.hp = st.player.maxHp;
+  st.player.energy = st.player.maxEnergy;
+  st.player.equip.tool = null;
+  st.player.x = 8;
+  st.player.y = 8;
+  st.inventory = [{ kind: 'phaser', count: 1 }, { kind: 'energy', count: 4 }];
+  openEast(st, 3);
+  st.enemies = [
+    makeEnemy({ id: 1, kind: 'mite', x: st.player.x + 2, y: st.player.y }),
+  ];
+  return st;
+}
 
 describe('autopilot chooseAction', () => {
   it('returns a non-null action on a fresh mission', () => {
@@ -51,6 +84,37 @@ describe('autopilot chooseAction', () => {
       makeEnemy({ id: 1, kind: 'mite', x: st.player.x + 1, y: st.player.y }),
     ];
     expect(unstickAction(st)).toEqual({ type: 'move', dx: 1, dy: 0 });
+  });
+
+  it('equips a phaser when a 2-tile cardinal lane is live', () => {
+    const st = phaserLane();
+    const action = chooseAction(st);
+    expect(action).toEqual({ type: 'use' });
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('phaser');
+  });
+
+  it('steps into a live phaser lane once the tool is worn', () => {
+    const st = phaserLane();
+    st.player.equip.tool = 'phaser';
+    expect(chooseAction(st)).toEqual({ type: 'move', dx: 1, dy: 0 });
+  });
+
+  it('sidesteps onto a cardinal before firing an off-axis foe', () => {
+    const st = phaserLane();
+    st.player.equip.tool = 'phaser';
+    st.tiles[9]![8] = { kind: 'floor', walkable: true, transparent: true };
+    st.visible[9]![8] = true;
+    st.enemies = [makeEnemy({ id: 2, kind: 'mite', x: 10, y: 9 })];
+    st.visible[9]![10] = true;
+    expect(chooseAction(st)).toEqual({ type: 'move', dx: 0, dy: 1 });
+  });
+
+  it('holds the phaser when Power is under the kit reserve', () => {
+    const st = phaserLane();
+    st.player.equip.tool = 'phaser';
+    st.player.energy = 50;
+    const action = chooseAction(st);
+    expect(action).not.toEqual({ type: 'move', dx: 1, dy: 0 });
   });
 });
 
