@@ -5,8 +5,10 @@ import {
   taxPower,
   POWER_TAX_HEAVY,
   KIT_POWER_COST,
+  BUS_DRIP_TURNS,
 } from '../../src/sim/bus';
 import { createGame } from '../../src/sim';
+import { applyAction } from '../../src/sim';
 import { useSelected } from '../../src/sim/inventory';
 
 describe('Power helpers', () => {
@@ -31,6 +33,25 @@ describe('Power helpers', () => {
     taxPower(st, POWER_TAX_HEAVY, 'LOG-PAY-PRICE');
     expect(st.player.energy).toBe(0);
     expect(st.log.some((e) => e.loreId === 'LOG-PAY-PRICE')).toBe(true);
+  });
+});
+
+describe('bus drip cadence', () => {
+  it('bills one Power every BUS_DRIP_TURNS turns, not sooner', () => {
+    const st = createGame(1, { skipTutorial: true });
+    st.player.energy = 100;
+    // Wait through one full cadence window: exactly one drain lands.
+    for (let i = 0; i < BUS_DRIP_TURNS; i++) applyAction(st, { type: 'wait' });
+    expect(st.player.energy).toBe(99);
+  });
+
+  it('deep_reserve skips every second drip', () => {
+    const st = createGame(1, { skipTutorial: true });
+    st.player.energy = 100;
+    st.skills = ['deep_reserve'];
+    for (let i = 0; i < BUS_DRIP_TURNS * 2; i++) applyAction(st, { type: 'wait' });
+    // Two windows would bill twice; the skill skips the second tick.
+    expect(st.player.energy).toBe(99);
   });
 });
 

@@ -26,13 +26,6 @@ export function purgeEmStress(state: GameState, amount: number): void {
   }
 }
 
-/** Extra bus drip while EM-stressed (ADOM hunger/corruption pressure). */
-export function emEnergyTax(state: GameState): number {
-  let tax = 0;
-  if (state.emStress >= EM_HIGH) tax += 1;
-  return tax;
-}
-
 /**
  * Extra aggro range for EM-sensitive fauna once contamination hits EM_HIGH.
  * EM_WARN still logs the rising threat without the full ecology bump.

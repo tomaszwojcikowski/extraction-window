@@ -8,6 +8,13 @@ export const BUS_WARN_AT = [40, 20, 8] as const;
 export const BUS_CRITICAL = 20;
 /** Handshake / pattern fail tax — matches prior Window penalty weight. */
 export const POWER_TAX_HEAVY = 8;
+/**
+ * Global bus drip cadence: one Power every N turns, billed in `tickEnvironment`.
+ * Sized so a full-spine run (~600 turns at the current room footprints) pays
+ * ~100 drip — the original 5-turn cadence predates the larger rooms and was
+ * taxing the longer spine ~35% harder than its Power budget allowed.
+ */
+export const BUS_DRIP_TURNS = 6;
 
 export function busIsCritical(state: GameState): boolean {
   return state.busFailing || state.player.energy <= BUS_CRITICAL;

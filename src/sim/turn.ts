@@ -11,12 +11,12 @@ import { applyAllyFieldRoles, moveAllies } from './allyAi';
 import { wornHasTag, wornTagMax } from './equipTags';
 import { addPlayerStatus, addStatus, addPlayerMarked, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
-import { addEmStress, emEnergyTax } from './emStress';
+import { addEmStress } from './emStress';
 import { mechanicsOnEndTurn } from './mechanics';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
-import { tickBusPressure } from './bus';
+import { tickBusPressure, BUS_DRIP_TURNS } from './bus';
 import type { Enemy, GameState } from './types';
 
 function trySpawnNestMite(state: GameState): void {
@@ -161,14 +161,13 @@ function tickEnvironment(state: GameState): void {
 
   const sector = getSector(state.sectorIndex);
   const filter = state.player.filterTurns > 0;
-  if (state.turn % 5 === 0) {
+  if (state.turn % BUS_DRIP_TURNS === 0) {
     const skipDrip =
-      hasSkill(state, 'deep_reserve') && state.turn % 10 === 0;
+      hasSkill(state, 'deep_reserve') && state.turn % (BUS_DRIP_TURNS * 2) === 0;
     if (!skipDrip) {
       state.player.energy -= filter ? 0 : 1;
     }
   }
-  state.player.energy -= emEnergyTax(state);
   state.player.energy -= filter ? Math.ceil(sector.energyDrain / 2) : sector.energyDrain;
 
   tickUnderfootTerrain(state);
