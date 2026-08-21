@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "art:export": "tsx scripts/export-art.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",

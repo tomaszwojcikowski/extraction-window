@@ -205,10 +205,10 @@ export function dressRoomRoles(
         break;
       }
       case 'cache': {
-        // Something in the way: a broken lip around the payout, or standing
-        // water if the sector has any to offer.
+        // Something in the way: a broken lip around the payout, or a runoff
+        // sump if the sector has wet ground to offer.
         for (const p of ring(room)) {
-          if (rng() < 0.4 * dens) paint(p, wet ? brinePool() : rubbleTile());
+          if (rng() < 0.4 * dens) paint(p, wet ? sumpTile() : rubbleTile());
         }
         break;
       }
@@ -218,7 +218,7 @@ export function dressRoomRoles(
         for (const p of inner(room)) {
           const onLane = lane === 'x' ? p.y === room.cy : p.x === room.cx;
           if (onLane) continue;
-          if (rng() < 0.55 * dens) paint(p, wet ? brinePool() : hazardTile());
+          if (rng() < 0.55 * dens) paint(p, wet ? sumpTile() : hazardTile());
         }
         break;
       }
@@ -270,8 +270,8 @@ function rubbleTile(): Tile {
 function hazardTile(): Tile {
   return { kind: 'hazard', walkable: true, transparent: true };
 }
-function brinePool(): Tile {
-  return { kind: 'brine_pool', walkable: true, transparent: true };
+function sumpTile(): Tile {
+  return { kind: 'sump', walkable: true, transparent: true };
 }
 function landmark(): Tile {
   return { kind: 'landmark', walkable: true, transparent: true };

@@ -41,8 +41,8 @@ export function collectSectorFacts(state: GameState): Set<SectorFact> {
         case 'hazard':
           facts.add('hazard');
           break;
-        case 'brine_pool':
-          facts.add('brine_pool');
+        case 'sump':
+          facts.add('sump');
           break;
         case 'sealed':
           facts.add('sealed');

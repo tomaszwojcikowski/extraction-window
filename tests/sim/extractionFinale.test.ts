@@ -8,28 +8,13 @@ import {
 describe('room quest extraction favors', () => {
   it('replaces the active favor and consumes it once', () => {
     const state = createGame(12);
-    grantExtractFavor(state, 'hazard_pass');
+    grantExtractFavor(state, 'pattern_fail_safe');
     grantExtractFavor(state, 'pattern_fail_safe');
 
     expect(state.extractFavor?.kind).toBe('pattern_fail_safe');
     expect(consumeExtractFavor(state, 'pattern_fail_safe')).toBe(true);
     expect(state.extractFavor).toBeNull();
     expect(consumeExtractFavor(state, 'pattern_fail_safe')).toBe(false);
-  });
-
-  it('spends safe-step favor on a hazard crossing', () => {
-    const state = createGame(12);
-    grantExtractFavor(state, 'hazard_pass');
-    state.tiles[state.player.y]![state.player.x] = {
-      kind: 'hazard',
-      walkable: true,
-      transparent: true,
-    };
-    const energy = state.player.energy;
-    applyAction(state, { type: 'wait' });
-
-    expect(state.extractFavor).toBeNull();
-    expect(state.player.energy).toBeGreaterThanOrEqual(energy - 1);
   });
 });
 

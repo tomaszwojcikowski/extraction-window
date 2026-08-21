@@ -16,7 +16,6 @@ import { mechanicsOnEndTurn } from './mechanics';
 import { refreshVision, refreshVisionAfterTurn } from './vision';
 import { enemyAt, manhattan } from './spatial';
 import { tickContamination } from './contamination';
-import { consumeExtractFavor } from './extractFavor';
 import { tickBusPressure } from './bus';
 import type { Enemy, GameState } from './types';
 
@@ -97,13 +96,9 @@ function tickUnderfootTerrain(state: GameState): void {
   const sector = getSector(state.sectorIndex);
   const filter = state.player.filterTurns > 0;
   const tile = state.tiles[state.player.y]![state.player.x]!;
-  const hazardCrossing =
-    tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
   const drainCut = wornTagMax(state, 'hazardDrainReduction');
   const gloves = wornHasTag(state, 'hazardIonSkip');
-  if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
-    pushLog(state, 'LOG-FAVOR-HAZARD');
-  } else if (tile.kind === 'hazard') {
+  if (tile.kind === 'hazard') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     const drain = Math.max(1, (filter ? 1 : 2) + brineExtra - drainCut);
     state.player.energy -= drain;
@@ -111,11 +106,11 @@ function tickUnderfootTerrain(state: GameState): void {
       addStatus(state.player, 'ion_burn', 1);
     }
     pushLog(state, 'LOG-HAZARD');
-  } else if (tile.kind === 'brine_pool') {
+  } else if (tile.kind === 'sump') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     const drain = Math.max(1, (filter ? 1 : 2) + brineExtra - drainCut);
     state.player.energy -= drain;
-    pushLog(state, 'LOG-BRINE-POOL');
+    pushLog(state, 'LOG-SUMP');
   } else if (tile.kind === 'vent') {
     const ventExtra = wornTagMax(state, 'ventDrainExtra');
     state.player.energy -= (filter ? 0 : 1) + ventExtra;
@@ -125,8 +120,7 @@ function tickUnderfootTerrain(state: GameState): void {
       pushLog(state, 'LOG-STATUS-JAM');
     }
   } else if (tile.kind === 'tripwire') {
-    const tripEm = Math.max(1, 2 - wornTagMax(state, 'tripwireEmReduction'));
-    addEmStress(state, tripEm, 'tripwire');
+    addEmStress(state, 2, 'tripwire');
     for (const en of state.enemies) {
       if (!en.alive) continue;
       if (manhattan(en.x, en.y, state.player.x, state.player.y) <= 5) {

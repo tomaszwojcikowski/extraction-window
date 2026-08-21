@@ -11,7 +11,7 @@ Solo turn-based sci-fi roguelike for the browser. **Halcyon Survey Corps / Merid
 - Phaser **4.2.1** + Vite + TypeScript
 - **Headless sim** in `src/sim/` (no Phaser imports) — all game rules live here
 - Phaser scenes only render state and forward keyboard actions via `applyAction`
-- Minimal 24×24 procedural pixel art (`pixelArt: true`), survey-chrome UI
+- 48×48 authored PNG field sprites (`pixelArt: true`), survey-chrome UI
 - Keyboard only
 
 ## Lore spine (must stay coherent)

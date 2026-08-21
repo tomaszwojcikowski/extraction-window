@@ -121,7 +121,7 @@ describe('room quest flows', () => {
     expect(st.log.some((e) => e.loreId === 'LOG-RQ-SALVAGE')).toBe(true);
   });
 
-  it('purge holds until nest hostiles die, then grants hazard pass', () => {
+  it('purge holds until nest hostiles die, then pays kit/XP only', () => {
     const st = combatArena();
     const room = { x: 1, y: 1, w: 5, h: 5 };
     st.roomQuest = buildSingleRoomQuest('purge', { x: 3, y: 3 }, room);
@@ -143,7 +143,7 @@ describe('room quest flows', () => {
     tickRoomQuest(st);
     expect(tryRoomQuest(st)).toBe(true);
     expect(st.roomQuest.done).toBe(true);
-    expect(st.extractFavor).toEqual({ kind: 'hazard_pass' });
+    expect(st.extractFavor).toBeNull();
   });
 
   it('vent-seal consumes Sealant Foam on site A, then console pays pattern fail-safe', () => {

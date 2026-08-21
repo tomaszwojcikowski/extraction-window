@@ -22,7 +22,7 @@ const GLYPH: Partial<Record<Tile['kind'], string>> = {
   rubble: '%',
   sealed: '+',
   tripwire: '^',
-  brine_pool: '~',
+  sump: '~',
   landmark: 'O',
   exit: '>',
   beacon: 'B',

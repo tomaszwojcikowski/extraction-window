@@ -112,13 +112,6 @@ export function contextHint(st: GameState): LoreId | null {
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
     return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
   }
-  // Situation coaching — only when the kit actually has the tool
-  if (
-    (tile.kind === 'hazard' || tile.kind === 'vent' || tile.kind === 'brine_pool') &&
-    hasItem(st, 'sealant')
-  ) {
-    return 'UI-HINT-USE-SEALANT';
-  }
   const adjSealed = (
     [
       [1, 0],

@@ -40,8 +40,6 @@ function linesForKind(kind: ItemKind): string[] {
   if ('hazardIonSkip' in row && row.hazardIonSkip) out.push(lore('UI-TAG-HAZ-SKIP'));
   if ('hazardDrainReduction' in row && row.hazardDrainReduction)
     out.push(withVal('UI-TAG-HAZ-DRAIN', row.hazardDrainReduction));
-  if ('tripwireEmReduction' in row && row.tripwireEmReduction)
-    out.push(withVal('UI-TAG-TRIP-EM', row.tripwireEmReduction));
   return out;
 }
 

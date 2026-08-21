@@ -5,11 +5,10 @@ import {
   allyTextureKey,
   enemyTextureKey,
   npcTextureKey,
-  registerTextures,
   TILE_DRAW,
   wallStyleForSector,
-  wallTextureKey,
 } from './scenes/textures';
+import { loadFieldArt, promoteFieldArt } from './scenes/atlasLoad';
 import { drawMeter, drawMenuPlate, drawStencilBadge, drawTapeStrip } from './scenes/atmosphere';
 import { LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
 import { lore } from './data/lore';
@@ -25,7 +24,7 @@ import { HANDSHAKE_TURNS } from './sim/mechanics/beaconHandshake';
 import { drawModalTapeHeader } from './game/views/overlays/modalChrome';
 
 /**
- * Review harness for the art gates. It bakes the real textures — never a
+ * Review harness for the art gates. It shows the real PNG atlas frames — never a
  * hand-drawn approximation — so a silhouette collision, a biome that only
  * differs by tint, or an unpainted telegraph shows up here instead of in a run.
  */
@@ -55,7 +54,7 @@ const SECTORS: SectorId[] = [
 const STRUCTURE: Array<[label: string, key: string]> = [
   ['hazard', 't_hazard'],
   ['vent', 't_vent'],
-  ['brine_pool', 't_brine_pool'],
+  ['sump', 't_sump'],
   ['scrub', 't_scrub'],
   ['scrub_nest', 't_scrub_nest'],
   ['rubble', 't_rubble'],
@@ -80,8 +79,12 @@ function openRoom(seed: number): GameState {
 }
 
 class SheetScene extends Phaser.Scene {
+  preload(): void {
+    loadFieldArt(this);
+  }
+
   create(): void {
-    registerTextures(this);
+    promoteFieldArt(this);
     this.buildSpriteGrid();
     this.buildLootGrid();
     this.buildContactGrid();
@@ -448,9 +451,7 @@ class SheetScene extends Phaser.Scene {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
         const floor = this.textures.get(floorTextureKey(sector, 0)).getSourceImage();
-        const crack = this.textures
-          .get(crackTextureKey(sector, 0, urgent))
-          .getSourceImage();
+        const crack = this.textures.get(crackTextureKey(urgent)).getSourceImage();
         ctx.drawImage(floor as CanvasImageSource, 0, 0, 46, 46);
         ctx.drawImage(crack as CanvasImageSource, 0, 0, 46, 46);
         cell.appendChild(canvas);
@@ -503,7 +504,7 @@ class SheetScene extends Phaser.Scene {
       ctx.imageSmoothingEnabled = false;
       const floor = this.textures.get(floorTextureKey(sector, 0)).getSourceImage();
       const crack = this.textures
-        .get(crackTextureKey(sector, sample.variant, sample.urgent))
+        .get(crackTextureKey(sample.urgent))
         .getSourceImage();
       ctx.drawImage(floor as CanvasImageSource, 0, 0, 46, 46);
       ctx.drawImage(crack as CanvasImageSource, 0, 0, 46, 46);
@@ -532,14 +533,14 @@ class SheetScene extends Phaser.Scene {
     for (const style of ['cliff', 'bulkhead', 'conduit'] as const) {
       this.cell('props', [`t_sconce_${style}`], `sconce / ${style}`, 'structure');
     }
-    for (const sector of SECTORS) {
+    for (const style of ['cliff', 'bulkhead', 'conduit'] as const) {
       this.cell(
         'props',
         [0, 1, 2, 3].flatMap((role) =>
-          [0, 1, 2].map((wear) => wallTextureKey(sector, role, wear)),
+          [0, 1, 2].map((wear) => `t_wall_${style}_${role}_${wear}`),
         ),
-        `wall / ${sector}`,
-        wallStyleForSector(sector),
+        `wall / ${style}`,
+        style,
       );
     }
     for (const [label, key] of STRUCTURE) {

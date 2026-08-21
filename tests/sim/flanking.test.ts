@@ -9,8 +9,10 @@ function openFloor(): GameState {
   const st = combatArena();
   st.player.x = 5;
   st.player.y = 5;
-  for (let y = 3; y <= 7; y++) {
-    for (let x = 3; x <= 7; x++) {
+  // Clear enough floor that approach lines in this file (x=8/9, y=2/8) do not
+  // depend on whatever the sector generator carved around the origin.
+  for (let y = 2; y <= 8; y++) {
+    for (let x = 2; x <= 9; x++) {
       st.tiles[y]![x] = { kind: 'floor', walkable: true, transparent: true };
     }
   }

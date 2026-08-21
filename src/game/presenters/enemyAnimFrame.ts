@@ -1,7 +1,7 @@
 import type { Enemy } from '../../sim/types';
 
 /**
- * Map a hostile to a deluxe texture frame (0 idle, 1 stride/alert, 2 windup).
+ * Map a hostile to a texture frame (0 idle, 1 stride/alert, 2 windup).
  * Presentation-only — does not change sim windup or AI.
  */
 export function enemyAnimFrame(

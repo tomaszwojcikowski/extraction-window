@@ -30,6 +30,7 @@ import {
   pickRoomQuestKind,
 } from '../sim/roomQuest';
 import { layoutForSector, placeLayout } from './layout';
+import { carveRoomStructure } from './interior';
 import {
   assignRoomRoles,
   dressRoomRoles,
@@ -86,8 +87,8 @@ function sealed(): Tile {
 function tripwire(): Tile {
   return { kind: 'tripwire', walkable: true, transparent: true };
 }
-function brinePool(): Tile {
-  return { kind: 'brine_pool', walkable: true, transparent: true };
+function sumpTile(): Tile {
+  return { kind: 'sump', walkable: true, transparent: true };
 }
 function scrubNest(blocksSight = true): Tile {
   return { kind: 'scrub_nest', walkable: true, transparent: !blocksSight };
@@ -189,37 +190,177 @@ function carveV(tiles: Tile[][], y1: number, y2: number, x: number, wide = false
   }
 }
 
-function connect(tiles: Tile[][], a: Room, b: Room, rng: Rng, wideChance = 0.35): void {
-  const wide = rng() < wideChance;
-  if (rng() < 0.5) {
-    carveH(tiles, a.cx, b.cx, a.cy, wide);
-    carveV(tiles, a.cy, b.cy, b.cx, wide);
+interface RoomAdj {
+  axis: 'x' | 'y';
+  gap: number;
+  lo: number;
+  hi: number;
+  first: Room;
+  second: Room;
+}
+
+function rangesOverlap(a0: number, a1: number, b0: number, b1: number): boolean {
+  return a0 < b1 && b0 < a1;
+}
+
+function adjacency(a: Room, b: Room): RoomAdj | null {
+  if (a.x + a.w <= b.x && rangesOverlap(a.y, a.y + a.h, b.y, b.y + b.h)) {
+    return {
+      axis: 'x',
+      gap: b.x - (a.x + a.w),
+      lo: Math.max(a.y, b.y),
+      hi: Math.min(a.y + a.h, b.y + b.h),
+      first: a,
+      second: b,
+    };
+  }
+  if (b.x + b.w <= a.x && rangesOverlap(a.y, a.y + a.h, b.y, b.y + b.h)) {
+    return {
+      axis: 'x',
+      gap: a.x - (b.x + b.w),
+      lo: Math.max(a.y, b.y),
+      hi: Math.min(a.y + a.h, b.y + b.h),
+      first: b,
+      second: a,
+    };
+  }
+  if (a.y + a.h <= b.y && rangesOverlap(a.x, a.x + a.w, b.x, b.x + b.w)) {
+    return {
+      axis: 'y',
+      gap: b.y - (a.y + a.h),
+      lo: Math.max(a.x, b.x),
+      hi: Math.min(a.x + a.w, b.x + b.w),
+      first: a,
+      second: b,
+    };
+  }
+  if (b.y + b.h <= a.y && rangesOverlap(a.x, a.x + a.w, b.x, b.x + b.w)) {
+    return {
+      axis: 'y',
+      gap: a.y - (b.y + b.h),
+      lo: Math.max(a.x, b.x),
+      hi: Math.min(a.x + a.w, b.x + b.w),
+      first: b,
+      second: a,
+    };
+  }
+  return null;
+}
+
+function punchGap(tiles: Tile[][], adj: RoomAdj, rng: Rng, wide: boolean): void {
+  if (adj.gap !== 1 || adj.hi - adj.lo < 1) return;
+  const span = Math.max(0, adj.hi - adj.lo - 1);
+  const at = adj.lo + (span <= 0 ? 0 : randInt(rng, 0, span));
+  if (adj.axis === 'x') {
+    const x = adj.first.x + adj.first.w;
+    tiles[at]![x] = floor();
+    if (wide && at + 1 < adj.hi) tiles[at + 1]![x] = floor();
   } else {
-    carveV(tiles, a.cy, b.cy, a.cx, wide);
-    carveH(tiles, a.cx, b.cx, b.cy, wide);
+    const y = adj.first.y + adj.first.h;
+    tiles[y]![at] = floor();
+    if (wide && at + 1 < adj.hi) tiles[y]![at + 1] = floor();
   }
 }
 
-/** Biome-flavored room footprint. */
+function clampAlong(preferred: number, min: number, max: number): number {
+  if (max < min) return min;
+  const innerMin = min + 1;
+  const innerMax = max - 1;
+  if (innerMax >= innerMin) return Math.max(innerMin, Math.min(innerMax, preferred));
+  return Math.max(min, Math.min(max, preferred));
+}
+
+function doorToward(room: Room, other: Room, rng: Rng): { door: Pos; outside: Pos } {
+  const dx = other.cx - room.cx;
+  const dy = other.cy - room.cy;
+  if (Math.abs(dy) > Math.abs(dx)) {
+    const south = dy > 0;
+    const y = south ? room.y + room.h - 1 : room.y;
+    const x = clampAlong(
+      room.cx + randInt(rng, -1, 1),
+      room.x,
+      room.x + room.w - 1,
+    );
+    return { door: { x, y }, outside: { x, y: south ? y + 1 : y - 1 } };
+  }
+  const east = dx >= 0;
+  const x = east ? room.x + room.w - 1 : room.x;
+  const y = clampAlong(
+    room.cy + randInt(rng, -1, 1),
+    room.y,
+    room.y + room.h - 1,
+  );
+  return { door: { x, y }, outside: { x: east ? x + 1 : x - 1, y } };
+}
+
+function carveL(tiles: Tile[][], x1: number, y1: number, x2: number, y2: number, wide: boolean, rng: Rng): void {
+  const manhattan = Math.abs(x1 - x2) + Math.abs(y1 - y2);
+  if (manhattan >= 8 && rng() < 0.45) {
+    const midX = x1 + Math.trunc((x2 - x1) / 2) + randInt(rng, -2, 2);
+    carveH(tiles, x1, midX, y1, wide);
+    carveV(tiles, y1, y2, midX, wide);
+    carveH(tiles, midX, x2, y2, wide);
+    return;
+  }
+  if (rng() < 0.5) {
+    carveH(tiles, x1, x2, y1, wide);
+    carveV(tiles, y1, y2, x2, wide);
+  } else {
+    carveV(tiles, y1, y2, x1, wide);
+    carveH(tiles, x1, x2, y2, wide);
+  }
+}
+
+/**
+ * Join two rooms at their edges, not through their centres.
+ * Centre-to-centre L-carves used to cut a highway through every room, which is
+ * why a room was spent in about twenty seconds.
+ */
+function connect(tiles: Tile[][], a: Room, b: Room, rng: Rng, wideChance = 0.35): void {
+  const wide = rng() < wideChance;
+  const tiny = a.w <= 2 || a.h <= 2 || b.w <= 2 || b.h <= 2;
+  if (tiny) {
+    carveL(tiles, a.cx, a.cy, b.cx, b.cy, wide, rng);
+    return;
+  }
+  const adj = adjacency(a, b);
+  if (adj && adj.gap <= 1) {
+    punchGap(tiles, adj, rng, wide);
+    return;
+  }
+  const from = doorToward(a, b, rng);
+  const to = doorToward(b, a, rng);
+  tiles[from.door.y]![from.door.x] = floor();
+  tiles[to.door.y]![to.door.x] = floor();
+  const height = tiles.length;
+  const width = tiles[0]?.length ?? 0;
+  const ox1 = Math.max(1, Math.min(width - 2, from.outside.x));
+  const oy1 = Math.max(1, Math.min(height - 2, from.outside.y));
+  const ox2 = Math.max(1, Math.min(width - 2, to.outside.x));
+  const oy2 = Math.max(1, Math.min(height - 2, to.outside.y));
+  carveL(tiles, ox1, oy1, ox2, oy2, wide, rng);
+}
+
+/** Biome-flavored room footprint — large enough to hold interior structure. */
 function roomSizeForBiome(id: SectorDef['id'], rng: Rng): { w: number; h: number } {
   switch (id) {
     case 'vault':
-      return { w: randInt(rng, 4, 6), h: randInt(rng, 3, 5) };
+      return { w: randInt(rng, 6, 10), h: randInt(rng, 5, 8) };
     case 'flood':
-      return { w: randInt(rng, 6, 11), h: randInt(rng, 5, 9) };
+      return { w: randInt(rng, 9, 15), h: randInt(rng, 7, 12) };
     case 'ridge':
     case 'approach':
-      return { w: randInt(rng, 4, 7), h: randInt(rng, 3, 5) };
+      return { w: randInt(rng, 7, 11), h: randInt(rng, 5, 8) };
     case 'canopy':
     case 'spire':
     case 'reef':
-      return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 8) };
+      return { w: randInt(rng, 8, 14), h: randInt(rng, 6, 11) };
     case 'ruin':
     case 'trench':
     case 'duct':
-      return { w: randInt(rng, 5, 9), h: randInt(rng, 4, 7) };
+      return { w: randInt(rng, 8, 13), h: randInt(rng, 6, 10) };
     default:
-      return { w: randInt(rng, 5, 10), h: randInt(rng, 4, 8) };
+      return { w: randInt(rng, 8, 14), h: randInt(rng, 6, 11) };
   }
 }
 
@@ -320,9 +461,9 @@ function dressBiomeTerrain(
       if (tiles[y]![x]!.kind !== 'floor') continue;
       const roll = rng();
       if (id === 'brine' || id === 'flood') {
-        if (roll < 0.016) tiles[y]![x] = brinePool();
+        if (roll < 0.016) tiles[y]![x] = sumpTile();
       } else if (roll < 0.004) {
-        tiles[y]![x] = brinePool();
+        tiles[y]![x] = sumpTile();
       }
       if (tiles[y]![x]!.kind !== 'floor') continue;
       if (id === 'canopy' || id === 'spire' || id === 'reef') {
@@ -455,8 +596,6 @@ export function generateSectorMap(
   });
   const rooms = layout.rooms;
 
-  dressBiomeTerrain(tiles, rooms, sector, rng);
-
   const startRoom = rooms[layout.startIndex] ?? rooms[0]!;
   const endRoom = rooms[layout.endIndex] ?? rooms[rooms.length - 1]!;
   const start: Pos = { x: startRoom.cx, y: startRoom.cy };
@@ -469,6 +608,8 @@ export function generateSectorMap(
   const kind = layoutForSector(sector.id);
   const crossing = kind === 'hub' ? rooms[0] : undefined;
   assignRoomRoles(rooms, sector, rng, startRoom, endRoom, crossing);
+  carveRoomStructure(tiles, rooms, rng, [start, exit]);
+  dressBiomeTerrain(tiles, rooms, sector, rng);
   dressRoomRoles(tiles, rooms, sector, rng, [start, exit]);
 
   let beaconPos: Pos | null = null;
@@ -514,6 +655,16 @@ export function generateSectorMap(
   }
 
   dressSealedHatches(tiles, rooms, start, exit, rng);
+
+  for (const room of rooms) {
+    const c = { x: room.cx, y: room.cy };
+    if (!tiles[c.y]?.[c.x]?.walkable) tiles[c.y]![c.x] = floor();
+    if (!canReach(tiles, start, c)) connect(tiles, startRoom, room, rng, wideChance);
+    if (!canReach(tiles, start, c)) {
+      carveH(tiles, start.x, c.x, start.y, false);
+      carveV(tiles, start.y, c.y, c.x, false);
+    }
+  }
 
   const specials: Pos[] = [exit];
   if (beaconPos) specials.push(beaconPos);

@@ -618,7 +618,7 @@ export class GameScene extends Phaser.Scene {
         if (
           kind !== 'hazard' &&
           kind !== 'vent' &&
-          kind !== 'brine_pool' &&
+          kind !== 'sump' &&
           kind !== 'landmark' &&
           kind !== 'quest' &&
           kind !== 'beacon'
@@ -849,8 +849,8 @@ export class GameScene extends Phaser.Scene {
         );
       case 'hazard':
         return animated('t_hazard');
-      case 'brine_pool':
-        return animated('t_brine_pool');
+      case 'sump':
+        return animated('t_sump');
       case 'scrub':
         return 't_scrub';
       case 'scrub_nest':

@@ -44,7 +44,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 | SEC-TRENCH | Inland Fault Cut | Inland after seal; deep fauna |
 | SEC-DUCT | Bus Conduit Warren | Vent spines; duct drones |
 | SEC-ASH | Shear Ash Fields | Baseline radiation bus drain |
-| SEC-BRINE | Pulse Brine Flats | Ion-brine pools before cache |
+| SEC-BRINE | Pulse Brine Flats | Ion runoff sumps before cache |
 | SEC-VAULT | Contingency Cache | Halcyon depot; spare Nav Lattice; pattern-buffer hook |
 | SEC-FISSURE | Shear Fissure | Storm pressure climb toward the pad |
 | SEC-APPROACH | Skiff Approach | Compact choke; storm shear; pattern stress |
@@ -56,7 +56,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 
 ### Room quests
 
-Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Power opportunity, HP, kit — and each grants a different extraction favor. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
+Optional side-room anomalies (≤1 per sector): salvage, purge (single-site) and the two-site vent_seal. Each bills a different resource — Power opportunity, HP, kit. Salvage and purge pay kit/XP; vent_seal pays a skiff-lock save. Never required for extraction. Completing them can grant mission **PADD** pages (in-run codex; reset each seed). HUD shows an active QUEST tracker with step text and 1/N.
 
 ### Hostiles (early food chain)
 
@@ -108,7 +108,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 ## Terrain (sparse)
 
 - Floor / rubble / scrub — open ground; scrub is sight-block only
-- Vent / hazard — ion stress drains bus (filter halves; sealant can neutralize underfoot)
+- Vent / hazard / sump — ion stress drains bus (filter halves; hazard also burns)
 - **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; opens a side cache. Never required for extract
 - Hatch / beacon / shuttle — mission structures
 - Landmark — decorative room centrepiece; nothing to interact with
@@ -125,7 +125,7 @@ Capacity 16 slots, and one clear tool per job — 18 kinds total.
 |------|-----|
 | Field Hypo | Heal, and stop bleeding |
 | Power Cell | Restore the bus, and resync a desynced pattern buffer |
-| Sealant Foam | Purge EM contamination, clear hazard/vent underfoot, or open an adjacent sealed hatch |
+| Sealant Foam | Purge EM contamination, or open an adjacent sealed hatch |
 | Shield Charge | Repair plating mid-sector |
 | Plasma Filter | Blunt ion damage |
 | Field Array Pulse | See further |

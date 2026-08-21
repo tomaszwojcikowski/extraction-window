@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { allowedPngColours } from '../../src/art/palette';
+import { decodePng } from '../../src/art/png';
 import { Material, Theme, ThemeCss } from '../../src/scenes/theme';
 
 /**
@@ -12,7 +14,7 @@ import { Material, Theme, ThemeCss } from '../../src/scenes/theme';
  */
 
 /** Everywhere colour is chosen: bake-time art, runtime views, presenters. */
-const PAINTING_LAYER = ['src/scenes', 'src/game/views', 'src/game/presenters'];
+const PAINTING_LAYER = ['src/scenes', 'src/game/views', 'src/game/presenters', 'src/art'];
 
 /**
  * Fully transparent and fully opaque are not colours — they are the alpha
@@ -50,10 +52,31 @@ function inlineColours(path: string): string[] {
 describe('every colour in the world is a named material', () => {
   it('has no inline hex in the painting layer', () => {
     const offenders = PAINTING_LAYER.flatMap(sources)
-      .filter((path) => !path.endsWith('theme.ts'))
+      .filter((path) => !path.endsWith('theme.ts') && !path.endsWith('png.ts'))
       .flatMap(inlineColours);
 
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps authored PNG pixels on the named palette', () => {
+    const allowed = allowedPngColours();
+    const dir = join('public', 'art');
+    const pngs = readdirSync(dir).filter((f) => f.endsWith('.png'));
+    expect(pngs.length).toBeGreaterThan(0);
+    const stray: string[] = [];
+    for (const file of pngs) {
+      const px = decodePng(readFileSync(join(dir, file)));
+      for (let y = 0; y < px.h; y++) {
+        for (let x = 0; x < px.w; x++) {
+          const p = px.get(x, y);
+          if (p.a < 8) continue;
+          if (!allowed.has(p.color)) {
+            stray.push(`${file}@${x},${y} 0x${p.color.toString(16).padStart(6, '0')}`);
+          }
+        }
+      }
+    }
+    expect(stray.slice(0, 24)).toEqual([]);
   });
 
   it('keeps roles and materials as separate vocabularies', () => {

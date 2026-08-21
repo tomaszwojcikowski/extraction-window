@@ -299,16 +299,6 @@ export function chooseAction(
     }
   }
 
-  // Sealant when standing on hazard/vent/brine
-  const underfoot = state.tiles[state.player.y]![state.player.x]!;
-  if (underfoot.kind === 'hazard' || underfoot.kind === 'vent' || underfoot.kind === 'brine_pool') {
-    const sIdx = state.inventory.findIndex((s) => s.kind === 'sealant');
-    if (sIdx >= 0) {
-      state.ui.selectedSlot = sIdx;
-      return { type: 'use' };
-    }
-  }
-
   // Probe doctrine: keep the read up even when nothing is wrong yet — the EM bill
   // is the point, so this is where scan pressure actually accumulates.
   if (persona.pushProbe && state.player.probeTurns <= 0 && state.emStress < EM_HIGH) {
