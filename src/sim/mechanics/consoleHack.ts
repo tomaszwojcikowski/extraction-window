@@ -5,17 +5,18 @@ import { addItem } from '../inventory';
 import { pushLog } from '../log';
 import { addEmStress, purgeEmStress } from '../emStress';
 import { POWER_TAX_HEAVY, taxPower } from '../bus';
-import { pick, randInt, type Rng } from '../rng';
+import { pick, randInt, shuffle, type Rng } from '../rng';
 import { grantCodex } from '../roomQuest';
 import type { Action, ConsoleHack, GameState, HackGlyph, HackSession, Pos } from '../types';
 import type { Mechanic } from './types';
 
 export const HACK_SIZE = 5;
-export const HACK_LEN = 4;
+export const HACK_LEN = 5;
 export const HACK_TRIES = 3;
-export const HACK_MARKS = ['A', 'B', 'C', 'D'] as const;
+export const HACK_MARKS = ['A', 'B', 'C', 'D', 'E'] as const;
+const MAX_SOLUTIONS = 2;
 
-const GLYPHS: HackGlyph[] = [0, 1, 2, 3];
+const GLYPHS: HackGlyph[] = [0, 1, 2, 3, 4];
 const KIT_PAY: ItemKind[] = ['plate', 'energy', 'mapper', 'probe', 'filter'];
 
 function consoleTile(): { kind: 'console'; walkable: true; transparent: true } {
@@ -77,13 +78,11 @@ function buildPath(rng: Rng): Pos[] {
     { x: 0, y: 1 },
     { x: 1, y: 1 },
     { x: 1, y: 2 },
+    { x: 2, y: 2 },
   ];
 }
 
-export function generateHackSession(rng: Rng): HackSession {
-  const grid = generateGrid(rng);
-  const path = buildPath(rng);
-  const target = path.map((p) => grid[p.y]![p.x]!);
+function sessionOf(grid: HackGlyph[][], target: HackGlyph[]): HackSession {
   return {
     grid,
     target,
@@ -97,32 +96,92 @@ export function generateHackSession(rng: Rng): HackSession {
   };
 }
 
-export function hackHasSolution(grid: HackGlyph[][], target: HackGlyph[]): boolean {
+/** Count lattice walks that match `target`. The painted path always counts as one. */
+export function countHackSolutions(grid: HackGlyph[][], target: HackGlyph[]): number {
   const n = grid.length;
-  const walk = (x: number, y: number, axis: 'row' | 'col', depth: number, used: Set<string>): boolean => {
-    if (grid[y]![x] !== target[depth]) return false;
-    if (depth + 1 >= target.length) return true;
+  let found = 0;
+  const walk = (
+    x: number,
+    y: number,
+    axis: 'row' | 'col',
+    depth: number,
+    used: Set<string>,
+  ): void => {
+    if (grid[y]![x] !== target[depth]) return;
+    if (depth + 1 >= target.length) {
+      found += 1;
+      return;
+    }
     const mark = `${x},${y}`;
     used.add(mark);
     const nextAxis = axis === 'col' ? 'row' : 'col';
     if (axis === 'col') {
       for (let ny = 0; ny < n; ny++) {
-        if (!used.has(`${x},${ny}`) && walk(x, ny, nextAxis, depth + 1, used)) return true;
+        if (!used.has(`${x},${ny}`)) walk(x, ny, nextAxis, depth + 1, used);
       }
     } else {
       for (let nx = 0; nx < n; nx++) {
-        if (!used.has(`${nx},${y}`) && walk(nx, y, nextAxis, depth + 1, used)) return true;
+        if (!used.has(`${nx},${y}`)) walk(nx, y, nextAxis, depth + 1, used);
       }
     }
     used.delete(mark);
-    return false;
   };
   for (let y = 0; y < n; y++) {
     for (let x = 0; x < n; x++) {
-      if (walk(x, y, 'col', 0, new Set())) return true;
+      walk(x, y, 'col', 0, new Set());
     }
   }
-  return false;
+  return found;
+}
+
+export function hackHasSolution(grid: HackGlyph[][], target: HackGlyph[]): boolean {
+  return countHackSolutions(grid, target) > 0;
+}
+
+function tightenDecoys(rng: Rng, grid: HackGlyph[][], target: HackGlyph[], path: Pos[]): void {
+  const locked = new Set(path.map(keyOf));
+  const decoys: Pos[] = [];
+  for (let y = 0; y < HACK_SIZE; y++) {
+    for (let x = 0; x < HACK_SIZE; x++) {
+      if (!locked.has(keyOf({ x, y }))) decoys.push({ x, y });
+    }
+  }
+  for (const p of shuffle(rng, decoys)) {
+    let best = grid[p.y]![p.x]!;
+    let bestN = countHackSolutions(grid, target);
+    for (const g of shuffle(rng, [...GLYPHS])) {
+      grid[p.y]![p.x] = g;
+      const n = countHackSolutions(grid, target);
+      if (n >= 1 && n < bestN) {
+        best = g;
+        bestN = n;
+        if (n === 1) break;
+      }
+    }
+    grid[p.y]![p.x] = best;
+  }
+}
+
+export function generateHackSession(rng: Rng): HackSession {
+  let best: HackSession | null = null;
+  let bestN = Infinity;
+  for (let attempt = 0; attempt < 32; attempt++) {
+    const path = buildPath(rng);
+    const target = Array.from({ length: HACK_LEN }, () => pick(rng, GLYPHS));
+    const grid = generateGrid(rng);
+    for (let i = 0; i < path.length; i++) {
+      const p = path[i]!;
+      grid[p.y]![p.x] = target[i]!;
+    }
+    tightenDecoys(rng, grid, target, path);
+    const n = countHackSolutions(grid, target);
+    if (n >= 1 && n < bestN) {
+      best = sessionOf(grid, target);
+      bestN = n;
+      if (n <= MAX_SOLUTIONS) return best;
+    }
+  }
+  return best ?? sessionOf(generateGrid(rng), [0, 1, 2, 3, 4]);
 }
 
 export function isHackOpen(state: GameState): boolean {
@@ -220,17 +279,6 @@ function setNote(state: GameState, note: HackPickResult): void {
   if (state.consoleHack) state.consoleHack.note = note;
 }
 
-function snapToLane(session: HackSession): void {
-  if (canPickHackCell(session, session.cursor.x, session.cursor.y)) return;
-  const lane = hackLaneCells(session);
-  if (lane.length === 0) return;
-  const { x, y } = session.cursor;
-  lane.sort(
-    (a, b) => Math.abs(a.x - x) + Math.abs(a.y - y) - (Math.abs(b.x - x) + Math.abs(b.y - y)),
-  );
-  session.cursor = { ...lane[0]! };
-}
-
 function resetAttempt(session: HackSession): void {
   session.buffer = [];
   session.last = null;
@@ -262,44 +310,10 @@ function failAttempt(state: GameState): 'fail' | 'lockout' {
 export function moveHackCursor(state: GameState, dx: number, dy: number): void {
   const session = state.consoleHack?.session;
   if (!session) return;
-  if (!session.last) {
-    session.cursor = {
-      x: (session.cursor.x + dx + HACK_SIZE) % HACK_SIZE,
-      y: (session.cursor.y + dy + HACK_SIZE) % HACK_SIZE,
-    };
-    return;
-  }
-  const along = session.axis === 'col' ? dy : dx;
-  const across = session.axis === 'col' ? dx : dy;
-  if (across !== 0 && along === 0) {
-    setNote(state, 'blocked');
-    return;
-  }
-  if (along === 0) return;
-  const lane = hackLaneCells(session);
-  if (lane.length === 0) return;
-  const step = along > 0 ? 1 : -1;
-  if (session.axis === 'col') {
-    const x = session.last.x;
-    let y = session.cursor.y;
-    for (let i = 0; i < HACK_SIZE; i++) {
-      y = (y + step + HACK_SIZE) % HACK_SIZE;
-      if (lane.some((p) => p.x === x && p.y === y)) {
-        session.cursor = { x, y };
-        return;
-      }
-    }
-  } else {
-    const y = session.last.y;
-    let x = session.cursor.x;
-    for (let i = 0; i < HACK_SIZE; i++) {
-      x = (x + step + HACK_SIZE) % HACK_SIZE;
-      if (lane.some((p) => p.x === x && p.y === y)) {
-        session.cursor = { x, y };
-        return;
-      }
-    }
-  }
+  session.cursor = {
+    x: (session.cursor.x + dx + HACK_SIZE) % HACK_SIZE,
+    y: (session.cursor.y + dy + HACK_SIZE) % HACK_SIZE,
+  };
 }
 
 export function abortHack(state: GameState): void {
@@ -327,23 +341,21 @@ export function pickHackCell(state: GameState): HackPickResult {
   session.last = { x, y };
   if (first) session.axis = 'col';
   else session.axis = session.axis === 'col' ? 'row' : 'col';
-  snapToLane(session);
 
-  if (session.buffer.length < HACK_LEN) {
-    if (hackLaneCells(session).length === 0) return failAttempt(state);
-    setNote(state, 'spliced');
-    return 'spliced';
-  }
+  const slot = session.buffer.length - 1;
+  if (session.buffer[slot] !== session.target[slot]) return failAttempt(state);
 
-  const ok = session.buffer.every((g, i) => g === session.target[i]);
-  if (ok) {
+  if (session.buffer.length >= HACK_LEN) {
     hack.session = null;
     hack.done = true;
     grantHackReward(state);
     setNote(state, 'win');
     return 'win';
   }
-  return failAttempt(state);
+
+  if (hackLaneCells(session).length === 0) return failAttempt(state);
+  setNote(state, 'spliced');
+  return 'spliced';
 }
 
 export function makeConsoleHack(pos: Pos): ConsoleHack {

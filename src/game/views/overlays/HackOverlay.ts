@@ -8,7 +8,6 @@ import {
   HACK_TRIES,
   hackConstraintHint,
   hackLaneCells,
-  nextHackGlyph,
 } from '../../../sim/mechanics/consoleHack';
 import { Theme, ThemeCss, FONT_DATA, FONT_DISPLAY } from '../../../scenes/theme';
 import { drawFieldPanel, drawStencilBadge } from '../../../scenes/atmosphere';
@@ -22,7 +21,7 @@ const GRID = HACK_SIZE * CELL + (HACK_SIZE - 1) * GAP;
 const CHIP = 36;
 const CHIP_GAP = 8;
 
-export const HACK_GLYPH_COLOR = [Theme.ink, Theme.biolum, Theme.tape, Theme.flag] as const;
+export const HACK_GLYPH_COLOR = [Theme.ink, Theme.biolum, Theme.tape, Theme.flag, Theme.safe] as const;
 
 export type HackOverlayObjects = {
   bg: Phaser.GameObjects.Rectangle;
@@ -229,7 +228,6 @@ export function drawHackOverlay(
   const gy = y + 132;
   const lane = new Set(hackLaneCells(session).map((p) => `${p.x},${p.y}`));
   const pulse = animFrame % 2 === 0;
-  const nextGlyph = nextHackGlyph(session);
 
   gridGfx.fillStyle(Theme.groundDeep, 0.65);
   gridGfx.fillRect(gx - 8, gy - 8, GRID + 16, GRID + 16);
@@ -255,17 +253,12 @@ export function drawHackOverlay(
       const used = session.used[row]![col]!;
       const cursor = session.cursor.x === col && session.cursor.y === row;
       const legal = lane.has(`${col},${row}`);
-      const want = !used && nextGlyph !== null && glyph === nextGlyph && legal;
 
       gridGfx.fillStyle(Theme.panel, used ? 0.35 : legal ? 1 : 0.55);
       gridGfx.fillRect(cx, cy, CELL, CELL);
       if (legal && !used) {
-        gridGfx.fillStyle(Theme.tape, cursor ? 0.28 : 0.16);
+        gridGfx.fillStyle(Theme.tape, cursor ? 0.22 : 0.1);
         gridGfx.fillRect(cx + 1, cy + 1, CELL - 2, CELL - 2);
-      }
-      if (want) {
-        gridGfx.fillStyle(HACK_GLYPH_COLOR[glyph]!, 0.22);
-        gridGfx.fillRect(cx + 3, cy + 3, CELL - 6, CELL - 6);
       }
       const edge = cursor
         ? note === 'blocked'

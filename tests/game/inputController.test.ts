@@ -117,6 +117,7 @@ describe('handleGameKey modal blocking', () => {
     handleGameKey(key('d'), host);
     expect(host.commitTurnAction).not.toHaveBeenCalled();
     expect(st.consoleHack!.session!.cursor).toEqual({ x: 1, y: 0 });
+    st.consoleHack!.session!.grid[0]![1] = st.consoleHack!.session!.target[0]!;
     handleGameKey(key('Enter'), host);
     expect(host.commitTurnAction).not.toHaveBeenCalled();
     expect(st.consoleHack!.session!.buffer.length).toBeGreaterThan(0);

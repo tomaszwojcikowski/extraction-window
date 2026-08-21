@@ -97,7 +97,7 @@ export const LORE = {
     '\n' +
     'OPTIONAL (amber frame — skip anytime)\n' +
     'Room site · OPT badge · Enter / Space / > on the site.\n' +
-    'Locked terminal in some rooms: WASD · Enter splice the lattice — heavy kit if it holds.\n' +
+    'Locked terminal in some rooms: splice a 5-mark lattice (WASD · Enter) — look ahead, a wrong channel bounces.\n' +
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
@@ -810,9 +810,9 @@ export const LORE = {
   'UI-HACK-TARGET': 'Target',
   'UI-HACK-BUFFER': 'Buffer',
   'UI-HACK-TRIES': 'Tries',
-  'UI-HACK-ANY': 'Splice any channel.',
-  'UI-HACK-COL': 'Stay on this column.',
-  'UI-HACK-ROW': 'Stay on this row.',
+  'UI-HACK-ANY': 'Pick a start — then look ahead.',
+  'UI-HACK-COL': 'Same column. Wrong mark bounces.',
+  'UI-HACK-ROW': 'Same row. Wrong mark bounces.',
   'UI-HACK-KEYS': 'WASD · Enter splice · Esc abort',
   'UI-HACK-CHIP': 'LOCK',
   'UI-HACK-LAB': 'LATTICE LAB',

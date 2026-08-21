@@ -252,7 +252,7 @@ export interface BeaconHandshake {
 }
 
 /** One channel mark on a lattice lock. */
-export type HackGlyph = 0 | 1 | 2 | 3;
+export type HackGlyph = 0 | 1 | 2 | 3 | 4;
 
 /** Open splice modal — headless so the overlay only renders. */
 export interface HackSession {
