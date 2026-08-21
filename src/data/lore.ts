@@ -96,7 +96,8 @@ export const LORE = {
     'On the skiff: > start · . hold · Power Cell skips · Flare blocks the wave.\n' +
     '\n' +
     'OPTIONAL (amber frame — skip anytime)\n' +
-    'Side console · OPT badge · Enter / Space / > on the site.\n' +
+    'Room site · OPT badge · Enter / Space / > on the site.\n' +
+    'Locked terminal in some rooms: splice the lattice in the modal for a heavy kit payout.\n' +
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
@@ -230,6 +231,7 @@ export const LORE = {
   'UI-HINT-PREFER-LIT': 'This hunter prefers light — SHADOW is +1 and they notice you less',
   'UI-HINT-QUEST': 'Optional site — follow the amber OPT line',
   'UI-HINT-QUEST-REMOTE': 'Optional site — follow amber frame · see OPT line',
+  'UI-HINT-CONSOLE': 'Locked terminal — Enter to splice',
   'UI-HINT-NPC': 'Someone here — press Enter / Space / > to talk',
   'UI-HINT-AGENDA-COMM':
     'Field comm worn — talk to a contact within two tiles · Enter / Space / >',
@@ -799,6 +801,22 @@ export const LORE = {
   'LOG-SKILL': 'Field skill unlocked.',
   'LOG-SKILL-PICK': 'Choose a field skill — press 1 or 2.',
   'LOG-SKILL-NEED': 'Skill choice pending — press 1 or 2.',
+  'LOG-HACK-OPEN': 'Locked terminal — splice the lattice.',
+  'LOG-HACK-OK': 'Lattice spliced — kit dumped.',
+  'LOG-HACK-FAIL': 'ICE bounce — lattice reset.',
+  'LOG-HACK-LOCK': 'Terminal fried — lockout.',
+  'LOG-HACK-ABORT': 'Splice aborted.',
+  'UI-HACK-TITLE': 'Lattice lock',
+  'UI-HACK-TARGET': 'Target',
+  'UI-HACK-BUFFER': 'Buffer',
+  'UI-HACK-TRIES': 'Tries',
+  'UI-HACK-ANY': 'Pick any channel.',
+  'UI-HACK-COL': 'Next pick: same column.',
+  'UI-HACK-ROW': 'Next pick: same row.',
+  'UI-HACK-KEYS': 'WASD move · Enter splice · Esc abort',
+  'UI-HACK-CHIP': 'LOCK',
+  'UI-HACK-LAB': 'LATTICE LAB',
+  'UI-HACK-LAB-HINT': 'r — new lock · Esc abort · Enter splice',
   'LOG-EM-WARN': 'EM rising — fauna getting agitated.',
   'LOG-EM-HIGH':
     'EM critical — extra Power drain and wider aggro. Sealant Foam clears it.',

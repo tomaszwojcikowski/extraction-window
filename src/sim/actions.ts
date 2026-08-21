@@ -9,6 +9,7 @@ import { pick, randInt } from './rng';
 import { pickSkill } from './progression';
 import { addEmStress } from './emStress';
 import { mechanicsTryAction } from './mechanics';
+import { abortHack, isHackOpen, moveHackCursor, pickHackCell } from './mechanics/consoleHack';
 import { resolveQuestOffer } from './questOffer';
 import { isAdjacentSealed } from './mechanics/sealedHatch';
 import { livingAllyAt } from './allyAi';
@@ -116,8 +117,9 @@ function tryMove(state: GameState, dx: number, dy: number): void {
 function tryExit(state: GameState): void {
   // Mechanics first (room quest, future beacon handshake, …)
   if (mechanicsTryAction(state, { type: 'exit' })) {
-    // Opening an accept/decline offer is UI-only — do not spend the turn.
+    // Opening an accept/decline offer or lattice lock is UI-only — do not spend the turn.
     if (state.questOffer) return;
+    if (isHackOpen(state)) return;
     endPlayerTurn(state);
     return;
   }
@@ -199,6 +201,22 @@ export function applyAction(state: GameState, action: Action): GameState {
     return state;
   }
 
+  if (isHackOpen(state)) {
+    if (action.type === 'hack_move') {
+      moveHackCursor(state, action.dx, action.dy);
+      return state;
+    }
+    if (action.type === 'hack_pick') {
+      if (pickHackCell(state)) endPlayerTurn(state);
+      return state;
+    }
+    if (action.type === 'hack_abort' || action.type === 'close_ui') {
+      abortHack(state);
+      return state;
+    }
+    return state;
+  }
+
   // ADOM talent fork — must choose before continuing
   if (state.skillPick) {
     if (action.type === 'pick_skill') {
@@ -219,6 +237,9 @@ export function applyAction(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'pick_skill':
     case 'quest_offer':
+    case 'hack_move':
+    case 'hack_pick':
+    case 'hack_abort':
       return state;
 
     case 'close_ui':

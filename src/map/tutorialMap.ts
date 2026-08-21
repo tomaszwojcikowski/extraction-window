@@ -265,6 +265,7 @@ export function generateTutorialMap(seed: number): GeneratedMap {
     beaconPos: null,
     shuttlePos: null,
     roomQuest: null,
+    consolePos: null,
     nextEntityId: 8,
     wallLights,
   };

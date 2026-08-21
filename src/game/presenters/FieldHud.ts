@@ -153,6 +153,9 @@ export function fieldHudChips(state: GameState): HudChip[] {
       fill: Theme.tape,
     });
   }
+  if (state.consoleHack && !state.consoleHack.done) {
+    chips.push({ label: lore('UI-HACK-CHIP'), fill: Theme.tape });
+  }
   const agendaNpc = openAgendaNpc(state);
   if (agendaNpc) {
     chips.push({ label: lore(agendaChipLore(agendaNpc)), fill: Theme.tape });

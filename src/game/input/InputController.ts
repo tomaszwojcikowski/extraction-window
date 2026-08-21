@@ -1,6 +1,7 @@
 import { applyAction, type Action, type GameState } from '../../sim';
 import { music } from '../../audio/music';
 import { sfx } from '../../audio/sfx';
+import { isHackOpen } from '../../sim/mechanics/consoleHack';
 import {
   actionFromKey,
   chromeFromKey,
@@ -50,6 +51,7 @@ function isModalInput(host: InputHost, state: GameState): boolean {
     host.isLogOpen() ||
     Boolean(state.skillPick?.length) ||
     Boolean(state.questOffer) ||
+    isHackOpen(state) ||
     state.ui.inventoryOpen
   );
 }
@@ -100,6 +102,29 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   }
 
   const state = host.getState();
+
+  if (isHackOpen(state)) {
+    if (e.key === 'Escape') {
+      applyAction(state, { type: 'hack_abort' });
+      sfx.play('ui');
+      host.afterUiChrome({ syncItems: true });
+      return;
+    }
+    const hackAction = actionFromKey(e);
+    if (hackAction?.type === 'move') {
+      applyAction(state, { type: 'hack_move', dx: hackAction.dx, dy: hackAction.dy });
+      sfx.play('ui');
+      host.afterUiChrome();
+      return;
+    }
+    if (hackAction?.type === 'exit' || hackAction?.type === 'wait') {
+      applyAction(state, { type: 'hack_pick' });
+      sfx.play('ui');
+      host.afterUiChrome({ syncItems: true });
+      return;
+    }
+    return;
+  }
 
   // Quest accept/decline — same priority band as skill pick.
   if (state.questOffer) {

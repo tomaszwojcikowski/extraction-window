@@ -10,6 +10,7 @@ import { npcMechanic } from './npcMechanic';
 import { sealedHatchMechanic } from './sealedHatch';
 import { tutorialMechanic } from './tutorial';
 import { ionFrontMechanic } from './ionFront';
+import { consoleHackMechanic } from './consoleHack';
 
 /**
  * Ordered plug-ins.
@@ -18,6 +19,7 @@ import { ionFrontMechanic } from './ionFront';
  * so mid-handshake or desync clear is not interrupted by side-quest pathing.
  * Field NPCs hail before room quests when both claim `>`.
  * Sealed pry after NPCs so hail still wins when both are adjacent.
+ * Locked terminal after room quests — quest furniture keeps `>` on its own tile.
  */
 const MECHANICS: Mechanic[] = [
   tutorialMechanic,
@@ -27,6 +29,7 @@ const MECHANICS: Mechanic[] = [
   npcMechanic,
   sealedHatchMechanic,
   roomQuestMechanic,
+  consoleHackMechanic,
   ionFrontMechanic,
   scriptedEventsMechanic,
 ];

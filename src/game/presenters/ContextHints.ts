@@ -17,6 +17,7 @@ export function contextHint(st: GameState): LoreId | null {
   // Skill pick overlay owns coaching — never stack a second hint channel.
   if (st.skillPick) return null;
   if (st.questOffer) return null;
+  if (st.consoleHack?.session) return null;
   if (st.ui.aimingDart) return 'UI-HINT-AIM';
 
   const phaserHint = phaserContextHint(st);

@@ -141,4 +141,27 @@ describe('map generator', () => {
       }
     }
   });
+
+  it('places locked terminals on some maps without stealing the room quest', () => {
+    let consoles = 0;
+    let withQuest = 0;
+    for (const seed of [1, 42, 99, 777, 12345, 9999]) {
+      for (let i = 0; i < CAMPAIGN_LENGTH; i++) {
+        const sector = getSector(i);
+        const map = generateSectorMap(sector, seed, i);
+        if (!map.consolePos) continue;
+        consoles += 1;
+        expect(map.tiles[map.consolePos.y]![map.consolePos.x]!.kind).toBe('console');
+        expect(canReach(map.tiles, map.start, map.consolePos)).toBe(true);
+        if (map.roomQuest) {
+          withQuest += 1;
+          for (const step of map.roomQuest.steps) {
+            expect(step.pos.x === map.consolePos.x && step.pos.y === map.consolePos.y).toBe(false);
+          }
+        }
+      }
+    }
+    expect(consoles).toBeGreaterThan(8);
+    expect(withQuest).toBe(consoles);
+  });
 });

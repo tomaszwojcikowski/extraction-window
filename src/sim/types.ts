@@ -28,7 +28,9 @@ export type TileKind =
   | 'shuttle'
   /** Purely decorative room centrepiece — no interaction. */
   | 'landmark'
-  | 'quest';
+  | 'quest'
+  /** Optional locked terminal — splice minigame, never required to extract. */
+  | 'console';
 
 export type EnemyTier = 'normal' | 'elite' | 'boss';
 
@@ -249,6 +251,29 @@ export interface BeaconHandshake {
   active: boolean;
 }
 
+/** One channel mark on a lattice lock. */
+export type HackGlyph = 0 | 1 | 2 | 3;
+
+/** Open splice modal — headless so the overlay only renders. */
+export interface HackSession {
+  grid: HackGlyph[][];
+  target: HackGlyph[];
+  buffer: HackGlyph[];
+  cursor: Pos;
+  last: Pos | null;
+  /** Next pick must share this axis with `last`. Ignored until last is set. */
+  axis: 'row' | 'col';
+  used: boolean[][];
+  attempts: number;
+}
+
+/** Optional locked terminal in this sector. */
+export interface ConsoleHack {
+  pos: Pos;
+  done: boolean;
+  session: HackSession | null;
+}
+
 /** One optional room-quest payoff that changes the route to extraction. */
 export type ExtractFavorKind = 'pattern_fail_safe';
 
@@ -321,6 +346,8 @@ export interface GameState {
   roomQuest: RoomQuest | null;
   /** Accept/decline modal for a room site or NPC agenda (null when closed). */
   questOffer: QuestOffer | null;
+  /** Optional locked terminal; null when this sector has none. */
+  consoleHack: ConsoleHack | null;
   /** Sector room layout for quest pulse (reset each sector). */
   rooms: MapRoom[];
   /** Field NPCs already logged as sighted this run. */
@@ -401,4 +428,7 @@ export type Action =
   | { type: 'exit' }
   | { type: 'close_ui' }
   | { type: 'pick_skill'; id: SkillId }
-  | { type: 'quest_offer'; accept: boolean };
+  | { type: 'quest_offer'; accept: boolean }
+  | { type: 'hack_move'; dx: number; dy: number }
+  | { type: 'hack_pick' }
+  | { type: 'hack_abort' };

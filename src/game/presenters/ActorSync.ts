@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { FONT_DATA, Theme, ThemeCss } from '../../scenes/theme';
 import { TILE_DRAW, allyTextureKey, enemyTextureKey, npcTextureKey } from '../../scenes/textures';
 import { activeQuestStep } from '../../sim/roomQuest';
-import type { GameState } from '../../sim/types';
+import type { GameState, Pos } from '../../sim/types';
 import { playActorDeath, type EnemyView } from './ActionFeedback';
 import { npcQuestMarker, npcQuestMarkerColor } from './NpcMarkers';
 import { enemyAnimFrame } from './enemyAnimFrame';
@@ -396,19 +396,30 @@ export function syncGoalVisuals(
 export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): void {
   host.optionalSiteGfx.clear();
   const rq = st.roomQuest;
-  if (!rq || rq.done || rq.offer === 'declined') return;
-  const step = activeQuestStep(rq);
-  if (!step) return;
+  if (rq && !rq.done && rq.offer !== 'declined') {
+    const step = activeQuestStep(rq);
+    if (step) {
+      paintOptionalSite(host, st, step.pos, rq.offer === 'pending');
+    }
+  }
+  const hack = st.consoleHack;
+  if (hack && !hack.done) paintOptionalSite(host, st, hack.pos, !hack.session);
+}
 
-  const explored = st.explored[step.pos.y]?.[step.pos.x] === true;
-  const visible = st.visible[step.pos.y]?.[step.pos.x] === true;
+function paintOptionalSite(
+  host: ActorSyncHost,
+  st: GameState,
+  pos: Pos,
+  pending: boolean,
+): void {
+  const explored = st.explored[pos.y]?.[pos.x] === true;
+  const visible = st.visible[pos.y]?.[pos.x] === true;
   const mapperReveal = st.player.mapperTurns > 0;
   if (!explored && !visible && !mapperReveal) return;
 
-  const onPlayer = st.player.x === step.pos.x && st.player.y === step.pos.y;
-  const pending = rq.offer === 'pending';
-  const wx = step.pos.x * TILE_DRAW;
-  const wy = step.pos.y * TILE_DRAW;
+  const onPlayer = st.player.x === pos.x && st.player.y === pos.y;
+  const wx = pos.x * TILE_DRAW;
+  const wy = pos.y * TILE_DRAW;
   const flash = st.ui.questFlash > 0;
   const a = flash ? 1 : onPlayer ? 0.95 : pending ? 0.75 : 0.88;
 
@@ -478,7 +489,7 @@ export function syncOptionalSiteVisuals(host: ActorSyncHost, st: GameState): voi
     host.optionalSiteGfx.fillRect(cx - 1.5, cy + 4, 3, 5);
   }
 
-  const tile = host.tileSprites[step.pos.y]?.[step.pos.x];
+  const tile = host.tileSprites[pos.y]?.[pos.x];
   if (tile && visible) tile.setTint(Theme.tape);
 
   const top = host.topInset;

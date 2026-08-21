@@ -15,6 +15,7 @@ type PropKind =
   | 'shuttle'
   | 'landmark'
   | 'quest'
+  | 'console'
   | 'sealed'
   | 'tripwire'
   | 'sump'
@@ -179,6 +180,16 @@ function paintProp(kind: PropKind, frame = 0): Px {
       px.fillTriangle(24, 6 + (pulse % 2), 17, 16, 31, 16, Theme.flag);
       px.fillRect(22, 16, 4, 8, Theme.flag);
       break;
+    case 'console':
+      bevelRect(px, 10, 14, 28, 26, Theme.inkMute, Material.deck, Theme.groundDeep);
+      px.fillRect(13, 17, 22, 16, Theme.groundDeep);
+      bevelRect(px, 15, 19, 18, 11, Theme.inkMute, Theme.panel, Theme.groundDeep);
+      px.fillRect(17, 21, 14, 7, Theme.biolumDeep);
+      px.fillRect(18, 22 + (pulse % 2), 5, 2, Theme.biolum);
+      px.fillRect(24, 23, 6, 2, mix(Theme.tape, Theme.biolum, 0.4));
+      px.fillRect(20, 8, 8, 6, Theme.panelEdge);
+      px.fillRect(22, 6 + (pulse % 2), 4, 4, Theme.tape);
+      break;
   }
   if (kind !== 'tripwire') {
     finishSprite(px, envPalette());
@@ -222,7 +233,7 @@ export function propFrames(): Frame[] {
     { key: 't_fog', px: paintFog() },
     { key: 't_memory', px: paintMemory() },
   ];
-  for (const kind of ['vent', 'hazard', 'sump', 'beacon', 'landmark', 'quest'] as const) {
+  for (const kind of ['vent', 'hazard', 'sump', 'beacon', 'landmark', 'quest', 'console'] as const) {
     const keyBase = kind === 'quest' ? 't_quest_tile' : (`t_${kind}` as const);
     for (let f = 0; f < 4; f++) {
       frames.push({

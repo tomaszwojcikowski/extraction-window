@@ -75,6 +75,13 @@ import {
   drawQuestOfferOverlay,
   hideQuestOfferOverlay,
 } from '../game/views/overlays/QuestOfferOverlay';
+import {
+  createHackOverlayObjects,
+  drawHackOverlay,
+  hideHackOverlay,
+  type HackOverlayObjects,
+} from '../game/views/overlays/HackOverlay';
+import { forceOpenHackLab } from '../sim/mechanics/consoleHack';
 import { computeShearPressure, type ShearPressureState } from '../game/presenters/ShearPressure';
 import { drawHudChrome } from '../game/presenters/HudChrome';
 import { shearFlashMs, syncShearReadout } from '../game/presenters/ShearReadout';
@@ -191,6 +198,8 @@ export class GameScene extends Phaser.Scene {
   private questOfferPanel!: Phaser.GameObjects.Graphics;
   private questOfferText!: Phaser.GameObjects.Text;
   private questOfferBadgeGfx!: Phaser.GameObjects.Graphics;
+  private hackOverlay!: HackOverlayObjects;
+  private openHackLab = false;
   /** Mission log strip — hidden by default; `l` toggles. */
   private logOpen = false;
   private minimap = new MinimapView();
@@ -206,8 +215,12 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: { seed?: number }): void {
-    this.state = createGame(data.seed ?? 42, { skipTutorial: false });
+  init(data: { seed?: number; skipTutorial?: boolean; openHack?: boolean } = {}): void {
+    this.openHackLab = Boolean(data.openHack);
+    this.state = createGame(data.seed ?? 42, {
+      skipTutorial: data.skipTutorial ?? data.openHack ?? false,
+    });
+    if (this.openHackLab) forceOpenHackLab(this.state);
     this.helpOpen = false;
     this.pagesOpen = false;
     this.logOpen = false;
@@ -501,6 +514,7 @@ export class GameScene extends Phaser.Scene {
     this.questOfferPanel = questOfferObjs.panel;
     this.questOfferText = questOfferObjs.text;
     this.questOfferBadgeGfx = questOfferObjs.badgeGfx;
+    this.hackOverlay = createHackOverlayObjects(this);
 
     this.flash = this.add
       .rectangle(0, 0, this.scale.width, this.scale.height, Theme.rust, 0)
@@ -873,6 +887,8 @@ export class GameScene extends Phaser.Scene {
         return animated('t_landmark');
       case 'quest':
         return animated('t_quest_tile');
+      case 'console':
+        return animated('t_console');
       case 'floor': {
         const v = (x + y * 3 + this.state.seed) % 3;
         return floorTextureKey(this.state.sectorId, v);
@@ -925,6 +941,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private handleKey(e: KeyboardEvent): void {
+    if (this.openHackLab && (e.key === 'r' || e.key === 'R')) {
+      forceOpenHackLab(this.state);
+      this.redrawTilesAndHud();
+      return;
+    }
     handleGameKey(e, {
       getState: () => this.state,
       isAnimating: () => this.animating,
@@ -1638,6 +1659,11 @@ export class GameScene extends Phaser.Scene {
         this.questOfferText,
         this.questOfferBadgeGfx,
       );
+    }
+    if (st.consoleHack?.session) {
+      drawHackOverlay(this.hackOverlay, this.scale.width, this.scale.height, st.consoleHack.session);
+    } else {
+      hideHackOverlay(this.hackOverlay);
     }
     // Preference tip fills an empty hint line only — never stomps tele/vitals/context.
     if (this.preferenceHint && this.preferenceHint.until > this.time.now) {

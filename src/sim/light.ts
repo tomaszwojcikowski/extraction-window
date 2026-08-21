@@ -291,6 +291,8 @@ function tileEmitter(kind: TileKind): Omit<SimLightSource, 'x' | 'y'> | null {
       return { radius: 3, intensity: 0.75, color: LIGHT_TEMP.pattern };
     case 'quest':
       return { radius: 3.5, intensity: 0.9, color: LIGHT_TEMP.marker };
+    case 'console':
+      return { radius: 3.2, intensity: 0.85, color: LIGHT_TEMP.pattern };
     case 'hazard':
     case 'vent':
     case 'sump':

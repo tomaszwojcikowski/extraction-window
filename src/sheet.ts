@@ -64,6 +64,7 @@ const STRUCTURE: Array<[label: string, key: string]> = [
   ['shuttle', 't_shuttle'],
   ['beacon prop', 't_beacon'],
   ['landmark', 't_landmark'],
+  ['console', 't_console'],
 ];
 
 function openRoom(seed: number): GameState {

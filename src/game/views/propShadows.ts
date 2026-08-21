@@ -13,6 +13,7 @@ export function tileCastsPropShadow(kind: TileKind): boolean {
     case 'shuttle':
     case 'sealed':
     case 'rubble':
+    case 'console':
       return true;
     default:
       return false;

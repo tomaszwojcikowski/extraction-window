@@ -15,6 +15,7 @@ vi.mock('../../src/audio/music', () => ({
 
 import { createGame, type Action } from '../../src/sim';
 import { handleGameKey, type InputHost } from '../../src/game/input/InputController';
+import { forceOpenHackLab } from '../../src/sim/mechanics/consoleHack';
 
 function key(k: string, opts: Partial<KeyboardEvent> = {}): KeyboardEvent {
   return { key: k, shiftKey: false, code: '', ...opts } as KeyboardEvent;
@@ -106,5 +107,18 @@ describe('handleGameKey modal blocking', () => {
     const host = stubHost({ state: st, isAnimating: () => true });
     handleGameKey(key('1'), host);
     expect(host.afterUiChrome).toHaveBeenCalled();
+  });
+
+  it('routes WASD and Enter into the lattice lock instead of the field', () => {
+    const st = createGame(1);
+    forceOpenHackLab(st);
+    st.consoleHack!.session!.cursor = { x: 0, y: 0 };
+    const host = stubHost({ state: st });
+    handleGameKey(key('d'), host);
+    expect(host.commitTurnAction).not.toHaveBeenCalled();
+    expect(st.consoleHack!.session!.cursor).toEqual({ x: 1, y: 0 });
+    handleGameKey(key('Enter'), host);
+    expect(host.commitTurnAction).not.toHaveBeenCalled();
+    expect(st.consoleHack!.session!.buffer.length).toBeGreaterThan(0);
   });
 });

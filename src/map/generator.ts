@@ -41,6 +41,7 @@ import {
   type Room,
 } from './rooms';
 import { placeWallLights } from './wallLights';
+import { placeLockedConsole } from './consoles';
 
 export type { Room } from './rooms';
 
@@ -57,6 +58,8 @@ export interface GeneratedMap {
   beaconPos: Pos | null;
   shuttlePos: Pos | null;
   roomQuest: RoomQuest | null;
+  /** Optional locked terminal; independent of the room-quest roll. */
+  consolePos: Pos | null;
   nextEntityId: number;
   /** Permanent wall fixtures seeded into `state.lightSources`. */
   wallLights: FieldLightSource[];
@@ -107,6 +110,9 @@ function landmarkTile(): Tile {
 }
 function questTile(): Tile {
   return { kind: 'quest', walkable: true, transparent: true };
+}
+function consoleTile(): Tile {
+  return { kind: 'console', walkable: true, transparent: true };
 }
 
 function makeEnemy(
@@ -765,6 +771,10 @@ export function generateSectorMap(
       }
     }
   }
+
+  const consolePos = placeLockedConsole(tiles, rooms, start, exit, specials, rng);
+  if (consolePos) specials.push(consolePos);
+
   const occ = () => occupiedSet(enemies, items, start, specials, npcs);
   /** A tile is spendable if it is free, reachable, and not the quest furniture. */
   const openIn = (room: Room, minStartDist = 0): Pos[] =>
@@ -978,6 +988,7 @@ export function generateSectorMap(
         tiles[step.pos.y]![step.pos.x] = questTile();
       }
     }
+    if (consolePos) tiles[consolePos.y]![consolePos.x] = consoleTile();
   }
   for (const it of items) {
     if ((it.kind === 'relay_key' || it.kind === 'nav_core') && !canReach(tiles, start, it)) {
@@ -1004,6 +1015,7 @@ export function generateSectorMap(
     beaconPos,
     shuttlePos,
     roomQuest,
+    consolePos,
     nextEntityId,
     wallLights,
   };

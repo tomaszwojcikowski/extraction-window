@@ -12,6 +12,7 @@ describe('propShadows', () => {
       'shuttle',
       'sealed',
       'rubble',
+      'console',
     ];
     for (const kind of yes) expect(tileCastsPropShadow(kind)).toBe(true);
     expect(tileCastsPropShadow('floor')).toBe(false);

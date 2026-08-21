@@ -11,6 +11,7 @@ import { syncObjectiveFlags } from './inventory';
 import { emptyEquipSlots } from './equip';
 import { hasSkill } from './progression';
 import { mechanicsOnSectorEnter } from './mechanics';
+import { makeConsoleHack } from './mechanics/consoleHack';
 import { refreshVision } from './vision';
 const SECTOR_ENTRY_LOG: Partial<Record<SectorId, LoreId>> = {
   plains: 'LOG-SEC-PLAINS',
@@ -104,6 +105,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
     beaconPos: map.beaconPos,
     roomQuest: map.roomQuest,
     questOffer: null,
+    consoleHack: map.consolePos ? makeConsoleHack(map.consolePos) : null,
     rooms: map.rooms.map((r) => ({ ...r })),
     noticedNpcIds: [],
     noticedBrandIds: [],
@@ -204,6 +206,7 @@ export function loadSector(state: GameState, sectorIndex: number): void {
   state.beaconPos = map.beaconPos;
   state.roomQuest = map.roomQuest;
   state.questOffer = null;
+  state.consoleHack = map.consolePos ? makeConsoleHack(map.consolePos) : null;
   state.rooms = map.rooms.map((r) => ({ ...r }));
   state.lightSources = map.wallLights.map((s) => ({ ...s }));
   state.contamination = [];
