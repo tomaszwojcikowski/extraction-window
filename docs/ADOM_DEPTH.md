@@ -34,7 +34,7 @@ flowchart TB
 | Identification | Single salvage | Biome tables on one salvage kind (tiers tried and cut — see Wave 5) |
 | Statuses | 4 | 7 with fauna/terrain/EM sources (`fatigue` cut Wave 6) |
 | Skills | 3×2 forks | Readable forks; later mastery track |
-| Terrain | hazard/vent/scrub + sealed hatch caches | Further traps / pools as needed |
+| Terrain | hazard/vent/scrub/sump + sealed hatch caches | Further traps as needed |
 | NPC quests | Hail + ally | Wave 2: agendas |
 | Crafting | None | Wave 2: 2–3 field recipes |
 | Brands | Flat equip | Situational equip tags; paper doll loadout (Waves 19–22) |
@@ -61,7 +61,7 @@ flowchart TB
 
 | Ticket | Status |
 |--------|--------|
-| Terrain: `sealed` / `tripwire` / `brine_pool` / `scrub_nest` | Done |
+| Terrain: `sealed` / `tripwire` / `sump` / `scrub_nest` | Done |
 | Field craft (sample→filter/ration, shard→balm) | Shipped, **cut in Wave 5** |
 | NPC agendas (ensign / tech / survey contact) | Done |
 | Quiet vs Probe doctrine tallies | Shipped, **cut in Wave 5** |

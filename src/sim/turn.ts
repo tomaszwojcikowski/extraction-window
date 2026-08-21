@@ -98,7 +98,7 @@ function tickUnderfootTerrain(state: GameState): void {
   const filter = state.player.filterTurns > 0;
   const tile = state.tiles[state.player.y]![state.player.x]!;
   const hazardCrossing =
-    tile.kind === 'hazard' || tile.kind === 'brine_pool' || tile.kind === 'vent';
+    tile.kind === 'hazard' || tile.kind === 'sump' || tile.kind === 'vent';
   const drainCut = wornTagMax(state, 'hazardDrainReduction');
   const gloves = wornHasTag(state, 'hazardIonSkip');
   if (hazardCrossing && consumeExtractFavor(state, 'hazard_pass')) {
@@ -111,11 +111,11 @@ function tickUnderfootTerrain(state: GameState): void {
       addStatus(state.player, 'ion_burn', 1);
     }
     pushLog(state, 'LOG-HAZARD');
-  } else if (tile.kind === 'brine_pool') {
+  } else if (tile.kind === 'sump') {
     const brineExtra = sector.id === 'brine' && !filter ? 1 : 0;
     const drain = Math.max(1, (filter ? 1 : 2) + brineExtra - drainCut);
     state.player.energy -= drain;
-    pushLog(state, 'LOG-BRINE-POOL');
+    pushLog(state, 'LOG-SUMP');
   } else if (tile.kind === 'vent') {
     const ventExtra = wornTagMax(state, 'ventDrainExtra');
     state.player.energy -= (filter ? 0 : 1) + ventExtra;

@@ -20,7 +20,7 @@ describe('propShadows', () => {
     expect(tileCastsPropShadow('wall')).toBe(false);
     expect(tileCastsPropShadow('hazard')).toBe(false);
     expect(tileCastsPropShadow('vent')).toBe(false);
-    expect(tileCastsPropShadow('brine_pool')).toBe(false);
+    expect(tileCastsPropShadow('sump')).toBe(false);
     expect(tileCastsPropShadow('scrub_nest')).toBe(false);
   });
 });

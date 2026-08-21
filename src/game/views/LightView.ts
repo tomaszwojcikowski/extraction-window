@@ -883,10 +883,10 @@ export class LightView {
             kind === 'scrub_nest' ||
             kind === 'rubble' ||
             kind === 'tripwire';
-          const isHazard = kind === 'hazard' || kind === 'vent' || kind === 'brine_pool';
+          const isHazard = kind === 'hazard' || kind === 'vent' || kind === 'sump';
           const isWall = kind === 'wall' || kind === 'sealed';
           const hazardTint =
-            kind === 'brine_pool' ? multiplyTint(Theme.arcWhite, Theme.biolum, 0.35) : Theme.arc;
+            kind === 'sump' ? multiplyTint(Theme.arcWhite, Theme.biolum, 0.35) : Theme.arc;
           let mem = isTerrain ? floorTint : isHazard ? hazardTint : isWall ? floorTint : 0xffffff;
           mem = desaturate(mem, isWall ? 0.85 : 0.72);
           mem = multiplyTint(mem, Theme.memoryWash, 0.42);

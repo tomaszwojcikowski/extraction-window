@@ -54,7 +54,7 @@ const SECTORS: SectorId[] = [
 const STRUCTURE: Array<[label: string, key: string]> = [
   ['hazard', 't_hazard'],
   ['vent', 't_vent'],
-  ['brine_pool', 't_brine_pool'],
+  ['sump', 't_sump'],
   ['scrub', 't_scrub'],
   ['scrub_nest', 't_scrub_nest'],
   ['rubble', 't_rubble'],

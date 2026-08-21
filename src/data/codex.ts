@@ -5,13 +5,13 @@ import type { LoreId } from './lore';
  *
  * PADD pages are written backward from these: geometry and contents come first,
  * then the fiction that explains them. A page may only claim what its facts
- * guarantee, so a note about flooded pools never surfaces in a dry sector.
+ * guarantee, so a note about sumps never surfaces in a dry sector.
  */
 export type SectorFact =
   // Terrain the player can point at
   | 'vent'
   | 'hazard'
-  | 'brine_pool'
+  | 'sump'
   | 'sealed'
   | 'tripwire'
   | 'scrub_nest'
@@ -41,13 +41,13 @@ export interface CodexEntry {
  */
 export const FACT_CODEX: readonly CodexEntry[] = [
   { id: 'CODEX-FACT-NEST-SWARM', requires: ['scrub_nest', 'fauna_swarm'] },
-  { id: 'CODEX-FACT-BRINE-HUNTER', requires: ['brine_pool', 'fauna_hunter'] },
+  { id: 'CODEX-FACT-BRINE-HUNTER', requires: ['sump', 'fauna_hunter'] },
   { id: 'CODEX-FACT-VENT-EM', requires: ['vent', 'em_warn'] },
   { id: 'CODEX-FACT-TRIPWIRE', requires: ['tripwire'] },
   { id: 'CODEX-FACT-SEALED', requires: ['sealed'] },
   { id: 'CODEX-FACT-MACHINE', requires: ['fauna_machine'] },
   { id: 'CODEX-FACT-BRANDED', requires: ['fauna_branded'] },
-  { id: 'CODEX-FACT-BRINE', requires: ['brine_pool'] },
+  { id: 'CODEX-FACT-BRINE', requires: ['sump'] },
   { id: 'CODEX-FACT-VENT', requires: ['vent'] },
   { id: 'CODEX-FACT-RUBBLE', requires: ['rubble'] },
 ];

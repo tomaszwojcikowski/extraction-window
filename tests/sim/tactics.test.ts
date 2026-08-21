@@ -94,10 +94,10 @@ describe('Iteration 2 tactical threats', () => {
 });
 
 describe('Iteration 2 player tactics', () => {
-  it('sealant on brine flushes EM and leaves the pool', () => {
+  it('sealant on a sump flushes EM and leaves the pan', () => {
     const st = combatArena();
     st.tiles[st.player.y]![st.player.x] = {
-      kind: 'brine_pool',
+      kind: 'sump',
       walkable: true,
       transparent: true,
     };
@@ -107,7 +107,7 @@ describe('Iteration 2 player tactics', () => {
 
     useSelected(st);
 
-    expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('brine_pool');
+    expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('sump');
     expect(st.inventory).toHaveLength(0);
     expect(st.emStress).toBe(4);
     expect(lastLog(st, 'LOG-EM-PURGE')).toBeTruthy();

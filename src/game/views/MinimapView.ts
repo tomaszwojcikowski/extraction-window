@@ -82,7 +82,7 @@ export class MinimapView {
           color = isVisible ? Theme.panelEdge : Theme.memory;
         } else if (kind === 'exit' || kind === 'beacon' || kind === 'shuttle') {
           color = Theme.tape;
-        } else if (kind === 'brine_pool' || kind === 'vent' || kind === 'hazard') {
+        } else if (kind === 'sump' || kind === 'vent' || kind === 'hazard') {
           color = isVisible ? Theme.arc : Theme.memory;
         } else {
           color = isVisible ? Theme.inkDim : Theme.memory;

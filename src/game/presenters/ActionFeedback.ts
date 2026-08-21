@@ -136,7 +136,7 @@ export function collectActionFloatLabels(
         };
         break;
       case 'LOG-HAZARD':
-      case 'LOG-BRINE-POOL':
+      case 'LOG-SUMP':
       case 'LOG-CONTAMINATION':
       case 'LOG-ION-PULSE':
       case 'LOG-UPLINK-WAVE-HIT':

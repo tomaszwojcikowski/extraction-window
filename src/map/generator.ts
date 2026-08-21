@@ -86,8 +86,8 @@ function sealed(): Tile {
 function tripwire(): Tile {
   return { kind: 'tripwire', walkable: true, transparent: true };
 }
-function brinePool(): Tile {
-  return { kind: 'brine_pool', walkable: true, transparent: true };
+function sumpTile(): Tile {
+  return { kind: 'sump', walkable: true, transparent: true };
 }
 function scrubNest(blocksSight = true): Tile {
   return { kind: 'scrub_nest', walkable: true, transparent: !blocksSight };
@@ -320,9 +320,9 @@ function dressBiomeTerrain(
       if (tiles[y]![x]!.kind !== 'floor') continue;
       const roll = rng();
       if (id === 'brine' || id === 'flood') {
-        if (roll < 0.016) tiles[y]![x] = brinePool();
+        if (roll < 0.016) tiles[y]![x] = sumpTile();
       } else if (roll < 0.004) {
-        tiles[y]![x] = brinePool();
+        tiles[y]![x] = sumpTile();
       }
       if (tiles[y]![x]!.kind !== 'floor') continue;
       if (id === 'canopy' || id === 'spire' || id === 'reef') {

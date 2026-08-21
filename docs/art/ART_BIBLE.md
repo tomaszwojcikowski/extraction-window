@@ -106,7 +106,7 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
   markings (beacon). Cross-checks worth keeping: plains must not drift into
   ridge's banding, and duct must stay bare parallel bars or it becomes brine.
 - Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash chokes (dark warm-grey), duct swallows it.
-- Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `brine_pool`, `scrub_nest`.
+- Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `sump`, `scrub_nest`.
 - Ordinary ground stays dull. Saturated paint on a walkable tile reads as a rule
   the tile does not have.
 

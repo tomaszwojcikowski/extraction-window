@@ -25,7 +25,7 @@ function onOrAdjacentHazard(state: GameState): boolean {
     [0, -1],
   ] as const) {
     const t = state.tiles[y + dy]?.[x + dx];
-    if (t?.kind === 'hazard' || t?.kind === 'vent' || t?.kind === 'brine_pool') return true;
+    if (t?.kind === 'hazard' || t?.kind === 'vent' || t?.kind === 'sump') return true;
   }
   return false;
 }

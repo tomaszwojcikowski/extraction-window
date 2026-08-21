@@ -419,7 +419,7 @@ export const LORE = {
   'CODEX-FACT-NEST-SWARM':
     'Scrub note: nests hatch on footfall. Swarms read motion first, light second — skirt the beds.',
   'CODEX-FACT-BRINE-HUNTER':
-    'Waterline note: pool glare hides the approach. Something patient works this flat — do not wade blind.',
+    'Sump note: runoff glare hides the approach. Something patient works this flat — do not cross blind.',
   'CODEX-FACT-VENT-EM':
     'Conduit note: venting under contamination doubles the Power bill. Seal it or hold your breath and move.',
   'CODEX-FACT-TRIPWIRE':
@@ -431,7 +431,7 @@ export const LORE = {
   'CODEX-FACT-BRANDED':
     'Contact brief: marked specimen on this ground. Kill it for a branded wearable — or route with Flare, Pulse, or Filter.',
   'CODEX-FACT-BRINE':
-    'Brine flat: pulse salts sit in the pools. Filters buy minutes; boots buy nothing.',
+    'Brine flat: pulse salts collect in the sumps. Filters buy minutes; boots buy nothing.',
   'CODEX-FACT-VENT':
     'Vent field: power junctions still bleed here. Sealant Foam (u) before the corridor drains you.',
   'CODEX-FACT-RUBBLE':
@@ -646,7 +646,7 @@ export const LORE = {
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache opened.',
   'LOG-TRIPWIRE': 'Tripwire snaps — EM spike; nearby fauna alerted.',
-  'LOG-BRINE-POOL': 'Brine pool drains Power.',
+  'LOG-SUMP': 'Sump runoff drains Power.',
   'LOG-SCRUB-NEST': 'Scrub nest stirs — mite emerges.',
   'LOG-SEALANT-FAIL': 'No vent or hazard underfoot to seal.',
   'LOG-AIM-DART': 'Microdart ready — choose fire direction.',
@@ -724,7 +724,7 @@ export const LORE = {
     'Power Conduit Warren. Abandoned junction warren — vent spines and rubble chokes.',
   'LOG-SEC-ASH': 'Shear Ash Fields. Baseline radiation — Power drain elevated.',
   'LOG-SEC-BRINE':
-    'Pulse Brine Flats. Ion-brine pools lace the shelf — hazard density spikes before the cache.',
+    'Pulse Brine Flats. Ion runoff sumps lace the shelf — hazard density spikes before the cache.',
   'LOG-SEC-VAULT':
     'Contingency Cache. Halcyon depot. Sentinels are site defense — EM-corrupted, still hostile.',
   'LOG-SEC-FISSURE':

@@ -75,7 +75,7 @@ All 15 sectors use Meridian names (Phase 2 fiction complete). Role/spine unchang
 | 7 | trench | Inland Fault Cut | Inland after seal; deep fauna |
 | 8 | duct | Bus Conduit Warren | Vent spines; duct drones |
 | 9 | ash | Shear Ash Fields | Baseline radiation bus drain |
-| 10 | brine | Pulse Brine Flats | Ion-brine pools before cache |
+| 10 | brine | Pulse Brine Flats | Ion runoff sumps before cache |
 | 11 | vault | Contingency Cache | Spare Nav Lattice |
 | 12 | fissure | Shear Fissure | Storm pressure climb |
 | 13 | approach | Skiff Approach | Compact choke; pattern stress |

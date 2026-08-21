@@ -44,7 +44,7 @@ CSV Halcyon drops a survey team after the long-range field array fails mid-trans
 | SEC-TRENCH | Inland Fault Cut | Inland after seal; deep fauna |
 | SEC-DUCT | Bus Conduit Warren | Vent spines; duct drones |
 | SEC-ASH | Shear Ash Fields | Baseline radiation bus drain |
-| SEC-BRINE | Pulse Brine Flats | Ion-brine pools before cache |
+| SEC-BRINE | Pulse Brine Flats | Ion runoff sumps before cache |
 | SEC-VAULT | Contingency Cache | Halcyon depot; spare Nav Lattice; pattern-buffer hook |
 | SEC-FISSURE | Shear Fissure | Storm pressure climb toward the pad |
 | SEC-APPROACH | Skiff Approach | Compact choke; storm shear; pattern stress |
@@ -108,7 +108,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 ## Terrain (sparse)
 
 - Floor / rubble / scrub — open ground; scrub is sight-block only
-- Vent / hazard — ion stress drains bus (filter halves)
+- Vent / hazard / sump — ion stress drains bus (filter halves; hazard also burns)
 - **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; opens a side cache. Never required for extract
 - Hatch / beacon / shuttle — mission structures
 - Landmark — decorative room centrepiece; nothing to interact with

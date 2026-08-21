@@ -17,7 +17,7 @@ type PropKind =
   | 'quest'
   | 'sealed'
   | 'tripwire'
-  | 'brine_pool'
+  | 'sump'
   | 'scrub_nest';
 
 function paintProp(kind: PropKind, frame = 0): Px {
@@ -101,13 +101,29 @@ function paintProp(kind: PropKind, frame = 0): Px {
       grit(px, Theme.inkMute, 6, 12);
       break;
     }
-    case 'brine_pool':
-      px.fillEllipse(24, 28, 18, 12, Material.brine);
-      volume(px, Material.brine, Theme.biolum, Theme.biolumDeep);
-      px.fillEllipse(24, 26, 10, 7, mix(Material.brine, Theme.biolum, 0.25));
-      px.fillRect(11, 16 + (pulse % 3), 8, 1, Theme.inkBright);
-      px.fillEllipse(24, 38, 14, 4, Theme.biolumDeep);
+    case 'sump': {
+      const runoff = mix(Material.brine, Theme.biolumDeep, 0.35);
+      bevelRect(px, 10, 18, 28, 5, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 10, 22, 5, 14, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 33, 22, 5, 14, Theme.inkMute, Material.deck, Theme.groundDeep);
+      px.fillRect(15, 23, 18, 13, Material.recess);
+      px.fillRect(16, 26, 16, 10, Material.brine);
+      px.fillRect(17, 27, 14, 7, runoff);
+      volume(px, runoff, Theme.biolum, Theme.biolumDeep);
+      px.fillRect(18, 28 + (pulse % 2), 10, 1, Theme.inkBright);
+      if (pulse >= 2) {
+        px.fillRect(20, 30, 6, 1, Theme.biolum);
+        px.set(22, 31, Theme.arcWhite);
+      }
+      bevelRect(px, 4, 24, 8, 7, Theme.inkMute, Material.conduit, Theme.groundDeep);
+      px.fillRect(6, 26, 5, 3, Theme.biolumDeep);
+      px.fillRect(7, 27, 3, 1, Theme.biolum);
+      px.fillRect(12, 19, 7, 2, Theme.tape);
+      px.fillRect(12, 19, 7, 1, Theme.inkBright);
+      grit(px, Theme.biolumDeep, 7, 50 + pulse);
+      grit(px, Theme.inkMute, 5, 18);
       break;
+    }
     case 'sealed':
       bevelRect(px, 8, 8, 32, 32, Theme.inkMute, Material.deck, Theme.groundDeep);
       px.fillRect(12, 12, 24, 24, Material.recess);
@@ -164,7 +180,7 @@ function paintProp(kind: PropKind, frame = 0): Px {
       px.fillRect(22, 16, 4, 8, Theme.flag);
       break;
   }
-  if (kind !== 'brine_pool' && kind !== 'tripwire') {
+  if (kind !== 'tripwire') {
     finishSprite(px, envPalette());
   } else {
     px.snap(envPalette());
@@ -206,7 +222,7 @@ export function propFrames(): Frame[] {
     { key: 't_fog', px: paintFog() },
     { key: 't_memory', px: paintMemory() },
   ];
-  for (const kind of ['vent', 'hazard', 'brine_pool', 'beacon', 'landmark', 'quest'] as const) {
+  for (const kind of ['vent', 'hazard', 'sump', 'beacon', 'landmark', 'quest'] as const) {
     const keyBase = kind === 'quest' ? 't_quest_tile' : (`t_${kind}` as const);
     for (let f = 0; f < 4; f++) {
       frames.push({

@@ -293,7 +293,7 @@ function tileEmitter(kind: TileKind): Omit<SimLightSource, 'x' | 'y'> | null {
       return { radius: 3.5, intensity: 0.9, color: LIGHT_TEMP.marker };
     case 'hazard':
     case 'vent':
-    case 'brine_pool':
+    case 'sump':
       return { radius: 2.4, intensity: 0.6, color: LIGHT_TEMP.fauna };
     default:
       return null;

@@ -21,7 +21,7 @@ export type TileKind =
   | 'vent'
   | 'sealed'
   | 'tripwire'
-  | 'brine_pool'
+  | 'sump'
   | 'scrub_nest'
   | 'exit'
   | 'beacon'

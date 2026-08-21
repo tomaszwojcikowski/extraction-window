@@ -25,12 +25,12 @@ describe('room facts', () => {
     const st = createGame(42);
     for (const row of st.tiles) {
       for (const tile of row) {
-        if (tile.kind === 'vent' || tile.kind === 'brine_pool') tile.kind = 'floor';
+        if (tile.kind === 'vent' || tile.kind === 'sump') tile.kind = 'floor';
       }
     }
     const facts = collectSectorFacts(st);
     expect(facts.has('vent')).toBe(false);
-    expect(facts.has('brine_pool')).toBe(false);
+    expect(facts.has('sump')).toBe(false);
 
     st.tiles[st.player.y]![st.player.x + 1]!.kind = 'vent';
     expect(collectSectorFacts(st).has('vent')).toBe(true);
