@@ -57,6 +57,36 @@ function tryPlace(
   return room;
 }
 
+function tryPlaceSized(
+  rooms: Room[],
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  width: number,
+  height: number,
+  pad: number,
+  makeRoom: LayoutDeps['makeRoom'],
+): Room | null {
+  const tries: Array<[number, number]> = [
+    [w, h],
+    [w - 1, h],
+    [w, h - 1],
+    [Math.max(5, w - 2), Math.max(4, h - 1)],
+    [5, 4],
+    [4, 3],
+  ];
+  for (const [rw, rh] of tries) {
+    if (rw < 3 || rh < 3) continue;
+    if (width - rw - 2 < 1 || height - rh - 2 < 1) continue;
+    const px = Math.max(1, Math.min(width - rw - 2, x));
+    const py = Math.max(1, Math.min(height - rh - 2, y));
+    const room = tryPlace(rooms, px, py, rw, rh, width, height, pad, makeRoom);
+    if (room) return room;
+  }
+  return null;
+}
+
 function ensureMinimum(
   rooms: Room[],
   tiles: Tile[][],
@@ -68,12 +98,12 @@ function ensureMinimum(
   if (rooms.length >= 3) return;
   for (const [rx, ry] of [
     [2, 2],
-    [width - 10, 2],
-    [2, height - 8],
-    [width - 10, height - 8],
+    [width - 12, 2],
+    [2, height - 10],
+    [width - 12, height - 10],
   ] as const) {
     if (rooms.length >= 4) break;
-    const room = tryPlace(rooms, rx, ry, 6, 5, width, height, 1, deps.makeRoom);
+    const room = tryPlaceSized(rooms, rx, ry, 8, 6, width, height, 1, deps.makeRoom);
     if (!room) continue;
     rooms.push(room);
     deps.carveRoom(tiles, room);
@@ -95,8 +125,8 @@ function addAlcoves(
     const ox = randInt(rng, -1, 1);
     const oy = randInt(rng, -1, 1);
     if (ox === 0 && oy === 0) continue;
-    const w = randInt(rng, 3, 5);
-    const h = randInt(rng, 3, 4);
+    const w = randInt(rng, 4, 6);
+    const h = randInt(rng, 3, 5);
     const x = parent.cx + ox * (parent.w + 1);
     const y = parent.cy + oy * (parent.h + 1);
     const alcove = tryPlace(rooms, x, y, w, h, width, height, 0, deps.makeRoom);
@@ -118,12 +148,12 @@ function placeScatter(
 ): LayoutResult {
   const rooms: Room[] = [];
   let attempts = 0;
-  while (rooms.length < target && attempts < 200) {
+  while (rooms.length < target && attempts < 400) {
     attempts++;
     const { w, h } = deps.roomSize(rng);
     const x = randInt(rng, 1, width - w - 2);
     const y = randInt(rng, 1, height - h - 2);
-    const room = tryPlace(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
+    const room = tryPlaceSized(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
     if (!room) continue;
     rooms.push(room);
     deps.carveRoom(tiles, room);
@@ -131,6 +161,10 @@ function placeScatter(
   }
   ensureMinimum(rooms, tiles, width, height, rng, deps);
   if (rooms.length >= 3) deps.connect(tiles, rooms[0]!, rooms[rooms.length - 1]!, rng, deps.wideChance);
+  if (rooms.length >= 5 && rng() < 0.55) {
+    const i = randInt(rng, 0, rooms.length - 3);
+    deps.connect(tiles, rooms[i]!, rooms[i + 2]!, rng, deps.wideChance);
+  }
   addAlcoves(rooms, tiles, width, height, rng, deps, randInt(rng, 1, 2));
   return { rooms, startIndex: 0, endIndex: Math.max(0, rooms.length - 1) };
 }
@@ -150,16 +184,17 @@ function placeSpine(
   const rooms: Room[] = [];
   const band = Math.max(3, Math.floor(width / (target + 1)));
   let attempts = 0;
-  while (rooms.length < target && attempts < 200) {
+  while (rooms.length < target && attempts < 400) {
     attempts++;
     const { w, h } = deps.roomSize(rng);
     const i = rooms.length;
-    const xMin = Math.max(1, 1 + i * band - 2);
-    const xMax = Math.min(width - w - 2, 1 + (i + 1) * band);
+    const slack = Math.max(2, Math.floor(w / 2));
+    const xMin = Math.max(1, 1 + i * band - slack);
+    const xMax = Math.min(width - w - 2, 1 + (i + 1) * band + slack);
     if (xMax < xMin) continue;
     const x = randInt(rng, xMin, xMax);
     const y = randInt(rng, 2, height - h - 3);
-    const room = tryPlace(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
+    const room = tryPlaceSized(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
     if (!room) continue;
     rooms.push(room);
     deps.carveRoom(tiles, room);
@@ -180,7 +215,22 @@ function placeSpine(
     const i = randInt(rng, 0, rooms.length - 3);
     deps.connect(tiles, rooms[i]!, rooms[i + 2]!, rng, deps.wideChance);
   }
-  return { rooms, startIndex: 0, endIndex: Math.max(0, rooms.length - 1) };
+  // Alcoves append after the west→east sort; pick the actual extremes so a
+  // western pocket cannot steal the exit.
+  let startIndex = 0;
+  let endIndex = 0;
+  for (let i = 1; i < rooms.length; i++) {
+    if (rooms[i]!.cx < rooms[startIndex]!.cx) startIndex = i;
+    if (rooms[i]!.cx > rooms[endIndex]!.cx) endIndex = i;
+  }
+  if (startIndex === endIndex && rooms.length > 1) {
+    endIndex = startIndex === 0 ? 1 : 0;
+    for (let i = 0; i < rooms.length; i++) {
+      if (i === startIndex) continue;
+      if (rooms[i]!.cx > rooms[endIndex]!.cx) endIndex = i;
+    }
+  }
+  return { rooms, startIndex, endIndex };
 }
 
 /**
@@ -196,8 +246,8 @@ function placeHub(
   deps: LayoutDeps,
 ): LayoutResult {
   const rooms: Room[] = [];
-  const hubW = Math.min(10, Math.max(6, Math.floor(width / 5)));
-  const hubH = Math.min(8, Math.max(5, Math.floor(height / 4)));
+  const hubW = Math.min(16, Math.max(8, Math.floor(width / 4)));
+  const hubH = Math.min(12, Math.max(6, Math.floor(height / 3.5)));
   const hub = deps.makeRoom(
     Math.floor(width / 2 - hubW / 2),
     Math.floor(height / 2 - hubH / 2),
@@ -214,15 +264,19 @@ function placeHub(
   );
   let attempts = 0;
   let ai = 0;
-  while (rooms.length < spokes + 1 && attempts < 200) {
+  while (rooms.length < spokes + 1 && attempts < 400) {
     attempts++;
     const { w, h } = deps.roomSize(rng);
     const angle = angles[ai % angles.length]!;
     ai++;
-    const dist = randInt(rng, Math.floor(Math.min(width, height) / 4), Math.floor(Math.min(width, height) / 2.2));
+    const dist = randInt(
+      rng,
+      Math.floor(Math.min(width, height) / 3.2) + 3,
+      Math.floor(Math.min(width, height) / 2.05),
+    );
     const x = Math.round(hub.cx + Math.cos(angle) * dist - w / 2);
     const y = Math.round(hub.cy + Math.sin(angle) * dist - h / 2);
-    const room = tryPlace(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
+    const room = tryPlaceSized(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
     if (!room) continue;
     rooms.push(room);
     deps.carveRoom(tiles, room);
@@ -260,7 +314,7 @@ function placeLattice(
   rng: Rng,
   deps: LayoutDeps,
 ): LayoutResult {
-  const cols = target <= 5 ? 2 : 3;
+  const cols = target <= 5 ? 2 : target <= 8 ? 3 : 4;
   const rows = Math.ceil(target / cols);
   const cellW = Math.floor(width / (cols + 1));
   const cellH = Math.floor(height / (rows + 1));
@@ -275,7 +329,7 @@ function placeLattice(
       const { w, h } = deps.roomSize(rng);
       const x = Math.max(1, Math.min(width - w - 2, (c + 1) * cellW - Math.floor(w / 2) + randInt(rng, -1, 1)));
       const y = Math.max(1, Math.min(height - h - 2, (r + 1) * cellH - Math.floor(h / 2) + randInt(rng, -1, 1)));
-      const room = tryPlace(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
+      const room = tryPlaceSized(rooms, x, y, w, h, width, height, 1, deps.makeRoom);
       if (!room) continue;
       rooms.push(room);
       grid[r]![c] = room;
@@ -317,13 +371,13 @@ function placeBranch(
 ): LayoutResult {
   const rooms: Room[] = [];
   let attempts = 0;
-  while (rooms.length < target && attempts < 200) {
+  while (rooms.length < target && attempts < 400) {
     attempts++;
     const { w, h } = deps.roomSize(rng);
     if (rooms.length === 0) {
       const x = randInt(rng, Math.floor(width / 3), Math.floor((width * 2) / 3) - w);
       const y = randInt(rng, Math.floor(height / 3), Math.floor((height * 2) / 3) - h);
-      const room = tryPlace(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
+      const room = tryPlaceSized(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
       if (!room) continue;
       rooms.push(room);
       deps.carveRoom(tiles, room);
@@ -335,12 +389,12 @@ function placeBranch(
     const gap = randInt(rng, 2, 5);
     const x = parent.cx + ox * (Math.floor(parent.w / 2) + gap + Math.floor(w / 2)) - Math.floor(w / 2);
     const y = parent.cy + oy * (Math.floor(parent.h / 2) + gap + Math.floor(h / 2)) - Math.floor(h / 2);
-    const room = tryPlace(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
+    const room = tryPlaceSized(rooms, x, y, w, h, width, height, 2, deps.makeRoom);
     if (!room) {
       // Fall back to a free random spot attached to the parent.
       const fx = randInt(rng, 1, width - w - 2);
       const fy = randInt(rng, 1, height - h - 2);
-      const fallback = tryPlace(rooms, fx, fy, w, h, width, height, 2, deps.makeRoom);
+      const fallback = tryPlaceSized(rooms, fx, fy, w, h, width, height, 2, deps.makeRoom);
       if (!fallback) continue;
       rooms.push(fallback);
       deps.carveRoom(tiles, fallback);
@@ -386,7 +440,7 @@ function placeWarren(
 ): LayoutResult {
   const rooms: Room[] = [];
   let attempts = 0;
-  while (rooms.length < target && attempts < 250) {
+  while (rooms.length < target && attempts < 450) {
     attempts++;
     const { w, h } = deps.roomSize(rng);
     let x: number;
@@ -403,7 +457,7 @@ function placeWarren(
       y = parent.cy + oy * (parent.h + 1) - Math.floor(h / 2);
     }
     // pad=0: rooms may share a wall. That is the warren feel.
-    const room = tryPlace(rooms, x, y, w, h, width, height, 0, deps.makeRoom);
+    const room = tryPlaceSized(rooms, x, y, w, h, width, height, 0, deps.makeRoom);
     if (!room) continue;
     rooms.push(room);
     deps.carveRoom(tiles, room);
