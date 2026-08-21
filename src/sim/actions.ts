@@ -202,6 +202,16 @@ export function applyAction(state: GameState, action: Action): GameState {
   }
 
   if (isHackOpen(state)) {
+    if (state.consoleHack?.payout && !state.consoleHack.session) {
+      if (
+        action.type === 'hack_pick' ||
+        action.type === 'hack_abort' ||
+        action.type === 'close_ui'
+      ) {
+        abortHack(state);
+      }
+      return state;
+    }
     if (action.type === 'hack_move') {
       moveHackCursor(state, action.dx, action.dy);
       return state;

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { lore } from '../../../data/lore';
-import type { HackNote, HackSession } from '../../../sim/types';
+import type { ConsoleHack, HackPayout } from '../../../sim/types';
 import {
   HACK_LEN,
   HACK_MARKS,
@@ -145,15 +145,75 @@ function drawChipPlate(
   }
 }
 
+function hidePuzzleBits(objs: HackOverlayObjects): void {
+  objs.labels.setVisible(false);
+  for (const chip of objs.chips) chip.setVisible(false);
+  for (const cell of objs.cells) cell.setVisible(false);
+}
+
+function drawHackPayout(
+  objs: HackOverlayObjects,
+  screenW: number,
+  screenH: number,
+  payout: HackPayout,
+  lab: boolean,
+): void {
+  const { bg, panel, badgeGfx, gridGfx, badge, header, footer } = objs;
+  hidePuzzleBits(objs);
+  bg.setVisible(true);
+  panel.setVisible(true);
+  badgeGfx.setVisible(true);
+  gridGfx.setVisible(true);
+  badge.setVisible(true);
+  header.setVisible(true);
+  footer.setVisible(true);
+
+  const w = 500;
+  const h = 360;
+  const x = (screenW - w) / 2;
+  const y = (screenH - h) / 2;
+  drawFieldPanel(panel, x, y, w, h, Theme.safe);
+  drawModalTapeHeader(panel, x, y, w, Theme.safe);
+
+  badgeGfx.clear();
+  gridGfx.clear();
+  const badgeW = 148;
+  drawStencilBadge(badgeGfx, x + w / 2 - badgeW / 2, y - 10, badgeW, 20, Theme.safe);
+  badge.setPosition(x + w / 2 + 4, y);
+  badge.setText(lore('UI-HACK-PAY-BADGE'));
+
+  const itemLines = payout.items.map((n) => `· ${n}`).join('\n');
+  const boostLines = payout.boosts.map((id) => `· ${lore(id)}`).join('\n');
+  header.setColor(ThemeCss.ink);
+  header.setLineSpacing(6);
+  header.setWordWrapWidth(w - 48);
+  header.setPosition(x + 24, y + 32);
+  header.setText(`${lore('UI-HACK-PAY').toUpperCase()}\n\n${itemLines}\n\n${boostLines}`);
+
+  footer.setPosition(x + 24, y + h - 36);
+  footer.setText(
+    lab ? `${lore('UI-HACK-PAY-KEYS')} · ${lore('UI-HACK-LAB-HINT')}` : lore('UI-HACK-PAY-KEYS'),
+  );
+}
+
 export function drawHackOverlay(
   objs: HackOverlayObjects,
   screenW: number,
   screenH: number,
-  session: HackSession,
+  hack: ConsoleHack,
   animFrame = 0,
   lab = false,
-  note: HackNote | null = null,
 ): void {
+  if (hack.payout) {
+    drawHackPayout(objs, screenW, screenH, hack.payout, lab);
+    return;
+  }
+  const session = hack.session;
+  if (!session) {
+    hideHackOverlay(objs);
+    return;
+  }
+  const note = hack.note;
   const { bg, panel, badgeGfx, gridGfx, badge, labels, header, footer, chips, cells } = objs;
   bg.setVisible(true);
   panel.setVisible(true);
@@ -162,6 +222,7 @@ export function drawHackOverlay(
   badge.setVisible(true);
   labels.setVisible(true);
   header.setVisible(true);
+  header.setLineSpacing(4);
   footer.setVisible(true);
 
   const x = (screenW - PANEL_W) / 2;

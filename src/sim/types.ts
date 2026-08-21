@@ -271,6 +271,12 @@ export interface HackSession {
 
 export type HackNote = 'blocked' | 'spliced' | 'win' | 'fail' | 'lockout';
 
+/** Kit dump shown on the splice modal until dismissed. */
+export interface HackPayout {
+  items: string[];
+  boosts: LoreId[];
+}
+
 /** Optional locked terminal in this sector. */
 export interface ConsoleHack {
   pos: Pos;
@@ -278,6 +284,7 @@ export interface ConsoleHack {
   session: HackSession | null;
   /** Last splice cue for overlay flash / SFX. */
   note: HackNote | null;
+  payout: HackPayout | null;
 }
 
 /** One optional room-quest payoff that changes the route to extraction. */

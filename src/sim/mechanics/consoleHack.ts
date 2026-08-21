@@ -7,7 +7,7 @@ import { addEmStress, purgeEmStress } from '../emStress';
 import { POWER_TAX_HEAVY, taxPower } from '../bus';
 import { pick, randInt, shuffle, type Rng } from '../rng';
 import { grantCodex } from '../roomQuest';
-import type { Action, ConsoleHack, GameState, HackGlyph, HackSession, Pos } from '../types';
+import type { Action, ConsoleHack, GameState, HackGlyph, HackPayout, HackSession, Pos } from '../types';
 import type { Mechanic } from './types';
 
 export const HACK_SIZE = 5;
@@ -185,7 +185,7 @@ export function generateHackSession(rng: Rng): HackSession {
 }
 
 export function isHackOpen(state: GameState): boolean {
-  return Boolean(state.consoleHack?.session);
+  return Boolean(state.consoleHack?.session || state.consoleHack?.payout);
 }
 
 export function onConsoleTile(state: GameState): boolean {
@@ -257,7 +257,7 @@ function giveItem(state: GameState, kind: ItemKind): string {
   return lore(ITEMS[kind].loreName);
 }
 
-function grantHackReward(state: GameState): void {
+function grantHackReward(state: GameState): HackPayout {
   const names: string[] = [];
   const kit = [...KIT_PAY];
   for (let i = 0; i < 3; i++) {
@@ -265,14 +265,25 @@ function grantHackReward(state: GameState): void {
     names.push(giveItem(state, kind));
   }
   names.push(giveItem(state, pickWearableLoot(state.sectorId, state.rng)));
-  pushLog(state, 'LOG-PICKUP', names.join(', '));
 
   state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 20);
   state.player.armor = state.player.maxArmor;
   state.player.filterTurns = Math.max(state.player.filterTurns, 35);
   purgeEmStress(state, 15);
   grantCodex(state);
-  pushLog(state, 'LOG-HACK-OK');
+
+  const payout: HackPayout = {
+    items: names,
+    boosts: [
+      'UI-HACK-PAY-POWER',
+      'UI-HACK-PAY-ARMOR',
+      'UI-HACK-PAY-FILTER',
+      'UI-HACK-PAY-EM',
+      'UI-HACK-PAY-PADD',
+    ],
+  };
+  pushLog(state, 'LOG-HACK-OK', names.join(', '));
+  return payout;
 }
 
 function setNote(state: GameState, note: HackPickResult): void {
@@ -318,7 +329,12 @@ export function moveHackCursor(state: GameState, dx: number, dy: number): void {
 
 export function abortHack(state: GameState): void {
   const hack = state.consoleHack;
-  if (!hack?.session) return;
+  if (!hack) return;
+  if (hack.payout) {
+    hack.payout = null;
+    return;
+  }
+  if (!hack.session) return;
   hack.session = null;
   pushLog(state, 'LOG-HACK-ABORT');
 }
@@ -348,7 +364,7 @@ export function pickHackCell(state: GameState): HackPickResult {
   if (session.buffer.length >= HACK_LEN) {
     hack.session = null;
     hack.done = true;
-    grantHackReward(state);
+    hack.payout = grantHackReward(state);
     setNote(state, 'win');
     return 'win';
   }
@@ -359,7 +375,7 @@ export function pickHackCell(state: GameState): HackPickResult {
 }
 
 export function makeConsoleHack(pos: Pos): ConsoleHack {
-  return { pos: { ...pos }, done: false, session: null, note: null };
+  return { pos: { ...pos }, done: false, session: null, note: null, payout: null };
 }
 
 /** Lab / `hack.html`: plant a terminal on the surveyor and open the modal. */
@@ -385,6 +401,7 @@ export const consoleHackMechanic: Mechanic = {
   },
 
   autopilotHint(state: GameState): Action | null {
+    if (state.consoleHack?.payout) return { type: 'hack_abort' };
     if (state.consoleHack?.session) return { type: 'hack_abort' };
     return null;
   },

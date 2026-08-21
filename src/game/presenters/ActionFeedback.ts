@@ -335,6 +335,12 @@ export function collectActionFloatLabels(
       case 'LOG-EXTRACT':
         next = { label: 'EXTRACT LOCK', color: ThemeCss.safe };
         break;
+      case 'LOG-HACK-OK':
+        next = {
+          label: log.detail ? `DUMP · ${log.detail}` : 'KIT DUMP',
+          color: ThemeCss.safe,
+        };
+        break;
       case 'LOG-PICKUP':
         next = {
           label: log.detail ? `STOWED · ${log.detail}` : 'STOWED',

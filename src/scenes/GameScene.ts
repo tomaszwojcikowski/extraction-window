@@ -610,15 +610,14 @@ export class GameScene extends Phaser.Scene {
       this.animFrame = (this.animFrame + 1) % 4;
       this.tickAnimatedTiles();
       this.tickAnimatedActors();
-      if (this.state.consoleHack?.session) {
+      if (this.state.consoleHack?.session || this.state.consoleHack?.payout) {
         drawHackOverlay(
           this.hackOverlay,
           this.scale.width,
           this.scale.height,
-          this.state.consoleHack.session,
+          this.state.consoleHack,
           this.animFrame,
           this.openHackLab,
-          this.state.consoleHack.note,
         );
       }
       if (this.state.status === 'playing') {
@@ -1672,15 +1671,14 @@ export class GameScene extends Phaser.Scene {
         this.questOfferBadgeGfx,
       );
     }
-    if (st.consoleHack?.session) {
+    if (st.consoleHack?.session || st.consoleHack?.payout) {
       drawHackOverlay(
         this.hackOverlay,
         this.scale.width,
         this.scale.height,
-        st.consoleHack.session,
+        st.consoleHack,
         this.animFrame,
         this.openHackLab,
-        st.consoleHack.note,
       );
     } else {
       hideHackOverlay(this.hackOverlay);

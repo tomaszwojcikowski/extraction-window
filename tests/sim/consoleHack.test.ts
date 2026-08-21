@@ -141,11 +141,16 @@ describe('lattice lock', () => {
     }
     expect(st.consoleHack?.done).toBe(true);
     expect(st.consoleHack?.session).toBeNull();
+    expect(st.consoleHack?.payout?.items.length).toBe(4);
+    expect(st.consoleHack?.payout?.boosts).toContain('UI-HACK-PAY-POWER');
     expect(st.player.energy).toBeGreaterThan(10);
     expect(st.player.armor).toBe(st.player.maxArmor);
-    expect(st.log.some((l) => l.loreId === 'LOG-HACK-OK')).toBe(true);
-    expect(st.log.some((l) => l.loreId === 'LOG-PICKUP')).toBe(true);
+    const ok = st.log.find((l) => l.loreId === 'LOG-HACK-OK');
+    expect(ok?.detail).toBe(st.consoleHack?.payout?.items.join(', '));
     expect(st.log.some((l) => l.loreId === 'LOG-CODEX')).toBe(true);
+    applyAction(st, { type: 'hack_abort' });
+    expect(st.consoleHack?.payout).toBeNull();
+    expect(st.log.some((l) => l.loreId === 'LOG-HACK-ABORT')).toBe(false);
   });
 
   it('taxes Power and EM on a wrong splice, then lockouts', () => {

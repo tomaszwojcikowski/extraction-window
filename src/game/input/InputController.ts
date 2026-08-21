@@ -112,6 +112,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
     }
     const hackAction = actionFromKey(e);
     if (hackAction?.type === 'move') {
+      if (state.consoleHack?.payout && !state.consoleHack.session) return;
       const cursor = state.consoleHack?.session?.cursor;
       const before = cursor ? { x: cursor.x, y: cursor.y } : null;
       applyAction(state, { type: 'hack_move', dx: hackAction.dx, dy: hackAction.dy });
@@ -121,12 +122,16 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
       return;
     }
     if (hackAction?.type === 'exit' || hackAction?.type === 'wait') {
+      const payingOut = Boolean(state.consoleHack?.payout && !state.consoleHack.session);
       applyAction(state, { type: 'hack_pick' });
-      const note = state.consoleHack?.note;
-      if (note === 'blocked') sfx.play('blocked');
-      else if (note === 'fail' || note === 'lockout') sfx.play('warn');
-      else if (note === 'win') sfx.play('pickup');
-      else sfx.play('ui');
+      if (payingOut) sfx.play('ui');
+      else {
+        const note = state.consoleHack?.note;
+        if (note === 'blocked') sfx.play('blocked');
+        else if (note === 'fail' || note === 'lockout') sfx.play('warn');
+        else if (note === 'win') sfx.play('pickup');
+        else sfx.play('ui');
+      }
       host.afterUiChrome({ syncItems: true });
       return;
     }
