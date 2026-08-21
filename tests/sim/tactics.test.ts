@@ -94,20 +94,23 @@ describe('Iteration 2 tactical threats', () => {
 });
 
 describe('Iteration 2 player tactics', () => {
-  it('sealant converts brine underfoot into stable floor', () => {
+  it('sealant on brine flushes EM and leaves the pool', () => {
     const st = combatArena();
     st.tiles[st.player.y]![st.player.x] = {
       kind: 'brine_pool',
       walkable: true,
       transparent: true,
     };
+    st.emStress = 24;
     st.inventory = [{ kind: 'sealant', count: 1 }];
+    st.ui.selectedSlot = 0;
 
     useSelected(st);
 
-    expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('floor');
+    expect(st.tiles[st.player.y]![st.player.x]!.kind).toBe('brine_pool');
     expect(st.inventory).toHaveLength(0);
-    expect(lastLog(st, 'LOG-USE-SEALANT')).toBeTruthy();
+    expect(st.emStress).toBe(4);
+    expect(lastLog(st, 'LOG-EM-PURGE')).toBeTruthy();
   });
 
   it('walking away from an adjacent enemy costs no bus', () => {

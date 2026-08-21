@@ -377,23 +377,12 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
-      const tile = state.tiles[state.player.y]![state.player.x]!;
-      if (tile.kind === 'hazard' || tile.kind === 'vent' || tile.kind === 'brine_pool') {
-        state.tiles[state.player.y]![state.player.x] = {
-          kind: 'floor',
-          walkable: true,
-          transparent: true,
-        };
-        removeOne(state, kind);
-        purgeEmStress(state, state.paddMods.brineSeal ? 18 : 8);
-        pushLog(state, 'LOG-USE-SEALANT');
-      } else if (tryOpenAdjacentSealed(state)) {
+      if (tryOpenAdjacentSealed(state)) {
         removeOne(state, kind);
         purgeEmStress(state, 6);
       } else {
-        // Flush EM without sealing terrain
         removeOne(state, kind);
-        purgeEmStress(state, 20);
+        purgeEmStress(state, state.paddMods.brineSeal ? 28 : 20);
         pushLog(state, 'LOG-EM-PURGE', 'sealant flush');
       }
       break;

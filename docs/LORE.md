@@ -108,7 +108,7 @@ Hostiles may leave salvage on kill (depth-scaled chance). Never quest items.
 ## Terrain (sparse)
 
 - Floor / rubble / scrub — open ground; scrub is sight-block only
-- Vent / hazard — ion stress drains bus (filter halves; sealant can neutralize underfoot)
+- Vent / hazard — ion stress drains bus (filter halves)
 - **Sealed hatch** — optional cache door; stand adjacent, open with Sealant Foam (`u`) or equip Pulse Baton then Enter / Space / `>`; opens a side cache. Never required for extract
 - Hatch / beacon / shuttle — mission structures
 - Landmark — decorative room centrepiece; nothing to interact with
@@ -125,7 +125,7 @@ Capacity 16 slots, and one clear tool per job — 18 kinds total.
 |------|-----|
 | Field Hypo | Heal, and stop bleeding |
 | Power Cell | Restore the bus, and resync a desynced pattern buffer |
-| Sealant Foam | Purge EM contamination, clear hazard/vent underfoot, or open an adjacent sealed hatch |
+| Sealant Foam | Purge EM contamination, or open an adjacent sealed hatch |
 | Shield Charge | Repair plating mid-sector |
 | Plasma Filter | Blunt ion damage |
 | Field Array Pulse | See further |

@@ -482,7 +482,7 @@ export const LORE = {
     'u then a direction: hit a lit target within 3 — damage and expose. Miss spends it; . cancels.',
   'ITEM-SEALANT': 'Sealant Foam',
   'ITEM-SEALANT-DESC':
-    'Clears ion/vent/brine underfoot, flushes EM, or opens an adjacent sealed hatch (u).',
+    'Flushes EM, or opens an adjacent sealed hatch (u).',
   'ITEM-MAPPER': 'Nav Ping',
   'ITEM-MAPPER-DESC': 'u — marks the sector hatch for 40 turns (even through fog).',
   'ITEM-SALVAGE': 'Salvage',
