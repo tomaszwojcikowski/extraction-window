@@ -813,7 +813,8 @@ export function generateSectorMap(
   // a decision; the same count smeared evenly reads as weather.
   const enemyN =
     randInt(rng, sector.enemyCount[0], sector.enemyCount[1]) +
-    enemyCountBonus(playerLevel);
+    enemyCountBonus(playerLevel) +
+    1;
   for (const fill of planHostiles(rooms, enemyN, rng)) {
     const spots = openIn(fill.room, 5);
     for (let i = 0; i < fill.count && i < spots.length; i++) {

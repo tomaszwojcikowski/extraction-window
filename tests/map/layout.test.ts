@@ -59,14 +59,19 @@ describe('sector layout grammars', () => {
     }
   });
 
-  it('keeps the hub crossing quiet', () => {
+  it('puts a fight on the hub crossing', () => {
     for (const seed of SEEDS) {
       for (const id of ['beacon', 'vault'] as const) {
         const sector = getSector(
           [...Array(CAMPAIGN_LENGTH)].map((_, i) => getSector(i)).findIndex((s) => s.id === id),
         );
         const map = generateSectorMap(sector, seed, sector.index);
-        expect(map.rooms[0]!.role, `seed=${seed} ${id}`).toBe('quiet');
+        const hub = map.rooms[0]!;
+        expect(hub.role, `seed=${seed} ${id}`).toMatch(/^(post|nest)$/);
+        const inside = map.enemies.filter(
+          (e) => e.x >= hub.x && e.x < hub.x + hub.w && e.y >= hub.y && e.y < hub.y + hub.h,
+        );
+        expect(inside.length, `seed=${seed} ${id} empty hub`).toBeGreaterThan(0);
       }
     }
   });

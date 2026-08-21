@@ -79,12 +79,12 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
 };
 
-export const XP_KILL_BASE = 6;
+export const XP_KILL_BASE = 10;
 export const XP_SECTOR = 18;
 export const XP_ROOM_QUEST = 15;
 export const XP_QUEST_ITEM = 22;
 export const XP_BEACON = 15;
-export const XP_ELITE = 24;
+export const XP_ELITE = 32;
 export const XP_BOSS = 40;
 export const XP_NPC_AGENDA = 5;
 

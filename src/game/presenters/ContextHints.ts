@@ -20,9 +20,6 @@ export function contextHint(st: GameState): LoreId | null {
   if (st.consoleHack?.session) return null;
   if (st.ui.aimingDart) return 'UI-HINT-AIM';
 
-  const phaserHint = phaserContextHint(st);
-  if (phaserHint) return phaserHint;
-
   const fromMechanic = mechanicsContextHint(st);
   // The first-run drill deliberately teaches its bespoke stalker response.
   if (st.tutorialActive && fromMechanic) return fromMechanic;
@@ -44,6 +41,9 @@ export function contextHint(st: GameState): LoreId | null {
     if (armed.some((e) => e.intent === 'reach')) return 'UI-HINT-TELE-REACH';
     return inReach ? 'UI-HINT-TELE-REACH' : 'UI-HINT-TELE';
   }
+
+  const phaserHint = phaserContextHint(st);
+  if (phaserHint) return phaserHint;
 
   if (fromMechanic) return fromMechanic;
 

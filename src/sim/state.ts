@@ -94,6 +94,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       { kind: 'plate', count: 2 },
       { kind: 'filter', count: 1 },
       { kind: 'dart', count: 1 },
+      { kind: 'phaser', count: 1 },
       { kind: 'sealant', count: 2 },
     ],
     enemies: map.enemies,

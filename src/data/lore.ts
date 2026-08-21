@@ -750,7 +750,7 @@ export const LORE = {
   'LOG-UPLINK-INTERRUPT': 'Uplink stopped — you left the pad.',
   'LOG-BUS-WARN': 'Power low — use a Power Cell.',
   'LOG-BUS-FAILING': 'Power at 0 — use a Power Cell this turn or the kit dies.',
-  'LOG-WINDUP-KILL': 'Windup interrupted — extra salvage.',
+  'LOG-WINDUP-KILL': 'Windup interrupted — recovered 2 Power.',
   'LOG-USE-MAPPER': 'Nav ping — hatch marked.',
   'LOG-USE-MAPPER-CACHE': 'Nav ping — cache marked on the minimap.',
   'LOG-CACHE-CLEAR': 'Sector caches cleared.',

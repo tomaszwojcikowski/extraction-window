@@ -80,5 +80,8 @@ export function killEnemy(state: GameState, enemy: Enemy): void {
     pushLog(state, 'LOG-BOSS-DOWN');
   }
   gainXp(state, xp);
-  if (windupInterrupt) pushLog(state, 'LOG-WINDUP-KILL');
+  if (windupInterrupt) {
+    state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 2);
+    pushLog(state, 'LOG-WINDUP-KILL', '+2 Power');
+  }
 }

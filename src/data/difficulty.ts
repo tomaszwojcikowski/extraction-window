@@ -5,9 +5,9 @@ import { MAX_LEVEL } from './progression';
  * Campaign difficulty answering player level bumps + sector depth.
  * Sector clock stays primary; level closes the gap as XP/skills come online.
  *
- * Fauna is a wake tax, not sponge padding: ATK rises faster than HP so engaged
- * hits chew plating, while fights stay short enough that combat never becomes
- * the skill pillar (clocks and light still own the run).
+ * Fauna is a wake tax that also has to be fought: ATK rises faster than HP so
+ * engaged hits chew plating, packs sit on the hatch-to-hatch route, and kill
+ * XP / interrupt Power make clearing a room the reason you can finish the spine.
  */
 
 /** Sector-only depth (legacy curve) — used for HP. */

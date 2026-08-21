@@ -72,7 +72,11 @@ export function phaserContextHint(st: GameState): LoreId | null {
     return null;
   }
 
-  if (inKit && phaserAnyTarget(st)) return 'UI-HINT-PHASER-EQUIP';
+  if (inKit && phaserAnyTarget(st)) {
+    // Drill bay teaches flare/stalker before the phaser bay — don't steal that beat.
+    if (st.tutorialActive && !st.scriptedFired.tut_phaser_fired) return null;
+    return 'UI-HINT-PHASER-EQUIP';
+  }
   return null;
 }
 

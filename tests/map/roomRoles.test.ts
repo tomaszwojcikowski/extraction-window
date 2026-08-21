@@ -40,15 +40,14 @@ describe('a room is for something', () => {
     });
   });
 
-  it('owes the player a fight worth avoiding and a payout worth taking', () => {
+  it('owes the player a fight on the road and a payout worth taking', () => {
     everyMap((map, label) => {
-      // Crossing hubs are quiet on purpose — they do not count toward the debt.
       const middle = map.rooms.filter(
         (r) => r.role !== 'entry' && r.role !== 'exit' && r.role !== 'quiet',
       );
       if (middle.length < 1) return;
       const roles = new Set(map.rooms.map((r) => r.role));
-      expect(roles.has('nest'), `${label} has no nest`).toBe(true);
+      expect(roles.has('nest') || roles.has('post'), `${label} has no fight room`).toBe(true);
       if (middle.length >= 2) {
         expect(roles.has('cache'), `${label} has no cache`).toBe(true);
       }

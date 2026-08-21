@@ -16,9 +16,9 @@ import { layoutForSector, type LayoutKind } from './layoutKind';
  *
  * So a room now has a role, the role owns its contents, and the sector's
  * hostile and loot budgets are *concentrated* rather than spread. Same totals,
- * very different rooms: a nest you may choose to leave alone, a cache worth
- * paying for, ground that is itself the problem, and quiet rooms that make the
- * loud ones legible.
+ * very different rooms: a nest or post on the hatch-to-hatch route, a cache
+ * worth paying for, ground that is itself the problem, and quiet rooms that
+ * make the loud ones legible.
  */
 
 export interface Room {
@@ -63,16 +63,20 @@ function grammarRoleTilt(kind: LayoutKind): Partial<Record<RoomRole, number>> {
   }
 }
 
+function sectorHoldsLines(sector: SectorDef): boolean {
+  return sector.enemyTable.some((kind) => {
+    const def = ENEMIES[kind];
+    return def.overwatch || def.beam;
+  });
+}
+
 function roleWeights(sector: SectorDef): Array<[RoomRole, number]> {
   // A weight of zero matters as much as a high one: the shelf sectors have no
   // caustic ground and nothing that can hold a line, so they must not be handed
   // rooms about either. That absence is what makes them a different place rather
   // than the same place with a gentler dial.
   const groundBites = sector.hazardChance + sector.ventChance > 0.08;
-  const holdsLines = sector.enemyTable.some((kind) => {
-    const def = ENEMIES[kind];
-    return def.overwatch || def.beam;
-  });
+  const holdsLines = sectorHoldsLines(sector);
   const overgrown = sector.scrubChance > 0.05;
   const fallingApart = sector.rubbleChance > 0.05;
   const base: Array<[RoomRole, number]> = [
@@ -106,10 +110,10 @@ function weightedRole(weights: Array<[RoomRole, number]>, rng: Rng): RoomRole {
  * Label every room. The start and exit rooms are spoken for — the surveyor
  * lands in one and leaves by the other — and the rest are drawn from the
  * sector's mix, except that a sector always owes the player one fight worth
- * avoiding and one payout worth taking.
+ * taking and one payout worth taking.
  *
- * A `crossing` (the hub of a hub layout) is forced quiet: the player has to
- * walk through it, so putting a pack there is a tax, not a choice.
+ * A `crossing` (the hub of a hub layout) is a post or nest: the player has to
+ * walk through it, so the fight is on the road, not parked in an alcove.
  */
 export function assignRoomRoles(
   rooms: Room[],
@@ -122,10 +126,11 @@ export function assignRoomRoles(
   if (!rooms.length) return;
   const entry = startRoom ?? rooms[0]!;
   const exit = endRoom ?? rooms[rooms.length - 1]!;
+  const spineFight: RoomRole = sectorHoldsLines(sector) ? 'post' : 'nest';
   for (const room of rooms) {
     if (room === entry) room.role = 'entry';
     else if (room === exit) room.role = 'exit';
-    else if (crossing && room === crossing) room.role = 'quiet';
+    else if (crossing && room === crossing) room.role = spineFight;
   }
 
   const middle = rooms.filter((r) => r !== entry && r !== exit && r !== crossing);
@@ -133,13 +138,33 @@ export function assignRoomRoles(
   for (const room of middle) room.role = weightedRole(weights, rng);
 
   const guarantee = (role: RoomRole): void => {
-    if (middle.some((r) => r.role === role)) return;
-    const spare = middle.filter((r) => r.role !== 'nest' && r.role !== 'cache');
+    if (middle.some((r) => r.role === role) || (crossing && crossing.role === role)) return;
+    const spare = middle.filter((r) => r.role !== 'nest' && r.role !== 'cache' && r.role !== 'post');
     const target = spare.length ? pick(rng, spare) : middle[0];
     if (target) target.role = role;
   };
   if (middle.length >= 1) guarantee('nest');
   if (middle.length >= 2) guarantee('cache');
+
+  pinSpineFight(middle, entry, exit, spineFight);
+}
+
+/** Convert a quiet mid-room on the start→exit axis into the sector's road fight. */
+function pinSpineFight(middle: Room[], entry: Room, exit: Room, spineFight: RoomRole): void {
+  const mx = (entry.cx + exit.cx) / 2;
+  const my = (entry.cy + exit.cy) / 2;
+  const ranked = middle
+    .filter((r) => r.role !== 'cache')
+    .slice()
+    .sort((a, b) => {
+      const da = Math.abs(a.cx - mx) + Math.abs(a.cy - my);
+      const db = Math.abs(b.cx - mx) + Math.abs(b.cy - my);
+      return da - db;
+    });
+  const target = ranked[0];
+  if (!target) return;
+  if (target.role === 'post' || target.role === 'nest') return;
+  target.role = spineFight;
 }
 
 // --- Ground -----------------------------------------------------------------
@@ -304,8 +329,10 @@ export function planHostiles(rooms: Room[], budget: number, rng: Rng): RoomFill[
 
   const byRole = (role: RoomRole): Room[] => shuffle(rng, rooms.filter((r) => r.role === role));
 
-  for (const room of byRole('nest')) take(room, randInt(rng, 2, 3));
+  // Road fights first — a nest in an alcove must not spend the whole budget
+  // before the holder on the hatch-to-hatch route is paid.
   for (const room of byRole('post')) take(room, 1);
+  for (const room of byRole('nest')) take(room, randInt(rng, 2, 3));
   for (const room of byRole('cache')) take(room, rng() < 0.6 ? 1 : 0);
   // A thicket with something in it is the point; an empty one is a bluff, and
   // the sector needs both for the room to stay worth reading.

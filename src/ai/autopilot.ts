@@ -206,10 +206,15 @@ function tryPhaserAction(state: GameState, persona: Persona): Action | null {
   const inKit = state.inventory.some((s) => s.kind === 'phaser');
   const worn = hasPhaserEquipped(state);
   if (!inKit && !worn) return null;
-  if (!canBurnKit(state, PHASER_ENERGY_COST, persona)) return null;
 
   const shot = phaserShotDir(state);
-  if (shot) {
+  const target = shot ? findPhaserTarget(state, shot.dx, shot.dy) : undefined;
+  const wantsShot =
+    !!shot &&
+    canBurnKit(state, PHASER_ENERGY_COST, persona) &&
+    (persona.id === 'reckless' || target?.tier === 'elite' || target?.tier === 'boss');
+
+  if (wantsShot && shot) {
     if (!worn) {
       const idx = state.inventory.findIndex((s) => s.kind === 'phaser');
       if (idx < 0) return null;
@@ -218,10 +223,25 @@ function tryPhaserAction(state: GameState, persona: Persona): Action | null {
     }
     return { type: 'move', dx: shot.dx, dy: shot.dy };
   }
-  if (worn) {
+
+  if (
+    worn &&
+    canBurnKit(state, PHASER_ENERGY_COST, persona) &&
+    (persona.id === 'reckless' || state.player.hp <= state.player.maxHp * 0.8)
+  ) {
     const align = phaserAlignDir(state);
     if (align) return { type: 'move', dx: align.dx, dy: align.dy };
   }
+
+  // Stow so ordinary pathing does not dump Power into every 2–3 tile mite.
+  if (worn && persona.id !== 'reckless') {
+    const idx = state.inventory.findIndex((s) => s.kind === 'phaser');
+    if (idx >= 0) {
+      state.ui.selectedSlot = idx;
+      return { type: 'use' };
+    }
+  }
+
   return null;
 }
 
@@ -463,17 +483,8 @@ export function chooseAction(
     if (action) return action;
   }
 
-  const phaserIdx = state.inventory.findIndex((s) => s.kind === 'phaser');
-  if (phaserIdx >= 0 && !state.player.equip.tool) {
-    state.ui.selectedSlot = phaserIdx;
-    return { type: 'use' };
-  }
   const batonIdx = state.inventory.findIndex((s) => s.kind === 'pulse_baton');
-  if (
-    batonIdx >= 0 &&
-    state.player.equip.tool !== 'pulse_baton' &&
-    state.player.equip.tool !== 'phaser'
-  ) {
+  if (batonIdx >= 0 && state.player.equip.tool !== 'pulse_baton') {
     state.ui.selectedSlot = batonIdx;
     return { type: 'use' };
   }
@@ -615,6 +626,37 @@ export function chooseAction(
     }
     return false;
   };
+
+  // Clear a visible hostile sitting on the road instead of pathing around the room.
+  if (
+    state.player.hp > state.player.maxHp * 0.5 &&
+    state.player.energy > state.player.maxEnergy * 0.35
+  ) {
+    let prey: { x: number; y: number; d: number } | null = null;
+    for (const en of state.enemies) {
+      if (!en.alive) continue;
+      if (!(state.visible[en.y]?.[en.x] ?? false)) continue;
+      if (
+        (en.tier === 'elite' || en.tier === 'boss') &&
+        state.player.hp < state.player.maxHp * 0.75
+      ) {
+        continue;
+      }
+      const d = manhattan(x, y, en.x, en.y);
+      if (d < 1 || d > 4) continue;
+      if (!prey || d < prey.d) prey = { x: en.x, y: en.y, d };
+    }
+    if (prey) {
+      const via = manhattan(x, y, prey.x, prey.y) + manhattan(prey.x, prey.y, goal.x, goal.y);
+      const direct = manhattan(x, y, goal.x, goal.y);
+      if (via <= direct + 3) {
+        const hunt = bfsPath(state.tiles, { x, y }, prey, blockedElites);
+        if (hunt && hunt[0]) {
+          return { type: 'move', dx: hunt[0].x - x, dy: hunt[0].y - y };
+        }
+      }
+    }
+  }
 
   // Pay an open contact job when the kit already holds the bill — short detour only.
   const agendaNpc = openAgendaNpc(state);

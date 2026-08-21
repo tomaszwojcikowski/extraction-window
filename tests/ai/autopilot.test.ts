@@ -32,7 +32,13 @@ function phaserLane(seed = 7): GameState {
   st.inventory = [{ kind: 'phaser', count: 1 }, { kind: 'energy', count: 4 }];
   openEast(st, 3);
   st.enemies = [
-    makeEnemy({ id: 1, kind: 'mite', x: st.player.x + 2, y: st.player.y }),
+    makeEnemy({
+      id: 1,
+      kind: 'elite_skirmisher',
+      tier: 'elite',
+      x: st.player.x + 2,
+      y: st.player.y,
+    }),
   ];
   return st;
 }
@@ -102,9 +108,12 @@ describe('autopilot chooseAction', () => {
   it('sidesteps onto a cardinal before firing an off-axis foe', () => {
     const st = phaserLane();
     st.player.equip.tool = 'phaser';
+    st.player.hp = Math.floor(st.player.maxHp * 0.75);
     st.tiles[9]![8] = { kind: 'floor', walkable: true, transparent: true };
     st.visible[9]![8] = true;
-    st.enemies = [makeEnemy({ id: 2, kind: 'mite', x: 10, y: 9 })];
+    st.enemies = [
+      makeEnemy({ id: 2, kind: 'elite_skirmisher', tier: 'elite', x: 10, y: 9 }),
+    ];
     st.visible[9]![10] = true;
     expect(chooseAction(st)).toEqual({ type: 'move', dx: 0, dy: 1 });
   });
@@ -115,6 +124,28 @@ describe('autopilot chooseAction', () => {
     st.player.energy = 50;
     const action = chooseAction(st);
     expect(action).not.toEqual({ type: 'move', dx: 1, dy: 0 });
+  });
+
+  it('walks into a visible hostile within 4 tiles instead of pathing past', () => {
+    const st = createGame(7, { skipTutorial: true });
+    st.handshake = null;
+    st.uplink = null;
+    st.questOffer = null;
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.x = 8;
+    st.player.y = 8;
+    st.player.equip.tool = null;
+    st.inventory = [{ kind: 'med', count: 2 }, { kind: 'energy', count: 4 }];
+    for (let x = 8; x <= 12; x++) {
+      st.tiles[8]![x] = { kind: 'floor', walkable: true, transparent: true };
+      st.visible[8]![x] = true;
+    }
+    st.enemies = [makeEnemy({ id: 3, kind: 'mite', x: 11, y: 8 })];
+    st.npcs = [];
+    st.allies = [];
+    const action = chooseAction(st);
+    expect(action).toEqual({ type: 'move', dx: 1, dy: 0 });
   });
 });
 
