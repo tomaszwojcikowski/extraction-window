@@ -63,17 +63,44 @@ function paintProp(kind: PropKind, frame = 0): Px {
       px.fillRect(18, 16 + pulse, 12, 3, Theme.biolum);
       px.fillRect(20, 8, 8, 4, Theme.panelEdge);
       break;
-    case 'hazard':
-      px.fillEllipse(24, 28, 16, 11, mix(Material.brine, Theme.rust, 0.25));
-      volume(px, mix(Material.brine, Theme.rust, 0.25), Theme.arc, Theme.rust);
-      px.fillEllipse(24, 27, 8, 6, Theme.rust);
-      px.fillEllipse(24, 25, 4, 3, Theme.arc);
-      if (pulse % 2 === 0) px.fillDisc(24, 22, 2, Theme.arcWhite);
-      px.fillRect(8, 38, 32, 4, Theme.tape);
-      px.fillRect(8, 38, 32, 1, Theme.inkBright);
-      px.fillRect(12, 39, 6, 2, Theme.groundDeep);
-      px.fillRect(30, 39, 6, 2, Theme.groundDeep);
+    case 'hazard': {
+      bevelRect(px, 8, 16, 22, 18, Theme.inkMute, Material.deck, Theme.groundDeep);
+      px.fillTriangle(12, 18, 32, 14, 26, 34, Material.recess);
+      px.fillTriangle(14, 20, 30, 16, 24, 32, Theme.groundDeep);
+      bevelRect(
+        px,
+        20,
+        22,
+        20,
+        16,
+        Theme.inkDim,
+        mix(Material.deck, Material.debris, 0.22),
+        Theme.groundDeep,
+      );
+      bevelRect(px, 14, 30, 12, 8, Theme.inkMute, mix(Material.deck, Theme.groundDeep, 0.15), Theme.groundDeep);
+      px.fillRect(24, 26, 8, 5, Material.recess);
+      px.fillRect(25, 27, 3, 2, Theme.panelEdge);
+      px.line(16, 20, 30, 36, Theme.groundDeep);
+      px.line(17, 19, 29, 34, Theme.biolumDeep);
+      px.line(18, 20, 28, 33, Theme.biolum);
+      const gy = 25 + (pulse % 2);
+      px.fillDisc(22, gy, 2, Theme.arcWhite);
+      px.set(22, gy - 1, Theme.inkBright);
+      if (pulse >= 1) {
+        px.set(24, gy + 2, Theme.biolum);
+        px.set(20, gy - 2, Theme.biolum);
+      }
+      if (pulse >= 2) {
+        px.set(19, 22, Theme.arcWhite);
+        px.set(27, 31, Theme.biolum);
+        px.set(23, gy + 4, Theme.arcWhite);
+      }
+      px.fillRect(10, 27, 7, 2, Theme.tape);
+      px.fillRect(10, 27, 7, 1, Theme.inkBright);
+      grit(px, Theme.biolumDeep, 8, 40 + pulse);
+      grit(px, Theme.inkMute, 6, 12);
       break;
+    }
     case 'brine_pool':
       px.fillEllipse(24, 28, 18, 12, Material.brine);
       volume(px, Material.brine, Theme.biolum, Theme.biolumDeep);
@@ -137,7 +164,7 @@ function paintProp(kind: PropKind, frame = 0): Px {
       px.fillRect(22, 16, 4, 8, Theme.flag);
       break;
   }
-  if (kind !== 'hazard' && kind !== 'brine_pool' && kind !== 'tripwire') {
+  if (kind !== 'brine_pool' && kind !== 'tripwire') {
     finishSprite(px, envPalette());
   } else {
     px.snap(envPalette());
