@@ -8,6 +8,8 @@ import {
   forceOpenHackLab,
   generateHackSession,
   hackHasSolution,
+  hackLaneCells,
+  nextHackGlyph,
 } from '../../src/sim/mechanics/consoleHack';
 
 describe('lattice lock', () => {
@@ -34,22 +36,29 @@ describe('lattice lock', () => {
     expect(st.inventory.length).toBe(kit);
   });
 
-  it('moves the cursor inside the grid and refuses a blocked pick', () => {
+  it('wraps the cursor and stays on the legal lane after the first splice', () => {
     const st = createGame(1);
     forceOpenHackLab(st);
     const session = st.consoleHack!.session!;
     session.cursor = { x: 0, y: 0 };
-    applyAction(st, { type: 'hack_move', dx: -1, dy: -1 });
-    expect(session.cursor).toEqual({ x: 0, y: 0 });
+    applyAction(st, { type: 'hack_move', dx: -1, dy: 0 });
+    expect(session.cursor).toEqual({ x: 4, y: 0 });
     applyAction(st, { type: 'hack_move', dx: 1, dy: 0 });
-    expect(session.cursor).toEqual({ x: 1, y: 0 });
-    session.last = { x: 0, y: 0 };
-    session.axis = 'col';
-    session.cursor = { x: 2, y: 0 };
-    expect(canPickHackCell(session, 2, 0)).toBe(false);
-    const buf = session.buffer.length;
+    expect(session.cursor).toEqual({ x: 0, y: 0 });
     applyAction(st, { type: 'hack_pick' });
-    expect(session.buffer.length).toBe(buf);
+    expect(session.last).toEqual({ x: 0, y: 0 });
+    expect(session.axis).toBe('col');
+    expect(session.cursor.x).toBe(0);
+    expect(session.cursor.y).not.toBe(0);
+    applyAction(st, { type: 'hack_move', dx: 1, dy: 0 });
+    expect(session.cursor.x).toBe(0);
+    expect(st.consoleHack?.note).toBe('blocked');
+    const y = session.cursor.y;
+    applyAction(st, { type: 'hack_move', dx: 0, dy: 1 });
+    expect(session.cursor).toEqual({ x: 0, y: (y + 1) % 5 });
+    expect(canPickHackCell(session, session.cursor.x, session.cursor.y)).toBe(true);
+    expect(hackLaneCells(session).every((p) => p.x === 0)).toBe(true);
+    expect(nextHackGlyph(session)).toBe(session.target[1]);
   });
 
   it('pays a heavy kit dump when the target sequence is spliced', () => {

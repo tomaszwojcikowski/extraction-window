@@ -88,10 +88,11 @@ export function generateHackSession(rng: Rng): HackSession {
     grid,
     target,
     buffer: [],
-    cursor: { x: path[0]!.x, y: path[0]!.y },
+    cursor: { x: 2, y: 2 },
     last: null,
     axis: 'col',
     used: emptyUsed(),
+    picks: [],
     attempts: HACK_TRIES,
   };
 }
@@ -132,6 +133,36 @@ export function onConsoleTile(state: GameState): boolean {
   const hack = state.consoleHack;
   if (!hack || hack.done) return false;
   return state.player.x === hack.pos.x && state.player.y === hack.pos.y;
+}
+
+export type HackPickResult = 'blocked' | 'spliced' | 'win' | 'fail' | 'lockout';
+
+export function nextHackGlyph(session: HackSession): HackGlyph | null {
+  return session.target[session.buffer.length] ?? null;
+}
+
+export function hackLaneCells(session: HackSession): Pos[] {
+  const out: Pos[] = [];
+  if (!session.last) {
+    for (let y = 0; y < HACK_SIZE; y++) {
+      for (let x = 0; x < HACK_SIZE; x++) {
+        if (canPickHackCell(session, x, y)) out.push({ x, y });
+      }
+    }
+    return out;
+  }
+  if (session.axis === 'col') {
+    const x = session.last.x;
+    for (let y = 0; y < HACK_SIZE; y++) {
+      if (canPickHackCell(session, x, y)) out.push({ x, y });
+    }
+  } else {
+    const y = session.last.y;
+    for (let x = 0; x < HACK_SIZE; x++) {
+      if (canPickHackCell(session, x, y)) out.push({ x, y });
+    }
+  }
+  return out;
 }
 
 export function canPickHackCell(session: HackSession, x: number, y: number): boolean {
@@ -185,16 +216,33 @@ function grantHackReward(state: GameState): void {
   pushLog(state, 'LOG-HACK-OK');
 }
 
+function setNote(state: GameState, note: HackPickResult): void {
+  if (state.consoleHack) state.consoleHack.note = note;
+}
+
+function snapToLane(session: HackSession): void {
+  if (canPickHackCell(session, session.cursor.x, session.cursor.y)) return;
+  const lane = hackLaneCells(session);
+  if (lane.length === 0) return;
+  const { x, y } = session.cursor;
+  lane.sort(
+    (a, b) => Math.abs(a.x - x) + Math.abs(a.y - y) - (Math.abs(b.x - x) + Math.abs(b.y - y)),
+  );
+  session.cursor = { ...lane[0]! };
+}
+
 function resetAttempt(session: HackSession): void {
   session.buffer = [];
   session.last = null;
   session.axis = 'col';
   session.used = emptyUsed();
+  session.picks = [];
+  session.cursor = { x: 2, y: 2 };
 }
 
-function failAttempt(state: GameState): 'retry' | 'resolved' {
+function failAttempt(state: GameState): 'fail' | 'lockout' {
   const session = state.consoleHack?.session;
-  if (!session) return 'resolved';
+  if (!session) return 'lockout';
   taxPower(state, POWER_TAX_HEAVY, 'LOG-HACK-FAIL');
   addEmStress(state, 8, 'lattice bounce');
   session.attempts -= 1;
@@ -202,19 +250,56 @@ function failAttempt(state: GameState): 'retry' | 'resolved' {
     const hack = state.consoleHack!;
     hack.session = null;
     hack.done = true;
+    setNote(state, 'lockout');
     pushLog(state, 'LOG-HACK-LOCK');
-    return 'resolved';
+    return 'lockout';
   }
   resetAttempt(session);
-  return 'retry';
+  setNote(state, 'fail');
+  return 'fail';
 }
 
 export function moveHackCursor(state: GameState, dx: number, dy: number): void {
   const session = state.consoleHack?.session;
   if (!session) return;
-  const nx = Math.max(0, Math.min(HACK_SIZE - 1, session.cursor.x + dx));
-  const ny = Math.max(0, Math.min(HACK_SIZE - 1, session.cursor.y + dy));
-  session.cursor = { x: nx, y: ny };
+  if (!session.last) {
+    session.cursor = {
+      x: (session.cursor.x + dx + HACK_SIZE) % HACK_SIZE,
+      y: (session.cursor.y + dy + HACK_SIZE) % HACK_SIZE,
+    };
+    return;
+  }
+  const along = session.axis === 'col' ? dy : dx;
+  const across = session.axis === 'col' ? dx : dy;
+  if (across !== 0 && along === 0) {
+    setNote(state, 'blocked');
+    return;
+  }
+  if (along === 0) return;
+  const lane = hackLaneCells(session);
+  if (lane.length === 0) return;
+  const step = along > 0 ? 1 : -1;
+  if (session.axis === 'col') {
+    const x = session.last.x;
+    let y = session.cursor.y;
+    for (let i = 0; i < HACK_SIZE; i++) {
+      y = (y + step + HACK_SIZE) % HACK_SIZE;
+      if (lane.some((p) => p.x === x && p.y === y)) {
+        session.cursor = { x, y };
+        return;
+      }
+    }
+  } else {
+    const y = session.last.y;
+    let x = session.cursor.x;
+    for (let i = 0; i < HACK_SIZE; i++) {
+      x = (x + step + HACK_SIZE) % HACK_SIZE;
+      if (lane.some((p) => p.x === x && p.y === y)) {
+        session.cursor = { x, y };
+        return;
+      }
+    }
+  }
 }
 
 export function abortHack(state: GameState): void {
@@ -224,35 +309,45 @@ export function abortHack(state: GameState): void {
   pushLog(state, 'LOG-HACK-ABORT');
 }
 
-/** Returns whether the sector turn should advance (success or lockout). */
-export function pickHackCell(state: GameState): boolean {
+/** Mutates the open lock. Caller ends the sector turn on win / lockout. */
+export function pickHackCell(state: GameState): HackPickResult {
   const hack = state.consoleHack;
   const session = hack?.session;
-  if (!hack || !session) return false;
+  if (!hack || !session) return 'blocked';
   const { x, y } = session.cursor;
-  if (!canPickHackCell(session, x, y)) return false;
+  if (!canPickHackCell(session, x, y)) {
+    setNote(state, 'blocked');
+    return 'blocked';
+  }
 
   session.used[y]![x] = true;
+  session.picks.push({ x, y });
   session.buffer.push(session.grid[y]![x]!);
   const first = !session.last;
   session.last = { x, y };
   if (first) session.axis = 'col';
   else session.axis = session.axis === 'col' ? 'row' : 'col';
+  snapToLane(session);
 
-  if (session.buffer.length < HACK_LEN) return false;
+  if (session.buffer.length < HACK_LEN) {
+    if (hackLaneCells(session).length === 0) return failAttempt(state);
+    setNote(state, 'spliced');
+    return 'spliced';
+  }
 
   const ok = session.buffer.every((g, i) => g === session.target[i]);
   if (ok) {
     hack.session = null;
     hack.done = true;
     grantHackReward(state);
-    return true;
+    setNote(state, 'win');
+    return 'win';
   }
-  return failAttempt(state) === 'resolved';
+  return failAttempt(state);
 }
 
 export function makeConsoleHack(pos: Pos): ConsoleHack {
-  return { pos: { ...pos }, done: false, session: null };
+  return { pos: { ...pos }, done: false, session: null, note: null };
 }
 
 /** Lab / `hack.html`: plant a terminal on the surveyor and open the modal. */

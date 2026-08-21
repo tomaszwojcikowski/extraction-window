@@ -207,7 +207,8 @@ export function applyAction(state: GameState, action: Action): GameState {
       return state;
     }
     if (action.type === 'hack_pick') {
-      if (pickHackCell(state)) endPlayerTurn(state);
+      const result = pickHackCell(state);
+      if (result === 'win' || result === 'lockout') endPlayerTurn(state);
       return state;
     }
     if (action.type === 'hack_abort' || action.type === 'close_ui') {

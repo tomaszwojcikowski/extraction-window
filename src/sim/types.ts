@@ -264,14 +264,20 @@ export interface HackSession {
   /** Next pick must share this axis with `last`. Ignored until last is set. */
   axis: 'row' | 'col';
   used: boolean[][];
+  /** Splice order for used cells (presentation). */
+  picks: Pos[];
   attempts: number;
 }
+
+export type HackNote = 'blocked' | 'spliced' | 'win' | 'fail' | 'lockout';
 
 /** Optional locked terminal in this sector. */
 export interface ConsoleHack {
   pos: Pos;
   done: boolean;
   session: HackSession | null;
+  /** Last splice cue for overlay flash / SFX. */
+  note: HackNote | null;
 }
 
 /** One optional room-quest payoff that changes the route to extraction. */

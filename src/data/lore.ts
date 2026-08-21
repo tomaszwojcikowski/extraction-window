@@ -97,7 +97,7 @@ export const LORE = {
     '\n' +
     'OPTIONAL (amber frame — skip anytime)\n' +
     'Room site · OPT badge · Enter / Space / > on the site.\n' +
-    'Locked terminal in some rooms: splice the lattice in the modal for a heavy kit payout.\n' +
+    'Locked terminal in some rooms: WASD · Enter splice the lattice — heavy kit if it holds.\n' +
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
@@ -810,13 +810,13 @@ export const LORE = {
   'UI-HACK-TARGET': 'Target',
   'UI-HACK-BUFFER': 'Buffer',
   'UI-HACK-TRIES': 'Tries',
-  'UI-HACK-ANY': 'Pick any channel.',
-  'UI-HACK-COL': 'Next pick: same column.',
-  'UI-HACK-ROW': 'Next pick: same row.',
-  'UI-HACK-KEYS': 'WASD move · Enter splice · Esc abort',
+  'UI-HACK-ANY': 'Splice any channel.',
+  'UI-HACK-COL': 'Stay on this column.',
+  'UI-HACK-ROW': 'Stay on this row.',
+  'UI-HACK-KEYS': 'WASD · Enter splice · Esc abort',
   'UI-HACK-CHIP': 'LOCK',
   'UI-HACK-LAB': 'LATTICE LAB',
-  'UI-HACK-LAB-HINT': 'r — new lock · Esc abort · Enter splice',
+  'UI-HACK-LAB-HINT': 'r new lock',
   'LOG-EM-WARN': 'EM rising — fauna getting agitated.',
   'LOG-EM-HIGH':
     'EM critical — extra Power drain and wider aggro. Sealant Foam clears it.',

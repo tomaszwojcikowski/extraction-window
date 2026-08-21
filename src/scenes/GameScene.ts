@@ -610,6 +610,17 @@ export class GameScene extends Phaser.Scene {
       this.animFrame = (this.animFrame + 1) % 4;
       this.tickAnimatedTiles();
       this.tickAnimatedActors();
+      if (this.state.consoleHack?.session) {
+        drawHackOverlay(
+          this.hackOverlay,
+          this.scale.width,
+          this.scale.height,
+          this.state.consoleHack.session,
+          this.animFrame,
+          this.openHackLab,
+          this.state.consoleHack.note,
+        );
+      }
       if (this.state.status === 'playing') {
         applyFieldLightingPass(this.fieldLightingHost(), this.state);
         syncOptionalSiteVisuals(this.actorSyncHost(), this.state);
@@ -635,7 +646,8 @@ export class GameScene extends Phaser.Scene {
           kind !== 'sump' &&
           kind !== 'landmark' &&
           kind !== 'quest' &&
-          kind !== 'beacon'
+          kind !== 'beacon' &&
+          kind !== 'console'
         )
           continue;
         const img = this.tileSprites[y]?.[x];
@@ -1661,7 +1673,15 @@ export class GameScene extends Phaser.Scene {
       );
     }
     if (st.consoleHack?.session) {
-      drawHackOverlay(this.hackOverlay, this.scale.width, this.scale.height, st.consoleHack.session);
+      drawHackOverlay(
+        this.hackOverlay,
+        this.scale.width,
+        this.scale.height,
+        st.consoleHack.session,
+        this.animFrame,
+        this.openHackLab,
+        st.consoleHack.note,
+      );
     } else {
       hideHackOverlay(this.hackOverlay);
     }
