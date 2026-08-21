@@ -2,7 +2,7 @@ import { pushLog } from './log';
 import type { ExtractFavorKind, GameState } from './types';
 
 export const FAVOR_LABEL: Record<ExtractFavorKind, string> = {
-  pattern_fail_safe: 'Block 1 skiff lock',
+  pattern_fail_safe: 'Save 1 skiff start',
 };
 
 /** Vent-seal pays a skiff-lock save; salvage and purge pay kit/XP only. */
