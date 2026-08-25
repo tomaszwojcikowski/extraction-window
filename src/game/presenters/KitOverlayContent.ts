@@ -158,6 +158,19 @@ function itemActionHint(state: GameState, kind: ItemKind): string {
   return lore('UI-KIT-USE');
 }
 
+function bagFillForSlot(
+  state: GameState,
+  slotId: EquipSlotId,
+): { index: number; kind: ItemKind } | null {
+  for (let i = 0; i < state.inventory.length; i++) {
+    const kind = state.inventory[i]?.kind;
+    if (!kind || isItemWorn(state, kind)) continue;
+    if (resolveEquipTarget(state, kind) !== slotId) continue;
+    return { index: i, kind };
+  }
+  return null;
+}
+
 function formatLoadoutRow(
   state: GameState,
   slotId: EquipSlotId,
@@ -165,9 +178,16 @@ function formatLoadoutRow(
 ): string {
   const label = lore(EQUIP_SLOT_LORE[slotId]);
   const worn = state.player.equip[slotId];
-  const mark = worn && worn === selectedKind ? '▶' : ' ';
-  const name = shortEquipName(worn);
-  return `${mark}${label.padEnd(5)} ${name}`;
+  if (worn) {
+    const mark = worn === selectedKind ? '▶' : ' ';
+    return `${mark}${label.padEnd(5)} ${shortEquipName(worn)}`;
+  }
+  const fill = bagFillForSlot(state, slotId);
+  if (fill) {
+    const mark = fill.kind === selectedKind ? '▶' : ' ';
+    return `${mark}${label.padEnd(5)} — ${slotHotkey(fill.index)}u`;
+  }
+  return ` ${label.padEnd(5)} —`;
 }
 
 function formatBagRow(state: GameState, index: number, selected: number): string {

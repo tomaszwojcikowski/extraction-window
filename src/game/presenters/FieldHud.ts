@@ -1,6 +1,7 @@
 import { lore } from '../../data/lore';
 import { SKILLS } from '../../data/progression';
 import { extractTrack, type GameState } from '../../sim';
+import { describeObjective } from '../../sim/objectives';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
@@ -27,8 +28,24 @@ export function formatExtractBoxes(state: GameState): string {
     hsCell = state.handshake.progress >= 1 ? 'H#' : 'H·';
   }
   const latticeCell = mark('L', boxes.lattice);
-  const padCell = mark('P', boxes.pad || Boolean(state.uplink?.active));
-  return `${lore('UI-EXTRACT')} ${keyCell} ${hsCell} ${latticeCell} ${padCell}`;
+  const padDone = boxes.pad || Boolean(state.uplink?.active);
+  const padCell = mark('P', padDone);
+  const cells = [keyCell, hsCell, latticeCell, padCell];
+  const local = describeObjective(state).local;
+  const nextIdx =
+    local === 'OBJ-LOCAL-KEY'
+      ? 0
+      : local === 'OBJ-LOCAL-BEACON'
+        ? 1
+        : local === 'OBJ-LOCAL-CORE'
+          ? 2
+          : local === 'OBJ-LOCAL-SHUTTLE'
+            ? 3
+            : -1;
+  if (nextIdx >= 0 && !cells[nextIdx]!.endsWith('#')) {
+    cells[nextIdx] = `▸${cells[nextIdx]}`;
+  }
+  return `${lore('UI-EXTRACT')} ${cells.join(' ')}`;
 }
 
 export function formatSkillsChip(state: GameState): string | null {

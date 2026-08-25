@@ -134,9 +134,10 @@ describe('phaserKitStatus', () => {
     expect(phaserKitStatus(st, undefined)).toBe('UI-PHASER-LOW');
   });
 
-  it('prompts wear when selected but not equipped', () => {
+  it('prompts wear when the Survey Phaser is in the bag, even if another item is selected', () => {
     const st = combatArena();
     expect(phaserKitStatus(st, 'phaser')).toBe('UI-PHASER-WEAR');
-    expect(lore(phaserKitStatus(st, 'phaser')!)).toContain('2–3');
+    expect(phaserKitStatus(st, 'med')).toBe('UI-PHASER-WEAR');
+    expect(lore(phaserKitStatus(st, 'med')!)).toContain('2–3');
   });
 });

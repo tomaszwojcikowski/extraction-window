@@ -80,17 +80,16 @@ export function phaserContextHint(st: GameState): LoreId | null {
   return null;
 }
 
-/** Kit overlay status when phaser is worn or selected. */
+/** Kit overlay status when the Survey Phaser is worn, selected, or sitting unworn in the bag. */
 export function phaserKitStatus(st: GameState, selectedKind: string | undefined): LoreId | null {
   const worn = st.player.equip.tool === 'phaser';
-  const selected = selectedKind === 'phaser';
-  if (!worn && !selected) return null;
   if (worn) {
     return st.player.energy >= PHASER_ENERGY_COST
       ? 'UI-PHASER-READY'
       : 'UI-PHASER-LOW';
   }
-  return 'UI-PHASER-WEAR';
+  if (hasItem(st, 'phaser') || selectedKind === 'phaser') return 'UI-PHASER-WEAR';
+  return null;
 }
 
 export type PhaserTrackRole = 'band' | 'target';

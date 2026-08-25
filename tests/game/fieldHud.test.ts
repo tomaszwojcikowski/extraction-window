@@ -59,6 +59,19 @@ describe('field HUD chips', () => {
     expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} K# H# L# P#`);
   });
 
+  it('marks the extract box that is the local next step', () => {
+    const st = combatArena();
+    st.tutorialActive = false;
+    st.sectorId = 'ruin';
+    st.objectives.hasRelayKey = false;
+    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} ▸K- H- L- P-`);
+    st.sectorId = 'ridge';
+    st.objectives.hasRelayKey = true;
+    st.objectives.beaconOpen = true;
+    st.objectives.hasNavCore = true;
+    expect(formatExtractBoxes(st)).toBe(`${lore('UI-EXTRACT')} K# H# L# ▸P-`);
+  });
+
   it('shows unlocked skills on the chip rail', () => {
     const st = combatArena();
     st.skills = ['triage', 'scavenger'];

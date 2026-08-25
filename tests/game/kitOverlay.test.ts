@@ -134,6 +134,18 @@ describe('buildKitOverlayContent', () => {
     expect(lines.some((l) => l.includes('◆Head'))).toBe(true);
   });
 
+  it('points an empty tool slot at the bag hotkey that will wear it', () => {
+    const st = combatArena();
+    st.inventory = [
+      { kind: 'med', count: 1 },
+      { kind: 'phaser', count: 1 },
+    ];
+    st.ui.selectedSlot = 0;
+    const { lines } = buildKitOverlayContent(st);
+    expect(lines.some((l) => l.includes('Tool') && l.includes('2u'))).toBe(true);
+    expect(lines.some((l) => l.includes('2–3'))).toBe(true);
+  });
+
   it('scrolls the bag list only when the cursor leaves the window', () => {
     const st = combatArena();
     st.inventory = Array.from({ length: 12 }, (_, i) => ({
