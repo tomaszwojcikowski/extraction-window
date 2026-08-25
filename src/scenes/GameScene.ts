@@ -1341,8 +1341,7 @@ export class GameScene extends Phaser.Scene {
         this.pagesText,
         this.scale.width,
         this.scale.height,
-        this.state.codexLog,
-        this.state.codexPages,
+        this.state,
       );
     }
     this.redrawTilesAndHud();
