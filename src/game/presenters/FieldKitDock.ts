@@ -93,6 +93,7 @@ export function fieldKitSpendCue(state: GameState): string {
   return `${slotHotkey(idx)} ${lore('UI-DOCK-USE')} ${shortKitName('energy')}`;
 }
 
+
 function formatSlotCell(
   state: GameState,
   index: number,

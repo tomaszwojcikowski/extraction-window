@@ -133,6 +133,50 @@ describe('contextHint coaching', () => {
     expect(contextHint(st)).not.toBe('UI-HINT-EXTRACT');
   });
 
+  it('coaches wearing the Survey Phaser before clocks on a quiet first field turn', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorIndex = 0;
+    st.turn = 1;
+    st.scriptedFired.tut_welcome = true;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.enemies = [];
+
+    expect(contextHint(st)).toBe('UI-HINT-EQUIP');
+    expect(contextHint(st)).toBe('UI-HINT-CLOCKS');
+  });
+
+  it('keeps the local next step on the hint plate once one-shots have fired', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorId = 'plains';
+    st.scriptedFired.tut_welcome = true;
+    st.scriptedFired.teach_clocks = true;
+    st.scriptedFired.teach_extract = true;
+    st.scriptedFired.teach_equip = true;
+    st.scriptedFired.teach_brand = true;
+    st.scriptedFired.teach_light = true;
+    st.items = [];
+    st.roomQuest = null;
+    st.npcs = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.enemies = [];
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+
+    expect(resolveHintLine(st)).toBe('OBJ-LOCAL-EXIT');
+  });
+
   it('keeps the flank hint live while two hostiles are in contact', () => {
     const st = createGame(42);
     st.tutorialActive = false;

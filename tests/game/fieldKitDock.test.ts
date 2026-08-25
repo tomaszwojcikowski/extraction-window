@@ -61,4 +61,25 @@ describe('field kit dock', () => {
     expect(line).toContain(`${lore('UI-DOCK-USE')} ${shortKitName('energy')}`);
     expect(line).toContain('2cell');
   });
+
+  it('keeps unworn gear and a wear cue when the starting kit is cramped', () => {
+    const st = combatArena();
+    st.inventory = [
+      { kind: 'med', count: 7 },
+      { kind: 'energy', count: 6 },
+      { kind: 'probe', count: 1 },
+      { kind: 'stim', count: 1 },
+      { kind: 'flare', count: 2 },
+      { kind: 'plate', count: 2 },
+      { kind: 'filter', count: 1 },
+      { kind: 'dart', count: 1 },
+      { kind: 'phaser', count: 1 },
+      { kind: 'sealant', count: 2 },
+    ];
+    st.ui.selectedSlot = 0;
+    const line = formatFieldKitDock(st, 72);
+    expect(line).toContain('phaser');
+    expect(line).toContain(`${lore('UI-DOCK-WEAR')} ${shortKitName('phaser')}`);
+    expect(line).toContain('[1hypo×7]');
+  });
 });

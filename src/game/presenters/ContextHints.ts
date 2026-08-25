@@ -230,50 +230,6 @@ export function applyHintKitSelection(st: GameState, hint: LoreId | null): void 
   if (idx >= 0) st.ui.selectedSlot = idx;
 }
 
-/** Which bag kind a hint wants `u` to hit — so the dock matches the line. */
-export function kitKindForHint(st: GameState, hint: LoreId | null): ItemKind | null {
-  if (!hint) return null;
-  switch (hint) {
-    case 'UI-HINT-USE-MED':
-    case 'UI-HINT-USE-PATCH':
-    case 'UI-HINT-DOWNED':
-      return 'med';
-    case 'UI-HINT-USE-ENERGY':
-      return 'energy';
-    case 'UI-HINT-USE-ARMOR':
-      return 'plate';
-    case 'UI-HINT-FLARE':
-    case 'UI-TUT-FIGHT':
-      return 'flare';
-    case 'UI-HINT-SEALED-SEALANT':
-    case 'UI-HINT-USE-SEALANT':
-      return 'sealant';
-    case 'UI-HINT-PHASER-EQUIP':
-    case 'UI-TUT-PHASER-EQUIP':
-      return 'phaser';
-    case 'UI-TUT-KIT':
-      return 'salvage';
-    case 'UI-HINT-EQUIP': {
-      for (const slot of st.inventory) {
-        if (isItemWorn(st, slot.kind)) continue;
-        if (equipSlotsFor(slot.kind).length > 0) return slot.kind;
-      }
-      return null;
-    }
-    default:
-      return null;
-  }
-}
-
-/** Point the dock at the hinted item so u matches the line. Skip while the case is open. */
-export function applyHintKitSelection(st: GameState, hint: LoreId | null): void {
-  if (st.ui.inventoryOpen) return;
-  const kind = kitKindForHint(st, hint);
-  if (!kind) return;
-  const idx = st.inventory.findIndex((s) => s.kind === kind);
-  if (idx >= 0) st.ui.selectedSlot = idx;
-}
-
 /** The single hint-line channel — overlays own the line when kit/skill/aim is open. */
 export function resolveHintLine(st: GameState): LoreId | null {
   const hint = contextHint(st);
