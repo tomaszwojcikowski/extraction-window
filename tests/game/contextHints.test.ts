@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, applyAction, emptyEquipSlots } from '../../src/sim';
+import { lore } from '../../src/data/lore';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
 import { hasItem } from '../../src/sim/inventory';
@@ -107,6 +108,28 @@ describe('contextHint coaching', () => {
 
     expect(contextHint(st)).toBe('UI-HINT-CLOCKS');
     expect(contextHint(st)).not.toBe('UI-HINT-CLOCKS');
+  });
+
+  it('still teaches the Power clock after a long drill bay run', () => {
+    const st = createGame(42);
+    st.tutorialActive = false;
+    st.sectorIndex = 0;
+    st.turn = 28;
+    st.scriptedFired.tut_welcome = true;
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.inventory = st.inventory.filter(
+      (s) => !(ITEMS[s.kind].equipSlot || ITEMS[s.kind].equipSlots?.length),
+    );
+    st.player.equip = emptyEquipSlots();
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.enemies = [];
+
+    expect(contextHint(st)).toBe('UI-HINT-CLOCKS');
+    expect(lore('UI-HINT-CLOCKS').toLowerCase()).toContain('power cell');
   });
 
   it('teaches extract spine once after clocks', () => {

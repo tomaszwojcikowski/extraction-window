@@ -4,7 +4,7 @@ import { formatExtractBoxes } from '../../src/game/presenters/FieldHud';
 import { formatFieldKitDock } from '../../src/game/presenters/FieldKitDock';
 import { buildKitOverlayContent } from '../../src/game/presenters/KitOverlayContent';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
-import { applyAction, createGame, describeObjective } from '../../src/sim';
+import { applyAction, createGame, describeObjective, finishTutorial } from '../../src/sim';
 
 /** Quiet opening tile so kit/objective coaching is not stolen by loot or fauna. */
 function quietOpening() {
@@ -71,5 +71,22 @@ describe('drill bay field interaction', () => {
     }
     expect(st.player.equip.tool).toBe('phaser');
     expect(formatFieldKitDock(st, 120)).toContain('◆phaser');
+  });
+
+  it('teaches u Power Cell on the first quiet plains beat after a long drill', () => {
+    const st = createGame(42, { skipTutorial: false });
+    st.turn = 28;
+    finishTutorial(st);
+    st.items = [];
+    st.enemies = [];
+    st.npcs = [];
+    st.roomQuest = null;
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    expect(contextHint(st)).toBe('UI-HINT-CLOCKS');
+    expect(lore('UI-HINT-CLOCKS').toLowerCase()).toContain('power cell');
   });
 });
