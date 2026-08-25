@@ -87,6 +87,11 @@ export function contextHint(st: GameState): LoreId | null {
   }
 
   const tile = st.tiles[st.player.y]![st.player.x]!;
+  if (tile.kind === 'hazard' || tile.kind === 'vent' || tile.kind === 'sump') {
+    if (st.player.filterTurns <= 0) {
+      return hasItem(st, 'filter') ? 'UI-HINT-HAZARD-FILTER' : 'UI-HINT-HAZARD';
+    }
+  }
   if (tile.kind === 'exit') {
     // Say what the hatch wants — "sealed" alone is a dead end.
     if (st.sectorId === 'ruin' && !hasItem(st, 'relay_key')) return 'UI-HINT-EXIT-NEED-KEY';
@@ -193,6 +198,7 @@ export function kitKindForHint(st: GameState, hint: LoreId | null): ItemKind | n
       return 'med';
     case 'UI-HINT-USE-ENERGY':
       return 'energy';
+    case 'UI-HINT-HAZARD-FILTER':
     case 'UI-HINT-ION-FRONT':
       return 'filter';
     case 'UI-HINT-USE-ARMOR':

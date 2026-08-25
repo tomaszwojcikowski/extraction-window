@@ -417,3 +417,28 @@ describe('hint kit selection', () => {
     expect(resolveHintLine(st)).toBe('OBJ-LOCAL-EXIT');
   });
 });
+
+describe('hazard Filter coaching', () => {
+  it('points the dock at Filter while standing on a yellow tile', () => {
+    const st = createGame(42);
+    st.enemies = [];
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'hazard';
+    st.player.energy = st.player.maxEnergy;
+    st.player.hp = st.player.maxHp;
+    st.player.filterTurns = 0;
+    expect(resolveHintLine(st)).toBe('UI-HINT-HAZARD-FILTER');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('filter');
+  });
+
+  it('tells you to step off when the kit has no Filter', () => {
+    const st = createGame(42);
+    st.enemies = [];
+    st.items = [];
+    st.inventory = st.inventory.filter((s) => s.kind !== 'filter');
+    st.tiles[st.player.y]![st.player.x]!.kind = 'hazard';
+    st.player.energy = st.player.maxEnergy;
+    st.player.hp = st.player.maxHp;
+    expect(contextHint(st)).toBe('UI-HINT-HAZARD');
+  });
+});

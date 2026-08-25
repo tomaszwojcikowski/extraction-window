@@ -199,6 +199,8 @@ export const LORE = {
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare stops the next pulse',
   'UI-HINT-FLARE': 'Dark fight — u Plasma Flare',
+  'UI-HINT-HAZARD-FILTER': 'Yellow tile drains Power — u Filter, or step off',
+  'UI-HINT-HAZARD': 'Yellow tile drains Power — step off it',
   'UI-HINT-LIGHT':
     'SHADOW — first unaware strike is Enhanced · LIT safer · Flare lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — u to wear (· on the dock)',
