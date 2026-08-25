@@ -51,3 +51,25 @@ describe('opening field interaction', () => {
     expect(lines.some((l) => l.includes(lore('UI-KIT-USE')))).toBe(true);
   });
 });
+
+describe('drill bay field interaction', () => {
+  it('keeps the Survey Phaser off the dock until the bay pickup wears it', () => {
+    const st = createGame(42, { skipTutorial: false });
+    expect(formatFieldKitDock(st, 120)).not.toContain('phaser');
+    expect(lore(describeObjective(st).local)).toBe(lore('OBJ-TUT-PHASER'));
+    expect(contextHint(st)).toBe('UI-TUT-MOVE');
+
+    st.scriptedFired.tut_light = true;
+    st.turn = 1;
+    st.player.x = 14;
+    st.player.y = 7;
+    st.enemies.forEach((e) => {
+      e.alive = false;
+    });
+    for (let i = 0; i < 8 && !st.inventory.some((s) => s.kind === 'phaser'); i++) {
+      applyAction(st, { type: 'move', dx: 1, dy: 0 });
+    }
+    expect(st.player.equip.tool).toBe('phaser');
+    expect(formatFieldKitDock(st, 120)).toContain('◆phaser');
+  });
+});

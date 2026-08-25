@@ -49,6 +49,7 @@ describe('drill bay tutorial', () => {
     expect(st.items.length).toBe(3);
     expect(st.items.some((item) => item.kind === 'flare')).toBe(true);
     expect(st.items.some((item) => item.kind === 'phaser')).toBe(true);
+    expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(false);
     expect(st.enemies.some((enemy) => enemy.kind === 'stalker')).toBe(true);
     expect(st.enemies.some((enemy) => enemy.kind === 'mite')).toBe(true);
     expect(st.roomQuest).toBeNull();
@@ -345,6 +346,7 @@ describe('drill bay tutorial', () => {
     st.ui.selectedSlot = phaserIdx;
     applyAction(st, { type: 'use' });
     expect(st.player.equip.tool).toBe('phaser');
+    expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(true);
 
     st.player.x = 20;
     st.player.y = 7;

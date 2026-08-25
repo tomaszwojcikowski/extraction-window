@@ -5,7 +5,7 @@ import type { LoreId } from '../data/lore';
 import { generateSectorMap } from '../map/generator';
 import { generateTutorialMap } from '../map/tutorialMap';
 import { mulberry32 } from './rng';
-import type { GameState } from './types';
+import type { GameState, InventorySlot } from './types';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { emptyEquipSlots } from './equip';
@@ -35,6 +35,24 @@ export type CreateGameOpts = {
   /** Default true — harness / tests / autopilot skip the drill bay. */
   skipTutorial?: boolean;
 };
+
+function startingKit(includeSurveyPhaser: boolean): InventorySlot[] {
+  const kit: InventorySlot[] = [
+    { kind: 'med', count: 7 },
+    { kind: 'energy', count: 6 },
+    { kind: 'probe', count: 1 },
+    { kind: 'stim', count: 1 },
+    { kind: 'flare', count: 2 },
+    { kind: 'plate', count: 2 },
+    { kind: 'filter', count: 1 },
+    { kind: 'dart', count: 1 },
+  ];
+  // Drill bay places a Survey Phaser on the deck — keep it out of the bag so
+  // pickup is the wear lesson. Skip-tutorial / harness starts with one packed.
+  if (includeSurveyPhaser) kit.push({ kind: 'phaser', count: 1 });
+  kit.push({ kind: 'sealant', count: 2 });
+  return kit;
+}
 
 export function createGame(seed: number, opts?: CreateGameOpts): GameState {
   const skipTutorial = opts?.skipTutorial ?? true;
@@ -85,18 +103,7 @@ export function createGame(seed: number, opts?: CreateGameOpts): GameState {
       statuses: {},
       equip: emptyEquipSlots(),
     },
-    inventory: [
-      { kind: 'med', count: 7 },
-      { kind: 'energy', count: 6 },
-      { kind: 'probe', count: 1 },
-      { kind: 'stim', count: 1 },
-      { kind: 'flare', count: 2 },
-      { kind: 'plate', count: 2 },
-      { kind: 'filter', count: 1 },
-      { kind: 'dart', count: 1 },
-      { kind: 'phaser', count: 1 },
-      { kind: 'sealant', count: 2 },
-    ],
+    inventory: startingKit(!tutorialActive),
     enemies: map.enemies,
     npcs: map.npcs,
     allies: [],
