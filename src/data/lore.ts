@@ -102,7 +102,7 @@ export const LORE = {
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
-    'Sealed hatch (adjacent, optional): Sealant Foam (u) or equip Pulse Baton then Enter / Space / >.\n' +
+    'Sealed hatch (adjacent, optional): Sealant Foam (u) or wear Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Power · XP\n' +
