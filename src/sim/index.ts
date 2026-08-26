@@ -32,7 +32,7 @@ export {
 } from './light';
 export { refreshVision } from './vision';
 export { busIsCritical, BUS_CRITICAL, canSpendPower, spendPower, taxPower, POWER_TAX_HEAVY, KIT_POWER_COST } from './bus';
-export { currentObjectivePos, describeObjective, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
+export { currentObjectivePos, describeObjective, isObjectiveHidden, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
 export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
 export {

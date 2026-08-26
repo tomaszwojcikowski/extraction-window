@@ -103,6 +103,13 @@ export function describeObjective(state: GameState): ObjectiveDesc {
   return { local, campaign, pos };
 }
 
+/** True when the live next-step tile is still in fog (not explored or in view). */
+export function isObjectiveHidden(state: GameState): boolean {
+  const pos = describeObjective(state).pos;
+  if (!pos) return false;
+  return !(state.explored[pos.y]?.[pos.x] || state.visible[pos.y]?.[pos.x]);
+}
+
 /** Latest causal milestone for sticky HUD (key → used → core). */
 export function stickyMilestone(events: LoreId[]): LoreId | null {
   const order: LoreId[] = ['LOG-GOT-KEY', 'LOG-USED-KEY', 'LOG-GOT-CORE'];

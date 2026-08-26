@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { lore } from '../../src/data/lore';
 import { formatExtractBoxes } from '../../src/game/presenters/FieldHud';
-import { formatFieldKitDock } from '../../src/game/presenters/FieldKitDock';
+import { formatFieldKitDock, shortKitName } from '../../src/game/presenters/FieldKitDock';
 import { buildKitOverlayContent } from '../../src/game/presenters/KitOverlayContent';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
+import { minimapGoalPos } from '../../src/game/views/MinimapView';
+import { formatPaddContent } from '../../src/game/views/overlays/PaddOverlay';
 import { applyAction, createGame, describeObjective, finishTutorial } from '../../src/sim';
 
 /** Quiet opening tile so kit/objective coaching is not stolen by loot or fauna. */
@@ -24,6 +26,11 @@ function quietOpening() {
 describe('opening field interaction', () => {
   it('wears the starting Survey Phaser with u from the dock, then shows the hatch', () => {
     const st = quietOpening();
+    const hatch = describeObjective(st).pos;
+    if (hatch) {
+      st.explored[hatch.y]![hatch.x] = true;
+      st.visible[hatch.y]![hatch.x] = true;
+    }
 
     const dock = formatFieldKitDock(st, 120);
     expect(dock).toContain('phaser');
@@ -49,6 +56,36 @@ describe('opening field interaction', () => {
     expect(lines.some((l) => l.includes('Tool') && l.includes('9u'))).toBe(true);
     expect(lines.some((l) => l.includes('2–3'))).toBe(true);
     expect(lines.some((l) => l.includes(lore('UI-KIT-USE')))).toBe(true);
+  });
+
+  it('uses Field Array Pulse when the hatch is in fog, then Nav Ping to mark the map', () => {
+    const st = quietOpening();
+    st.scriptedFired.teach_equip = true;
+    st.scriptedFired.teach_phaser = true;
+    st.player.equip.tool = 'phaser';
+    const hatch = describeObjective(st).pos;
+    expect(hatch).not.toBeNull();
+    st.explored[hatch!.y]![hatch!.x] = false;
+    st.visible[hatch!.y]![hatch!.x] = false;
+
+    expect(formatPaddContent(st)).toContain(lore('UI-HINT-PROBE'));
+    expect(resolveHintLine(st)).toBe('UI-HINT-PROBE');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('probe');
+    expect(formatFieldKitDock(st, 120)).toContain(`${lore('UI-DOCK-USE')} ${shortKitName('probe')}`);
+
+    applyAction(st, { type: 'use' });
+    expect(st.player.probeTurns).toBeGreaterThan(0);
+    expect(st.inventory.some((s) => s.kind === 'probe')).toBe(false);
+
+    st.explored[hatch!.y]![hatch!.x] = false;
+    st.visible[hatch!.y]![hatch!.x] = false;
+    st.inventory.push({ kind: 'mapper', count: 1 });
+    expect(resolveHintLine(st)).toBe('UI-HINT-MAPPER');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('mapper');
+    applyAction(st, { type: 'use' });
+    expect(st.player.mapperTurns).toBeGreaterThan(0);
+    expect(minimapGoalPos(st)).toEqual(hatch);
+    expect(formatPaddContent(st)).not.toContain(lore('UI-HINT-MAPPER'));
   });
 });
 

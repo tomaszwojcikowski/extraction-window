@@ -13,6 +13,7 @@ import { activeQuestStep } from '../../sim/roomQuest';
 import { describeObjective } from '../../sim/objectives';
 import { pillarCoachHint } from './PillarCoach';
 import { phaserContextHint } from './PhaserLanes';
+import { fogSurveyKitKind } from './FieldKitDock';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -177,6 +178,16 @@ export function contextHint(st: GameState): LoreId | null {
   const pillar = pillarCoachHint(st);
   if (pillar) return pillar;
 
+  const fogKind = fogSurveyKitKind(st);
+  if (fogKind === 'mapper' && !st.scriptedFired.teach_mapper) {
+    st.scriptedFired.teach_mapper = true;
+    return 'UI-HINT-MAPPER';
+  }
+  if (fogKind === 'probe' && !st.scriptedFired.teach_probe) {
+    st.scriptedFired.teach_probe = true;
+    return 'UI-HINT-PROBE';
+  }
+
   const rq = st.roomQuest;
   if (rq && !rq.done) {
     const step = activeQuestStep(rq);
@@ -215,6 +226,10 @@ export function kitKindForHint(st: GameState, hint: LoreId | null): ItemKind | n
       return 'phaser';
     case 'UI-TUT-KIT':
       return 'salvage';
+    case 'UI-HINT-MAPPER':
+      return 'mapper';
+    case 'UI-HINT-PROBE':
+      return 'probe';
     case 'UI-HINT-EQUIP': {
       for (const slot of st.inventory) {
         if (isItemWorn(st, slot.kind)) continue;

@@ -6,6 +6,7 @@ import {
   shortKitName,
 } from '../../src/game/presenters/FieldKitDock';
 import { tryEquipItem } from '../../src/sim/inventory';
+import { describeObjective } from '../../src/sim/objectives';
 import { combatArena } from '../sim/fixtures';
 
 describe('field kit dock', () => {
@@ -81,5 +82,23 @@ describe('field kit dock', () => {
     expect(line).toContain('phaser');
     expect(line).toContain(`${lore('UI-DOCK-WEAR')} ${shortKitName('phaser')}`);
     expect(line).toContain('[1hypo×7]');
+  });
+
+  it('points at Field Array Pulse on the dock while the hatch is in fog', () => {
+    const st = combatArena();
+    st.tutorialActive = false;
+    st.sectorId = 'plains';
+    st.inventory = [
+      { kind: 'med', count: 1 },
+      { kind: 'probe', count: 1 },
+    ];
+    st.ui.selectedSlot = 0;
+    const pos = describeObjective(st).pos;
+    expect(pos).not.toBeNull();
+    st.explored[pos!.y]![pos!.x] = false;
+    st.visible[pos!.y]![pos!.x] = false;
+    const line = formatFieldKitDock(st);
+    expect(line).toContain(`${lore('UI-DOCK-USE')} ${shortKitName('probe')}`);
+    expect(line).toContain('2pulse');
   });
 });

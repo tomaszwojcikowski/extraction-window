@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { lore } from '../../../data/lore';
+import { lore, type LoreId } from '../../../data/lore';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
 import { drawModalTapeHeader } from './modalChrome';
 import { describeObjective } from '../../../sim/objectives';
 import { formatExtractBoxes } from '../../presenters/FieldHud';
+import { fogSurveyKitKind } from '../../presenters/FieldKitDock';
 import type { GameState } from '../../../sim/types';
 
 /** Fixed panel budget — body grows only inside this cap (kit lesson). */
@@ -21,10 +22,14 @@ export function formatPaddContent(state: GameState): string {
       ? [lore('UI-PAGES-EMPTY')]
       : state.codexLog.map((id, i) => `${i + 1}  ${lore(id)}`);
   const notes = entries.join(`\n${SEP}\n`);
+  const fogKind = fogSurveyKitKind(state);
+  const fogLine: LoreId | null =
+    fogKind === 'mapper' ? 'UI-HINT-MAPPER' : fogKind === 'probe' ? 'UI-HINT-PROBE' : null;
   return [
     `${lore('UI-PAGES')}  (${state.codexPages} pages)`,
     SEP,
     `${lore('UI-OBJECTIVE')}  ${lore(desc.local)}`,
+    ...(fogLine ? [lore(fogLine)] : []),
     lore(desc.campaign),
     formatExtractBoxes(state),
     SEP,

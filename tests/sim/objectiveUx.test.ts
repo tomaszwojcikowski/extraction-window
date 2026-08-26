@@ -43,5 +43,7 @@ describe('describeObjective now vs later', () => {
     st.explored[pos!.y]![pos!.x] = false;
     st.visible[pos!.y]![pos!.x] = false;
     expect(minimapGoalPos(st)).toBeNull();
+    st.player.mapperTurns = 40;
+    expect(minimapGoalPos(st)).toEqual(pos);
   });
 });

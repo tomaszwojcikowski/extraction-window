@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createGame, applyAction, emptyEquipSlots } from '../../src/sim';
+import { createGame, applyAction, emptyEquipSlots, describeObjective } from '../../src/sim';
 import { lore } from '../../src/data/lore';
 import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextHints';
 import { stanceBadgeLabel } from '../../src/game/presenters/HudBadges';
@@ -184,6 +184,8 @@ describe('contextHint coaching', () => {
     st.scriptedFired.teach_equip = true;
     st.scriptedFired.teach_brand = true;
     st.scriptedFired.teach_light = true;
+    st.scriptedFired.teach_mapper = true;
+    st.scriptedFired.teach_probe = true;
     st.items = [];
     st.roomQuest = null;
     st.npcs = [];
@@ -440,5 +442,49 @@ describe('hazard Filter coaching', () => {
     st.player.energy = st.player.maxEnergy;
     st.player.hp = st.player.maxHp;
     expect(contextHint(st)).toBe('UI-HINT-HAZARD');
+  });
+});
+
+describe('fog goal kit coaching', () => {
+  function hideObjective(st: ReturnType<typeof createGame>): void {
+    st.enemies = [];
+    st.items = [];
+    st.roomQuest = null;
+    st.npcs = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.scriptedFired.tut_welcome = true;
+    st.scriptedFired.teach_clocks = true;
+    st.scriptedFired.teach_extract = true;
+    st.scriptedFired.teach_equip = true;
+    st.scriptedFired.teach_brand = true;
+    st.scriptedFired.teach_light = true;
+    const pos = describeObjective(st).pos;
+    expect(pos).not.toBeNull();
+    st.explored[pos!.y]![pos!.x] = false;
+    st.visible[pos!.y]![pos!.x] = false;
+  }
+
+  it('teaches Field Array Pulse once when the hatch is in fog', () => {
+    const st = createGame(42);
+    hideObjective(st);
+    st.inventory = [{ kind: 'probe', count: 1 }];
+    expect(resolveHintLine(st)).toBe('UI-HINT-PROBE');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('probe');
+    expect(contextHint(st)).toBe('OBJ-LOCAL-EXIT');
+  });
+
+  it('prefers Nav Ping over pulse when both can reveal the hatch', () => {
+    const st = createGame(42);
+    hideObjective(st);
+    st.inventory = [
+      { kind: 'probe', count: 1 },
+      { kind: 'mapper', count: 1 },
+    ];
+    expect(resolveHintLine(st)).toBe('UI-HINT-MAPPER');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('mapper');
   });
 });

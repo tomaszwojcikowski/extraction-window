@@ -15,10 +15,11 @@ const MAP_H = 128;
 /** Inner map canvas padding; tape strip sits above. */
 const PAD = 10;
 
-/** Local next-step cell for the minimap ring — explored or currently visible. */
+/** Local next-step cell for the minimap ring — seen, or revealed by Nav Ping. */
 export function minimapGoalPos(state: GameState): { x: number; y: number } | null {
   const pos = describeObjective(state).pos;
   if (!pos) return null;
+  if (state.player.mapperTurns > 0) return pos;
   if (state.explored[pos.y]?.[pos.x] || state.visible[pos.y]?.[pos.x]) return pos;
   return null;
 }

@@ -2,6 +2,8 @@ import { lore } from '../../data/lore';
 import { ITEMS, shortEquipName, type ItemKind } from '../../data/items';
 import { equipSlotsFor, isItemWorn } from '../../sim/equip';
 import { BUS_WARN_AT } from '../../sim/bus';
+import { hasItem } from '../../sim/inventory';
+import { isObjectiveHidden } from '../../sim/objectives';
 import type { GameState } from '../../sim/types';
 import { clampKitSelection } from './KitOverlayContent';
 
@@ -81,6 +83,14 @@ export function fieldKitWearCue(state: GameState): string {
   return '';
 }
 
+/** Kit that can reveal the live next-step tile while it is still in fog. */
+export function fogSurveyKitKind(state: GameState): ItemKind | null {
+  if (!isObjectiveHidden(state)) return null;
+  if (hasItem(state, 'mapper') && state.player.mapperTurns <= 0) return 'mapper';
+  if (hasItem(state, 'probe') && state.player.probeTurns <= 0) return 'probe';
+  return null;
+}
+
 /** Hotkey + use verb for a Power Cell when the bus is at a warn mark. */
 export function fieldKitSpendCue(state: GameState): string {
   if (!state.busFailing && state.player.energy > BUS_WARN_AT[0]) return '';
@@ -93,6 +103,18 @@ export function fieldKitSpendCue(state: GameState): string {
   return `${slotHotkey(idx)} ${lore('UI-DOCK-USE')} ${shortKitName('energy')}`;
 }
 
+/** Hotkey + use verb for Nav Ping / Field Array Pulse while the goal is in fog. */
+export function fieldKitFogCue(state: GameState): string {
+  const kind = fogSurveyKitKind(state);
+  if (!kind) return '';
+  const bag = Math.min(state.inventory.length, FIELD_KIT_DOCK_SLOTS);
+  if (bag === 0) return '';
+  const selected = clampKitSelection(state.ui.selectedSlot, bag);
+  if (state.inventory[selected]?.kind === kind) return '';
+  const idx = state.inventory.findIndex((s) => s.kind === kind);
+  if (idx < 0 || idx >= bag) return '';
+  return `${slotHotkey(idx)} ${lore('UI-DOCK-USE')} ${shortKitName(kind)}`;
+}
 
 function formatSlotCell(
   state: GameState,
@@ -138,7 +160,12 @@ export function formatFieldKitDock(state: GameState, maxChars = 88): string {
   const cells: string[] = [];
   for (let i = 0; i < bag; i++) cells.push(formatSlotCell(state, i, selected));
   const verb = fieldKitSelectedVerb(state);
-  const extras = [verb, fieldKitSpendCue(state), fieldKitWearCue(state)].filter(Boolean);
+  const extras = [
+    verb,
+    fieldKitSpendCue(state),
+    fieldKitFogCue(state),
+    fieldKitWearCue(state),
+  ].filter(Boolean);
 
   const fit = (slice: string[], extra: string[]) =>
     joinDock(slice, extra).length <= maxChars;

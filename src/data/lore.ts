@@ -201,6 +201,8 @@ export const LORE = {
   'UI-HINT-FLARE': 'Dark fight — u Plasma Flare',
   'UI-HINT-HAZARD-FILTER': 'Yellow tile drains Power — u Filter, or step off',
   'UI-HINT-HAZARD': 'Yellow tile drains Power — step off it',
+  'UI-HINT-MAPPER': 'Goal in fog — u Nav Ping, then n for the map ring',
+  'UI-HINT-PROBE': 'Goal in fog — u Field Array Pulse to see farther',
   'UI-HINT-LIGHT':
     'SHADOW — first unaware strike is Enhanced · LIT safer · Flare lights a dark fight',
   'UI-HINT-EQUIP': 'Wearable in kit — u to wear (· on the dock)',
