@@ -286,7 +286,8 @@ export const SECTORS: SectorDef[] = [
     scrubChance: 0.015,
     rubbleChance: 0.06,
     ventChance: 0.1,
-    energyDrain: 1,
+    // Ash identity is vents / EM — not a second Power clock on top of bus drip.
+    energyDrain: 0,
     hasRelayKey: false,
     hasNavCore: false,
     isBeacon: false,

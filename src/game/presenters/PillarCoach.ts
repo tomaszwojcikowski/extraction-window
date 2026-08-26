@@ -1,6 +1,8 @@
 import type { LoreId } from '../../data/lore';
 import { ENEMIES } from '../../data/enemies';
 import { inShadow } from '../../sim/light';
+import { describeObjective } from '../../sim/objectives';
+import { manhattan } from '../../sim/spatial';
 import type { GameState } from '../../sim/types';
 
 function once(state: GameState, id: string): boolean {
@@ -11,9 +13,9 @@ function once(state: GameState, id: string): boolean {
 
 /**
  * One-shot pillar coaching for the early shelf — Power clock, extract spine,
- * light. Flank stays on the hint line while peel is live (`contextHint`).
- * Call only when the hint line is free of combat / tile urgency
- * (DESIGN_PRINCIPLES §4: teach at the moment of need).
+ * light, map when the next step sits outside the lamp. Flank stays on the hint
+ * line while peel is live (`contextHint`). Call only when the hint line is free
+ * of combat / tile urgency (DESIGN_PRINCIPLES §4: teach at the moment of need).
  *
  * Clocks / extract fire only after the drill bay (`tut_welcome`) so harness
  * runs and tutorial hint tests are not stomped.
@@ -44,6 +46,17 @@ export function pillarCoachHint(st: GameState): LoreId | null {
     once(st, 'teach_extract')
   ) {
     return 'UI-HINT-EXTRACT';
+  }
+
+  // Next step off the lamp — teach the map ring once, then fall back to local.
+  const goal = describeObjective(st).pos;
+  if (
+    goal &&
+    manhattan(st.player.x, st.player.y, goal.x, goal.y) > 4 &&
+    !(st.visible[goal.y]?.[goal.x] ?? false) &&
+    once(st, 'teach_minimap')
+  ) {
+    return 'UI-HINT-MINIMAP';
   }
 
   // Shadow badge alone is easy to miss — teach ambush once on first dark tile.

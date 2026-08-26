@@ -3,6 +3,7 @@ import type { GameState } from '../../sim';
 import { Theme } from '../../scenes/theme';
 import { drawBolt, drawMenuPlate, drawTapeStrip } from '../../scenes/atmosphere';
 import { HUD_TOP } from '../GameHost';
+import { describeObjective } from '../../sim/objectives';
 import { activeQuestStep } from '../../sim/roomQuest';
 import { cacheRoomList } from '../../sim/cacheSurvey';
 
@@ -18,6 +19,15 @@ const TAPE_H = 8;
 /** Total panel size including padding and bolt clearance. */
 const PANEL_W = MAP_W + PAD * 2;
 const PANEL_H = MAP_H + PAD * 2 + TAPE_H;
+
+/** Local next-step cell for the minimap ring — explored, visible, or Nav Ping live. */
+export function minimapGoalPos(state: GameState): { x: number; y: number } | null {
+  const pos = describeObjective(state).pos;
+  if (!pos) return null;
+  if (state.explored[pos.y]?.[pos.x] || state.visible[pos.y]?.[pos.x]) return pos;
+  if (state.player.mapperTurns > 0) return pos;
+  return null;
+}
 
 /**
  * Field-sketch minimap overlay — toggle with `n`.
@@ -150,12 +160,19 @@ export class MinimapView {
 
     if (state.mapperPing) {
       const { x, y } = state.mapperPing;
-      if (explored[y]?.[x]) {
-        this.mapGfx.lineStyle(1, Theme.tape, 1);
-        const px = mapX + offX + x * cellW;
-        const py = mapY + offY + y * cellH;
-        this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
-      }
+      // Nav Ping is honest FOW pierce — draw even when the cell is still dark.
+      this.mapGfx.lineStyle(1, Theme.tape, 1);
+      const px = mapX + offX + x * cellW;
+      const py = mapY + offY + y * cellH;
+      this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
+    }
+
+    const goal = minimapGoalPos(state);
+    if (goal) {
+      this.mapGfx.lineStyle(1, Theme.flag, 1);
+      const gx = mapX + offX + goal.x * cellW;
+      const gy = mapY + offY + goal.y * cellH;
+      this.mapGfx.strokeRect(gx - 1, gy - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
     }
   }
 

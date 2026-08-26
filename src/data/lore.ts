@@ -208,6 +208,7 @@ export const LORE = {
     'Downed — u Field Hypo to stabilize, or step off the pack',
   'UI-HINT-EXTRACT':
     'Required order: Splice Key → beacon → Nav Lattice → drop skiff',
+  'UI-HINT-MINIMAP': 'Goal is off your lamp — press n for the map ring · follow the edge chevron',
   'UI-HINT-FLANK':
     'Two+ hostiles touching you — DEF drops; fight in a doorway or break contact',
   'UI-HINT-FLANK-COMING':
@@ -487,7 +488,7 @@ export const LORE = {
   'ITEM-SEALANT-DESC':
     'u — clear EM, or open a sealed hatch beside you.',
   'ITEM-MAPPER': 'Nav Ping',
-  'ITEM-MAPPER-DESC': 'u — shows the hatch through fog for 40 turns.',
+  'ITEM-MAPPER-DESC': 'u — marks the next extract goal through fog for 40 turns.',
   'ITEM-SALVAGE': 'Salvage',
   'ITEM-SALVAGE-DESC':
     'u — scan. May become kit, or spike EM and wake fauna.',
@@ -753,7 +754,7 @@ export const LORE = {
   'LOG-BUS-WARN': 'Power low — use a Power Cell.',
   'LOG-BUS-FAILING': 'Power at 0 — use a Power Cell this turn or the kit dies.',
   'LOG-WINDUP-KILL': 'Windup interrupted — recovered 2 Power.',
-  'LOG-USE-MAPPER': 'Nav ping — hatch marked.',
+  'LOG-USE-MAPPER': 'Nav ping — extract goal marked.',
   'LOG-USE-MAPPER-CACHE': 'Nav ping — cache marked on the minimap.',
   'LOG-CACHE-CLEAR': 'Sector caches cleared.',
   'LOG-COMM-CACHE-HINT': 'Comm hears a cache — use Nav Ping, then check the minimap.',

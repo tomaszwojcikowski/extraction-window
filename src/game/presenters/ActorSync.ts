@@ -312,7 +312,11 @@ export function syncFieldActors(host: ActorSyncHost, st: GameState, snapPosition
   host.entityLayer.bringToTop(host.playerSprite);
 }
 
-/** Pulse explored/visible extract goal; edge chevron when known but off-screen. */
+/**
+ * Pulse known extract goal on the field; always keep an edge compass toward the
+ * active objective so large early sectors are not map-blind (map first — chevron
+ * is direction, not FOW pierce).
+ */
 export function syncGoalVisuals(
   host: ActorSyncHost,
   st: GameState,
@@ -329,21 +333,20 @@ export function syncGoalVisuals(
   const explored = st.explored[pos.y]?.[pos.x] === true;
   const visible = st.visible[pos.y]?.[pos.x] === true;
   const mapperReveal = st.player.mapperTurns > 0;
-  if (!explored && !visible && !mapperReveal) {
-    host.goalMarker.setAlpha(0);
-    host.getGoalPulseTween()?.stop();
-    host.setGoalPulseTween(null);
-    return;
-  }
+  const known = explored || visible || mapperReveal;
 
   const wx = pos.x * TILE_DRAW + TILE_DRAW / 2;
   const wy = pos.y * TILE_DRAW + TILE_DRAW / 2;
-  host.goalMarker.setPosition(wx, wy);
-  host.goalMarker.setTint(Theme.flag);
-  // Instrument pulse on animFrame — stop any legacy forever tween.
+
   host.getGoalPulseTween()?.stop();
   host.setGoalPulseTween(null);
-  host.goalMarker.setAlpha(0.45 + (host.animFrame % 4) * 0.12);
+  if (known) {
+    host.goalMarker.setPosition(wx, wy);
+    host.goalMarker.setTint(Theme.flag);
+    host.goalMarker.setAlpha(0.45 + (host.animFrame % 4) * 0.12);
+  } else {
+    host.goalMarker.setAlpha(0);
+  }
 
   const top = host.topInset;
   const screenX = wx - host.camX;
@@ -356,6 +359,8 @@ export function syncGoalVisuals(
   const bottom = host.scale.height - bottomInset - pad;
   const onScreen =
     screenX >= left && screenX <= right && screenY >= topEdge && screenY <= bottom;
+  // Known + on screen: the pulsed tile owns the tell. Unknown + on screen: still
+  // no chevron (the fog cell is under the camera). Off screen: always compass.
   if (onScreen) return;
 
   const cx = host.scale.width / 2;
@@ -371,8 +376,8 @@ export function syncGoalVisuals(
   const ex = cx + ux * edgeDist;
   const ey = cy + uy * edgeDist;
 
-  host.chevronGfx.fillStyle(Theme.flag, 0.95);
-  host.chevronGfx.lineStyle(1, Theme.inkBright, 1);
+  host.chevronGfx.fillStyle(Theme.flag, known ? 0.95 : 0.75);
+  host.chevronGfx.lineStyle(1, Theme.inkBright, known ? 1 : 0.7);
   const s = 10;
   const px = -uy;
   const py = ux;

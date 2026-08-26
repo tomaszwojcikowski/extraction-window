@@ -492,7 +492,11 @@ function dressSealedHatches(
   start: Pos,
   exit: Pos,
   rng: Rng,
+  sectorIndex: number,
 ): void {
+  // Plains/flood lack sealant in the loot mix — skip until foam shows up so
+  // early sealed tiles do not read as progress blockers.
+  if (sectorIndex < 2) return;
   const contains = (room: Room, p: Pos): boolean =>
     p.x >= room.x && p.x < room.x + room.w && p.y >= room.y && p.y < room.y + room.h;
   const mid = rooms.filter((r) => !contains(r, start) && !contains(r, exit));
@@ -660,7 +664,7 @@ export function generateSectorMap(
     else if (!sector.isShuttle) tiles[exit.y]![exit.x] = exitTile();
   }
 
-  dressSealedHatches(tiles, rooms, start, exit, rng);
+  dressSealedHatches(tiles, rooms, start, exit, rng, sector.index);
 
   for (const room of rooms) {
     const c = { x: room.cx, y: room.cy };
@@ -811,10 +815,13 @@ export function generateSectorMap(
 
   // Hostiles the same way. A pack in one room and nothing in the next reads as
   // a decision; the same count smeared evenly reads as weather.
+  // Early shelf (plains/flood) keeps the sector table as written so the opener
+  // stays exploration-led; from canopy on, +1 packs the extract road.
+  const roadPack = sector.index >= 2 ? 1 : 0;
   const enemyN =
     randInt(rng, sector.enemyCount[0], sector.enemyCount[1]) +
     enemyCountBonus(playerLevel) +
-    1;
+    roadPack;
   for (const fill of planHostiles(rooms, enemyN, rng)) {
     const spots = openIn(fill.room, 5);
     for (let i = 0; i < fill.count && i < spots.length; i++) {

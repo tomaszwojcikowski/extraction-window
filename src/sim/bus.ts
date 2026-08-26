@@ -10,11 +10,11 @@ export const BUS_CRITICAL = 20;
 export const POWER_TAX_HEAVY = 8;
 /**
  * Global bus drip cadence: one Power every N turns, billed in `tickEnvironment`.
- * Sized so a full-spine run (~600 turns at the current room footprints) pays
- * ~100 drip — the original 5-turn cadence predates the larger rooms and was
- * taxing the longer spine ~35% harder than its Power budget allowed.
+ * Sized so a full-spine run (~800 turns at current room footprints / WR) pays
+ * ~100 drip — the prior 6-turn cadence was tuned for ~600 turns and drained
+ * the longer shelf before ash/kit spends even entered the story.
  */
-export const BUS_DRIP_TURNS = 6;
+export const BUS_DRIP_TURNS = 8;
 
 export function busIsCritical(state: GameState): boolean {
   return state.busFailing || state.player.energy <= BUS_CRITICAL;
