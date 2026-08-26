@@ -381,7 +381,7 @@ export function collectActionFloatLabels(
         next = { label: 'CANNOT OPEN', color: ThemeCss.tape };
         break;
       case 'LOG-INTERACT-MISS':
-        next = { label: 'STAND ON HATCH', color: ThemeCss.inkDim };
+        next = { label: 'WALK ONTO HATCH', color: ThemeCss.inkDim };
         break;
       case 'LOG-USE-EMPTY':
         next = { label: 'KIT EMPTY', color: ThemeCss.inkDim };

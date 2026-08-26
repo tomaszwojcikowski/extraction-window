@@ -142,7 +142,7 @@ describe('ActionFeedback', () => {
       { label: 'KIT EMPTY', color: ThemeCss.inkDim },
     ]);
     expect(actionFloatLabels([{ loreId: 'LOG-INTERACT-MISS' }])).toEqual([
-      { label: 'STAND ON HATCH', color: ThemeCss.inkDim },
+      { label: 'WALK ONTO HATCH', color: ThemeCss.inkDim },
     ]);
   });
 

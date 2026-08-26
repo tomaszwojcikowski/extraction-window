@@ -121,6 +121,15 @@ export const tutorialMechanic: Mechanic = {
         }
         return 'UI-TUT-PHASER';
       }
+      // East goal is often outside the lamp — teach the map before "go east".
+      if (
+        !state.scriptedFired.teach_minimap &&
+        Math.abs(18 - state.player.x) + Math.abs(7 - state.player.y) > 4 &&
+        !(state.visible[7]?.[18] ?? false)
+      ) {
+        once(state, 'teach_minimap');
+        return 'UI-HINT-MINIMAP';
+      }
       return 'UI-TUT-GOTO-PHASER';
     }
 
@@ -130,6 +139,16 @@ export const tutorialMechanic: Mechanic = {
         state.player.x === state.exitPos.x &&
         state.player.y === state.exitPos.y);
     if (onHatch) return 'UI-TUT-EXIT';
+    if (
+      state.exitPos &&
+      !state.scriptedFired.teach_minimap &&
+      Math.abs(state.exitPos.x - state.player.x) + Math.abs(state.exitPos.y - state.player.y) >
+        4 &&
+      !(state.visible[state.exitPos.y]?.[state.exitPos.x] ?? false)
+    ) {
+      once(state, 'teach_minimap');
+      return 'UI-HINT-MINIMAP';
+    }
     return 'UI-TUT-GOTO-HATCH';
   },
 
@@ -181,8 +200,8 @@ export const tutorialMechanic: Mechanic = {
     if (x === state.exitPos.x && y === state.exitPos.y) {
       return { type: 'exit' };
     }
-    // Prefer south alcove while still west of it — skips stalker + ion tile.
-    const alcove = { x: 12, y: 10 } as const;
+    // Prefer lit south lane while still west of it — skips stalker + ion tile.
+    const alcove = { x: 12, y: 11 } as const;
     const useAlcove =
       x < alcove.x && (state.tiles[alcove.y]?.[alcove.x]?.walkable ?? false);
     const goal = useAlcove ? alcove : state.exitPos;
