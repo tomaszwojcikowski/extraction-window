@@ -53,7 +53,8 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
       px.fillRect(insetL + 8 + i * 7 + wear, y + 2, 5, 2, Material.recess);
     }
     grit(px, Theme.inkMute, 12 + wear * 6, 20 + role * 3 + wear);
-    if (wear > 0) grit(px, Theme.rust, 4 + wear * 3, 80 + wear);
+    if (wear === 1) grit(px, Theme.rust, 3, 80 + wear);
+    if (wear === 2) grit(px, Theme.rust, 10, 80 + wear);
   } else if (style === 'bulkhead') {
     for (let y = 12; y < 36; y += 8) {
       for (let x = insetL + 5; x < TILE - insetR - 5; x += 8) {
@@ -73,9 +74,11 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
     px.fillRect(TILE - insetR - 7, 12, 1, 28, Theme.biolum);
     px.fillRect(insetL + 10, 16, TILE - insetL - insetR - 20, 4, Theme.biolumDeep);
     px.fillRect(insetL + 11, 17, TILE - insetL - insetR - 22, 2, Theme.biolum);
-    if (wear > 0) {
+    if (wear === 2) {
       px.fillRect(insetL + 12, 28, 8, 3, Theme.rust);
       grit(px, Theme.inkMute, 10, 55 + wear);
+    } else if (wear === 1) {
+      grit(px, Theme.inkMute, 6, 55 + wear);
     }
   }
 

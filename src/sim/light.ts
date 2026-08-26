@@ -207,11 +207,11 @@ export type SimLightSource = FieldLightSource;
  * palette can't drift apart — `scenes/theme.ts` re-exports this as `LightTemp`.
  */
 export const LIGHT_TEMP = {
-  /** Hooded work lamp through scratched glass. */
+  /** Hooded work lamp through clear glass. */
   lamp: 0xffd9a8,
   /** Magnesium flare — chemical burn, near-white with a warm skirt. */
   flare: 0xfff4e2,
-  /** Fauna / reef bioluminescence — cold, wet, green-cyan. */
+  /** Fauna / reef glow — living green-cyan. */
   fauna: 0x66f0d0,
   /** Sodium relay beacon. */
   beacon: 0xffb347,
@@ -221,10 +221,10 @@ export const LIGHT_TEMP = {
   pattern: 0xbfe6ff,
   /** Survey flagging / relay-key marker. */
   marker: 0xff7fb0,
-  /** EM-HIGH scan wash — sallow, sickly, unwelcome. */
-  scan: 0xbfd45e,
+  /** EM-HIGH survey wash — chartreuse scan you can read. */
+  scan: 0xc8e054,
   /** Hatch / exit standby lamp. */
-  standby: 0x6fa87a,
+  standby: 0x7cbc88,
   /** Wall fixture — warm bulkhead / cliff sconce. */
   sconce: 0xffc48a,
   /** Wall fixture — cool conduit strip. */

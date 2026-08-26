@@ -1,6 +1,6 @@
 # Extraction Window — Art Bible
 
-The locked look: **Halcyon field kit on the Meridian Shelf.** Material story, not a UI kit.
+The locked look: **Crisp Halcyon survey kit on a living Meridian Shelf.** Material story, not a UI kit.
 
 **Canon:** [`../GEM.md`](../GEM.md) scope filter · [`../DESIGN_PRINCIPLES.md`](../DESIGN_PRINCIPLES.md) UI/feel rules · [`../V1.md`](../V1.md) pillars · [`../WORLD.md`](../WORLD.md) glossary.
 
@@ -27,9 +27,9 @@ on an inline colour or a stray PNG pixel, so this is a rule the reviewer no long
 
 ## 1. The one-line look
 
-Painted alloy cases scuffed back to bare metal, bone-white silkscreen legends, reflective hazard tape, brine corrosion, and whatever the local ecology is glowing with — lit by hooded work lamps and burning magnesium.
+Crisp Halcyon survey kit on a living Meridian Shelf — sealed alloy still in expedition paint, bone-white legends, high-vis flagging and charge tape, and ecology glowing like a reef at night — lit by clear work lamps and magnesium.
 
-Nothing here is a starship bridge console. Nothing is a default sci-fi glow: every emitter has a motivated colour temperature and should be nameable by colour alone with the sprite hidden.
+Nothing here is a starship bridge console. Nothing is a default sci-fi glow: every emitter has a motivated colour temperature and should be nameable by colour alone with the sprite hidden. Wear comes from use, not decay.
 
 ---
 
@@ -37,14 +37,14 @@ Nothing here is a starship bridge console. Nothing is a default sci-fi glow: eve
 
 | Role | Token | Material story |
 |------|-------|----------------|
-| Structure | `ground`, `groundDeep`, `panel`, `panelEdge` | Wet basalt, damp deck plate, painted alloy, machined bevel |
+| Structure | `ground`, `groundDeep`, `panel`, `panelEdge` | Mineral slate, painted expedition alloy, machined bevel |
 | Ink | `ink`, `inkBright`, `inkDim`, `inkMute` | Silkscreen legend on a painted case — bone, never phosphor green |
-| Ecology | `biolum`, `biolumDeep` | Fauna and vent bioluminescence: cold, wet, green-cyan |
-| Failure | `rust` | Brine corrosion — damage, failure |
+| Ecology | `biolum`, `biolumDeep` | Living reef-glow: fauna and vent light, green-cyan |
+| Kinetic heat | `rust` | Impact tell — charge you can eat or interrupt |
 | Player marks | `flag` | Surveyor's flagging tape — objectives the player cares about |
-| Stored charge | `tape` | Reflective hazard tape — Power |
+| Stored charge | `tape` | Reflective high-vis tape — Power |
 | Window closing | `arc`, `arcWhite` | Shear heat, then arc blow-out at Breaching |
-| Contamination | `scanWash` | Sallow EM-HIGH wash — sickly, unwelcome |
+| Survey wash | `scanWash` | Chartreuse EM-HIGH wash — a scan you can read, not a sickness |
 | Safe / standby | `safe` | Hatch standby, all-clear |
 | Survey memory | `fog`, `memory` | Unseen vs remembered ground |
 
@@ -64,12 +64,13 @@ Because `theme.ts` re-exports the sim table, **palette and gameplay lighting can
 
 ### Materials
 
-Roles say what a colour *means*; materials say what a surface *is*. Wet basalt
-(`rock`), painted deck (`deck`), damp conduit lining (`conduit`), seam depth
-(`recess`), shelf scrub (`foliage`), fallen plate (`debris`), nest lining
-(`nest`), standing brine (`brine`), the surveyor's suit, and the field contacts
-each have a name. The two vocabularies stay disjoint — a material that duplicates
-a role gives the drawing code two ways to say one thing, and the test rejects it.
+Roles say what a colour *means*; materials say what a surface *is*. Mineral
+slate (`rock`), painted expedition deck (`deck`), conduit lining (`conduit`),
+seam depth (`recess`), shelf scrub (`foliage`), fallen plate (`debris`), nest
+lining (`nest`), standing brine (`brine`), the surveyor's suit, and the field
+contacts each have a name. Kit reads as used, not salvage-rot. The two
+vocabularies stay disjoint — a material that duplicates a role gives the drawing
+code two ways to say one thing, and the test rejects it.
 
 Wall faces are three family sheets (`t_wall_<cliff|bulkhead|conduit>_<role>_<wear>`)
 with a biome lift at light time — not 180 per-sector stamps. Role (0–3) is neighbor
@@ -105,9 +106,9 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
   grating slats (duct), a bolt grid (spire), chevroned seals (vault), pad
   markings (beacon). Cross-checks worth keeping: plains must not drift into
   ridge's banding, and duct must stay bare parallel bars or it becomes brine.
-- Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash chokes (dark warm-grey), duct swallows it.
+- Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash holds it (dark warm-grey), duct absorbs it.
 - Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `sump`, `scrub_nest`.
-- Ordinary ground stays dull. Saturated paint on a walkable tile reads as a rule
+- Ordinary ground stays **unsaturated**. Saturated paint on a walkable tile reads as a rule
   the tile does not have.
 
 ---
@@ -132,7 +133,7 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
   `enemyThreatTiles` from the sim, so the overlay cannot drift from what actually
   resolves. Incoming pack seats use `incomingFlankSeats` / `flankBoxTiles` from
   the same AI pick. Colour encodes the answer, not the attacker: rust = eat the charge,
-  kill mid-windup, or step to a doorway before a second hunter seats; sallow = leave the ring; hazard tape = held shot;
+  kill mid-windup, or step to a doorway before a second hunter seats; survey wash = leave the ring; high-vis tape = held shot;
   arc-white = beam lane.
 
 ---
@@ -143,7 +144,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
 
 - Bars: HP · Shield · Power · Window · XP. Meta line carries combat/EM plus **active** timers only — never a permanent equip dump.
 - **Meters are instruments.** `drawMeter` in [`atmosphere.ts`](../../src/scenes/atmosphere.ts) draws a recessed trough with a machined lip, quarter ticks, and rust flecks when critical — never a flat filled rectangle. Badges stay stencilled plates with a colour tab (`drawStencilBadge`), not pills.
-- **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on scuffed `drawFieldPanel` cases, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a dead lamp, never soft-fade.
+- **Chrome is stamped kit.** Context hints sit on a left-taped `drawHintPlate` note, modals on `drawFieldPanel` field-kit plates with light wear, Window urgency is a hard tape strip (no alpha breathe). Sector progress uses stencil ticks (`#` / `-`). Meta/log separators stay `/` or spaces — not middot dashboards. Title/end CTAs blink hard on/off like a work lamp, never soft-fade.
 - **Mission log is opt-in.** Bottom strip height is `0` until `l` opens `HUD_BOTTOM_LOG`. While closed, recent causal floats dock as plated chips (`SignalRail`) — confirm in the text feed, don’t keep a permanent ticker.
 - **Title is an aperture.** `drawTitleWindow` is a recessed survey glass in the case lid (sight brackets, grit, stepped scan tick); mission ID / begin / footer sit on `drawMenuPlate` strips — not a floating text stack.
 - **One channel per beat.** When Shear owns the HUD, Window urgency and pulse stay suppressed.

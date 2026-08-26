@@ -13,7 +13,7 @@ export type CameraAtmosphere = {
 
 export function addCameraAtmosphere(
   scene: Phaser.Scene,
-  strength = 0.07,
+  strength = 0.045,
 ): CameraAtmosphere | null {
   const filters = scene.cameras.main.filters?.external;
   if (!filters || typeof filters.addVignette !== 'function') return null;
@@ -38,13 +38,13 @@ export function addCameraAtmosphere(
 }
 
 // --- Field-kit primitives ---------------------------------------------------
-// Everything below is drawn as if it were bolted, painted, taped or corroded
-// onto salvaged survey hardware. Light comes from above: top edges catch a
+// Everything below is drawn as if it were bolted, painted, or taped
+// onto expedition survey hardware. Light comes from above: top edges catch a
 // highlight, bottom edges drop a hard shadow line. No elbows, no pills.
 
 type G = Phaser.GameObjects.Graphics;
 
-/** Deterministic scuff/pit hash so chrome grain is stable between redraws. */
+/** Deterministic wear-grain hash so chrome marks stay stable between redraws. */
 function grain(i: number, salt: number): number {
   const n = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
   return n - Math.floor(n);
@@ -125,8 +125,8 @@ export function drawStencilTicks(
 }
 
 /**
- * Brine corrosion creeping across a surface. `amount` 0–1 drives pit count and
- * bite — the Shear Pressure chrome uses this to physically degrade the frame.
+ * Wear marks as Shear climbs. `amount` 0–1 drives fleck count —
+ * the Shear Pressure chrome uses this to show the frame under load.
  */
 export function drawCorrosion(
   g: G,
@@ -139,7 +139,7 @@ export function drawCorrosion(
 ): void {
   const a = Math.max(0, Math.min(1, amount));
   if (a <= 0.001) return;
-  const pits = Math.floor(a * 46);
+  const pits = Math.floor(a * 22);
   for (let i = 0; i < pits; i++) {
     const px = x + grain(i, salt) * w;
     const py = y + grain(i + 91, salt) * h;
@@ -151,7 +151,7 @@ export function drawCorrosion(
 }
 
 /**
- * Field-kit menu backdrop — a scuffed equipment case lid, not a bridge console.
+ * Field-kit menu backdrop — an expedition case lid, not a bridge console.
  */
 export function drawMenuChrome(
   _scene: Phaser.Scene,
@@ -161,7 +161,7 @@ export function drawMenuChrome(
   accent: number = Theme.tape,
 ): void {
   g.clear();
-  // Wet basalt behind the kit — flat and scuffed, not a soft UI gradient.
+  // Mineral slate behind the kit — flat field plate, not a soft UI gradient.
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(0, 0, width, height);
   g.fillStyle(shade(Theme.groundDeep, 0.72), 1);
@@ -170,8 +170,8 @@ export function drawMenuChrome(
   g.fillStyle(shade(Theme.groundDeep, 0.78), 1);
   g.fillRect(0, 0, 26, height);
   g.fillRect(width - 26, 0, 26, height);
-  // Ash/spray flecks catching the low light.
-  for (let i = 0; i < 90; i++) {
+  // Reef-glow motes catching the work light.
+  for (let i = 0; i < 45; i++) {
     const fx = grain(i, 3) * width;
     const fy = grain(i + 400, 3) * height;
     g.fillStyle(i % 9 === 0 ? Theme.biolum : Theme.inkDim, i % 9 === 0 ? 0.22 : 0.08);
@@ -183,15 +183,15 @@ export function drawMenuChrome(
   const pw = width - 68;
   const ph = height - 76;
 
-  // Case lid: painted alloy, worn back to metal along the top rail.
+  // Case lid: painted expedition alloy.
   drawPlate(g, px, py, pw, ph, { fill: Theme.panel, alpha: 0.97 });
   g.fillStyle(Theme.ground, 0.85);
   g.fillRect(px + 8, py + 22, pw - 16, ph - 44);
   g.fillStyle(Theme.panelEdge, 0.3);
   g.fillRect(px + 8, py + 22, pw - 16, 1);
 
-  // Paint scuffs down to bare metal.
-  for (let i = 0; i < 26; i++) {
+  // Light wear on the laminate.
+  for (let i = 0; i < 13; i++) {
     const sx = px + 12 + grain(i, 7) * (pw - 30);
     const sy = py + 26 + grain(i + 55, 7) * (ph - 56);
     const sw = 2 + Math.floor(grain(i + 13, 7) * 14);
@@ -227,8 +227,8 @@ export function drawMenuChrome(
     g.fillRect(px + pw - 18, y, 8, 1);
   }
 
-  // Condensation beading on the lower plate.
-  for (let i = 0; i < 30; i++) {
+  // Ecology glints on the lower plate.
+  for (let i = 0; i < 15; i++) {
     const dx = px + 20 + grain(i, 21) * (pw - 40);
     const dy = py + ph - 60 + grain(i + 9, 21) * 46;
     g.fillStyle(Theme.biolum, 0.1 + grain(i + 3, 21) * 0.12);
@@ -264,7 +264,7 @@ export function drawTitleWindow(
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(vx, vy + vh - 1, vw, 1);
 
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 18; i++) {
     const fx = vx + 4 + grain(i, 41) * (vw - 8);
     const fy = vy + 4 + grain(i + 90, 41) * (vh - 8);
     g.fillStyle(Theme.inkDim, 0.08 + grain(i, 41) * 0.06);
@@ -473,8 +473,8 @@ export function drawFieldPanel(
   g.fillRect(x + w - 52, y + 8, 1, 3);
   g.fillRect(x + w - 17, y + 8, 1, 3);
 
-  // Interior scuffs — used laminate, not a clean modal card.
-  for (let i = 0; i < 18; i++) {
+  // Interior wear — used kit, not a clean modal card.
+  for (let i = 0; i < 9; i++) {
     const sx = x + 14 + grain(i, 11) * (w - 36);
     const sy = y + 22 + grain(i + 40, 11) * (h - 48);
     g.fillStyle(Theme.panelEdge, 0.1 + grain(i + 7, 11) * 0.12);

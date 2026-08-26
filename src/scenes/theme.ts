@@ -1,49 +1,49 @@
 import type { SectorId } from '../data/encounters';
 
 /**
- * Halcyon field kit on the Meridian Shelf.
+ * Crisp Halcyon survey kit on a living Meridian Shelf.
  *
- * Material story, not a UI kit: painted alloy cases scuffed back to bare metal,
- * bone-white silkscreen legends, reflective hazard tape, brine corrosion, and
- * whatever the local ecology is glowing with. Nothing here is a starship
+ * Material story, not a UI kit: sealed alloy still in expedition paint,
+ * bone-white silkscreen legends, high-vis flagging and charge tape, and
+ * ecology glowing like a reef at night. Nothing here is a starship
  * console — no rounded elbow panels, no orange-on-black bridge chrome — and
  * nothing is a default "sci-fi glow": each emitter below has a motivated
- * colour temperature (see `LightTemp`).
+ * colour temperature (see `LightTemp`). Wear comes from use, not decay.
  */
 
 export const FONT_DATA = '"IBM Plex Mono", "Courier New", monospace';
 export const FONT_DISPLAY = '"Share Tech Mono", "IBM Plex Mono", monospace';
 
 export const Theme = {
-  // Structure — wet basalt, damp deck plate, painted alloy, machined bevel.
-  ground: 0x121a1c,
-  groundDeep: 0x06090a,
-  panel: 0x182124,
-  panelEdge: 0x36464a,
+  // Structure — mineral slate, painted expedition alloy, machined bevel.
+  ground: 0x1e2c30,
+  groundDeep: 0x0c1214,
+  panel: 0x243438,
+  panelEdge: 0x4a5e62,
 
   // Ink — silkscreen legends on painted cases (bone, not phosphor).
   ink: 0xdfe4d5,
   inkBright: 0xf6f4e6,
   inkDim: 0x93a196,
-  inkMute: 0x55635f,
+  inkMute: 0x647470,
 
   // Materials / status.
-  /** Fauna + vent bioluminescence. */
-  biolum: 0x54cbb2,
-  biolumDeep: 0x1d6a63,
-  /** Brine corrosion — damage, failure, rust. */
+  /** Living reef-glow — fauna and vent light. */
+  biolum: 0x5edcc4,
+  biolumDeep: 0x228078,
+  /** Kinetic heat — impact tell, not corrosion-as-identity. */
   rust: 0xc0512f,
   /** Surveyor's flagging tape — player-placed objectives and marks. */
   flag: 0xe0578f,
-  /** Reflective hazard tape — the bus / stored charge. */
+  /** Reflective high-vis tape — the bus / stored charge. */
   tape: 0xe8b93c,
   /** Shear heat — the window closing. */
   arc: 0xe4622f,
   /** Overloaded arc blow-out — Breaching. */
   arcWhite: 0xcfefff,
-  /** Sallow EM-HIGH scan wash. */
-  scanWash: 0xbfd45e,
-  safe: 0x6fa87a,
+  /** Chartreuse EM-HIGH survey wash. */
+  scanWash: 0xc8e054,
+  safe: 0x7cbc88,
 
   // Fog / survey memory.
   fog: 0x030506,
@@ -63,28 +63,28 @@ export const Theme = {
  * keeps the world from drifting into unmotivated colour.
  */
 export const Material = {
-  /** Wet basalt cliff face. */
-  rock: 0x2c3a37,
-  /** Painted deck plate in built sectors. */
-  deck: 0x28343a,
-  /** Damp conduit lining. */
-  conduit: 0x1e2f36,
+  /** Mineral slate cliff face. */
+  rock: 0x354844,
+  /** Painted expedition deck in built sectors. */
+  deck: 0x32444c,
+  /** Conduit lining. */
+  conduit: 0x264048,
   /** Depth inside a wall recess or seam. */
-  recess: 0x0d1517,
+  recess: 0x151e20,
 
   /** Shelf scrub. */
-  foliage: 0x285b49,
+  foliage: 0x327055,
   /** Fallen masonry and broken plate. */
   debris: 0x4e4658,
-  /** Scrub nest lining — old kill, dried. */
-  nest: 0x351522,
+  /** Scrub nest lining. */
+  nest: 0x3e1c28,
   /** Standing brine. */
-  brine: 0x123349,
+  brine: 0x184056,
 
   /** Surveyor's suit: shadowed body, lit panels, mid webbing, sealed visor. */
   suitDeep: 0x09111e,
-  suitLit: 0x3175a8,
-  suitMid: 0x18344e,
+  suitLit: 0x3a82b4,
+  suitMid: 0x1e3e5a,
   visor: 0x07101c,
 
   /** Field contacts: another surveyor's kit, a projection, a drone shell. */
@@ -96,27 +96,27 @@ export const Material = {
 } as const;
 
 export const ThemeCss = {
-  ground: '#121a1c',
-  groundDeep: '#06090a',
-  panel: '#182124',
+  ground: '#1e2c30',
+  groundDeep: '#0c1214',
+  panel: '#243438',
   ink: '#dfe4d5',
   inkBright: '#f6f4e6',
   inkDim: '#93a196',
-  inkMute: '#55635f',
-  biolum: '#54cbb2',
+  inkMute: '#647470',
+  biolum: '#5edcc4',
   rust: '#c0512f',
   flag: '#e0578f',
   tape: '#e8b93c',
   arc: '#e4622f',
   arcWhite: '#cfefff',
-  scanWash: '#bfd45e',
-  safe: '#6fa87a',
-  hintBg: '#0d1416ee',
+  scanWash: '#c8e054',
+  safe: '#7cbc88',
+  hintBg: '#0c1214ee',
 } as const;
 
 /**
  * Motivated colour temperatures. Every emitter in the world is a *thing* —
- * a hooded halogen, a magnesium stick, an animal, a corroded relay — and it
+ * a hooded halogen, a magnesium stick, an animal, a sodium relay — and it
  * should be nameable by its colour alone with the sprite hidden. Owned by the
  * sim's emitter table so palette and gameplay lighting can't drift apart.
  */
@@ -152,7 +152,7 @@ export type BiomeAmbient = {
 /**
  * How light *behaves* per biome, not just what colour the floor is:
  * scrub scatters it (canopy/plains/ridge lift), brine reflects it (brine/flood/reef
- * cool and bright), ash chokes it (ash/approach dark and warm-grey), duct swallows
+ * cool and bright), ash holds it (ash/approach dark and warm-grey), duct absorbs
  * it. Presentation only — sim exitance lives in `SECTOR_AMBIENT`.
  */
 export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
@@ -165,12 +165,12 @@ export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
   ruin: { ambient: 0.32, tint: 0xe4ccac },
   beacon: { ambient: 0.37, tint: 0xffdcb0 },
   trench: { ambient: 0.26, tint: 0xccbc9c },
-  duct: { ambient: 0.12, tint: 0xa4b0b8 },
-  ash: { ambient: 0.2, tint: 0xdcbc98 },
+  duct: { ambient: 0.18, tint: 0xa4b0b8 },
+  ash: { ambient: 0.26, tint: 0xdcbc98 },
   brine: { ambient: 0.36, tint: 0xa4d8e0 },
   vault: { ambient: 0.33, tint: 0xc4ccd8 },
   fissure: { ambient: 0.27, tint: 0xe4b49c },
-  approach: { ambient: 0.17, tint: 0xd4b898 },
+  approach: { ambient: 0.23, tint: 0xd4b898 },
   ridge: { ambient: 0.43, tint: 0xe8e0c8 },
 };
 
