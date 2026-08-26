@@ -38,7 +38,7 @@ describe('campaign gameplay fun', () => {
     const st = createGame(42);
     st.tutorialActive = false;
     const hatch = st.exitPos!;
-    st.inventory = [{ kind: 'mapper', qty: 1 }];
+    st.inventory = [{ kind: 'mapper', count: 1 }];
     st.ui.selectedSlot = 0;
     applyAction(st, { type: 'use' });
     expect(st.mapperPing).toEqual(hatch);

@@ -137,7 +137,7 @@ export function contextHint(st: GameState): LoreId | null {
   const exit = st.exitPos;
   if (
     exit &&
-    tile.kind !== 'exit' &&
+    !(st.player.x === exit.x && st.player.y === exit.y) &&
     (st.explored[exit.y]?.[exit.x] || st.visible[exit.y]?.[exit.x]) &&
     manhattan(st.player.x, st.player.y, exit.x, exit.y) <= 6
   ) {
