@@ -334,6 +334,7 @@ describe('hint kit selection', () => {
     st.scriptedFired.teach_equip = true;
     st.scriptedFired.teach_brand = true;
     st.scriptedFired.teach_light = true;
+    st.scriptedFired.teach_minimap = true;
     st.items = [];
     st.roomQuest = null;
     st.npcs = [];

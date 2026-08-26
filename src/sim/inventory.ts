@@ -22,6 +22,7 @@ import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
+import { describeObjective } from './objectives';
 import {
   cacheCenter,
   markCacheRoomLooted,
@@ -304,10 +305,14 @@ export function useSelected(state: GameState): boolean {
     }
     case 'mapper': {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
+      const goal = describeObjective(state).pos ?? state.exitPos;
       const cache = nearestUnlootedCache(state);
-      state.mapperPing = cache ? cacheCenter(cache) : null;
+      // Honest to copy: mark the active extract goal through fog. Cache is a bonus ping.
+      state.mapperPing = goal ?? (cache ? cacheCenter(cache) : null);
       removeOne(state, kind);
-      pushLog(state, cache ? 'LOG-USE-MAPPER-CACHE' : 'LOG-USE-MAPPER');
+      if (goal) pushLog(state, 'LOG-USE-MAPPER');
+      else if (cache) pushLog(state, 'LOG-USE-MAPPER-CACHE');
+      else pushLog(state, 'LOG-USE-MAPPER');
       break;
     }
     case 'flare': {

@@ -13,6 +13,7 @@ import { activeQuestStep } from '../../sim/roomQuest';
 import { describeObjective } from '../../sim/objectives';
 import { pillarCoachHint } from './PillarCoach';
 import { phaserContextHint } from './PhaserLanes';
+import { manhattan } from '../../sim/spatial';
 
 /** Pure contextual hint for the field HUD — no Phaser / scene state. */
 export function contextHint(st: GameState): LoreId | null {
@@ -131,6 +132,22 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-SEALED-SEALANT';
   }
   if (adjSealed) return 'UI-HINT-SEALED';
+
+  // Explored hatch still wants a key/core — coach before Power is spent circling it.
+  const exit = st.exitPos;
+  if (
+    exit &&
+    tile.kind !== 'exit' &&
+    (st.explored[exit.y]?.[exit.x] || st.visible[exit.y]?.[exit.x]) &&
+    manhattan(st.player.x, st.player.y, exit.x, exit.y) <= 6
+  ) {
+    if (st.sectorId === 'ruin' && !hasItem(st, 'relay_key')) return 'UI-HINT-EXIT-NEED-KEY';
+    if (st.sectorId === 'vault' && !hasItem(st, 'nav_core')) return 'UI-HINT-EXIT-NEED-CORE';
+    if (st.sectorId === 'beacon' && !st.objectives.beaconOpen) {
+      return hasItem(st, 'relay_key') ? 'UI-HINT-EXIT-NEED-BEACON' : 'UI-HINT-EXIT-NEED-KEY';
+    }
+  }
+
   // Soft-shadow ambush tip is one-shot via drill / light badge — do not re-hog here.
   if (
     inShadow(st, st.player.x, st.player.y) &&
