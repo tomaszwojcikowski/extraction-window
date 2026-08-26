@@ -8,6 +8,7 @@ import { loadSector } from './state';
 import { pinPhaserTrainingMites } from '../map/tutorialMap';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
+import { rewardQuietDiscovery } from './cacheSurvey';
 import { wornHasTag, wornTagMax } from './equipTags';
 import { addPlayerStatus, addStatus, addPlayerMarked, tickPlayerStatusEffects } from './status';
 import { gainXp, hasSkill } from './progression';
@@ -189,6 +190,7 @@ export function endPlayerTurn(state: GameState): void {
   state.turn += 1;
   tickEnvironment(state);
   refreshVisionAfterTurn(state);
+  rewardQuietDiscovery(state);
   applyAllyFieldRoles(state);
   moveEnemies(state);
   pinPhaserTrainingMites(state);

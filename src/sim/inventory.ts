@@ -307,11 +307,11 @@ export function useSelected(state: GameState): boolean {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
       const goal = describeObjective(state).pos ?? state.exitPos;
       const cache = nearestUnlootedCache(state);
-      // Honest to copy: mark the active extract goal through fog. Cache is a bonus ping.
-      state.mapperPing = goal ?? (cache ? cacheCenter(cache) : null);
+      // Prefer an unlooted cache (fog OK) so Nav Ping pays exploration; goal
+      // still lights via mapperTurns on the field marker.
+      state.mapperPing = cache ? cacheCenter(cache) : goal;
       removeOne(state, kind);
-      if (goal) pushLog(state, 'LOG-USE-MAPPER');
-      else if (cache) pushLog(state, 'LOG-USE-MAPPER-CACHE');
+      if (cache) pushLog(state, 'LOG-USE-MAPPER-CACHE');
       else pushLog(state, 'LOG-USE-MAPPER');
       break;
     }

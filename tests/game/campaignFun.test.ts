@@ -4,7 +4,6 @@ import { BUS_DRIP_TURNS } from '../../src/sim/bus';
 import { getSector } from '../../src/data/encounters';
 import { generateSectorMap } from '../../src/map/generator';
 import { contextHint } from '../../src/game/presenters/ContextHints';
-import { minimapGoalPos } from '../../src/game/views/MinimapView';
 import { ITEMS } from '../../src/data/items';
 
 describe('campaign gameplay fun', () => {
@@ -34,16 +33,16 @@ describe('campaign gameplay fun', () => {
     }
   });
 
-  it('Nav Ping marks the extract goal, not only a cache', () => {
+  it('Nav Ping marks a cache through fog when one remains', () => {
     const st = createGame(42);
     st.tutorialActive = false;
-    const hatch = st.exitPos!;
+    const cache = st.rooms.find((r) => r.role === 'cache');
+    expect(cache).toBeTruthy();
     st.inventory = [{ kind: 'mapper', count: 1 }];
     st.ui.selectedSlot = 0;
     applyAction(st, { type: 'use' });
-    expect(st.mapperPing).toEqual(hatch);
+    expect(st.mapperPing).toEqual({ x: cache!.cx, y: cache!.cy });
     expect(st.player.mapperTurns).toBeGreaterThan(0);
-    expect(minimapGoalPos(st)).toEqual(hatch);
   });
 
   it('teaches the minimap once when the hatch sits outside lamp range', () => {

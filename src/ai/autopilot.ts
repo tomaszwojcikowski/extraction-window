@@ -685,10 +685,9 @@ export function chooseAction(
   }
 
   if (
-    wantsCacheWearable(state) &&
-    state.sectorIndex >= 10 &&
-    state.player.energy > state.player.maxEnergy * 0.5 &&
-    state.player.hp > state.player.maxHp * 0.65
+    state.sectorIndex >= 1 &&
+    state.player.energy > state.player.maxEnergy * 0.55 &&
+    state.player.hp > state.player.maxHp * 0.7
   ) {
     const cacheGoal = nearestCacheDetour(state);
     if (cacheGoal) {
@@ -696,7 +695,9 @@ export function chooseAction(
       const via =
         manhattan(x, y, cacheGoal.x, cacheGoal.y) +
         manhattan(cacheGoal.x, cacheGoal.y, goal.x, goal.y);
-      if (via <= direct + 2) {
+      // Wearable hunts stay tight; early kit/XP/Power sips get a short detour.
+      const slack = wantsCacheWearable(state) && state.sectorIndex >= 10 ? 2 : 4;
+      if (via <= direct + slack) {
         const cachePath = bfsPath(state.tiles, { x, y }, cacheGoal, blockedElites);
         if (cachePath && cachePath[0]) {
           return { type: 'move', dx: cachePath[0].x - x, dy: cachePath[0].y - y };

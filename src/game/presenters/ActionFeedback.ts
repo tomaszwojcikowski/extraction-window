@@ -370,6 +370,15 @@ export function collectActionFloatLabels(
           color: ThemeCss.safe,
         };
         break;
+      case 'LOG-CACHE-FIND':
+        next = { label: 'CACHE · POWER SIP', color: ThemeCss.safe };
+        break;
+      case 'LOG-CACHE-CLEAR':
+        next = { label: 'CACHES CLEARED', color: ThemeCss.flag };
+        break;
+      case 'LOG-QUIET-FIND':
+        next = { label: 'QUIET · POWER SIP', color: ThemeCss.safe };
+        break;
       case 'LOG-SEALED-BLOCK':
       case 'LOG-SEALED-NEED-TOOL':
         next = { label: 'SEALED · SEALANT OR BATON', color: ThemeCss.tape };
