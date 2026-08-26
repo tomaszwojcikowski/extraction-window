@@ -6,8 +6,9 @@ import { MAX_LEVEL } from './progression';
  * Sector clock stays primary; level closes the gap as XP/skills come online.
  *
  * Fauna is a wake tax that also has to be fought: ATK rises faster than HP so
- * engaged hits chew plating, packs sit on the hatch-to-hatch route, and kill
- * XP / interrupt Power make clearing a room the reason you can finish the spine.
+ * engaged hits chew plating. Mid/late packs sit on the hatch-to-hatch route;
+ * kill XP / interrupt Power make clearing a room pay for spine progress — early
+ * shelf stays lighter so exploration and route-reading come first.
  */
 
 /** Sector-only depth (legacy curve) — used for HP. */

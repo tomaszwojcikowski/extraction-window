@@ -42,11 +42,18 @@ describe('generateTutorialMap', () => {
     expect(map.shuttlePos).toBeNull();
   });
 
-  it('keeps a scrub and south alcove around the corridor', () => {
+  it('keeps a scrub and a lit south bypass around the corridor', () => {
     const map = generateTutorialMap(3);
     expect(map.tiles[6]![11]!.kind).toBe('scrub');
+    expect(map.tiles[6]![12]!.kind).toBe('hazard');
+    expect(map.tiles[11]![11]!.walkable).toBe(true);
     expect(map.tiles[10]![11]!.walkable).toBe(true);
-    expect(canReach(map.tiles, { x: 10, y: 10 }, map.exit)).toBe(true);
+    // South lane reaches the hatch without stepping on the stalker's tile.
+    const stalker = map.enemies.find((e) => e.kind === 'stalker')!;
+    expect(stalker.y).toBe(7);
+    expect(canReach(map.tiles, { x: 9, y: 11 }, map.exit)).toBe(true);
+    expect(canReach(map.tiles, { x: 9, y: 11 }, { x: stalker.x, y: stalker.y })).toBe(true);
+    expect(map.items.find((i) => i.kind === 'flare')).toMatchObject({ x: 11, y: 11 });
   });
 
   it('lines up phaser training mites from the stand tile', () => {

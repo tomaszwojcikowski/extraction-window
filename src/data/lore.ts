@@ -246,16 +246,19 @@ export const LORE = {
   'UI-TUT-WAKE':
     'Fauna notice your lamp and shadow — stay LIT when you can · Flare for dark fights',
   'UI-TUT-FIGHT': 'Walk into them to hit · dark: u Plasma Flare',
-  'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
+  'UI-TUT-STALKER':
+    'Hunter winding up — Flare, leave the painted tiles, or take the lit south lane east',
   'UI-TUT-GOTO-PHASER':
-    'East phaser bay — walk onto the Survey Phaser to wear it, fire at 2–3 tiles on a clear lane',
+    'East phaser bay — south lit lane past the hunter, or Flare then walk east',
   'UI-TUT-PHASER-PICKUP': 'Survey Phaser on the deck — walk onto it to wear',
   'UI-TUT-PHASER-EQUIP': 'Wear the phaser (u) — step toward a hostile 2–3 out to fire',
   'UI-TUT-PHASER':
     'Stand on the lane — step toward a mite 2–3 tiles away (−4 Power) · adjacent is melee',
-  'UI-TUT-GOTO-HATCH': 'East hatch ends the drill — step on it (Power drip then goes live)',
+  'UI-TUT-GOTO-HATCH':
+    'East hatch ends the drill — walk onto the pink hatch tile (Enter also works on it)',
   'UI-TUT-EXIT':
-    'On hatch — step on it or press Enter / Space to start the drop (Power drip goes live)',
+    'On the hatch — walk onto it (or Enter / Space) to leave (Power drip then goes live)',
+  'UI-HINT-MINIMAP': 'Goal is off your lamp — press n for the map ring',
   'UI-QUEST-TRACK': 'OPT',
   'UI-QUEST-PAYS': 'gives',
   'UI-QUEST-BILLS': 'costs',
@@ -644,7 +647,7 @@ export const LORE = {
   'LOG-SEALED-NEED-TOOL':
     'Sealed hatch — Sealant Foam (i then u) or wear Pulse Baton then Enter / Space / >.',
   'LOG-INTERACT-MISS':
-    'Not on a sector hatch, beacon, or pad — stand on it, then Enter / Space / >. Sealed hatches open from beside.',
+    'Not on a hatch, beacon, or pad — walk onto that tile (pink hatch marker). Sealed hatches open from beside.',
   'LOG-SEALED-OPEN': 'Sealant Foam opens the sealed hatch.',
   'LOG-SEALED-PRY': 'Pulse Baton pries the sealed hatch open.',
   'LOG-SEALED-CACHE': 'Sealed hatch cache opened.',

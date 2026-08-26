@@ -3,6 +3,7 @@ import type { GameState } from '../../sim';
 import { Theme } from '../../scenes/theme';
 import { drawBolt, drawMenuPlate, drawTapeStrip } from '../../scenes/atmosphere';
 import { HUD_TOP } from '../GameHost';
+import { describeObjective } from '../../sim/objectives';
 import { activeQuestStep } from '../../sim/roomQuest';
 import { cacheRoomList } from '../../sim/cacheSurvey';
 
@@ -13,6 +14,15 @@ const MAP_W = 128;
 const MAP_H = 128;
 /** Inner map canvas padding; tape strip sits above. */
 const PAD = 10;
+
+/** Local next-step cell for the minimap ring — explored or currently visible. */
+export function minimapGoalPos(state: GameState): { x: number; y: number } | null {
+  const pos = describeObjective(state).pos;
+  if (!pos) return null;
+  if (state.explored[pos.y]?.[pos.x] || state.visible[pos.y]?.[pos.x]) return pos;
+  return null;
+}
+
 /** Extra top for kit tape. */
 const TAPE_H = 8;
 /** Total panel size including padding and bolt clearance. */
@@ -156,6 +166,15 @@ export class MinimapView {
         const py = mapY + offY + y * cellH;
         this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
       }
+    }
+
+    // Local next step — ring so it does not collide with the player pip.
+    const goal = minimapGoalPos(state);
+    if (goal) {
+      this.mapGfx.lineStyle(1, Theme.flag, 1);
+      const gx = mapX + offX + goal.x * cellW;
+      const gy = mapY + offY + goal.y * cellH;
+      this.mapGfx.strokeRect(gx - 1, gy - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
     }
   }
 

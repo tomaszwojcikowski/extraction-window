@@ -74,9 +74,9 @@ export function generateTutorialMap(seed: number): GeneratedMap {
 
   // Room 1 — west chamber (start)
   carveRect(tiles, 1, 4, 7, 11);
-  // Mid corridor + stalker beat
+  // Mid corridor — stalker holds the north lane; south bypass stays lit.
   carveRect(tiles, 7, 6, 15, 9);
-  carveRect(tiles, 9, 9, 15, 11);
+  carveRect(tiles, 8, 9, 16, 12);
   // Room 2 — phaser lane drill
   carveRect(tiles, 16, 5, 24, 10);
   // Room 3 — hatch chamber
@@ -86,16 +86,19 @@ export function generateTutorialMap(seed: number): GeneratedMap {
   const exit: Pos = { x: 28, y: 7 };
   tiles[exit.y]![exit.x] = exitTile();
 
+  // North-side scrub / hazard — not on the south walk past the ambush.
   tiles[6]![11] = scrub();
-  tiles[7]![12] = hazard();
+  tiles[6]![12] = hazard();
 
   const items: GroundItem[] = [
     { id: 1, kind: 'salvage', x: 3, y: 8 },
-    { id: 2, kind: 'flare', x: 10, y: 9 },
+    // Flare on the south bypass — pick it before the dark north lane.
+    { id: 2, kind: 'flare', x: 11, y: 11 },
     { id: 3, kind: 'phaser', x: 18, y: 7 },
   ];
 
-  const stalkerPos: Pos = { x: 13, y: 8 };
+  // North side of the corridor — east progress via y=10–11 avoids contact.
+  const stalkerPos: Pos = { x: 13, y: 7 };
   const stalkerDef = ENEMIES.stalker;
   const miteDef = ENEMIES.mite;
 
@@ -218,6 +221,17 @@ export function generateTutorialMap(seed: number): GeneratedMap {
       mountY: 10,
       radius: 2.5,
       intensity: 0.55,
+      color: LIGHT_TEMP.sconce,
+      fixture: 'sconce',
+    },
+    // South bypass lamp — LIT path past the ambush so east progress is not a pounce tax.
+    {
+      x: 12,
+      y: 11,
+      mountX: 12,
+      mountY: 13,
+      radius: 2.8,
+      intensity: 0.65,
       color: LIGHT_TEMP.sconce,
       fixture: 'sconce',
     },
