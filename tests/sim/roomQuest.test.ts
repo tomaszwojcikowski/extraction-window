@@ -71,9 +71,16 @@ describe('room quest readability', () => {
     ]);
     st.roomQuest.offer = 'accepted';
     placeOnQuest(st, 2, 2);
+    st.inventory = [
+      { kind: 'med', count: 1 },
+      { kind: 'sealant', count: 1 },
+    ];
+    st.ui.selectedSlot = 0;
 
     expect(roomQuestMechanic.contextHint?.(st)).toBe('UI-RQ-VENT-A');
     expect(resolveHintLine(st)).toBe('UI-RQ-VENT-A');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('sealant');
+    expect(lore('UI-RQ-VENT-A').toLowerCase()).toContain('u sealant');
     expect(resolveHintLine(st)).not.toBe('UI-HINT-QUEST');
   });
 

@@ -6,7 +6,7 @@ import { BUS_WARN_AT } from '../../sim/bus';
 import type { GameState } from '../../sim';
 import { incomingFlankSeats } from '../../sim/ai';
 import { flankPenalty } from '../../sim/combat';
-import { hasItem } from '../../sim/inventory';
+import { hasDartTarget, hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { activeQuestStep } from '../../sim/roomQuest';
@@ -149,6 +149,15 @@ export function contextHint(st: GameState): LoreId | null {
   ) {
     return 'UI-HINT-FLARE';
   }
+  // Starting kit carries a dart — teach the u → aim step once a lit shot exists.
+  if (
+    !st.scriptedFired.teach_dart &&
+    hasItem(st, 'dart') &&
+    hasDartTarget(st)
+  ) {
+    st.scriptedFired.teach_dart = true;
+    return 'UI-HINT-DART';
+  }
   if ((st.player.statuses.bleed ?? 0) > 0 && hasItem(st, 'med')) {
     return 'UI-HINT-USE-PATCH';
   }
@@ -230,6 +239,8 @@ export function kitKindForHint(st: GameState, hint: LoreId | null): ItemKind | n
       return 'mapper';
     case 'UI-HINT-PROBE':
       return 'probe';
+    case 'UI-HINT-DART':
+      return 'dart';
     case 'UI-HINT-EQUIP': {
       for (const slot of st.inventory) {
         if (isItemWorn(st, slot.kind)) continue;

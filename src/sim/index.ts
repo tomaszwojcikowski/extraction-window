@@ -34,7 +34,7 @@ export { refreshVision } from './vision';
 export { busIsCritical, BUS_CRITICAL, canSpendPower, spendPower, taxPower, POWER_TAX_HEAVY, KIT_POWER_COST } from './bus';
 export { currentObjectivePos, describeObjective, isObjectiveHidden, stickyMilestone, assertLegalWin, loreOrderLegal, extractTrack } from './objectives';
 export { gainXp, hasSkill, pickSkill } from './progression';
-export { hasItem, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
+export { hasItem, hasDartTarget, syncObjectiveFlags, tryEquipItem, fireDart } from './inventory';
 export {
   emptyEquipSlots,
   equippedInSlot,

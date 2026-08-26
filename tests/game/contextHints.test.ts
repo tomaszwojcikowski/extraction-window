@@ -488,3 +488,30 @@ describe('fog goal kit coaching', () => {
     expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('mapper');
   });
 });
+
+describe('dart aim coaching', () => {
+  it('teaches u then aim once a lit foe sits in dart range', () => {
+    const st = createGame(42);
+    st.enemies = [];
+    st.items = [];
+    st.tiles[st.player.y]![st.player.x]!.kind = 'floor';
+    st.player.hp = st.player.maxHp;
+    st.player.energy = st.player.maxEnergy;
+    st.player.armor = st.player.maxArmor;
+    st.player.statuses = {};
+    st.scriptedFired.teach_equip = true;
+    st.scriptedFired.teach_dart = false;
+    st.inventory = [{ kind: 'dart', count: 1 }];
+    const foe = makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y });
+    st.enemies = [foe];
+    st.visible[foe.y]![foe.x] = true;
+    st.illumination[foe.y]![foe.x] = 1;
+    st.illumination[st.player.y]![st.player.x] = 1;
+
+    expect(resolveHintLine(st)).toBe('UI-HINT-DART');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('dart');
+    applyAction(st, { type: 'use' });
+    expect(st.ui.aimingDart).toBe(true);
+    expect(resolveHintLine(st)).toBe('UI-HINT-AIM');
+  });
+});

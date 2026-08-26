@@ -7,6 +7,7 @@ import { contextHint, resolveHintLine } from '../../src/game/presenters/ContextH
 import { minimapGoalPos } from '../../src/game/views/MinimapView';
 import { formatPaddContent } from '../../src/game/views/overlays/PaddOverlay';
 import { applyAction, createGame, describeObjective, finishTutorial } from '../../src/sim';
+import { makeEnemy } from '../sim/fixtures';
 
 /** Quiet opening tile so kit/objective coaching is not stolen by loot or fauna. */
 function quietOpening() {
@@ -86,6 +87,27 @@ describe('opening field interaction', () => {
     expect(st.player.mapperTurns).toBeGreaterThan(0);
     expect(minimapGoalPos(st)).toEqual(hatch);
     expect(formatPaddContent(st)).not.toContain(lore('UI-HINT-MAPPER'));
+  });
+
+  it('teaches Plasma Microdart with u then aim on a lit lane', () => {
+    const st = quietOpening();
+    st.scriptedFired.teach_equip = true;
+    st.scriptedFired.teach_phaser = true;
+    st.player.equip.tool = null;
+    st.inventory = [{ kind: 'dart', count: 1 }];
+    const foe = makeEnemy({ kind: 'mite', x: st.player.x + 2, y: st.player.y });
+    st.tiles[foe.y]![foe.x] = { kind: 'floor', walkable: true, transparent: true };
+    st.enemies = [foe];
+    st.visible[foe.y]![foe.x] = true;
+    st.illumination[foe.y]![foe.x] = 1;
+    st.illumination[st.player.y]![st.player.x] = 1;
+
+    expect(resolveHintLine(st)).toBe('UI-HINT-DART');
+    expect(st.inventory[st.ui.selectedSlot]?.kind).toBe('dart');
+    expect(formatFieldKitDock(st, 120)).toContain(`${lore('UI-DOCK-USE')} ${shortKitName('dart')}`);
+    applyAction(st, { type: 'use' });
+    expect(st.ui.aimingDart).toBe(true);
+    expect(resolveHintLine(st)).toBe('UI-HINT-AIM');
   });
 });
 

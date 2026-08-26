@@ -199,6 +199,8 @@ export const LORE = {
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare stops the next pulse',
   'UI-HINT-FLARE': 'Dark fight — u Plasma Flare',
+  'UI-HINT-DART':
+    'Lit foe in dart range — u Plasma Microdart, then aim a direction',
   'UI-HINT-HAZARD-FILTER': 'Yellow tile drains Power — u Filter, or step off',
   'UI-HINT-HAZARD': 'Yellow tile drains Power — step off it',
   'UI-HINT-MAPPER': 'Goal in fog — u Nav Ping, then n for the map ring',

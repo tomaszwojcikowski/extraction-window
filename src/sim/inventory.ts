@@ -401,6 +401,22 @@ export function useSelected(state: GameState): boolean {
   return true;
 }
 
+/** True when a visible lit hostile sits on a dart ray (Chebyshev ≤3). */
+export function hasDartTarget(state: GameState): boolean {
+  for (const en of state.enemies) {
+    if (!en.alive) continue;
+    if (!(state.visible[en.y]?.[en.x] ?? false)) continue;
+    if (!isLit(state, en.x, en.y)) continue;
+    const dx = en.x - state.player.x;
+    const dy = en.y - state.player.y;
+    const d = Math.max(Math.abs(dx), Math.abs(dy));
+    if (d < 1 || d > 3) continue;
+    if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) continue;
+    return true;
+  }
+  return false;
+}
+
 /** Fire dart in a direction (Chebyshev range ≤3, needs FOV + lit target). */
 export function fireDart(state: GameState, dx: number, dy: number): void {
   state.ui.aimingDart = false;
