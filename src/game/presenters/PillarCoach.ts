@@ -30,8 +30,9 @@ export function pillarCoachHint(st: GameState): LoreId | null {
 
   if (!st.scriptedFired.tut_welcome) return null;
 
-  // Power drip goes live the moment the drill hatch closes.
-  if (st.sectorIndex === 0 && st.turn <= 4 && once(st, 'teach_clocks')) {
+  // Power drip goes live when the drill hatch closes — do not gate on turn
+  // count; a real bay run is already past turn 4.
+  if (st.sectorIndex === 0 && once(st, 'teach_clocks')) {
     return 'UI-HINT-CLOCKS';
   }
 

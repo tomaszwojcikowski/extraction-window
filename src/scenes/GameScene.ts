@@ -137,6 +137,7 @@ export class GameScene extends Phaser.Scene {
   private bottomPanel!: Phaser.GameObjects.Graphics;
   private bottomDockPanel!: Phaser.GameObjects.Graphics;
   private dockLegendText!: Phaser.GameObjects.Text;
+  private kitDockText!: Phaser.GameObjects.Text;
   private barsGfx!: Phaser.GameObjects.Graphics;
   private badgeGfx!: Phaser.GameObjects.Graphics;
   private hudMeta!: Phaser.GameObjects.Text;
@@ -261,6 +262,14 @@ export class GameScene extends Phaser.Scene {
     this.topPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.bottomPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.bottomDockPanel = this.add.graphics().setScrollFactor(0).setDepth(90);
+    this.kitDockText = this.add
+      .text(0, 0, '', {
+        fontFamily: FONT_DATA,
+        fontSize: '11px',
+        color: ThemeCss.ink,
+      })
+      .setScrollFactor(0)
+      .setDepth(91);
     this.dockLegendText = this.add
       .text(0, 0, '', {
         fontFamily: FONT_DATA,
@@ -684,6 +693,7 @@ export class GameScene extends Phaser.Scene {
         bottomPanel: this.bottomPanel,
         bottomDockPanel: this.bottomDockPanel,
         dockLegendText: this.dockLegendText,
+        kitDockText: this.kitDockText,
       },
       {
         screenW: this.scale.width,
@@ -695,6 +705,7 @@ export class GameScene extends Phaser.Scene {
         sectorId: this.state.sectorId,
         biomeAccent: BIOME_FLOOR_TINT[this.state.sectorId],
         animFrame: this.animFrame,
+        state: this.state,
       },
     );
   }

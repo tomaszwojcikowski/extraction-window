@@ -462,6 +462,8 @@ export function tryPickup(state: GameState): boolean {
   }
   if (!addItem(state, item.kind)) return false;
   state.items = state.items.filter((i) => i.id !== item.id);
+  const pickedIdx = findSlot(state, item.kind);
+  if (pickedIdx >= 0) state.ui.selectedSlot = pickedIdx;
   state.lootTakenThisSector = true;
   const cacheRoom = roomAt(state, state.player.x, state.player.y);
   if (cacheRoom?.role === 'cache') markCacheRoomLooted(state, cacheRoom);

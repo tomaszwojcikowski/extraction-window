@@ -1,7 +1,8 @@
 import type { LoreId } from '../../data/lore';
 import { ENEMIES } from '../../data/enemies';
-import { ITEMS, INVENTORY_SLOTS } from '../../data/items';
+import { INVENTORY_SLOTS, type ItemKind } from '../../data/items';
 import { equipSlotsFor, isItemWorn } from '../../sim/equip';
+import { BUS_WARN_AT } from '../../sim/bus';
 import type { GameState } from '../../sim';
 import { incomingFlankSeats } from '../../sim/ai';
 import { flankPenalty } from '../../sim/combat';
@@ -9,6 +10,7 @@ import { hasItem } from '../../sim/inventory';
 import { inShadow } from '../../sim/light';
 import { mechanicsContextHint } from '../../sim/mechanics';
 import { activeQuestStep } from '../../sim/roomQuest';
+import { describeObjective } from '../../sim/objectives';
 import { pillarCoachHint } from './PillarCoach';
 import { phaserContextHint } from './PhaserLanes';
 
@@ -49,7 +51,7 @@ export function contextHint(st: GameState): LoreId | null {
 
   if ((st.player.statuses.downed ?? 0) > 0) return 'UI-HINT-DOWNED';
 
-  if (st.busFailing || st.player.energy <= 8) {
+  if (st.busFailing || st.player.energy <= BUS_WARN_AT[0]) {
     return hasItem(st, 'energy') ? 'UI-HINT-USE-ENERGY' : 'UI-HINT-BUS-LOW';
   }
 
@@ -103,12 +105,13 @@ export function contextHint(st: GameState): LoreId | null {
   if (tile.kind === 'shuttle') return 'UI-HINT-SHUTTLE';
   if (tile.kind === 'quest') {
     const rq = st.roomQuest;
-    if (!rq || rq.done) return null;
-    const step = activeQuestStep(rq);
-    if (step && (st.player.x !== step.pos.x || st.player.y !== step.pos.y)) {
-      return 'UI-HINT-QUEST-REMOTE';
+    if (rq && !rq.done) {
+      const step = activeQuestStep(rq);
+      if (step && (st.player.x !== step.pos.x || st.player.y !== step.pos.y)) {
+        return 'UI-HINT-QUEST-REMOTE';
+      }
+      return 'UI-HINT-QUEST';
     }
-    return null;
   }
   if (st.items.some((i) => i.x === st.player.x && i.y === st.player.y)) {
     return st.inventory.length >= INVENTORY_SLOTS ? 'UI-HINT-ITEM-FULL' : 'UI-HINT-ITEM';
@@ -147,12 +150,6 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-USE-MED';
   }
   if (
-    st.player.energy <= st.player.maxEnergy * 0.35 &&
-    hasItem(st, 'energy')
-  ) {
-    return 'UI-HINT-USE-ENERGY';
-  }
-  if (
     st.player.armor <= 3 &&
     st.player.maxArmor > 0 &&
     hasItem(st, 'plate')
@@ -160,10 +157,16 @@ export function contextHint(st: GameState): LoreId | null {
     return 'UI-HINT-USE-ARMOR';
   }
 
-  // Unequipped wearables still in kit
-  for (const slot of st.inventory) {
-    if (isItemWorn(st, slot.kind)) continue;
-    if (equipSlotsFor(slot.kind).length > 0) return 'UI-HINT-EQUIP';
+  // Unequipped wearables — one-shot, before pillar so "put the tool on"
+  // is not buried under clocks / extract on the first quiet field turns.
+  if (!st.scriptedFired.teach_equip) {
+    for (const slot of st.inventory) {
+      if (isItemWorn(st, slot.kind)) continue;
+      if (equipSlotsFor(slot.kind).length > 0) {
+        st.scriptedFired.teach_equip = true;
+        return 'UI-HINT-EQUIP';
+      }
+    }
   }
 
   const pillar = pillarCoachHint(st);
@@ -177,10 +180,59 @@ export function contextHint(st: GameState): LoreId | null {
     }
   }
 
-  return null;
+  return describeObjective(st).local;
+}
+
+/** Which bag kind a hint wants `u` to hit — so the dock matches the line. */
+export function kitKindForHint(st: GameState, hint: LoreId | null): ItemKind | null {
+  if (!hint) return null;
+  switch (hint) {
+    case 'UI-HINT-USE-MED':
+    case 'UI-HINT-USE-PATCH':
+    case 'UI-HINT-DOWNED':
+      return 'med';
+    case 'UI-HINT-USE-ENERGY':
+      return 'energy';
+    case 'UI-HINT-ION-FRONT':
+      return 'filter';
+    case 'UI-HINT-USE-ARMOR':
+      return 'plate';
+    case 'UI-HINT-FLARE':
+    case 'UI-TUT-FIGHT':
+      return 'flare';
+    case 'UI-HINT-SEALED-SEALANT':
+    case 'UI-HINT-USE-SEALANT':
+    case 'UI-RQ-VENT-A':
+      return 'sealant';
+    case 'UI-HINT-PHASER-EQUIP':
+    case 'UI-TUT-PHASER-EQUIP':
+      return 'phaser';
+    case 'UI-TUT-KIT':
+      return 'salvage';
+    case 'UI-HINT-EQUIP': {
+      for (const slot of st.inventory) {
+        if (isItemWorn(st, slot.kind)) continue;
+        if (equipSlotsFor(slot.kind).length > 0) return slot.kind;
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** Point the dock at the hinted item so u matches the line. Skip while the case is open. */
+export function applyHintKitSelection(st: GameState, hint: LoreId | null): void {
+  if (st.ui.inventoryOpen) return;
+  const kind = kitKindForHint(st, hint);
+  if (!kind) return;
+  const idx = st.inventory.findIndex((s) => s.kind === kind);
+  if (idx >= 0) st.ui.selectedSlot = idx;
 }
 
 /** The single hint-line channel — overlays own the line when kit/skill/aim is open. */
 export function resolveHintLine(st: GameState): LoreId | null {
-  return contextHint(st);
+  const hint = contextHint(st);
+  applyHintKitSelection(st, hint);
+  return hint;
 }

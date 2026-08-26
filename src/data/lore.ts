@@ -54,7 +54,7 @@ export const LORE = {
     'Reach the east hatch. Power does not drip here.\n' +
     '\n' +
     'WASD — move · . — wait · step on kit to take it\n' +
-    'i — open kit · u — use selected item\n' +
+    '1–9 select · u — use or wear · i — inspect kit\n' +
     '\n' +
     'Yellow tiles drain Power — walk around them, or use a Filter.\n' +
     'LIT is safer · SHADOW can ambush · Flare lights a dark fight.\n' +
@@ -64,7 +64,8 @@ export const LORE = {
     'CONTROLS\n' +
     'WASD / arrows — move one tile\n' +
     '. — wait\n' +
-    'i — kit · u — use or equip · step onto kit to pick it up\n' +
+    'i — inspect kit · 1–9 / 0 select on the dock · u — use or wear\n' +
+    'step onto kit to pick it up (it becomes the selected dock slot)\n' +
     'Enter / Space / > — hatch, beacon, pad, optional site, talk\n' +
     'n — minimap · p — PADD · l — mission log · ? — help · m — mute · Esc — close\n' +
     'Title only: c — field bulletin (ship notes)\n' +
@@ -101,11 +102,12 @@ export const LORE = {
     '\n' +
     'HATCHES\n' +
     'Sector hatch (on it): Enter / Space — locked until Key / beacon / Lattice as required.\n' +
-    'Sealed hatch (adjacent, optional): Sealant Foam (i then u) or equip Pulse Baton then Enter / Space / >.\n' +
+    'Sealed hatch (adjacent, optional): Sealant Foam (u) or equip Pulse Baton then Enter / Space / >.\n' +
     '\n' +
     'HUD\n' +
     'HP · Shield · Power · XP\n' +
     'Risky / Desperate = two+ hostiles touching you (DEF already down).\n' +
+    'The bottom dock shows kit slots (◆ worn, · wearable). 1–9 select · u uses or wears · i inspects.\n' +
     'Extract boxes (# filled) sit on the chip rail: Key → handshake → Lattice → pad.\n' +
     'Enhanced / Impaired / Downed / Kit full / Kit jammed are status chips.\n' +
     'l — mission log (hidden by default)\n' +
@@ -113,8 +115,8 @@ export const LORE = {
   'UI-KIT-PURPOSE':
     'Kit keeps you alive. Key and Lattice unlock extract. Optional sites give extra rewards.',
   'UI-CONTROLS':
-    'WASD move · . wait · i kit · n map · l log · ? help',
-  'UI-CONTROLS-TITLE': 'WASD move · i kit · ? help · c bulletin',
+    'WASD move · 1–9 select · u use or wear · i kit · n map · l log · ? help',
+  'UI-CONTROLS-TITLE': 'WASD · 1–9 select · u use · i kit · ? help · c bulletin',
   'UI-VERSION': 'Field build',
   'UI-CHANGELOG': 'FIELD BULLETIN',
   'UI-CHANGELOG-HINT': 'c — bulletin',
@@ -179,32 +181,29 @@ export const LORE = {
   'UI-HINT-PHASER-RANGE':
     'Too close or too far for the phaser — stand 2–3 tiles away on a clear lane, or walk in',
   'UI-HINT-PHASER-EQUIP':
-    'Survey Phaser in kit — i, select, u to wear · step toward foe at 2–3 tiles to fire',
+    'Survey Phaser in kit — u to wear · step toward foe at 2–3 tiles to fire',
   'UI-PHASER-READY': 'Worn · READY · 2–3 tile lane · −4 Power per beam',
   'UI-PHASER-LOW': 'Worn · LOW POWER (need 4) · adjacent is still melee',
   'UI-PHASER-WEAR': 'Equip to fire at 2–3 tiles · −4 Power · adjacent stays melee',
-  'UI-HINT-USE-MED': 'HP low — open kit (i), select Field Hypo, press u',
-  'UI-HINT-USE-ENERGY': 'Power low — open kit (i), select Power Cell, press u',
+  'UI-HINT-USE-MED': 'HP low — u Field Hypo',
+  'UI-HINT-USE-ENERGY': 'Power low — u Power Cell',
   'UI-HINT-BUS-LOW': 'Power failing — pick up a Power Cell this turn',
-  'UI-HINT-USE-ARMOR': 'Shield low — open kit (i), select Shield Charge, press u',
-  'UI-HINT-USE-PATCH': 'Bleeding — open kit (i), select Field Hypo, press u',
-  'UI-HINT-USE-SEALANT':
-    'EM high — open kit (i), select Sealant Foam, press u',
+  'UI-HINT-USE-ARMOR': 'Shield low — u Shield Charge',
+  'UI-HINT-USE-PATCH': 'Bleeding — u Field Hypo',
+  'UI-HINT-USE-SEALANT': 'EM high — u Sealant Foam',
   'UI-HINT-SEALED':
     'Sealed hatch (optional) — need Sealant Foam or equip Pulse Baton',
-  'UI-HINT-SEALED-SEALANT':
-    'Sealed hatch — i, select Sealant Foam, press u to open',
+  'UI-HINT-SEALED-SEALANT': 'Sealed hatch — u Sealant Foam to open',
   'UI-HINT-PRY-SEALED':
     'Sealed hatch — press Enter / Space / > to pry open (Pulse Baton equipped)',
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare stops the next pulse',
-  'UI-HINT-FLARE':
-    'Dark fight — open kit (i), select Plasma Flare, press u',
+  'UI-HINT-FLARE': 'Dark fight — u Plasma Flare',
   'UI-HINT-LIGHT':
     'SHADOW — first unaware strike is Enhanced · LIT safer · Flare lights a dark fight',
-  'UI-HINT-EQUIP': 'Wearable in kit — i, select it, u to equip',
+  'UI-HINT-EQUIP': 'Wearable in kit — u to wear (· on the dock)',
   'UI-HINT-CLOCKS':
-    'Power = kit charge — sector drip, hazards, and kit spends drain it. Empty Power = lose.',
+    'Power drip is live — u a Power Cell before it hits 0. Empty Power = lose.',
   'UI-HINT-DOWNED':
     'Downed — u Field Hypo to stabilize, or step off the pack',
   'UI-HINT-EXTRACT':
@@ -240,17 +239,17 @@ export const LORE = {
   'UI-AGENDA-CHIP-SURVEY': 'JOB · ping',
   'UI-TUT-MOVE': 'WASD move · . wait · lamp and Flare change who notices you',
   'UI-TUT-LIGHT':
-    'LIT safer fights · SHADOW ambush risk — Flare (i → select → u) lights dark fights',
-  'UI-TUT-KIT': 'Salvage in kit — i, select Salvage, u to scan (item or backlash)',
+    'LIT safer fights · SHADOW ambush risk — Flare (u) lights dark fights',
+  'UI-TUT-KIT': 'Salvage in kit — u to scan (item or backlash)',
   'UI-TUT-HAZARD':
     'Yellow tile drains Power — step off, walk south around it, or use a Filter',
   'UI-TUT-WAKE':
     'Fauna notice your lamp and shadow — stay LIT when you can · Flare for dark fights',
-  'UI-TUT-FIGHT': 'Walk into them to hit · dark: i, select Plasma Flare, u',
+  'UI-TUT-FIGHT': 'Walk into them to hit · dark: u Plasma Flare',
   'UI-TUT-STALKER': 'Hunter winding up — Flare, leave the painted tiles, or go south',
   'UI-TUT-GOTO-PHASER':
-    'East phaser bay — pick up Survey Phaser, wear it, fire at 2–3 tiles on a clear lane',
-  'UI-TUT-PHASER-PICKUP': 'Survey Phaser on the deck — walk onto it, then i → u to wear',
+    'East phaser bay — walk onto the Survey Phaser to wear it, fire at 2–3 tiles on a clear lane',
+  'UI-TUT-PHASER-PICKUP': 'Survey Phaser on the deck — walk onto it to wear',
   'UI-TUT-PHASER-EQUIP': 'Wear the phaser (u) — step toward a hostile 2–3 out to fire',
   'UI-TUT-PHASER':
     'Stand on the lane — step toward a mite 2–3 tiles away (−4 Power) · adjacent is melee',
@@ -292,7 +291,7 @@ export const LORE = {
   'UI-RQ-PURGE': 'Purge nest — step in to wake hostiles',
   'UI-RQ-PURGE-WAKE': 'Clear hostiles — then Enter / Space / >',
   'UI-RQ-PURGE-CLAIM': 'Claim crate — Enter / Space / >',
-  'UI-RQ-VENT-A': 'Vent — Sealant Foam here (i → select → u)',
+  'UI-RQ-VENT-A': 'Vent — u Sealant Foam here',
   'UI-RQ-VENT-B': 'Seal console — Enter / Space / > to finish',
   'UI-LOADOUT-CHIP': 'LOADOUT',
   'UI-LOADOUT-NET': 'Worn loadout',
@@ -360,7 +359,10 @@ export const LORE = {
   'UI-KIT-POWER-READY': 'ready',
   'UI-KIT-POWER-SHORT': 'short',
   'UI-KIT-FEEDBACK': '!',
-  'UI-DOCK-LEGEND': '? help · i kit · u use · . wait · Enter act · p PADD · n map · l log · m mute',
+  'UI-DOCK-LEGEND': '1–9 select · u use/wear · i kit · ? help',
+  'UI-DOCK-USE': 'u',
+  'UI-DOCK-WEAR': 'u wear',
+  'UI-DOCK-STOW': 'u stow',
   'UI-SKILL-CHIP': 'Skills',
 
   // Mission

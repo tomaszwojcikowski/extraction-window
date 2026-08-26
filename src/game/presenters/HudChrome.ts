@@ -2,14 +2,17 @@ import Phaser from 'phaser';
 import type { SectorId } from '../../data/encounters';
 import { lore } from '../../data/lore';
 import { drawHudStripChrome } from '../../scenes/atmosphere';
+import type { GameState } from '../../sim';
 import { HUD_BOTTOM_DOCK } from '../GameHost';
-import type { ShearPressureSpec, ShearPressureState } from './ShearPressure';
+import { formatFieldKitDock } from './FieldKitDock';
+import type { ShearPressureSpec } from './ShearPressure';
 
 export type HudChromeRefs = {
   topPanel: Phaser.GameObjects.Graphics;
   bottomPanel: Phaser.GameObjects.Graphics;
   bottomDockPanel: Phaser.GameObjects.Graphics;
   dockLegendText: Phaser.GameObjects.Text;
+  kitDockText: Phaser.GameObjects.Text;
 };
 
 /** Top/bottom HUD strip chrome — extracted from GameScene. */
@@ -25,6 +28,7 @@ export function drawHudChrome(
     sectorId: SectorId;
     biomeAccent: number;
     animFrame: number;
+    state: GameState;
   },
 ): void {
   const {
@@ -36,6 +40,7 @@ export function drawHudChrome(
     shear,
     biomeAccent,
     animFrame,
+    state,
   } = opts;
   void opts.sectorId;
   drawHudStripChrome(refs.topPanel, {
@@ -70,7 +75,9 @@ export function drawHudChrome(
     accent: shear.accent,
     biomeAccent,
   });
-  const legendStr = lore('UI-DOCK-LEGEND');
-  refs.dockLegendText.setText(legendStr);
-  refs.dockLegendText.setPosition(w - refs.dockLegendText.width - 10, h - HUD_BOTTOM_DOCK + 3);
+  const kitMax = Math.max(40, Math.floor((w - 24) / 7));
+  refs.kitDockText.setText(formatFieldKitDock(state, kitMax));
+  refs.kitDockText.setPosition(10, h - HUD_BOTTOM_DOCK + 4);
+  refs.dockLegendText.setText(lore('UI-DOCK-LEGEND'));
+  refs.dockLegendText.setPosition(10, h - HUD_BOTTOM_DOCK + 20);
 }
