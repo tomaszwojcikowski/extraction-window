@@ -142,6 +142,12 @@ function tickUnderfootTerrain(state: GameState): void {
     } else if (nestRoll < 0.14) {
       trySpawnNestMite(state);
     }
+    // One-shot like tripwire — no persistent underfoot RNG.
+    state.tiles[state.player.y]![state.player.x] = {
+      kind: 'floor',
+      walkable: true,
+      transparent: true,
+    };
   }
 }
 

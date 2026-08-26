@@ -65,10 +65,6 @@ export function formatHudMeta(
   const probe = state.player.probeTurns > 0 ? `${lore('UI-PROBE')} ${state.player.probeTurns}` : '';
   const stim = state.player.stimTurns > 0 ? `${lore('UI-STIM')} ${state.player.stimTurns}` : '';
   const filter = state.player.filterTurns > 0 ? `${lore('UI-FILTER')} ${state.player.filterTurns}` : '';
-  const desync =
-    state.patternDesync > 0
-      ? `${lore('UI-SKIFF-LOCK')} ${state.patternDesync} · Power Cell`
-      : '';
   const allyRole = state.allies.some((a) => a.alive && a.kind === 'probe_drone')
     ? lore('UI-ALLY-DRONE')
     : state.allies.some(
@@ -79,7 +75,7 @@ export function formatHudMeta(
         )
       ? lore('UI-ALLY-ESCORT')
       : '';
-  const sysBits = [probe, stim, filter, desync, allyRole].filter(Boolean);
+  const sysBits = [probe, stim, filter, allyRole].filter(Boolean);
   const systems = sysBits.length ? ` · ${sysBits.join(' · ')}` : '';
   const statuses = statusHud(state.player.statuses);
   const statusLine = statuses ? ` · ${statuses}` : '';

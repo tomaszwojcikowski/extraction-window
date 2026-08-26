@@ -32,7 +32,6 @@ import {
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
 import { addLightSource, inShadow, isLit, LIGHT_TEMP, rebuildIllumination } from './light';
-import { tryClearPatternDesync } from './mechanics/patternBuffer';
 import { flareDamageForEnemy } from './brands';
 import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
@@ -188,14 +187,6 @@ export function tryEquipItem(state: GameState, kind: ItemKind): void {
 
 function applyIdentifyBacklash(state: GameState): void {
   addEmStress(state, SALVAGE_BACKLASH_EM, 'unstable salvage');
-  addStatus(state.player, 'ion_burn', 2);
-  state.lootTakenThisSector = true;
-  for (const en of state.enemies) {
-    if (!en.alive) continue;
-    if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 5) {
-      en.alerted = true;
-    }
-  }
   pushLog(state, 'LOG-SALVAGE-BAD');
 }
 
@@ -263,10 +254,6 @@ export function useSelected(state: GameState): boolean {
     case 'energy':
       if (tryUseUplinkAid(state, 'energy')) {
         removeOne(state, kind);
-        break;
-      }
-      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
-        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);
         break;
       }
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);

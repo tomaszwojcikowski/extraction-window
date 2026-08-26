@@ -12,6 +12,7 @@ import {
 } from '../../src/sim';
 import { lore } from '../../src/data/lore';
 import { contextHint } from '../../src/game/presenters/ContextHints';
+import { BUS_DRIP_TURNS } from '../../src/sim/bus';
 
 describe('sim bootstrap', () => {
   it('createGame starts playing on drop zone with base vitals', () => {
@@ -36,10 +37,11 @@ describe('sim bootstrap', () => {
 });
 
 describe('sim actions', () => {
-  it('wait advances turn and drains Power on taxed sectors', () => {
+  it('wait advances turn and drains Power on global drip cadence', () => {
     const st = createGame(99);
     st.sectorIndex = 9;
     st.sectorId = 'ash';
+    st.turn = BUS_DRIP_TURNS - 1;
     const energy = st.player.energy;
     const turn = st.turn;
     applyAction(st, { type: 'wait' });
@@ -172,7 +174,7 @@ describe('expansion phase 2 mechanics', () => {
     expect(st.objectives.beaconOpen).toBe(false);
   });
 
-  it('pattern desync blocks shuttle extract until coolant', () => {
+  it('shuttle extract is not blocked by legacy pattern desync', () => {
     const st = createGame(42);
     st.sectorId = 'ridge';
     st.shuttlePos = { x: st.player.x, y: st.player.y };
@@ -186,14 +188,6 @@ describe('expansion phase 2 mechanics', () => {
     st.objectives.usedRelayKey = true;
     st.objectives.beaconOpen = true;
     st.patternDesync = 2;
-    applyAction(st, { type: 'exit' });
-    expect(st.status).toBe('playing');
-    // Energy owns the bus, so it is what resyncs a desynced pattern buffer
-    const cIdx = st.inventory.findIndex((s) => s.kind === 'energy');
-    expect(cIdx).toBeGreaterThanOrEqual(0);
-    st.ui.selectedSlot = cIdx;
-    applyAction(st, { type: 'use' });
-    expect(st.patternDesync).toBe(0);
     applyAction(st, { type: 'exit' });
     expect(st.status).toBe('playing');
     expect(st.uplink?.progress).toBe(1);
