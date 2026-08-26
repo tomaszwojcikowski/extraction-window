@@ -87,6 +87,15 @@ export const XP_BEACON = 15;
 export const XP_ELITE = 32;
 export const XP_BOSS = 40;
 export const XP_NPC_AGENDA = 5;
+/** First loot in a cache room — pays the detour without matching a pack kill. */
+export const XP_CACHE = 8;
+/** Opening a sealed side hatch. */
+export const XP_SEALED = 6;
+
+/** Power sip on first cache loot. */
+export const CACHE_POWER_SIP = 3;
+/** Power sip on first step into a quiet room this sector. */
+export const QUIET_POWER_SIP = 4;
 
 export function xpToNextForLevel(level: number): number {
   if (level >= MAX_LEVEL) return 0;

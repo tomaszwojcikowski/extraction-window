@@ -93,6 +93,8 @@ export interface MapRoom {
   role: RoomRole;
   /** Set when any loot is recovered inside this cache room. */
   cacheLooted?: boolean;
+  /** Quiet alcove already paid its first-visit Power sip. */
+  quietSiphoned?: boolean;
 }
 
 export interface Tile {
