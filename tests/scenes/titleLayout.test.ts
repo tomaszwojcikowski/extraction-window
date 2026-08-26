@@ -52,5 +52,7 @@ describe('field bulletin lore', () => {
     expect(lore('UI-CHANGELOG')).toContain('BULLETIN');
     expect(lore('UI-CHANGELOG-BODY')).toContain(GAME_VERSION);
     expect(lore('UI-CONTROLS-TITLE')).toContain('c bulletin');
+    expect(lore('UI-CONTROLS-TITLE')).toContain('u use');
+    expect(lore('UI-CONTROLS')).toContain('1–9 select');
   });
 });

@@ -247,7 +247,7 @@ export function handleGameKey(e: KeyboardEvent, host: InputHost): void {
   if (slotIdx !== null) {
     host.clearQueuedAction();
     applyAction(state, { type: 'select_slot', index: slotIdx });
-    if (!state.ui.inventoryOpen) applyAction(state, { type: 'toggle_inventory' });
+    // Digits only select on the field dock — i still opens the kit case.
     sfx.play('ui');
     host.afterUiChrome({ syncItems: true });
     return;

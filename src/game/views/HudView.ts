@@ -201,12 +201,12 @@ export class HudView {
     this.drawQuestBadges(badgeSpecs, opts.screenW, opts);
 
     const desc = describeObjective(st);
-    this.setReadout(r.objLocalText, lore(desc.local), opts, ThemeCss.inkDim, 'objLocal');
+    this.setReadout(r.objLocalText, lore(desc.local), opts, ThemeCss.inkBright, 'objLocal');
     this.setReadout(
       r.objCampaignText,
       `${lore('UI-OBJECTIVE')}: ${lore(desc.campaign)}`,
       opts,
-      ThemeCss.inkBright,
+      ThemeCss.inkDim,
       'objCampaign',
     );
 
