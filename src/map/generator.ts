@@ -811,14 +811,10 @@ export function generateSectorMap(
 
   // Hostiles the same way. A pack in one room and nothing in the next reads as
   // a decision; the same count smeared evenly reads as weather.
-  // Early shelf (plains/flood) keeps the sector table as written so the first
-  // hatch-to-hatch stretch stays an exploration beat; from canopy on, +1 packs
-  // the extract road so fights pay for progress without gating the opener.
-  const roadPack = sector.index >= 2 ? 1 : 0;
   const enemyN =
     randInt(rng, sector.enemyCount[0], sector.enemyCount[1]) +
     enemyCountBonus(playerLevel) +
-    roadPack;
+    1;
   for (const fill of planHostiles(rooms, enemyN, rng)) {
     const spots = openIn(fill.room, 5);
     for (let i = 0; i < fill.count && i < spots.length; i++) {

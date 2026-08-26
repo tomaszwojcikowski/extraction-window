@@ -61,6 +61,37 @@ export function pinPhaserTrainingMites(state: {
 }
 
 /**
+ * South lit bypass is the progress path — hold the stalker on its north mark
+ * while the surveyor stays on/south of the bypass so east progress is not a
+ * pounce tax. Taking the north corridor still wakes the hunter.
+ */
+export function pinDrillStalkerOnSouthLane(state: {
+  tutorialActive: boolean;
+  player: { x: number; y: number };
+  enemies: Array<{
+    kind: string;
+    alive: boolean;
+    homeX: number;
+    homeY: number;
+    x: number;
+    y: number;
+    windup: number;
+    alerted: boolean;
+  }>;
+}): void {
+  if (!state.tutorialActive) return;
+  // South bypass floor is y ≥ 10; north ambush lane is y 6–8.
+  if (state.player.y < 10) return;
+  for (const e of state.enemies) {
+    if (e.kind !== 'stalker' || !e.alive) continue;
+    e.x = e.homeX;
+    e.y = e.homeY;
+    e.windup = 0;
+    e.alerted = false;
+  }
+}
+
+/**
  * Hand-authored ~32×16 drill bay — west start, mid stalker corridor, east phaser
  * training bay, hatch chamber. Not a campaign sector; `tutorialActive` only.
  */

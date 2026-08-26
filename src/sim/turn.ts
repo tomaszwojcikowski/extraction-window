@@ -5,7 +5,7 @@ import { XP_SECTOR } from '../data/progression';
 import { pushLog } from './log';
 import { syncObjectiveFlags } from './inventory';
 import { loadSector } from './state';
-import { pinPhaserTrainingMites } from '../map/tutorialMap';
+import { pinDrillStalkerOnSouthLane, pinPhaserTrainingMites } from '../map/tutorialMap';
 import { moveEnemies } from './ai';
 import { applyAllyFieldRoles, moveAllies } from './allyAi';
 import { wornHasTag, wornTagMax } from './equipTags';
@@ -192,6 +192,7 @@ export function endPlayerTurn(state: GameState): void {
   applyAllyFieldRoles(state);
   moveEnemies(state);
   pinPhaserTrainingMites(state);
+  pinDrillStalkerOnSouthLane(state);
   moveAllies(state);
   refreshVision(state);
   syncObjectiveFlags(state);

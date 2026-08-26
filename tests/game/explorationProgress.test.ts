@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, emptyEquipSlots } from '../../src/sim';
 import { ITEMS } from '../../src/data/items';
-import { getSector } from '../../src/data/encounters';
 import { contextHint } from '../../src/game/presenters/ContextHints';
 import { minimapGoalPos } from '../../src/game/views/MinimapView';
 import { describeObjective } from '../../src/sim/objectives';
-import { generateTutorialMap } from '../../src/map/tutorialMap';
-import { generateSectorMap } from '../../src/map/generator';
+import { generateTutorialMap, pinDrillStalkerOnSouthLane } from '../../src/map/tutorialMap';
 import { manhattan } from '../../src/sim/spatial';
 
 describe('exploration progress coaching', () => {
@@ -68,13 +66,21 @@ describe('exploration progress coaching', () => {
       }
     }
   });
-});
 
-describe('early shelf wake tax', () => {
-  it('packs fewer hostiles on plains than on canopy for the same seed', () => {
-    const plains = generateSectorMap(getSector(0), 42, 0);
-    const canopy = generateSectorMap(getSector(2), 42, 2);
-    // Elites/bosses aside, plains should not carry the mid-spine +1 road pack.
-    expect(plains.enemies.length).toBeLessThan(canopy.enemies.length);
+  it('pins the drill stalker while the surveyor stays on the south lane', () => {
+    const st = createGame(1, { skipTutorial: false });
+    const stalker = st.enemies.find((e) => e.kind === 'stalker')!;
+    const home = { x: stalker.homeX, y: stalker.homeY };
+    st.player.x = 12;
+    st.player.y = 11;
+    stalker.x = 12;
+    stalker.y = 10;
+    stalker.windup = 2;
+    stalker.alerted = true;
+    pinDrillStalkerOnSouthLane(st);
+    expect(stalker.x).toBe(home.x);
+    expect(stalker.y).toBe(home.y);
+    expect(stalker.windup).toBe(0);
+    expect(stalker.alerted).toBe(false);
   });
 });
