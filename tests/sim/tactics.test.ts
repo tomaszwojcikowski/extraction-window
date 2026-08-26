@@ -39,18 +39,13 @@ describe('Iteration 2 tactical threats', () => {
     expect(hasBeamLine(st, drone)).toBe(false);
   });
 
-  it('spore contamination names a three-turn tile tax', () => {
+  it('spore contamination decays without a hidden Power tax', () => {
     const st = combatArena();
     leaveContamination(st, { x: st.player.x, y: st.player.y });
     const energy = st.player.energy;
     tickContamination(st);
-    expect(st.player.energy).toBe(energy - 3);
-    expect(st.contamination).toHaveLength(1);
-    tickContamination(st);
-    expect(st.contamination).toHaveLength(1);
-    tickContamination(st);
+    expect(st.player.energy).toBe(energy);
     expect(st.contamination).toHaveLength(0);
-    expect(lastLog(st, 'LOG-CONTAMINATION')?.detail).toBe('tile tax -3 Power');
   });
 
   it('sentinel overwatch triggers first and flare cancellation clears it', () => {

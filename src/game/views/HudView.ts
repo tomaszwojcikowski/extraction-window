@@ -13,7 +13,6 @@ import { resolveHintLine } from '../presenters/ContextHints';
 import { fieldHudChips, fitHudChips, formatHudMeta } from '../presenters/FieldHud';
 import { lightBadgeSpec } from '../presenters/HudBadges';
 import { drawKitOverlay } from './overlays/KitOverlay';
-import { formatRoomQuestHudLine } from '../../sim/mechanics/roomQuestMechanic';
 import type { ShearPressureSpec } from '../presenters/ShearPressure';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { busIsCritical } from '../../sim/bus';
@@ -181,7 +180,7 @@ export class HudView {
     const emHot = st.emStress >= EM_HIGH;
     const skillLock = Boolean(st.skillPick);
     const emUrgentStrip =
-      !skillLock && (emHot && !shearPrimary || st.emStress >= EM_WARN);
+      !skillLock && !shearPrimary && st.emStress >= EM_WARN;
     const meta = formatHudMeta(st, { shearPrimary, suppressEmMeta: emUrgentStrip });
     this.setReadout(r.hudMeta, meta, opts, ThemeCss.ink, 'meta');
 
@@ -210,15 +209,9 @@ export class HudView {
       'objCampaign',
     );
 
-    // Optional tracker: step verb + favor preview (never steals the extract objective).
-    const questLine = formatRoomQuestHudLine(st);
-    if (questLine) {
-      this.setReadout(r.questText, questLine, opts, ThemeCss.tape, 'quest');
-      r.questText.setVisible(true);
-    } else {
-      this.setReadout(r.questText, '', opts, ThemeCss.tape, 'quest');
-      r.questText.setVisible(false);
-    }
+    // Optional site: chip rail + context hints — no second quest essay line.
+    this.setReadout(r.questText, '', opts, ThemeCss.tape, 'quest');
+    r.questText.setVisible(false);
 
     const urgencyParts: string[] = [];
     // Skill pick overlay owns the beat — no urgency strip duplicate.

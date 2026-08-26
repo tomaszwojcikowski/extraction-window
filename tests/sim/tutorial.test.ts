@@ -7,6 +7,7 @@ import { mechanicsAutopilotHint } from '../../src/sim/mechanics';
 import { canReach } from '../../src/sim/fov';
 import { addStatus } from '../../src/sim/status';
 import { inShadow } from '../../src/sim/light';
+import { BUS_DRIP_TURNS } from '../../src/sim/bus';
 import type { LightView } from '../../src/game/views/LightView';
 
 function drill(seed = 42) {
@@ -275,6 +276,7 @@ describe('drill bay tutorial', () => {
     applyAction(st, { type: 'exit' });
     st.sectorIndex = 9;
     st.sectorId = 'ash';
+    st.turn = BUS_DRIP_TURNS - 1;
     const energy = st.player.energy;
     applyAction(st, { type: 'wait' });
     expect(st.player.energy).toBeLessThan(energy);

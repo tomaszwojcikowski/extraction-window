@@ -22,6 +22,7 @@ import { pushLog, recordLoreEvent } from './log';
 import { addStatus, addPlayerMarked, hasStatus } from './status';
 import { pick, randInt } from './rng';
 import { trySealVentSite } from './roomQuest';
+import { describeObjective } from './objectives';
 import {
   cacheCenter,
   markCacheRoomLooted,
@@ -31,7 +32,6 @@ import {
 import { gainXp, hasSkill } from './progression';
 import { addEmStress, purgeEmStress } from './emStress';
 import { addLightSource, inShadow, isLit, LIGHT_TEMP, rebuildIllumination } from './light';
-import { tryClearPatternDesync } from './mechanics/patternBuffer';
 import { flareDamageForEnemy } from './brands';
 import { tryUseUplinkAid } from './mechanics/extractionUplink';
 import { tryOpenAdjacentSealed } from './mechanics/sealedHatch';
@@ -187,14 +187,6 @@ export function tryEquipItem(state: GameState, kind: ItemKind): void {
 
 function applyIdentifyBacklash(state: GameState): void {
   addEmStress(state, SALVAGE_BACKLASH_EM, 'unstable salvage');
-  addStatus(state.player, 'ion_burn', 2);
-  state.lootTakenThisSector = true;
-  for (const en of state.enemies) {
-    if (!en.alive) continue;
-    if (Math.abs(en.x - state.player.x) + Math.abs(en.y - state.player.y) <= 5) {
-      en.alerted = true;
-    }
-  }
   pushLog(state, 'LOG-SALVAGE-BAD');
 }
 
@@ -264,10 +256,6 @@ export function useSelected(state: GameState): boolean {
         removeOne(state, kind);
         break;
       }
-      if (state.patternDesync > 0 && tryClearPatternDesync(state)) {
-        state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);
-        break;
-      }
       state.player.energy = Math.min(state.player.maxEnergy, state.player.energy + 32);
       removeOne(state, kind);
       pushLog(state, 'LOG-USE-ENERGY');
@@ -304,10 +292,14 @@ export function useSelected(state: GameState): boolean {
     }
     case 'mapper': {
       state.player.mapperTurns = Math.max(state.player.mapperTurns, 40);
+      const goal = describeObjective(state).pos ?? state.exitPos;
       const cache = nearestUnlootedCache(state);
-      state.mapperPing = cache ? cacheCenter(cache) : null;
+      // Prefer an unlooted cache (fog OK) so Nav Ping pays exploration; goal
+      // still lights via mapperTurns on the field marker.
+      state.mapperPing = cache ? cacheCenter(cache) : goal;
       removeOne(state, kind);
-      pushLog(state, cache ? 'LOG-USE-MAPPER-CACHE' : 'LOG-USE-MAPPER');
+      if (cache) pushLog(state, 'LOG-USE-MAPPER-CACHE');
+      else pushLog(state, 'LOG-USE-MAPPER');
       break;
     }
     case 'flare': {

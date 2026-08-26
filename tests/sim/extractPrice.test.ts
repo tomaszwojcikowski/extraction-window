@@ -33,28 +33,6 @@ describe('extract Pays the Price', () => {
     expect(lastLog(st, 'LOG-PAY-PRICE')).toBeTruthy();
   });
 
-  it('pattern reject taxes Power', () => {
-    const st = createGame(42);
-    st.sectorId = 'ridge';
-    st.shuttlePos = { x: st.player.x, y: st.player.y };
-    st.tiles[st.player.y]![st.player.x] = {
-      kind: 'shuttle',
-      walkable: true,
-      transparent: true,
-    };
-    st.inventory.push({ kind: 'nav_core', count: 1 });
-    st.objectives.hasNavCore = true;
-    st.objectives.usedRelayKey = true;
-    st.objectives.beaconOpen = true;
-    st.patternDesync = 2;
-    const powerBefore = st.player.energy;
-    applyAction(st, { type: 'exit' });
-    expect(st.status).toBe('playing');
-    expect(st.player.energy).toBeLessThanOrEqual(powerBefore - POWER_TAX_HEAVY);
-    expect(lastLog(st, 'LOG-PB-REJECT')).toBeTruthy();
-    expect(lastLog(st, 'LOG-PAY-PRICE')).toBeTruthy();
-  });
-
   it('extract boxes fill from existing flags', () => {
     const st = combatArena();
     expect(extractTrack(st)).toEqual({

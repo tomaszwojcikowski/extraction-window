@@ -28,13 +28,12 @@ function pulseIonFront(state: GameState): void {
   }
 
   addEmStress(state, 2, 'ion front');
-  state.player.energy -= 2;
   pushLog(state, 'LOG-ION-PULSE');
 }
 
 /**
- * Late-sector ion fronts are short, optional ecology pressure: they tax the
- * Bus/EM together and make an already lit player easier for lit fauna to track.
+ * Late-sector ion fronts are short ecology pressure: EM spike plus fauna
+ * tracking on lit tiles. Power drip already owns the kill clock.
  */
 export const ionFrontMechanic: Mechanic = {
   id: 'ion_front',

@@ -370,6 +370,15 @@ export function collectActionFloatLabels(
           color: ThemeCss.safe,
         };
         break;
+      case 'LOG-CACHE-FIND':
+        next = { label: 'CACHE · POWER SIP', color: ThemeCss.safe };
+        break;
+      case 'LOG-CACHE-CLEAR':
+        next = { label: 'CACHES CLEARED', color: ThemeCss.flag };
+        break;
+      case 'LOG-QUIET-FIND':
+        next = { label: 'QUIET · POWER SIP', color: ThemeCss.safe };
+        break;
       case 'LOG-SEALED-BLOCK':
       case 'LOG-SEALED-NEED-TOOL':
         next = { label: 'SEALED · SEALANT OR BATON', color: ThemeCss.tape };
@@ -381,7 +390,7 @@ export function collectActionFloatLabels(
         next = { label: 'CANNOT OPEN', color: ThemeCss.tape };
         break;
       case 'LOG-INTERACT-MISS':
-        next = { label: 'STAND ON HATCH', color: ThemeCss.inkDim };
+        next = { label: 'WALK ONTO HATCH', color: ThemeCss.inkDim };
         break;
       case 'LOG-USE-EMPTY':
         next = { label: 'KIT EMPTY', color: ThemeCss.inkDim };
