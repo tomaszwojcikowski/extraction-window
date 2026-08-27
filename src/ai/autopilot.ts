@@ -388,7 +388,10 @@ export function chooseAction(
     }
   }
   if (
-    (state.sectorId === 'ash' || state.sectorId === 'brine' || state.sectorId === 'fissure') &&
+    (state.sectorId === 'ash' ||
+      state.sectorId === 'brine' ||
+      state.sectorId === 'fissure' ||
+      (state.ionFrontTurns > 0 && state.player.energy <= 40)) &&
     state.player.filterTurns <= 0
   ) {
     const fIdx = state.inventory.findIndex((s) => s.kind === 'filter');

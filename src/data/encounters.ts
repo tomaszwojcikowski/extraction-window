@@ -402,3 +402,10 @@ export const SECTORS: SectorDef[] = [
 export function getSector(index: number): SectorDef {
   return SECTORS[Math.max(0, Math.min(SECTORS.length - 1, index))]!;
 }
+
+/** Handshake is done; Lattice is still four sectors out. This stretch needs its own toys. */
+export function isInlandShelf(
+  id: SectorId,
+): id is 'trench' | 'duct' | 'ash' | 'brine' {
+  return id === 'trench' || id === 'duct' || id === 'ash' || id === 'brine';
+}

@@ -84,7 +84,9 @@ export const ALLIES: Record<AllyKind, AllyDef> = {
 /** Pick contact kind by sector depth. */
 export function npcKindForSector(index: number): NpcKind {
   if (index <= 4) return 'archive_holo';
-  if (index <= 7) return index % 2 === 0 ? 'survey_contact' : 'stranded_ensign';
+  if (index <= 6) return index % 2 === 0 ? 'survey_contact' : 'stranded_ensign';
+  // Trench / duct: foam and filter jobs match the vent-and-fault stretch.
+  if (index <= 8) return 'field_tech';
   if (index <= 9) return 'stranded_ensign';
   return index % 2 === 0 ? 'survey_contact' : 'field_tech';
 }

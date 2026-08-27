@@ -164,4 +164,16 @@ describe('map generator', () => {
     expect(consoles).toBeGreaterThan(8);
     expect(withQuest).toBe(consoles);
   });
+
+  it('always places a locked terminal on inland shelf sectors', () => {
+    for (const seed of [1, 42, 99, 777, 12345, 9999]) {
+      for (const index of [7, 8, 9, 10]) {
+        const sector = getSector(index);
+        const map = generateSectorMap(sector, seed, index);
+        expect(map.consolePos, `seed=${seed} ${sector.id}`).toBeTruthy();
+        expect(map.tiles[map.consolePos!.y]![map.consolePos!.x]!.kind).toBe('console');
+        expect(canReach(map.tiles, map.start, map.consolePos!)).toBe(true);
+      }
+    }
+  });
 });

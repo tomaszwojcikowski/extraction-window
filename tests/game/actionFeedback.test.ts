@@ -220,6 +220,15 @@ describe('ActionFeedback', () => {
     ]);
   });
 
+  it('floats inland weather wakes on the map', () => {
+    expect(actionFloatLabels([{ loreId: 'LOG-ION-WAKE-FAULT' }])).toEqual([
+      { label: 'FAULT WAKE', color: ThemeCss.rust },
+    ]);
+    expect(worldActionFloats([{ loreId: 'LOG-ION-WAKE-VENT' }])).toEqual([
+      { label: 'VENT SURGE', color: ThemeCss.arc },
+    ]);
+  });
+
   it('detects hit and spore tiles from enemy snaps', () => {
     const st = createGame(42);
     const target = st.enemies.find((e) => e.alive);

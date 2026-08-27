@@ -1,4 +1,4 @@
-import type { SectorDef } from '../data/encounters';
+import { isInlandShelf, type SectorDef } from '../data/encounters';
 import { ENEMIES, type EnemyKind } from '../data/enemies';
 import {
   enemyCountBonus,
@@ -492,13 +492,15 @@ function dressSealedHatches(
   start: Pos,
   exit: Pos,
   rng: Rng,
+  sectorId: SectorDef['id'],
 ): void {
   const contains = (room: Room, p: Pos): boolean =>
     p.x >= room.x && p.x < room.x + room.w && p.y >= room.y && p.y < room.y + room.h;
   const mid = rooms.filter((r) => !contains(r, start) && !contains(r, exit));
   if (mid.length === 0) return;
+  const hatchChance = isInlandShelf(sectorId) ? 0.42 : 0.22;
   for (const room of mid) {
-    if (rng() > 0.22) continue;
+    if (rng() > hatchChance) continue;
     const candidates: Pos[] = [];
     for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
       for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
@@ -660,7 +662,7 @@ export function generateSectorMap(
     else if (!sector.isShuttle) tiles[exit.y]![exit.x] = exitTile();
   }
 
-  dressSealedHatches(tiles, rooms, start, exit, rng);
+  dressSealedHatches(tiles, rooms, start, exit, rng, sector.id);
 
   for (const room of rooms) {
     const c = { x: room.cx, y: room.cy };
@@ -704,7 +706,7 @@ export function generateSectorMap(
   if (rooms.length >= 3) {
     const midRooms = rooms.filter((r) => r !== startRoom && r !== endRoom);
     const candidates = midRooms.length >= 1 ? midRooms : rooms.filter((r) => r !== startRoom);
-    const kind = pickRoomQuestKind(rng);
+    const kind = pickRoomQuestKind(rng, sector.id);
 
     if (isMultiSiteKind(kind) && candidates.length >= 2) {
       const shuffled = shuffle(rng, [...candidates]);
@@ -772,7 +774,7 @@ export function generateSectorMap(
     }
   }
 
-  const consolePos = placeLockedConsole(tiles, rooms, start, exit, specials, rng);
+  const consolePos = placeLockedConsole(tiles, rooms, start, exit, specials, rng, sector.id);
   if (consolePos) specials.push(consolePos);
 
   const occ = () => occupiedSet(enemies, items, start, specials, npcs);

@@ -150,6 +150,18 @@ export function collectActionFloatLabels(
           color: ThemeCss.arc,
         };
         break;
+      case 'LOG-ION-WAKE-FAULT':
+        next = { label: 'FAULT WAKE', color: ThemeCss.rust };
+        break;
+      case 'LOG-ION-WAKE-VENT':
+        next = { label: 'VENT SURGE', color: ThemeCss.arc };
+        break;
+      case 'LOG-ION-WAKE-ASH':
+        next = { label: 'ASH SCOUR', color: ThemeCss.rust };
+        break;
+      case 'LOG-ION-WAKE-BRINE':
+        next = { label: 'BRINE SWELL', color: ThemeCss.arc };
+        break;
       case 'LOG-SHADOW-BITE':
         next = { label: 'SHADOW +1', color: ThemeCss.rust };
         break;
@@ -445,7 +457,7 @@ export function actionFloatLabels(
 
 /** Labels that deserve a world-anchored float — rail carries the rest. */
 const WORLD_FLOAT_RES =
-  /^(STOWED|HP [+-]|FLANK|SHADOW \+1|LIT \+1|DARK \+1|AMBUSH|CHARGE BREAK|WINDED|ENHANCED|OPEN · CLEAN HIT|CACHE OPEN|EXTRACT LOCK|SEALED OPEN|HANDSHAKE BROKEN|UPLINK BROKEN|PHASER ·)|INCOMING|OVERWATCH|BEAM READY|PULSE RING|SWELL ·/;
+  /^(STOWED|HP [+-]|FLANK|SHADOW \+1|LIT \+1|DARK \+1|AMBUSH|CHARGE BREAK|WINDED|ENHANCED|OPEN · CLEAN HIT|CACHE OPEN|EXTRACT LOCK|SEALED OPEN|HANDSHAKE BROKEN|UPLINK BROKEN|PHASER ·|FAULT WAKE|VENT SURGE|ASH SCOUR|BRINE SWELL)|INCOMING|OVERWATCH|BEAM READY|PULSE RING|SWELL ·/;
 
 /** Subset of causal floats to paint over the player — salient beats only. */
 export function worldActionFloats(
@@ -670,7 +682,18 @@ export function playActionSfx(
     sfx.play('handshake');
     return;
   }
-  if (has('LOG-ION-PULSE') || has('LOG-ION-FRONT')) {
+  if (
+    has('LOG-ION-PULSE') ||
+    has('LOG-ION-FRONT') ||
+    has('LOG-ION-FAULT') ||
+    has('LOG-ION-VENT') ||
+    has('LOG-ION-ASH') ||
+    has('LOG-ION-BRINE') ||
+    has('LOG-ION-WAKE-FAULT') ||
+    has('LOG-ION-WAKE-VENT') ||
+    has('LOG-ION-WAKE-ASH') ||
+    has('LOG-ION-WAKE-BRINE')
+  ) {
     sfx.play('ion_pulse');
     return;
   }

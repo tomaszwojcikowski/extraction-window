@@ -22,6 +22,10 @@ export const LORE = {
   'UI-BAR-XP': 'XP',
   'UI-SECTOR': 'Sector',
   'UI-ION-FRONT': 'ION FRONT',
+  'UI-ION-FAULT': 'FAULT CRACK',
+  'UI-ION-VENT': 'VENT SURGE',
+  'UI-ION-ASH': 'ASH SCOUR',
+  'UI-ION-BRINE': 'BRINE SWELL',
   'UI-FRONT-CLEARING': 'FRONT CLEARING',
   'UI-TUT-SECTOR': 'DRILL',
   'UI-ATK': 'ATK',
@@ -198,6 +202,14 @@ export const LORE = {
     'Sealed hatch — press Enter / Space / > to pry open (Pulse Baton equipped)',
   'UI-HINT-ION-FRONT':
     'Ion front — Filter or Flare stops the next pulse',
+  'UI-HINT-ION-FAULT':
+    'Fault crack — Filter stops the pulse that wakes this room',
+  'UI-HINT-ION-VENT':
+    'Vent surge — Filter stops the pulse; drones wake near vents',
+  'UI-HINT-ION-ASH':
+    'Ash scour — Filter stops the pulse; hunters in this room wake',
+  'UI-HINT-ION-BRINE':
+    'Brine swell — Filter stops the pulse; Mag Boots skip the wet extra tax',
   'UI-HINT-FLARE': 'Dark fight — u Plasma Flare',
   'UI-HINT-DART':
     'Lit foe in dart range — u Plasma Microdart, then aim a direction',
@@ -801,7 +813,15 @@ export const LORE = {
   'LOG-EVT-APPROACH': 'Approach — Power pulses. Keep a Power Cell for the skiff.',
   'LOG-EVT-SHEAR': 'Shear pulse — Power drain.',
   'LOG-ION-FRONT': 'Ion front — drains EM and Power. Lit fauna track you harder.',
+  'LOG-ION-FAULT': 'Fault crack — this room\'s fauna wake on the pulse. Filter stops it.',
+  'LOG-ION-VENT': 'Vent surge — drones wake near vents. Filter stops the pulse.',
+  'LOG-ION-ASH': 'Ash scour — hunters in this room wake. Filter stops the pulse.',
+  'LOG-ION-BRINE': 'Brine swell — wet tiles tax extra. Filter or Mag Boots.',
   'LOG-ION-PULSE': 'Ion front pulse — +2 EM and −2 Power. Filter or Flare stops it.',
+  'LOG-ION-WAKE-FAULT': 'Fault crack wakes the room.',
+  'LOG-ION-WAKE-VENT': 'Vent surge wakes nearby drones.',
+  'LOG-ION-WAKE-ASH': 'Ash scour wakes hunters in the room.',
+  'LOG-ION-WAKE-BRINE': 'Brine swell — wet tax; leeches wake.',
   'LOG-ION-DAMPEN': 'Ion front pulse stopped.',
   'LOG-ION-CLEAR': 'Ion front gone.',
   'LOG-XP': 'XP gained.',

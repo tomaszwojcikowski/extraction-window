@@ -1,3 +1,4 @@
+import { isInlandShelf, type SectorId } from '../data/encounters';
 import { canReach } from '../sim/fov';
 import { shuffle, type Rng } from '../sim/rng';
 import type { Pos, Tile, TileKind } from '../sim/types';
@@ -47,9 +48,13 @@ export function placeLockedConsole(
   exit: Pos,
   reserved: Pos[],
   rng: Rng,
+  sectorId?: SectorId,
 ): Pos | null {
   if (rooms.length < 3) return null;
-  if (rng() >= CONSOLE_CHANCE) return null;
+  const roll = rng();
+  // Inland always gets the splice toy — consume the roll so later loot stays aligned.
+  const guaranteed = sectorId !== undefined && isInlandShelf(sectorId);
+  if (!guaranteed && roll >= CONSOLE_CHANCE) return null;
 
   const blocked = new Set(reserved.map(keyOf));
   blocked.add(keyOf(start));

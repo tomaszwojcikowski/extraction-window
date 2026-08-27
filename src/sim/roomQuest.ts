@@ -1,5 +1,6 @@
 import type { LoreId } from '../data/lore';
 import { lore } from '../data/lore';
+import { isInlandShelf, type SectorId } from '../data/encounters';
 import { ITEMS, INVENTORY_SLOTS, type ItemKind } from '../data/items';
 import { ENEMIES } from '../data/enemies';
 import { scaleEnemyCombat } from '../data/difficulty';
@@ -401,8 +402,24 @@ export function trySealVentSite(state: GameState): boolean {
 
 const ROOM_QUEST_KINDS: RoomQuestKind[] = ['salvage', 'purge', 'vent_seal'];
 
-/** Every sector draws from the same three; depth changes the danger, not the ask. */
-export function pickRoomQuestKind(rng: () => number): RoomQuestKind {
+const INLAND_QUEST_BAG: Record<
+  'trench' | 'duct' | 'ash' | 'brine',
+  readonly RoomQuestKind[]
+> = {
+  trench: ['purge', 'purge', 'salvage', 'vent_seal'],
+  duct: ['vent_seal', 'vent_seal', 'purge', 'salvage'],
+  ash: ['vent_seal', 'purge', 'salvage', 'vent_seal'],
+  brine: ['vent_seal', 'vent_seal', 'salvage', 'purge'],
+};
+
+/**
+ * Every sector draws from the same three; inland only weights the draw so the
+ * local ground is the more likely ask.
+ */
+export function pickRoomQuestKind(rng: () => number, sectorId?: SectorId): RoomQuestKind {
+  if (sectorId && isInlandShelf(sectorId)) {
+    return pick(rng, INLAND_QUEST_BAG[sectorId]);
+  }
   return pick(rng, ROOM_QUEST_KINDS);
 }
 

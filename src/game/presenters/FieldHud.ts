@@ -5,6 +5,7 @@ import { describeObjective } from '../../sim/objectives';
 import { armorDefBonus, flankPenalty, toolAtkBonus } from '../../sim/combat';
 import { EM_HIGH, EM_WARN } from '../../sim/emStress';
 import { FAVOR_LABEL } from '../../sim/extractFavor';
+import { ionFrontChipLore } from '../../sim/mechanics/ionFront';
 import { agendaChipLore, openAgendaNpc } from '../../sim/mechanics/npcMechanic';
 import { questKindLabel } from '../../sim/mechanics/roomQuestMechanic';
 import { netLoadoutTagSummary, hasWornLoadout } from '../../sim/equipTagLines';
@@ -147,11 +148,12 @@ export function fieldHudChips(state: GameState): HudChip[] {
   }
 
   if (state.ionFrontTurns > 0) {
+    const ionLore = ionFrontChipLore(state);
     chips.push({
       label:
-        state.ionFrontTurns <= 1
-          ? lore('UI-FRONT-CLEARING')
-          : `${lore('UI-ION-FRONT')} ${state.ionFrontTurns}`,
+        ionLore === 'UI-FRONT-CLEARING'
+          ? lore(ionLore)
+          : `${lore(ionLore)} ${state.ionFrontTurns}`,
       fill: state.ionFrontTurns <= 1 ? Theme.inkMute : Theme.rust,
     });
   }
