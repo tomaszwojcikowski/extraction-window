@@ -10,7 +10,7 @@ describe('PADD briefing', () => {
     st.tutorialActive = false;
     const body = formatPaddContent(st);
     expect(body).toContain(`${lore('UI-OBJECTIVE')}  ${lore('OBJ-LOCAL-EXIT')}`);
-    expect(body).toContain(lore('OBJ-SURVEY-KEY'));
+    expect(body).toContain(lore('OBJ-RELAYKEY'));
     expect(body).toContain(formatExtractBoxes(st));
     expect(body).toContain(lore('UI-PAGES-PURPOSE'));
   });

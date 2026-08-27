@@ -11,7 +11,7 @@ describe('describeObjective now vs later', () => {
     st.objectives.hasRelayKey = false;
     const desc = describeObjective(st);
     expect(desc.local).toBe('OBJ-LOCAL-EXIT');
-    expect(desc.campaign).toBe('OBJ-SURVEY-KEY');
+    expect(desc.campaign).toBe('OBJ-RELAYKEY');
   });
 
   it('on the wreck, campaign names getting the Key here', () => {
@@ -29,7 +29,7 @@ describe('describeObjective now vs later', () => {
     st.sectorId = 'beacon';
     st.objectives.hasRelayKey = false;
     st.objectives.beaconOpen = false;
-    expect(describeObjective(st).campaign).toBe('OBJ-BEACON-NEED-KEY');
+    expect(describeObjective(st).campaign).toBe('OBJ-RELAYKEY');
   });
 
   it('exposes the local goal cell once that tile is explored', () => {
