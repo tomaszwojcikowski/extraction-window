@@ -31,7 +31,7 @@ const MAX_SOURCES = 12;
 /** Additive washes per pool — two soft shells, not onion rings. */
 const POOL_SCALES = [1.05, 0.58] as const;
 /** Relative alpha per wash (outer → body). */
-const POOL_ALPHA = [0.14, 0.28] as const;
+const POOL_ALPHA = [0.18, 0.34] as const;
 
 function poolSeed(x: number, y: number, radius: number): number {
   return ((Math.floor(x * 17) ^ Math.floor(y * 31) ^ Math.floor(radius * 10)) >>> 0) || 1;
@@ -486,7 +486,7 @@ export class LightView {
         for (let k = 0; k < POOL_SCALES.length; k++) {
           const scale = POOL_SCALES[k]!;
           const shellAlpha = aCore * POOL_ALPHA[k]! * (0.45 + 0.55 * atten);
-          this.lightsGfx.fillStyle(s.color, Math.min(0.28, shellAlpha));
+          this.lightsGfx.fillStyle(s.color, Math.min(0.34, shellAlpha));
           this.lightsGfx.fillPoints(this.shellPointsAt(rays, cx, cy, scale, seed + k * 19), true);
         }
       } else {

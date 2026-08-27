@@ -3,7 +3,7 @@ import { Material, Theme } from '../../scenes/theme';
 import { actorPalette } from '../palette';
 import type { Frame } from '../pack';
 import { bodyShades, Px } from '../px';
-import { bevelRect, finishSprite, volume } from '../shade';
+import { bevelRect, finishSprite, grit, volume } from '../shade';
 import { HOVER_SHAPES, silhouetteFor, type Silhouette } from '../silhouette';
 
 function eyes(px: Px, cx: number, y: number, spread: number, size: number, ion: boolean): void {
@@ -205,18 +205,21 @@ function paintShape(
     }
     case 'turret': {
       const swivel = frame === 1 ? 4 : frame === 2 ? -4 : 0;
-      bevelRect(px, 10, 26 + bob, 28, 14, Theme.inkMute, Theme.panel, Theme.groundDeep);
+      bevelRect(px, 10, 26 + bob, 28, 14, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
       px.fillTriangle(6, 44 + bob, 12, 28 + bob, 36, 28 + bob, Theme.panelEdge);
       px.fillTriangle(42, 44 + bob, 36, 28 + bob, 12, 28 + bob, Theme.panelEdge);
-      bevelRect(px, 12 + swivel, 10 + bob, 22, 16, lit, mid, deep);
+      volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, Theme.inkDim);
+      bevelRect(px, 12 + swivel, 10 + bob, 22, 16, lit, mid, deep, lift, rim);
       bevelRect(px, 32 + swivel, 16 + bob, 14, 6, Theme.inkMute, Theme.panelEdge, Theme.groundDeep);
       px.fillRect(44 + swivel, 16 + bob, 3, 6, Theme.tape);
       px.fillRect(16 + swivel, 18 + bob, 5, 4, threat);
+      grit(px, Theme.inkMute, 5, 11 + frame);
       break;
     }
     case 'emitter': {
       if (kind === 'duct_drone') {
-        bevelRect(px, 8, 12 + bob, 32, 22, Theme.inkMute, Theme.panel, Theme.groundDeep);
+        bevelRect(px, 8, 12 + bob, 32, 22, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
+        volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, Theme.inkDim);
         px.fillRect(10, 14 + bob, 28, 4, mid);
         px.fillRect(2, 18 + bob, 8, 8, Theme.panelEdge);
         px.fillRect(38, 18 + bob, 8, 8, Theme.panelEdge);
@@ -224,7 +227,8 @@ function paintShape(
         px.fillRect(18, 24 + bob, 12, 4, Theme.arcWhite);
         px.fillRect(12 - frame, 8 + bob, 24 + frame * 2, 3, Theme.panelEdge);
       } else {
-        bevelRect(px, 12, 14 + bob, 24, 18, Theme.inkMute, Theme.panel, Theme.groundDeep);
+        bevelRect(px, 12, 14 + bob, 24, 18, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
+        volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, Theme.inkDim);
         px.fillRect(2, 20 + bob, 12, 5, Theme.panelEdge);
         px.fillRect(34, 20 + bob, 12, 5, Theme.panelEdge);
         px.fillRect(2, 18 + bob, 3, 9, mid);
@@ -237,7 +241,8 @@ function paintShape(
       break;
     }
     case 'chassis': {
-      bevelRect(px, 8, 10 + bob, 32, 28, Theme.inkMute, Theme.panel, Theme.groundDeep);
+      bevelRect(px, 8, 10 + bob, 32, 28, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
+      volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, Theme.inkDim);
       px.fillRect(10, 12 + bob, 28, 5, mid);
       px.fillRect(10, 32 + bob, 28, 3, mid);
       px.fillRect(12, 20 + bob, 24, 9, Theme.groundDeep);
@@ -245,6 +250,7 @@ function paintShape(
       px.fillRect(10, 38 + bob, 8, 5, Theme.panelEdge);
       px.fillRect(30, 38 + bob, 8, 5, Theme.panelEdge);
       px.fillRect(12, 13 + bob, 8, 2, Theme.inkBright);
+      grit(px, Theme.inkMute, 6, 19 + frame);
       break;
     }
     case 'coil': {
@@ -295,6 +301,7 @@ function paintCrown(px: Px): void {
   px.fillTriangle(8, 10, 14, 1, 20, 10, Theme.tape);
   px.fillTriangle(18, 10, 24, 0, 30, 10, Theme.tape);
   px.fillTriangle(28, 10, 34, 1, 40, 10, Theme.tape);
+  volume(px, Theme.tape, Theme.inkBright, Theme.groundDeep, Theme.arc, Theme.inkBright);
   px.fillRect(8, 10, 32, 3, Theme.groundDeep);
   px.fillRect(10, 10, 8, 1, Theme.inkBright);
   px.set(14, 3, Theme.inkBright);
@@ -326,28 +333,48 @@ function paintPlayer(frame: number): Px {
   const px = new Px();
   const bob = frame === 1 ? -2 : 0;
   const stride = frame === 2 ? 2 : frame === 1 ? -2 : 0;
-  // Pack
-  bevelRect(px, 28, 16 + bob, 10, 14, Material.suitMid, Material.suitDeep, Theme.groundDeep);
-  px.fillRect(30, 18 + bob, 6, 3, Theme.tape);
-  // Helmet
-  px.fillEllipse(23, 13 + bob, 10, 8, Material.suitMid);
+  const lLeg = 16 + Math.min(0, stride);
+  const rLeg = 25 + Math.max(0, stride);
+  // Field pack — sealed case with tape rail and lamp housing.
+  bevelRect(px, 27, 15 + bob, 12, 16, Material.suitLit, Material.suitDeep, Theme.groundDeep, Material.suitMid, Theme.groundDeep);
+  px.fillRect(29, 17 + bob, 8, 3, Theme.tape);
+  px.fillRect(29, 18 + bob, 8, 1, Theme.inkBright);
+  px.fillRect(31, 22 + bob, 5, 6, Material.suitMid);
+  px.fillRect(32, 23 + bob, 3, 2, Theme.biolum);
+  px.fillRect(36, 14 + bob, 3, 4, Theme.panelEdge);
+  px.set(37, 13 + bob, Theme.tape);
+  grit(px, Theme.inkMute, 4, 5 + frame);
+  // Helmet + visor glass.
+  px.fillEllipse(23, 13 + bob, 11, 9, Material.suitMid);
   volume(px, Material.suitMid, Material.suitLit, Material.suitDeep, Material.suitDeep, Theme.ink);
+  px.fillEllipse(23, 13 + bob, 8, 6, Material.visor);
   px.fillRect(16, 11 + bob, 14, 5, Material.visor);
-  px.fillRect(18, 12 + bob, 10, 2, Theme.inkBright);
-  px.fillRect(20 + frame, 12 + bob, 5, 1, Theme.biolum);
-  // Torso
-  bevelRect(px, 14, 18 + bob, 20, 16, Material.suitLit, Material.suitMid, Material.suitDeep);
-  px.fillRect(20, 22 + bob, 8, 4, Theme.ink);
-  px.set(24, 23 + bob, Theme.biolum);
-  px.fillRect(16, 20 + bob, 4, 2, Theme.tape);
-  // Arms
-  bevelRect(px, 8 + stride, 20 + bob, 7, 14, Material.suitLit, Material.suitMid, Material.suitDeep);
-  bevelRect(px, 33 - stride, 20 + bob, 7, 14, Material.suitLit, Material.suitMid, Material.suitDeep);
-  // Legs + boots
-  bevelRect(px, 16 + Math.min(0, stride), 33 + bob, 7, 10, Material.suitMid, Material.suitDeep, Theme.groundDeep);
-  bevelRect(px, 25 + Math.max(0, stride), 33 + bob, 7, 10, Material.suitMid, Material.suitDeep, Theme.groundDeep);
-  px.fillRect(15 + Math.min(0, stride), 41, 9, 4, Material.visor);
-  px.fillRect(24 + Math.max(0, stride), 41, 9, 4, Material.visor);
+  px.fillRect(17, 12 + bob, 12, 1, Theme.inkBright);
+  px.fillRect(19 + frame, 13 + bob, 6, 2, Theme.biolum);
+  px.set(22 + frame, 13 + bob, Theme.arcWhite);
+  px.fillRect(14, 10 + bob, 4, 3, Material.suitLit);
+  px.fillRect(30, 10 + bob, 4, 3, Material.suitLit);
+  // Torso webbing.
+  bevelRect(px, 14, 18 + bob, 20, 16, Material.suitLit, Material.suitMid, Material.suitDeep, Theme.ink, Material.suitDeep);
+  px.fillRect(16, 20 + bob, 16, 2, Theme.tape);
+  px.fillRect(20, 23 + bob, 8, 5, Theme.ink);
+  px.fillRect(21, 24 + bob, 6, 3, Theme.groundDeep);
+  px.set(24, 25 + bob, Theme.biolum);
+  px.fillRect(15, 28 + bob, 3, 5, Theme.tape);
+  px.fillRect(30, 28 + bob, 3, 5, Theme.tape);
+  // Arms + gloves.
+  bevelRect(px, 8 + stride, 20 + bob, 7, 14, Material.suitLit, Material.suitMid, Material.suitDeep, Theme.ink, Material.suitDeep);
+  bevelRect(px, 33 - stride, 20 + bob, 7, 14, Material.suitLit, Material.suitMid, Material.suitDeep, Theme.ink, Material.suitDeep);
+  px.fillRect(8 + stride, 31 + bob, 7, 4, Material.suitLit);
+  px.fillRect(33 - stride, 31 + bob, 7, 4, Material.suitLit);
+  px.fillRect(9 + stride, 32 + bob, 5, 1, Theme.inkBright);
+  // Legs + taped boots.
+  bevelRect(px, lLeg, 33 + bob, 7, 10, Material.suitMid, Material.suitDeep, Theme.groundDeep, Material.suitMid, Theme.groundDeep);
+  bevelRect(px, rLeg, 33 + bob, 7, 10, Material.suitMid, Material.suitDeep, Theme.groundDeep, Material.suitMid, Theme.groundDeep);
+  px.fillRect(lLeg, 41, 9, 4, Material.visor);
+  px.fillRect(rLeg - 1, 41, 9, 4, Material.visor);
+  px.fillRect(lLeg + 1, 38 + bob, 5, 2, Theme.tape);
+  px.fillRect(rLeg + 1, 38 + bob, 5, 2, Theme.tape);
   px.fillRect(36, 24 + bob, 3, 5, Theme.safe);
   finishSprite(px, actorPalette());
   return px;
@@ -365,23 +392,31 @@ function paintContact(role: 'npc' | 'ally', kind: string, frame: number): Px {
   const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
   const stride = frame === 1 ? 2 : frame === 2 ? -2 : 0;
   if (kind.includes('drone')) {
-    bevelRect(px, 10, 14 + bob, 28, 20, Theme.inkMute, rim, Theme.groundDeep);
+    bevelRect(px, 10, 14 + bob, 28, 20, Theme.inkMute, rim, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
     px.fillRect(14, 18 + bob, 20, 12, body);
     volume(px, body, Theme.inkBright, rim, rim, Theme.ink);
     px.fillRect(12 + stride, 12 + bob, 24, 2, Theme.biolum);
-    px.fillDisc(24, 24 + bob, 3, Theme.inkBright);
+    px.fillDisc(24, 24 + bob, 4, Theme.inkBright);
+    px.fillDisc(24, 24 + bob, 2, Theme.groundDeep);
+    px.set(24, 23 + bob, Theme.arcWhite);
+    px.fillRect(16, 32 + bob, 6, 3, Theme.panelEdge);
+    px.fillRect(26, 32 + bob, 6, 3, Theme.panelEdge);
   } else {
-    bevelRect(px, 15 + stride, 8 + bob, 18, 28, body, rim, Theme.groundDeep);
-    px.fillRect(17 + stride, 10 + bob, 14, 22, body);
+    px.fillEllipse(24 + stride, 12 + bob, 9, 7, body);
+    volume(px, body, Theme.inkBright, rim, rim, Theme.ink);
+    px.fillRect(17 + stride, 10 + bob, 14, 4, Theme.groundDeep);
+    px.fillRect(18 + stride, 11 + bob, 12, 2, Theme.inkBright);
+    bevelRect(px, 15 + stride, 16 + bob, 18, 20, body, rim, Theme.groundDeep, Theme.ink, Theme.groundDeep);
+    px.fillRect(17 + stride, 18 + bob, 14, 16, body);
     volume(px, body, Theme.inkBright, rim, rim, Theme.ink);
     bevelRect(px, 10 + stride, 18 + bob, 7, 14, body, rim, Theme.groundDeep);
     bevelRect(px, 31 + stride, 18 + bob, 7, 14, body, rim, Theme.groundDeep);
     px.fillRect(16 + stride, 38, 7, 4, Theme.groundDeep);
     px.fillRect(25 + stride, 38, 7, 4, Theme.groundDeep);
+    px.fillRect(18 + stride, 39, 4, 1, Theme.tape);
+    px.fillRect(26 + stride, 39, 4, 1, Theme.tape);
+    px.fillRect(21 + stride, 24 + bob, 7, 4, ally ? Theme.safe : Theme.biolum);
   }
-  px.fillRect(18 + stride, 14 + bob, 4, 3, Theme.inkBright);
-  px.fillRect(26 + stride, 14 + bob, 4, 3, Theme.inkBright);
-  px.fillRect(21 + stride, 24 + bob, 7, 4, ally ? Theme.safe : Theme.biolum);
   if (kind === 'archive_holo') {
     px.fillRect(12, 12 + bob, 24, 1, Theme.biolum);
     px.fillRect(14, 28 + bob, 20, 1, Theme.biolum);
