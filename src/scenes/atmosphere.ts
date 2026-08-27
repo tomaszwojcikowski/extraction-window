@@ -67,14 +67,18 @@ export function drawPlate(
   // Motivated key light from above.
   g.fillStyle(Theme.panelEdge, 0.85 * bevel);
   g.fillRect(x, y, w, 1);
-  g.fillStyle(Theme.inkDim, 0.16 * bevel);
+  g.fillStyle(Theme.inkDim, 0.22 * bevel);
   g.fillRect(x, y + 1, w, 1);
   g.fillStyle(Theme.groundDeep, 0.85 * bevel);
   g.fillRect(x, y + h - 1, w, 1);
-  g.fillStyle(Theme.groundDeep, 0.45 * bevel);
+  g.fillStyle(Theme.groundDeep, 0.5 * bevel);
   g.fillRect(x + w - 1, y + 1, 1, h - 2);
-  g.fillStyle(Theme.panelEdge, 0.35 * bevel);
+  g.fillStyle(Theme.panelEdge, 0.45 * bevel);
   g.fillRect(x, y + 1, 1, h - 2);
+  if (w > 4 && h > 4) {
+    g.fillStyle(Theme.inkMute, 0.12 * bevel);
+    g.fillRect(x + 1, y + 2, w - 2, 1);
+  }
 }
 
 /** Countersunk bolt head — 3px, lit from above. */
@@ -605,10 +609,12 @@ export function drawMeter(
   if (innerW > 0) {
     g.fillStyle(colour, 1);
     g.fillRect(x + 1, y + 1, innerW, h - 2);
-    g.fillStyle(Theme.inkBright, critical ? 0.1 : 0.16);
+    g.fillStyle(Theme.inkBright, critical ? 0.14 : 0.28);
     g.fillRect(x + 1, y + 1, innerW, 1);
+    g.fillStyle(Theme.groundDeep, critical ? 0.18 : 0.28);
+    g.fillRect(x + 1, y + h - 2, innerW, 1);
     // Leading notch — the needle edge, not a soft gradient cap.
-    g.fillStyle(Theme.inkBright, 0.55);
+    g.fillStyle(Theme.inkBright, 0.7);
     g.fillRect(x + innerW, y + 1, 1, h - 2);
     if (critical) {
       for (let i = 0; i < Math.min(8, Math.floor(innerW / 4)); i++) {

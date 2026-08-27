@@ -923,7 +923,7 @@ export class LightView {
         let tint = isTerrain ? floorTint : isWallFace ? multiplyTint(0xffffff, floorTint, 0.22) : 0xffffff;
         tint = multiplyTint(tint, ambientTint, 0.22);
         if (colorPull > 0.04) {
-          tint = multiplyTint(tint, colorAcc, Math.min(0.55, colorPull * 0.48));
+          tint = multiplyTint(tint, colorAcc, Math.min(0.68, colorPull * 0.62));
         }
         if (brightness < SHADOW_THRESHOLD) {
           const wash =
@@ -934,8 +934,11 @@ export class LightView {
                 : 0.45;
           tint = multiplyTint(tint, Theme.shadowWash, wash * (1 - brightness / SHADOW_THRESHOLD));
         }
-        // Gentler lift — lit floor stays warm metal, not chalk-white.
-        tint = blendTowardWhite(tint, Math.pow(brightness, 1.05) * 0.38 * reflect);
+        // Lit floor stays warm metal; lamp pull + lift so the pool reads as light, not chalk.
+        tint = blendTowardWhite(tint, Math.pow(brightness, 1.05) * 0.46 * reflect);
+        if (isWallFace && brightness >= SHADOW_THRESHOLD) {
+          tint = blendTowardWhite(tint, 0.1 * brightness);
+        }
         if (st.emStress >= EM_HIGH) {
           // Sickly scan wash — intensity already in sim ambient; hue is present-only.
           tint = multiplyTint(tint, LightTemp.scan, 0.12);
@@ -966,7 +969,7 @@ export class LightView {
           tint = multiplyTint(tint, Theme.arc, crush * 0.22);
         }
 
-        const occlusion = 1 - Math.min(0.55, this.contactOcclusion(st, x, y) * 0.07);
+        const occlusion = 1 - Math.min(0.62, this.contactOcclusion(st, x, y) * 0.12);
         // Softer response curve: dark stays readable, bright doesn't punch.
         const alpha = Math.min(
           1,
@@ -1028,7 +1031,7 @@ export class LightView {
       const tx = Math.round(x);
       const ty = Math.round(y);
       if (!st.visible[ty]?.[tx]) return 0;
-      return 0.58 + 0.42 * tileBrightness(st, tx, ty);
+      return 0.48 + 0.52 * tileBrightness(st, tx, ty);
     };
 
     const keyTint = (x: number, y: number): number | null => {
@@ -1043,7 +1046,7 @@ export class LightView {
         acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.7));
       }
       if (pull < 0.06) return null;
-      return multiplyTint(0xffffff, acc, Math.min(0.36, pull * 0.32));
+      return multiplyTint(0xffffff, acc, Math.min(0.48, pull * 0.42));
     };
 
     // Mid-hop: sample from the carried lamp so alpha matches wash/tint, not dest tile.
