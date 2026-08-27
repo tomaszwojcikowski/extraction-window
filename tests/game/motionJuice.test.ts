@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { actorFrameKey, idlePose, walkPose, windupPose } from '../../src/scenes/textures';
+import { actorFrameKey, idlePose, walkPose, walkPoseAt, windupPose } from '../../src/scenes/textures';
 import { enemyAnimFrame } from '../../src/game/presenters/enemyAnimFrame';
 import { beamLaneHot, tileHatchPulse, windupThreatPulse } from '../../src/game/presenters/threatPulse';
 import { igniteTileForCue, pickCameraCue, sectorEnterCue } from '../../src/game/presenters/EventCamera';
 
-describe('sectorEnterCue', () => {
-  it('holds windup poses on frames 6–7', () => {
-    expect(enemyAnimFrame({ windup: 2, intent: 'beam', alerted: true }, 0, false)).toBe(6);
-    expect(enemyAnimFrame({ windup: 1, intent: 'pounce', alerted: false }, 3, true)).toBe(7);
+describe('enemyAnimFrame', () => {
+  it('holds windup poses on frames 10–11', () => {
+    expect(enemyAnimFrame({ windup: 2, intent: 'beam', alerted: true }, 0, false)).toBe(10);
+    expect(enemyAnimFrame({ windup: 1, intent: 'pounce', alerted: false }, 3, true)).toBe(11);
   });
 
-  it('strides 2–5 while moving and idles 0↔1 on patrol', () => {
+  it('strides 2–9 while moving and idles 0↔1 on patrol', () => {
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 0, true)).toBe(2);
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 1, true)).toBe(3);
-    expect(enemyAnimFrame({ windup: 0, alerted: false }, 3, true)).toBe(5);
+    expect(enemyAnimFrame({ windup: 0, alerted: false }, 7, true)).toBe(9);
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 0, false)).toBe(0);
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 2, false)).toBe(1);
   });
@@ -24,13 +24,19 @@ describe('sectorEnterCue', () => {
 });
 
 describe('actorFrameKey', () => {
-  it('keeps frame 0 un-suffixed and wraps at 8', () => {
+  it('keeps frame 0 un-suffixed and wraps at 12', () => {
     expect(actorFrameKey('t_player', 0)).toBe('t_player');
-    expect(actorFrameKey('t_player', 3)).toBe('t_player_3');
-    expect(actorFrameKey('t_player', 8)).toBe('t_player');
+    expect(actorFrameKey('t_player', 9)).toBe('t_player_9');
+    expect(actorFrameKey('t_player', 12)).toBe('t_player');
     expect(idlePose(0)).toBe(0);
     expect(walkPose(0)).toBe(2);
-    expect(windupPose(1)).toBe(7);
+    expect(walkPoseAt(0)).toBe(2);
+    expect(walkPoseAt(0.5)).toBe(6);
+    expect(walkPoseAt(1)).toBe(9);
+    expect(windupPose(1)).toBe(11);
+    for (let i = 0; i < 8; i++) {
+      expect(walkPoseAt(i / 8)).toBe(2 + i);
+    }
   });
 });
 

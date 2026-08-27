@@ -10,7 +10,7 @@ import {
 import { enterSfxForLayout, sfx } from '../../audio/sfx';
 import { layoutForSector } from '../../map/layoutKind';
 import { LightTemp, Theme, ThemeCss } from '../../scenes/theme';
-import { TILE_DRAW } from '../../scenes/textures';
+import { TILE_DRAW, allyTextureKey, enemyTextureKey, npcTextureKey, playerTextureKey, walkPoseAt } from '../../scenes/textures';
 import { MOVE_MS } from '../GameHost';
 import type { LightView } from '../views/LightView';
 
@@ -1301,6 +1301,10 @@ export type MoveAnimHost = {
 
 const HOP_PX = 5;
 
+function bindWalk(img: Phaser.GameObjects.Image, key: string): void {
+  if (img.active && img.texture.key !== key) img.setTexture(key);
+}
+
 type StepMotion = {
   hop?: boolean;
   delay?: number;
@@ -1412,7 +1416,10 @@ export function playMoveAnims(
       from: fromPlayer,
       to: { x: px, y: py },
       motion: { hop: true },
-      onProgress: host.onPlayerMoveLight,
+      onProgress: (t) => {
+        bindWalk(host.playerSprite, playerTextureKey(walkPoseAt(t)));
+        host.onPlayerMoveLight?.(t);
+      },
     });
   } else {
     host.snapImg(host.playerSprite, px, py);
@@ -1440,6 +1447,7 @@ export function playMoveAnims(
       // Keep logical gx/gy on the sprite path — afterStart used to snap to the
       // destination while the image lerped, so umbra jumped ahead of the body.
       onProgress: (t) => {
+        bindWalk(view.img, enemyTextureKey(en.kind, walkPoseAt(t)));
         view.gx = prev.x + (en.x - prev.x) * t;
         view.gy = prev.y + (en.y - prev.y) * t;
         host.onPlayerMoveLight?.(t);
@@ -1464,6 +1472,7 @@ export function playMoveAnims(
       to: { x: ally.x, y: ally.y },
       motion: { hop: false, ease: 'Sine.easeInOut' },
       onProgress: (t) => {
+        bindWalk(view.img, allyTextureKey(ally.kind, walkPoseAt(t)));
         view.gx = prev.x + (ally.x - prev.x) * t;
         view.gy = prev.y + (ally.y - prev.y) * t;
         host.onPlayerMoveLight?.(t);
@@ -1487,6 +1496,7 @@ export function playMoveAnims(
       to: { x: npc.x, y: npc.y },
       motion: { hop: false, ease: 'Sine.easeInOut' },
       onProgress: (t) => {
+        bindWalk(view.img, npcTextureKey(npc.kind, walkPoseAt(t)));
         view.gx = prev.x + (npc.x - prev.x) * t;
         view.gy = prev.y + (npc.y - prev.y) * t;
         host.onPlayerMoveLight?.(t);

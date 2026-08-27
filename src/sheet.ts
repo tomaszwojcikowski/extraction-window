@@ -216,7 +216,7 @@ class SheetScene extends Phaser.Scene {
         'sheet',
         [...Array(ACTOR_ANIM_FRAMES).keys()].map((frame) => enemyTextureKey(kind, frame)),
         lore(def.loreName),
-        `${kind} · idle/stride/windup · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
+        `${kind} · idle/8-stride/windup · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
         def.color,
       );
     }

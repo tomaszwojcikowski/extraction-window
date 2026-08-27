@@ -669,7 +669,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tickAnimatedActors(): void {
-    const playerKey = playerTextureKey(this.animating ? 2 + (this.animFrame % 4) : this.animFrame % 2);
+    if (this.animating) return;
+    const playerKey = playerTextureKey(this.animFrame % 2);
     if (this.playerSprite.texture.key !== playerKey) this.playerSprite.setTexture(playerKey);
     refreshEnemyAnimFrame(this.actorSyncHost(), this.state);
   }

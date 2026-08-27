@@ -165,13 +165,13 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
-- Hostile PNG frames: 0–1 patrol idle, 2–5 four-step stride, 6–7 windup. `setTexture` only when the key changes.
+- Hostile PNG frames: 0–1 patrol idle, 2–9 eight-step stride, 10–11 windup. `setTexture` only when the key changes. Mid-hop, stride stamps follow hop progress (~8 keys across `MOVE_MS`) — not the 420ms idle ticker.
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.
 
 **Perf (do not tighten):**
 
-- Actor/prop `setTexture` and FOV mote/threat redraw: once per `animFrame` (~420ms), not every Phaser `update`.
+- Actor/prop idle `setTexture` and FOV mote/threat redraw: once per `animFrame` (~420ms), not every Phaser `update`. Mid-hop stride stamps share the ~8× hop FX cadence.
 - Mid-hop lamp wash tints **dirty cells only**; bloom/shadows step ~8×/hop. Skip motes mid-hop.
 - Field motes capped at 52 / 62 / 78 (Calm / Arcing / Breaching). Spike alpha/size, not uncapped count.
 - Live `LightView.ignite` Graphics: at most one (reuse/restart). First-light front is one ADD circle, not a second full-grid lighting pass.

@@ -1,5 +1,8 @@
-/** Authored actor poses: 0–1 idle, 2–5 stride, 6–7 windup / assist. */
-export const ACTOR_ANIM_FRAMES = 8;
+/** Authored actor poses: 0–1 idle, 2–9 eight-step stride, 10–11 windup / assist. */
+export const ACTOR_ANIM_FRAMES = 12;
+export const WALK_FRAME_START = 2;
+export const WALK_FRAME_COUNT = 8;
+export const WINDUP_FRAME_START = 10;
 /** Hazard / vent / beacon pulse stamps. */
 export const PROP_ANIM_FRAMES = 6;
 
@@ -24,70 +27,70 @@ export function propFrameKey(base: string, frame = 0): string {
 const at = <T>(table: readonly T[], frame: number): T => table[wrapActorFrame(frame)]!;
 
 export function poseGait(frame: number): number {
-  return at([0, 1, 2, 1, -2, -1, 2, -2], frame);
+  return at([0, 1, 2, 3, 2, 0, -2, -3, -2, 0, 3, -3], frame);
 }
 
 export function poseStomp(frame: number): number {
-  return at([0, 1, 2, 1, -1, 0, 2, 1], frame);
+  return at([0, 1, 2, 2, 1, 0, -1, -1, 0, 1, 2, 1], frame);
 }
 
 export function poseSway(frame: number): number {
-  return at([0, 1, 1, 0, -1, -1, 2, -2], frame);
+  return at([0, 1, 1, 2, 1, 0, -1, -2, -1, 0, 2, -2], frame);
 }
 
 export function poseWing(frame: number, mastling: boolean): number {
   return mastling
-    ? at([15, 16, 18, 16, 11, 14, 19, 10], frame)
-    : at([12, 13, 16, 14, 7, 10, 17, 6], frame);
+    ? at([15, 16, 18, 19, 17, 15, 13, 11, 13, 15, 19, 10], frame)
+    : at([12, 13, 16, 17, 14, 12, 9, 7, 9, 12, 17, 6], frame);
 }
 
 export function poseSwivel(frame: number): number {
-  return at([0, 2, 4, 2, -4, -2, 5, -5], frame);
+  return at([0, 2, 4, 5, 3, 0, -3, -5, -3, 0, 6, -6], frame);
 }
 
 export function poseLean(frame: number): number {
-  return at([0, 2, 3, 1, -3, -2, 4, -4], frame);
+  return at([0, 2, 3, 4, 2, 0, -2, -4, -2, 0, 5, -4], frame);
 }
 
 export function poseStretch(frame: number): number {
-  return at([0, 3, 6, 4, 2, 1, 7, 5], frame);
+  return at([0, 3, 4, 6, 5, 3, 2, 1, 2, 4, 7, 5], frame);
 }
 
 export function posePulse(frame: number): number {
-  return at([0, 1, 1, 0, -1, -1, 2, -1], frame);
+  return at([0, 1, 1, 1, 0, 0, -1, -1, 0, 1, 2, -1], frame);
 }
 
 /** Bloom / aperture / emitter lift in the old 0–3 band, not raw frame index. */
 export function poseBloom(frame: number): number {
-  return at([0, 0, 1, 1, 2, 2, 3, 2], frame);
+  return at([0, 0, 1, 1, 2, 2, 2, 3, 2, 1, 3, 2], frame);
 }
 
 export function poseSlide(frame: number): number {
-  return at([0, 1, 1, 2, 2, 3, 0, 3], frame);
+  return at([0, 1, 1, 2, 2, 3, 3, 2, 1, 0, 0, 3], frame);
 }
 
 export function hoverBob(frame: number): number {
-  return at([0, -2, -3, -1, 2, 1, -1, 3], frame);
+  return at([0, -2, -3, -2, -1, 0, 1, 2, 1, 0, -1, 3], frame);
 }
 
 export function groundBob(frame: number): number {
-  return at([0, 0, 0, 1, 1, 0, 1, 2], frame);
+  return at([0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 2], frame);
 }
 
 export function playerBob(frame: number): number {
-  return at([0, -2, -1, 0, 1, 0, 1, 2], frame);
+  return at([0, -2, 0, 1, 0, 1, 0, 1, 0, 1, 1, 2], frame);
 }
 
 export function playerStride(frame: number): number {
-  return at([0, -1, 2, 3, -2, -3, 1, -1], frame);
+  return at([0, -1, 2, 4, 3, 1, -2, -4, -3, -1, 2, -2], frame);
 }
 
 export function contactBob(frame: number): number {
-  return at([0, -1, -1, 0, 1, 1, 0, 2], frame);
+  return at([0, -1, -1, 0, 0, 1, 0, 1, 0, 0, 0, 2], frame);
 }
 
 export function contactStride(frame: number): number {
-  return at([0, 1, 2, 3, -2, -3, 1, -1], frame);
+  return at([0, 1, 2, 4, 3, 1, -2, -4, -3, -1, 1, -1], frame);
 }
 
 export function poseKick(frame: number, i: number, gait: number): number {
@@ -99,9 +102,16 @@ export function idlePose(animFrame: number): number {
 }
 
 export function walkPose(animFrame: number): number {
-  return 2 + (animFrame % 4);
+  return WALK_FRAME_START + (animFrame % WALK_FRAME_COUNT);
+}
+
+/** One stride stamp per ~hop FX step (8 across MOVE_MS). */
+export function walkPoseAt(t: number): number {
+  const u = Math.min(1, Math.max(0, t));
+  const i = Math.min(WALK_FRAME_COUNT - 1, Math.floor(u * WALK_FRAME_COUNT));
+  return WALK_FRAME_START + i;
 }
 
 export function windupPose(animFrame: number): number {
-  return 6 + (animFrame % 2);
+  return WINDUP_FRAME_START + (animFrame % 2);
 }

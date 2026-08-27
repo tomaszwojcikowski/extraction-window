@@ -2,7 +2,7 @@ import { actorFrameKey } from '../art/animPose';
 import type { SectorId } from '../data/encounters';
 import type { EnemyKind } from '../data/enemies';
 
-export { ACTOR_ANIM_FRAMES, PROP_ANIM_FRAMES, actorFrameKey, propFrameKey, idlePose, walkPose, windupPose } from '../art/animPose';
+export { ACTOR_ANIM_FRAMES, PROP_ANIM_FRAMES, WALK_FRAME_START, actorFrameKey, propFrameKey, idlePose, walkPose, walkPoseAt, windupPose } from '../art/animPose';
 
 export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
 
