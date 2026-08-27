@@ -56,6 +56,9 @@ function paintShape(
       }
       px.fillEllipse(24, 32 + bob, 16, 8, mid);
       volume(px, mid, lit, deep, rim, lift);
+      bevelRect(px, 12, 28 + bob, 8, 5, lit, mid, deep, lift, rim);
+      bevelRect(px, 20, 27 + bob, 8, 6, lit, mid, deep, lift, rim);
+      bevelRect(px, 28, 28 + bob, 8, 5, lit, mid, deep, lift, rim);
       px.fillRect(12, 28 + bob, 24, 2, lit);
       px.fillRect(10, 31 + bob, 4, 3, deep);
       px.fillRect(34, 31 + bob, 4, 3, deep);
@@ -152,6 +155,8 @@ function paintShape(
           jointLeg(px, lx, 34 + bob, 43 + bob, kick, deep, rim);
         }
         volume(px, mid, lit, deep, rim, lift);
+        bevelRect(px, 16, 26 + bob, 8, 5, lit, mid, deep, lift, rim);
+        bevelRect(px, 24, 26 + bob, 8, 5, lit, mid, deep, lift, rim);
         px.fillRect(17, 28 + bob, 14, 2, threat);
         eyes(px, 24, 27 + bob, 5, 2, ion);
       } else if (kind === 'reef_skitter') {
@@ -196,6 +201,7 @@ function paintShape(
       px.fillRect(8, 10 + bob, 32, 28, mid);
       px.fillTriangle(44, 42 + bob, 38, 10 + bob, 10, 10 + bob, mid);
       volume(px, mid, lit, deep, rim, lift);
+      bevelRect(px, 12, 12 + bob, 24, 8, lit, mid, deep, lift, rim);
       px.fillRect(12, 22 + bob, 24, 2, deep);
       px.fillRect(12, 30 + bob, 24, 2, deep);
       px.fillRect(12, 16 + bob, 24, 3, Theme.tape);
@@ -259,6 +265,7 @@ function paintShape(
       px.fillEllipse(24, 28 + bob, 11, 7, mid);
       px.fillRect(21 + lean, 10 + bob, 6, 16, mid);
       volume(px, mid, lit, deep, rim, lift);
+      bevelRect(px, 21 + lean, 16 + bob, 6, 12, lit, mid, deep, lift, rim);
       px.fillTriangle(16 + lean, 12 + bob, 32 + lean, 12 + bob, 24 + lean, 2 + bob, rim);
       px.fillRect(20 + lean, 11 + bob, 3, 4, threat);
       px.fillRect(25 + lean, 11 + bob, 3, 4, threat);
@@ -341,6 +348,7 @@ function paintPlayer(frame: number): Px {
   px.fillRect(29, 18 + bob, 8, 1, Theme.inkBright);
   px.fillRect(31, 22 + bob, 5, 6, Material.suitMid);
   px.fillRect(32, 23 + bob, 3, 2, Theme.biolum);
+  px.set(33, 23 + bob, Theme.arcWhite);
   px.fillRect(36, 14 + bob, 3, 4, Theme.panelEdge);
   px.set(37, 13 + bob, Theme.tape);
   grit(px, Theme.inkMute, 4, 5 + frame);

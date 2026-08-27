@@ -76,8 +76,10 @@ export function drawPlate(
   g.fillStyle(Theme.panelEdge, 0.45 * bevel);
   g.fillRect(x, y + 1, 1, h - 2);
   if (w > 4 && h > 4) {
-    g.fillStyle(Theme.inkMute, 0.12 * bevel);
+    g.fillStyle(Theme.inkMute, 0.18 * bevel);
     g.fillRect(x + 1, y + 2, w - 2, 1);
+    g.fillStyle(Theme.panelEdge, 0.22 * bevel);
+    g.fillRect(x + 1, y + 2, 1, h - 4);
   }
 }
 
@@ -263,12 +265,16 @@ export function drawTitleWindow(
   g.fillRect(vx, vy, vw, vh);
   g.fillStyle(shade(Theme.groundDeep, 0.88), 1);
   g.fillRect(vx + 2, vy + 2, vw - 4, vh - 4);
-  g.fillStyle(Theme.panelEdge, 0.35);
+  g.fillStyle(Theme.panelEdge, 0.55);
   g.fillRect(vx, vy, vw, 1);
+  g.fillStyle(Theme.inkDim, 0.28);
+  g.fillRect(vx + 1, vy + 1, vw - 2, 1);
   g.fillStyle(Theme.groundDeep, 1);
   g.fillRect(vx, vy + vh - 1, vw, 1);
+  g.fillStyle(Theme.groundDeep, 0.55);
+  g.fillRect(vx + vw - 1, vy, 1, vh);
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 22; i++) {
     const fx = vx + 4 + grain(i, 41) * (vw - 8);
     const fy = vy + 4 + grain(i + 90, 41) * (vh - 8);
     g.fillStyle(Theme.inkDim, 0.08 + grain(i, 41) * 0.06);
@@ -276,13 +282,20 @@ export function drawTitleWindow(
   }
 
   const horizon = vy + Math.floor(vh * 0.64);
-  g.fillStyle(Theme.ground, 0.4);
+  g.fillStyle(Theme.ground, 0.28);
+  g.fillRect(vx + 8, horizon, vw - 16, vh - (horizon - vy) - 8);
+  g.fillStyle(Theme.ground, 0.5);
   g.fillRect(vx + 8, horizon, vw - 16, 1);
+  g.fillStyle(Theme.groundDeep, 0.55);
+  g.fillTriangle(vx + 28, horizon, vx + 72, horizon - 18, vx + 110, horizon);
+  g.fillTriangle(vx + vw - 140, horizon, vx + vw - 88, horizon - 12, vx + vw - 40, horizon);
 
-  // Stepped scan tick — slow crawl across the glass.
+  // Stepped scan tick — chartreuse survey wash, not phosphor.
   const tickX = vx + 4 + ((phase % 1) * (vw - 8));
-  g.fillStyle(Theme.biolum, 0.14);
+  g.fillStyle(Theme.scanWash, 0.12);
   g.fillRect(Math.floor(tickX), vy + 4, 2, vh - 8);
+  g.fillStyle(Theme.tape, 0.55);
+  g.fillRect(vx + 8, vy + 4, Math.min(48, vw - 16), 2);
 
   const arm = 10;
   g.lineStyle(1, Theme.inkMute, 0.45);

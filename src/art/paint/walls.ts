@@ -3,7 +3,7 @@ import { Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
 import type { Frame } from '../pack';
 import { Px, TILE } from '../px';
-import { bevelRect, grit } from '../shade';
+import { bevelRect, grit, volume } from '../shade';
 
 export type WallStyle = 'cliff' | 'bulkhead' | 'conduit';
 export const WALL_WEAR_COUNT = 3;
@@ -45,6 +45,11 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
     TILE - 16,
     mix(face, Material.recess, 0.12),
   );
+  const faceLit =
+    style === 'cliff' ? Material.rockLit : style === 'bulkhead' ? Material.deckLit : mix(Material.conduit, Theme.biolum, 0.28);
+  px.fillRect(insetL + 1, 8, 1, TILE - 16, mix(face, faceLit, 0.55));
+  px.fillRect(insetL + 1, 8, TILE - insetL - insetR - 2, 1, mix(face, faceLit, 0.4));
+  px.fillRect(TILE - insetR - 2, 9, 1, TILE - 17, mix(face, Theme.groundDeep, 0.38));
   px.fillRect(insetL, 1, TILE - insetL - insetR, 5, crown);
   px.fillRect(insetL + 1, 2, TILE - insetL - insetR - 2, 1, Theme.inkBright);
   px.fillRect(insetL, 6, TILE - insetL - insetR, 2, Theme.groundDeep);
@@ -60,7 +65,8 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
     for (let i = 0; i < 4; i++) {
       const y = 11 + i * 8 + (wear === 2 ? 1 : 0);
       px.fillRect(insetL + 3, y, TILE - insetL - insetR - 6, 5, mix(Material.rock, Theme.groundDeep, 0.22));
-      px.fillRect(insetL + 3, y, TILE - insetL - insetR - 6, 1, mix(Theme.inkMute, face, 0.4));
+      px.fillRect(insetL + 3, y, TILE - insetL - insetR - 6, 1, Material.rockLit);
+      px.fillRect(insetL + 3, y + 4, TILE - insetL - insetR - 6, 1, Theme.groundDeep);
       px.fillRect(insetL + 8 + i * 7 + wear, y + 2, 5, 2, Material.recess);
     }
     grit(px, Theme.inkMute, 12 + wear * 6, 20 + role * 3 + wear);
@@ -79,12 +85,20 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
     if (wear === 2) grit(px, Theme.rust, 8, 99);
   } else {
     const pipe = mix(Material.conduit, Theme.biolumDeep, 0.3);
-    px.fillRect(insetL + 3, 12, 5, 28, pipe);
-    px.fillRect(TILE - insetR - 8, 12, 5, 28, pipe);
+    bevelRect(px, insetL + 3, 12, 5, 28, Theme.biolum, pipe, Theme.groundDeep, Theme.biolumDeep, Material.recess);
+    bevelRect(px, TILE - insetR - 8, 12, 5, 28, Theme.biolum, pipe, Theme.groundDeep, Theme.biolumDeep, Material.recess);
     px.fillRect(insetL + 4, 12, 1, 28, Theme.biolum);
     px.fillRect(TILE - insetR - 7, 12, 1, 28, Theme.biolum);
-    px.fillRect(insetL + 10, 16, TILE - insetL - insetR - 20, 4, Theme.biolumDeep);
-    px.fillRect(insetL + 11, 17, TILE - insetL - insetR - 22, 2, Theme.biolum);
+    bevelRect(
+      px,
+      insetL + 10,
+      16,
+      TILE - insetL - insetR - 20,
+      4,
+      Theme.biolum,
+      Theme.biolumDeep,
+      Theme.groundDeep,
+    );
     if (wear === 2) {
       px.fillRect(insetL + 12, 28, 8, 3, Theme.rust);
       grit(px, Theme.inkMute, 10, 55 + wear);
@@ -105,9 +119,11 @@ function paintSconce(style: WallStyle): Px {
   const body = cool ? Material.conduit : Material.deck;
   const glow = cool ? Theme.biolum : Theme.tape;
   bevelRect(px, 16, 10, 16, 24, Theme.inkMute, body, Theme.groundDeep, cool ? Theme.biolum : Theme.inkDim, Theme.groundDeep);
+  volume(px, body, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, cool ? Theme.biolumDeep : Theme.inkDim);
   px.fillRect(18, 12, 12, 8, Theme.groundDeep);
   px.fillRect(19, 13, 10, 6, glow);
   px.fillRect(21, 14, 6, 2, Theme.inkBright);
+  px.set(22, 14, Theme.arcWhite);
   px.fillRect(20, 22, 8, 8, mix(body, Theme.groundDeep, 0.3));
   px.fillRect(21, 32, 6, 4, Theme.panelEdge);
   px.fillRect(18, 36, 12, 2, Theme.groundDeep);

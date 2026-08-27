@@ -503,7 +503,7 @@ export class LightView {
           TILE_DRAW * (isSconce ? 0.16 : personal ? 0.16 : 0.2) * gain,
         ),
       );
-      this.lightsGfx.fillStyle(s.color, aCore * (isSconce ? 0.32 : personal ? 0.26 : 0.28));
+      this.lightsGfx.fillStyle(s.color, aCore * (isSconce ? 0.38 : personal ? 0.34 : 0.32));
       this.lightsGfx.fillCircle(wx, wy, core);
     }
   }
@@ -937,7 +937,7 @@ export class LightView {
         // Lit floor stays warm metal; lamp pull + lift so the pool reads as light, not chalk.
         tint = blendTowardWhite(tint, Math.pow(brightness, 1.05) * 0.46 * reflect);
         if (isWallFace && brightness >= SHADOW_THRESHOLD) {
-          tint = blendTowardWhite(tint, 0.1 * brightness);
+          tint = blendTowardWhite(tint, 0.16 * brightness);
         }
         if (st.emStress >= EM_HIGH) {
           // Sickly scan wash — intensity already in sim ambient; hue is present-only.
@@ -1045,8 +1045,8 @@ export class LightView {
         pull += E;
         acc = multiplyTint(acc, sources[i]!.color, Math.min(1, E * 0.7));
       }
-      if (pull < 0.06) return null;
-      return multiplyTint(0xffffff, acc, Math.min(0.48, pull * 0.42));
+      if (pull < 0.08) return null;
+      return multiplyTint(0xffffff, acc, Math.min(0.26, pull * 0.22));
     };
 
     // Mid-hop: sample from the carried lamp so alpha matches wash/tint, not dest tile.
