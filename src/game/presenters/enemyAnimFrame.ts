@@ -1,7 +1,8 @@
 import type { Enemy } from '../../sim/types';
+import { idlePose, walkPose, windupPose } from '../../scenes/textures';
 
 /**
- * Map a hostile to a texture frame (0 idle, 1 stride/alert, 2 windup).
+ * Map a hostile to a texture frame (0–1 idle, 2–5 stride, 6–7 windup).
  * Presentation-only — does not change sim windup or AI.
  */
 export function enemyAnimFrame(
@@ -9,8 +10,8 @@ export function enemyAnimFrame(
   animFrame: number,
   moving: boolean,
 ): number {
-  if (en.windup > 0 && en.intent) return 2;
-  if (moving) return animFrame % 2 === 0 ? 1 : 2;
-  if (en.alerted) return 1;
-  return animFrame % 4 < 2 ? 0 : 1;
+  if (en.windup > 0 && en.intent) return windupPose(animFrame);
+  if (moving) return walkPose(animFrame);
+  if (en.alerted) return 2;
+  return idlePose(animFrame);
 }

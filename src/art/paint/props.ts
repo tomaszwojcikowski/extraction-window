@@ -1,3 +1,4 @@
+import { PROP_ANIM_FRAMES, propFrameKey } from '../animPose';
 import { mix } from '../../scenes/tex/color';
 import { Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
@@ -23,7 +24,7 @@ type PropKind =
 
 function paintProp(kind: PropKind, frame = 0): Px {
   const px = new Px();
-  const pulse = frame % 4;
+  const pulse = frame % PROP_ANIM_FRAMES;
   switch (kind) {
     case 'scrub':
       px.fillEllipse(16, 36, 10, 6, mix(Material.foliage, Material.debris, 0.35));
@@ -250,9 +251,9 @@ export function propFrames(): Frame[] {
   ];
   for (const kind of ['vent', 'hazard', 'sump', 'beacon', 'landmark', 'quest', 'console'] as const) {
     const keyBase = kind === 'quest' ? 't_quest_tile' : (`t_${kind}` as const);
-    for (let f = 0; f < 4; f++) {
+    for (let f = 0; f < PROP_ANIM_FRAMES; f++) {
       frames.push({
-        key: f === 0 ? keyBase : `${keyBase}_${f}`,
+        key: propFrameKey(keyBase, f),
         px: paintProp(kind, f),
       });
     }

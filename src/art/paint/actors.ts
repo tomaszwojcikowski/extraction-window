@@ -1,5 +1,26 @@
 import { ENEMIES, type EnemyKind } from '../../data/enemies';
 import { Material, Theme } from '../../scenes/theme';
+import {
+  ACTOR_ANIM_FRAMES,
+  actorFrameKey,
+  contactBob,
+  contactStride,
+  groundBob,
+  hoverBob,
+  playerBob,
+  playerStride,
+  poseBloom,
+  poseGait,
+  poseKick,
+  poseLean,
+  posePulse,
+  poseSlide,
+  poseStomp,
+  poseStretch,
+  poseSway,
+  poseSwivel,
+  poseWing,
+} from '../animPose';
 import { actorPalette } from '../palette';
 import type { Frame } from '../pack';
 import { bodyShades, Px } from '../px';
@@ -47,11 +68,11 @@ function paintShape(
 
   switch (shape) {
     case 'scuttler': {
-      const gait = frame === 1 ? 2 : frame === 2 ? -2 : 0;
+      const gait = poseGait(frame);
       for (let i = 0; i < 6; i++) {
         const lx = 7 + i * 6;
         const out = i === 0 || i === 5 ? 4 : i === 1 || i === 4 ? 2 : 0;
-        const kick = (i + frame) % 2 === 0 ? gait : -gait;
+        const kick = poseKick(frame, i, gait);
         jointLeg(px, lx, 30 + bob + out, 42 + bob, kick, deep, rim);
       }
       px.fillEllipse(24, 32 + bob, 16, 8, mid);
@@ -67,7 +88,7 @@ function paintShape(
       break;
     }
     case 'crawler_body': {
-      const stomp = frame === 1 ? 2 : frame === 2 ? -1 : 0;
+      const stomp = poseStomp(frame);
       for (let i = 0; i < 8; i++) {
         const lx = 3 + i * 5;
         const out = i === 0 || i === 7 ? 5 : i === 1 || i === 6 ? 2 : 0;
@@ -85,7 +106,7 @@ function paintShape(
       break;
     }
     case 'spore_body': {
-      const sway = frame === 1 ? 1 : frame === 2 ? -1 : 0;
+      const sway = poseSway(frame);
       px.fillEllipse(24, 39 + bob, 16, 6, mid);
       volume(px, mid, lit, deep, rim, lift);
       for (let i = 0; i < 8; i++) {
@@ -104,33 +125,23 @@ function paintShape(
       break;
     }
     case 'bloom': {
-      const r = 10 + frame * 3;
+      const r = 10 + poseBloom(frame) * 3;
       px.fillDisc(24, 26 + bob, r + 3, mid);
       volume(px, mid, lit, deep, rim, lift);
       for (let i = 0; i < 8; i++) {
-        const ang = (i / 8) * Math.PI * 2 + frame * 0.25;
+        const ang = (i / 8) * Math.PI * 2 + poseBloom(frame) * 0.25;
         const sx = Math.round(24 + Math.cos(ang) * (r + 4));
         const sy = Math.round(26 + bob + Math.sin(ang) * (r + 4));
         px.fillRect(sx - 1, sy - 1, 3, 3, rim);
         px.set(sx, sy, threat);
       }
       px.fillDisc(18, 20 + bob, 4, lit);
-      px.fillDisc(24, 26 + bob, 3 + frame, Theme.arcWhite);
+      px.fillDisc(24, 26 + bob, 3 + poseBloom(frame), Theme.arcWhite);
       break;
     }
     case 'darter': {
       const mastling = kind === 'mastling';
-      const wing = mastling
-        ? frame === 1
-          ? 18
-          : frame === 2
-            ? 11
-            : 15
-        : frame === 1
-          ? 16
-          : frame === 2
-            ? 7
-            : 12;
+      const wing = poseWing(frame, mastling);
       px.fillTriangle(20, 18 + bob, 20 - wing, 8 + bob, 22, 28 + bob, mid);
       px.fillTriangle(28, 18 + bob, 28 + wing, 8 + bob, 26, 28 + bob, mid);
       px.fillEllipse(24, 24 + bob, mastling ? 8 : 6, mastling ? 13 : 14, mid);
@@ -151,7 +162,7 @@ function paintShape(
         px.fillEllipse(24, 30 + bob, 15, 8, mid);
         for (let i = 0; i < 5; i++) {
           const lx = 8 + i * 8;
-          const kick = frame === 1 && i % 2 === 0 ? 2 : -1;
+          const kick = poseKick(frame, i, poseGait(frame) || -1);
           jointLeg(px, lx, 34 + bob, 43 + bob, kick, deep, rim);
         }
         volume(px, mid, lit, deep, rim, lift);
@@ -170,7 +181,7 @@ function paintShape(
         px.fillRect(4, 30 + bob, 6, 3, threat);
         eyes(px, 16, 28 + bob, 2, 3, ion);
       } else {
-        const crouch = frame === 2 ? 2 : frame === 1 ? -1 : 0;
+        const crouch = poseStomp(frame);
         px.fillEllipse(32, 28 + bob, 13, 10, mid);
         px.fillRect(8, 24 + bob, 22, 12, mid);
         px.fillTriangle(2, 28 + bob, 14, 20 + bob, 14, 36 + bob, mid);
@@ -183,9 +194,9 @@ function paintShape(
       break;
     }
     case 'annelid': {
-      const pulse = frame === 1 ? 1 : frame === 2 ? -1 : 0;
+      const pulse = posePulse(frame);
       for (let i = 4; i >= 0; i--) {
-        const w = 11 - i * 1.4 + (i === frame ? 1 : 0);
+        const w = 11 - i * 1.4 + (i === frame % 5 ? 1 : 0);
         px.fillEllipse(24, 38 - i * 6 + bob + pulse, w, 5, mid);
       }
       volume(px, mid, lit, deep, rim, lift);
@@ -210,7 +221,7 @@ function paintShape(
       break;
     }
     case 'turret': {
-      const swivel = frame === 1 ? 4 : frame === 2 ? -4 : 0;
+      const swivel = poseSwivel(frame);
       bevelRect(px, 10, 26 + bob, 28, 14, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
       px.fillTriangle(6, 44 + bob, 12, 28 + bob, 36, 28 + bob, Theme.panelEdge);
       px.fillTriangle(42, 44 + bob, 36, 28 + bob, 12, 28 + bob, Theme.panelEdge);
@@ -231,7 +242,7 @@ function paintShape(
         px.fillRect(38, 18 + bob, 8, 8, Theme.panelEdge);
         px.fillRect(16, 22 + bob, 16, 8, Theme.groundDeep);
         px.fillRect(18, 24 + bob, 12, 4, Theme.arcWhite);
-        px.fillRect(12 - frame, 8 + bob, 24 + frame * 2, 3, Theme.panelEdge);
+        px.fillRect(12 - poseBloom(frame), 8 + bob, 24 + poseBloom(frame) * 2, 3, Theme.panelEdge);
       } else {
         bevelRect(px, 12, 14 + bob, 24, 18, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
         volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.groundDeep, Theme.inkDim);
@@ -241,8 +252,8 @@ function paintShape(
         px.fillRect(43, 18 + bob, 3, 9, mid);
         px.fillDisc(24, 23 + bob, 8, Theme.groundDeep);
         px.strokeDisc(24, 23 + bob, 8, Theme.panelEdge);
-        px.fillDisc(24, 23 + bob, 4 + frame, Theme.arcWhite);
-        px.fillRect(14 - frame * 2, 8 + bob, 20 + frame * 4, 3, Theme.panelEdge);
+        px.fillDisc(24, 23 + bob, 4 + poseBloom(frame), Theme.arcWhite);
+        px.fillRect(14 - poseBloom(frame) * 2, 8 + bob, 20 + poseBloom(frame) * 4, 3, Theme.panelEdge);
       }
       break;
     }
@@ -252,7 +263,7 @@ function paintShape(
       px.fillRect(10, 12 + bob, 28, 5, mid);
       px.fillRect(10, 32 + bob, 28, 3, mid);
       px.fillRect(12, 20 + bob, 24, 9, Theme.groundDeep);
-      px.fillRect(14 + frame * 6, 22 + bob, 7, 5, threat);
+      px.fillRect(14 + poseSlide(frame) * 6, 22 + bob, 7, 5, threat);
       px.fillRect(10, 38 + bob, 8, 5, Theme.panelEdge);
       px.fillRect(30, 38 + bob, 8, 5, Theme.panelEdge);
       px.fillRect(12, 13 + bob, 8, 2, Theme.inkBright);
@@ -260,7 +271,7 @@ function paintShape(
       break;
     }
     case 'coil': {
-      const lean = frame === 1 ? 3 : frame === 2 ? -3 : 0;
+      const lean = poseLean(frame);
       px.fillEllipse(24, 34 + bob, 15, 8, mid);
       px.fillEllipse(24, 28 + bob, 11, 7, mid);
       px.fillRect(21 + lean, 10 + bob, 6, 16, mid);
@@ -273,7 +284,7 @@ function paintShape(
       break;
     }
     case 'reacher': {
-      const stretch = frame === 1 ? 6 : frame === 2 ? 2 : 0;
+      const stretch = poseStretch(frame);
       px.fillRect(19, 8 + bob, 10, 22, mid);
       px.fillTriangle(19, 12 + bob, 1, 22 + stretch + bob, 19, 24 + bob, mid);
       px.fillTriangle(29, 12 + bob, 47, 22 + stretch + bob, 29, 24 + bob, mid);
@@ -287,14 +298,15 @@ function paintShape(
       break;
     }
     case 'aperture': {
+      const k = poseBloom(frame);
       px.fillDisc(24, 24 + bob, 18, mid);
       volume(px, mid, lit, deep, rim, lift);
       px.fillDisc(24, 24 + bob, 13, Theme.groundDeep);
-      px.strokeDisc(24, 24 + bob, 16 - frame, color);
-      px.strokeDisc(24, 24 + bob, 10 + frame, lit);
-      px.fillDisc(24, 24 + bob, 6 + frame, mid);
+      px.strokeDisc(24, 24 + bob, 16 - k, color);
+      px.strokeDisc(24, 24 + bob, 10 + k, lit);
+      px.fillDisc(24, 24 + bob, 6 + k, mid);
       px.fillDisc(24, 24 + bob, 2, Theme.arcWhite);
-      const pulse = frame * 2;
+      const pulse = k * 2;
       px.fillRect(22, 2 + bob, 4, 6 + pulse / 2, threat);
       px.fillRect(22, 40 + bob - pulse / 2, 4, 6, threat);
       px.fillRect(2, 22 + bob, 6 + pulse / 2, 4, threat);
@@ -321,15 +333,7 @@ function paintEnemy(kind: EnemyKind, frame: number): Px {
   const def = ENEMIES[kind];
   const shape = silhouetteFor(kind);
   const ion = def.damageType === 'ion';
-  const bob = HOVER_SHAPES.has(shape)
-    ? frame === 1
-      ? -3
-      : frame === 2
-        ? 2
-        : 0
-    : frame === 2
-      ? 1
-      : 0;
+  const bob = HOVER_SHAPES.has(shape) ? hoverBob(frame) : groundBob(frame);
   paintShape(px, shape, def.color, frame, bob, kind, ion);
   if (def.brand) paintCrown(px);
   finishSprite(px, actorPalette(def.color));
@@ -338,8 +342,8 @@ function paintEnemy(kind: EnemyKind, frame: number): Px {
 
 function paintPlayer(frame: number): Px {
   const px = new Px();
-  const bob = frame === 1 ? -2 : 0;
-  const stride = frame === 2 ? 2 : frame === 1 ? -2 : 0;
+  const bob = playerBob(frame);
+  const stride = playerStride(frame);
   const lLeg = 16 + Math.min(0, stride);
   const rLeg = 25 + Math.max(0, stride);
   // Field pack — sealed case with tape rail and lamp housing.
@@ -397,8 +401,8 @@ function paintContact(role: 'npc' | 'ally', kind: string, frame: number): Px {
       ? Material.contactHolo
       : Material.contactSuit;
   const rim = ally ? Material.allyRim : Material.contactRim;
-  const bob = frame === 1 ? -1 : frame === 2 ? 1 : 0;
-  const stride = frame === 1 ? 2 : frame === 2 ? -2 : 0;
+  const bob = contactBob(frame);
+  const stride = contactStride(frame);
   if (kind.includes('drone')) {
     bevelRect(px, 10, 14 + bob, 28, 20, Theme.inkMute, rim, Theme.groundDeep, Theme.inkDim, Theme.groundDeep);
     px.fillRect(14, 18 + bob, 20, 12, body);
@@ -442,29 +446,29 @@ export function paintCrownOverlay(): Px {
 
 export function actorFrames(): Frame[] {
   const frames: Frame[] = [];
-  for (let f = 0; f < 3; f++) {
-    frames.push({ key: f === 0 ? 't_player' : `t_player_${f}`, px: paintPlayer(f) });
+  for (let f = 0; f < ACTOR_ANIM_FRAMES; f++) {
+    frames.push({ key: actorFrameKey('t_player', f), px: paintPlayer(f) });
   }
   for (const kind of Object.keys(ENEMIES) as EnemyKind[]) {
-    for (let f = 0; f < 3; f++) {
+    for (let f = 0; f < ACTOR_ANIM_FRAMES; f++) {
       frames.push({
-        key: f === 0 ? `t_enemy_${kind}` : `t_enemy_${kind}_${f}`,
+        key: actorFrameKey(`t_enemy_${kind}`, f),
         px: paintEnemy(kind, f),
       });
     }
   }
   for (const kind of ['archive_holo', 'stranded_ensign', 'field_tech', 'survey_contact'] as const) {
-    for (let f = 0; f < 3; f++) {
+    for (let f = 0; f < ACTOR_ANIM_FRAMES; f++) {
       frames.push({
-        key: f === 0 ? `t_npc_${kind}` : `t_npc_${kind}_${f}`,
+        key: actorFrameKey(`t_npc_${kind}`, f),
         px: paintContact('npc', kind, f),
       });
     }
   }
   for (const kind of ['probe_drone', 'away_escort'] as const) {
-    for (let f = 0; f < 3; f++) {
+    for (let f = 0; f < ACTOR_ANIM_FRAMES; f++) {
       frames.push({
-        key: f === 0 ? `t_ally_${kind}` : `t_ally_${kind}_${f}`,
+        key: actorFrameKey(`t_ally_${kind}`, f),
         px: paintContact('ally', kind, f),
       });
     }

@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import type { SectorId } from './data/encounters';
 import { ENEMIES, type EnemyKind } from './data/enemies';
 import {
+  ACTOR_ANIM_FRAMES,
+  PROP_ANIM_FRAMES,
   allyTextureKey,
   enemyTextureKey,
   npcTextureKey,
@@ -212,7 +214,7 @@ class SheetScene extends Phaser.Scene {
       const def = ENEMIES[kind];
       this.cell(
         'sheet',
-        [0, 1, 2].map((frame) => enemyTextureKey(kind, frame)),
+        [...Array(ACTOR_ANIM_FRAMES).keys()].map((frame) => enemyTextureKey(kind, frame)),
         lore(def.loreName),
         `${kind} · idle/stride/windup · ${def.behavior}${def.hunt ? `/${def.hunt}` : ''}`,
         def.color,
@@ -260,7 +262,7 @@ class SheetScene extends Phaser.Scene {
     for (const kind of ['probe_drone', 'away_escort'] as const) {
       this.cell(
         'contacts',
-        [0, 1, 2].map((f) => allyTextureKey(kind, f)),
+        [...Array(ACTOR_ANIM_FRAMES).keys()].map((f) => allyTextureKey(kind, f)),
         kind,
         kind === 'away_escort' ? 'flat idle' : 'idle/stride/assist',
         Theme.safe,
@@ -274,7 +276,7 @@ class SheetScene extends Phaser.Scene {
     ] as const) {
       this.cell(
         'contacts',
-        [0, 1, 2].map((f) => npcTextureKey(kind, f)),
+        [...Array(ACTOR_ANIM_FRAMES).keys()].map((f) => npcTextureKey(kind, f)),
         kind,
         'idle/stride/assist',
         Theme.biolum,
@@ -545,10 +547,12 @@ class SheetScene extends Phaser.Scene {
       );
     }
     for (const [label, key] of STRUCTURE) {
-      const frames = this.textures.exists(`${key}_1`)
-        ? [key, `${key}_1`, `${key}_2`, `${key}_3`].filter((k) => this.textures.exists(k))
-        : [key];
-      this.cell('props', frames, label, frames.length > 1 ? '4-frame' : 'rule-changing');
+      const frames = [key];
+      for (let i = 1; i < PROP_ANIM_FRAMES; i++) {
+        const k = `${key}_${i}`;
+        if (this.textures.exists(k)) frames.push(k);
+      }
+      this.cell('props', frames, label, frames.length > 1 ? `${frames.length}-frame` : 'rule-changing');
     }
   }
 

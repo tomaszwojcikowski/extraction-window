@@ -6,6 +6,8 @@ import {
   sconceTextureKey,
   floorScatter,
   wallWearAt,
+  PROP_ANIM_FRAMES,
+  propFrameKey,
 } from './textures';
 import {
   BIOME_FLOOR_TINT,
@@ -616,7 +618,7 @@ export class GameScene extends Phaser.Scene {
     this.animAccum += dt;
     if (this.animAccum >= 420) {
       this.animAccum = 0;
-      this.animFrame = (this.animFrame + 1) % 4;
+      this.animFrame += 1;
       this.tickAnimatedTiles();
       this.tickAnimatedActors();
       if (this.state.consoleHack?.session || this.state.consoleHack?.payout) {
@@ -667,7 +669,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tickAnimatedActors(): void {
-    const playerKey = playerTextureKey(this.animating ? 1 : this.animFrame % 3);
+    const playerKey = playerTextureKey(this.animating ? 2 + (this.animFrame % 4) : this.animFrame % 2);
     if (this.playerSprite.texture.key !== playerKey) this.playerSprite.setTexture(playerKey);
     refreshEnemyAnimFrame(this.actorSyncHost(), this.state);
   }
@@ -874,8 +876,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tileKey(kind: string, x = 0, y = 0): string {
-    const f = this.animFrame;
-    const animated = (base: string): string => (f === 0 ? base : `${base}_${f}`);
+    const f = this.animFrame % PROP_ANIM_FRAMES;
+    const animated = (base: string): string => propFrameKey(base, f);
     switch (kind) {
       case 'wall':
         return wallTextureKey(

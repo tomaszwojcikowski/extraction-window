@@ -1,23 +1,36 @@
 import { describe, expect, it } from 'vitest';
+import { actorFrameKey, idlePose, walkPose, windupPose } from '../../src/scenes/textures';
 import { enemyAnimFrame } from '../../src/game/presenters/enemyAnimFrame';
 import { beamLaneHot, tileHatchPulse, windupThreatPulse } from '../../src/game/presenters/threatPulse';
 import { igniteTileForCue, pickCameraCue, sectorEnterCue } from '../../src/game/presenters/EventCamera';
 
-describe('enemyAnimFrame', () => {
-  it('holds windup pose on frame 2', () => {
-    expect(enemyAnimFrame({ windup: 2, intent: 'beam', alerted: true }, 0, false)).toBe(2);
-    expect(enemyAnimFrame({ windup: 1, intent: 'pounce', alerted: false }, 3, true)).toBe(2);
+describe('sectorEnterCue', () => {
+  it('holds windup poses on frames 6–7', () => {
+    expect(enemyAnimFrame({ windup: 2, intent: 'beam', alerted: true }, 0, false)).toBe(6);
+    expect(enemyAnimFrame({ windup: 1, intent: 'pounce', alerted: false }, 3, true)).toBe(7);
   });
 
-  it('strides 1↔2 while moving and idles 0↔1 on patrol', () => {
-    expect(enemyAnimFrame({ windup: 0, alerted: false }, 0, true)).toBe(1);
-    expect(enemyAnimFrame({ windup: 0, alerted: false }, 1, true)).toBe(2);
+  it('strides 2–5 while moving and idles 0↔1 on patrol', () => {
+    expect(enemyAnimFrame({ windup: 0, alerted: false }, 0, true)).toBe(2);
+    expect(enemyAnimFrame({ windup: 0, alerted: false }, 1, true)).toBe(3);
+    expect(enemyAnimFrame({ windup: 0, alerted: false }, 3, true)).toBe(5);
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 0, false)).toBe(0);
     expect(enemyAnimFrame({ windup: 0, alerted: false }, 2, false)).toBe(1);
   });
 
-  it('uses alert pose when standing watch', () => {
-    expect(enemyAnimFrame({ windup: 0, alerted: true }, 0, false)).toBe(1);
+  it('uses a ready stride when standing watch', () => {
+    expect(enemyAnimFrame({ windup: 0, alerted: true }, 0, false)).toBe(2);
+  });
+});
+
+describe('actorFrameKey', () => {
+  it('keeps frame 0 un-suffixed and wraps at 8', () => {
+    expect(actorFrameKey('t_player', 0)).toBe('t_player');
+    expect(actorFrameKey('t_player', 3)).toBe('t_player_3');
+    expect(actorFrameKey('t_player', 8)).toBe('t_player');
+    expect(idlePose(0)).toBe(0);
+    expect(walkPose(0)).toBe(2);
+    expect(windupPose(1)).toBe(7);
   });
 });
 

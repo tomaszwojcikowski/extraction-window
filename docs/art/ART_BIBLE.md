@@ -165,7 +165,7 @@ Enforcing `DESIGN_PRINCIPLES` §2 and §7:
   The personal lamp and tile wash travel with that hop (`LightView` move blend) —
   light does not snap to the destination ahead of the sprite.
 - Camera cues are ranked, one per turn, profiled as punch / snap / pressure / bloom / reward ([`EventCamera.ts`](../../src/game/presenters/EventCamera.ts)).
-- Hostile PNG frames: 0 patrol idle, 1 stride/alert, 2 windup. `setTexture` only when the key changes.
+- Hostile PNG frames: 0–1 patrol idle, 2–5 four-step stride, 6–7 windup. `setTexture` only when the key changes.
 - Zoom scales map/entity layers, never the HUD.
 - Never delay the input queue for an effect.
 
@@ -218,7 +218,7 @@ Carried from [`../experiment/PASS4_ART.md`](../experiment/PASS4_ART.md):
 | Windup-synced telegraphs | Done — Wave 45 |
 | Combat/phaser contact juice | Done — Wave 46 |
 | Arcing/Breaching field crush (no scanline) | Done — Wave 47 |
-| Prop 4-frame + bloom pulse | Done — Wave 48 |
+| Prop 6-frame + bloom pulse | Done — Wave 48, extended to 6 stamps |
 | Sector-enter bloom + handshake ignite | Done — Wave 49 |
 | Animation sheet + motion/perf rules | Done — Wave 50 |
 | Ground loot family silhouettes | Done — Wave 51 |

@@ -1,6 +1,8 @@
-/** Contact texture frame: 0 idle, 1 stride/assist, 2 active. */
+import { idlePose, walkPose, windupPose } from '../../scenes/textures';
+
+/** Contact texture frame: 0–1 idle, 2–5 stride, 6–7 assist. */
 export function contactAnimFrame(moving: boolean, animFrame: number, assist = false): number {
-  if (assist) return 2;
-  if (moving) return animFrame % 2 === 0 ? 1 : 2;
-  return animFrame % 4 < 2 ? 0 : 1;
+  if (assist) return windupPose(animFrame);
+  if (moving) return walkPose(animFrame);
+  return idlePose(animFrame);
 }

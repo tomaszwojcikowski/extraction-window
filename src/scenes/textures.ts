@@ -1,5 +1,8 @@
+import { actorFrameKey } from '../art/animPose';
 import type { SectorId } from '../data/encounters';
 import type { EnemyKind } from '../data/enemies';
+
+export { ACTOR_ANIM_FRAMES, PROP_ANIM_FRAMES, actorFrameKey, propFrameKey, idlePose, walkPose, windupPose } from '../art/animPose';
 
 export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
 
@@ -36,21 +39,19 @@ export function wallWearAt(x: number, y: number, seed: number): number {
 }
 
 export function enemyTextureKey(kind: EnemyKind, frame = 0): string {
-  return frame === 0 ? `t_enemy_${kind}` : `t_enemy_${kind}_${frame % 3}`;
+  return actorFrameKey(`t_enemy_${kind}`, frame);
 }
 
 export function playerTextureKey(frame = 0): string {
-  return frame === 0 ? 't_player' : `t_player_${frame % 3}`;
+  return actorFrameKey('t_player', frame);
 }
 
 export function npcTextureKey(kind: string, frame = 0): string {
-  const f = frame % 3;
-  return f === 0 ? `t_npc_${kind}` : `t_npc_${kind}_${f}`;
+  return actorFrameKey(`t_npc_${kind}`, frame);
 }
 
 export function allyTextureKey(kind: string, frame = 0): string {
-  const f = frame % 3;
-  return f === 0 ? `t_ally_${kind}` : `t_ally_${kind}_${f}`;
+  return actorFrameKey(`t_ally_${kind}`, frame);
 }
 
 /** Wall contour family per biome — cliff / bulkhead / conduit. */
