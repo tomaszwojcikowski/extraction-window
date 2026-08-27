@@ -53,7 +53,7 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
   px.fillRect(insetL, 1, TILE - insetL - insetR, 5, crown);
   px.fillRect(insetL + 1, 2, TILE - insetL - insetR - 2, 1, Theme.inkBright);
   px.fillRect(insetL, 6, TILE - insetL - insetR, 2, Theme.groundDeep);
-  for (let rx = insetL + 6; rx < TILE - insetR - 4; rx += 8) {
+  for (let rx = insetL + 5 + wear; rx < TILE - insetR - 4; rx += 7 + wear) {
     bevelRect(px, rx, 3, 2, 2, Theme.inkBright, Theme.panelEdge, Theme.groundDeep);
   }
   if (role === 3) {
@@ -62,25 +62,30 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
   }
 
   if (style === 'cliff') {
+    const band = 7 + (wear % 2);
+    const y0 = 10 + wear * 2;
     for (let i = 0; i < 4; i++) {
-      const y = 11 + i * 8 + (wear === 2 ? 1 : 0);
+      const y = y0 + i * band;
       px.fillRect(insetL + 3, y, TILE - insetL - insetR - 6, 5, mix(Material.rock, Theme.groundDeep, 0.22));
       px.fillRect(insetL + 3, y, TILE - insetL - insetR - 6, 1, Material.rockLit);
       px.fillRect(insetL + 3, y + 4, TILE - insetL - insetR - 6, 1, Theme.groundDeep);
-      px.fillRect(insetL + 8 + i * 7 + wear, y + 2, 5, 2, Material.recess);
+      px.fillRect(insetL + 8 + i * 7 + wear * 3, y + 2, 5, 2, Material.recess);
     }
     grit(px, Theme.inkMute, 12 + wear * 6, 20 + role * 3 + wear);
     if (wear === 1) grit(px, Theme.rust, 3, 80 + wear);
     if (wear === 2) grit(px, Theme.rust, 10, 80 + wear);
   } else if (style === 'bulkhead') {
-    for (let y = 12; y < 36; y += 8) {
-      for (let x = insetL + 5; x < TILE - insetR - 5; x += 8) {
+    const gx = 7 + wear;
+    const gy = 7 + (wear === 2 ? 2 : wear);
+    for (let y = 11 + wear; y < 36; y += gy) {
+      for (let x = insetL + 4 + wear; x < TILE - insetR - 5; x += gx) {
         if (wear === 2 && ((x + y) % 16 === 0)) continue;
         bevelRect(px, x, y, 3, 3, Theme.inkMute, Theme.panelEdge, Theme.groundDeep);
       }
     }
-    px.fillRect(insetL + 3, 34, TILE - insetL - insetR - 6, 5, mix(Material.deck, Theme.tape, 0.14));
-    px.fillRect(insetL + 3, 34, TILE - insetL - insetR - 6, 1, Theme.tape);
+    const tapeY = 33 + wear;
+    px.fillRect(insetL + 3, tapeY, TILE - insetL - insetR - 6, 5, mix(Material.deck, Theme.tape, 0.14));
+    px.fillRect(insetL + 3, tapeY, TILE - insetL - insetR - 6, 1, Theme.tape);
     grit(px, Material.recess, 8 + wear * 4, 40 + role);
     if (wear === 2) grit(px, Theme.rust, 8, 99);
   } else {

@@ -5,6 +5,7 @@ import {
   wallTextureKey,
   sconceTextureKey,
   floorScatter,
+  floorVariantAt,
   wallWearAt,
   PROP_ANIM_FRAMES,
   propFrameKey,
@@ -915,7 +916,7 @@ export class GameScene extends Phaser.Scene {
       case 'console':
         return animated('t_console');
       case 'floor': {
-        const v = (x + y * 3 + this.state.seed) % 3;
+        const v = floorVariantAt(x, y, this.state.seed);
         return floorTextureKey(this.state.sectorId, v);
       }
       default:

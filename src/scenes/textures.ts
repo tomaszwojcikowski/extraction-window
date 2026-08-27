@@ -1,10 +1,11 @@
 import { actorFrameKey } from '../art/animPose';
 import type { SectorId } from '../data/encounters';
 import type { EnemyKind } from '../data/enemies';
+import { FLOOR_VARIANT_COUNT } from './theme';
 
 export { ACTOR_ANIM_FRAMES, PROP_ANIM_FRAMES, WALK_FRAME_START, actorFrameKey, propFrameKey, idlePose, walkPose, walkPoseAt, windupPose } from '../art/animPose';
 
-export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT } from './theme';
+export { FONT_DATA, FONT_DISPLAY, BIOME_FLOOR_TINT, FLOOR_VARIANT_COUNT } from './theme';
 
 /** Base pixel art size — drawn 1:1 so floor seams don't scale up as a grout grid. */
 export const TILE = 48;
@@ -36,6 +37,12 @@ export function wallWearAt(x: number, y: number, seed: number): number {
   const py = Math.floor(y / 2);
   const n = Math.abs((px * 29 + py * 53 + (seed & 0xffff) * 17) | 0);
   return n % WALL_WEAR_COUNT;
+}
+
+/** Hash the cell so floors do not stripe `(x + 3y) % n` across the room. */
+export function floorVariantAt(x: number, y: number, seed: number): number {
+  const n = Math.abs((x * 73856093) ^ (y * 19349663) ^ ((seed & 0xffff) * 83492791));
+  return n % FLOOR_VARIANT_COUNT;
 }
 
 export function enemyTextureKey(kind: EnemyKind, frame = 0): string {

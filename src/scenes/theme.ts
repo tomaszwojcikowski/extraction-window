@@ -180,8 +180,11 @@ export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
   ridge: { ambient: 0.43, tint: 0xe8e0c8 },
 };
 
+export const FLOOR_VARIANT_COUNT = 6;
+
 export function floorTextureKey(sectorId: SectorId, variant: number): string {
-  return `t_floor_${sectorId}_${variant % 3}`;
+  const v = ((variant % FLOOR_VARIANT_COUNT) + FLOOR_VARIANT_COUNT) % FLOOR_VARIANT_COUNT;
+  return `t_floor_${sectorId}_${v}`;
 }
 
 /** Shear fracture overlay — two authored frames, tinted per motif at runtime. */

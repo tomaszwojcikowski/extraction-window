@@ -12,7 +12,7 @@ import {
 } from './scenes/textures';
 import { loadFieldArt, promoteFieldArt } from './scenes/atlasLoad';
 import { drawMeter, drawMenuPlate, drawStencilBadge, drawTapeStrip } from './scenes/atmosphere';
-import { LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey } from './scenes/theme';
+import { LightTemp, Theme, ThemeCss, crackTextureKey, floorTextureKey, FLOOR_VARIANT_COUNT } from './scenes/theme';
 import { lore } from './data/lore';
 import { drawThreatZones } from './game/views/ThreatView';
 import { paintPhaserBeamFrame } from './game/presenters/ActionFeedback';
@@ -197,6 +197,7 @@ class SheetScene extends Phaser.Scene {
     const cell = document.createElement('div');
     cell.className = 'cell';
     for (const key of tiles) cell.appendChild(this.tile(key));
+    if (tiles.length > 3) cell.style.width = `${Math.min(tiles.length, 6) * 48 + 20}px`;
 
     const label = document.createElement('div');
     label.className = 'name';
@@ -433,7 +434,7 @@ class SheetScene extends Phaser.Scene {
     for (const sector of SECTORS) {
       this.cell(
         parent,
-        [0, 1, 2].map((variant) => floorTextureKey(sector, variant)),
+        Array.from({ length: FLOOR_VARIANT_COUNT }, (_, variant) => floorTextureKey(sector, variant)),
         sector,
         wallStyleForSector(sector),
       );

@@ -74,8 +74,9 @@ role gives the drawing code two ways to say one thing, and the test rejects it.
 
 Wall faces are three family sheets (`t_wall_<cliff|bulkhead|conduit>_<role>_<wear>`)
 with a biome lift at light time — not 180 per-sector stamps. Role (0–3) is neighbor
-mass; wear (0–2) is a seed-stable 2×2 patch so a corridor weathers together without
-wallpaper tiling.
+mass; wear (0–2) is a seed-stable 2×2 patch so a corridor weathers together.
+Wear also phase-shifts strata and bolt grids so an 8px wallpaper does not run
+the length of a hall.
 Corridors also get weak wall sconces (permanent `lightSources` with
 `fixture: 'sconce'`) so work lights exist beyond POIs; ambush rooms stay dark by role.
 
@@ -106,6 +107,10 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
   grating slats (duct), a bolt grid (spire), chevroned seals (vault), pad
   markings (beacon). Cross-checks worth keeping: plains must not drift into
   ridge's banding, and duct must stay bare parallel bars or it becomes brine.
+- **Floors do not wallpaper.** Six variants per sector (`FLOOR_VARIANT_COUNT`),
+  hashed per cell (`floorVariantAt`) so rooms do not stripe `(x + 3y) % n`.
+  Motifs phase-shift with the variant. Washes clip and reseed per variant so a
+  48px stain does not stamp on every neighbour.
 - Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash holds it (dark warm-grey), duct absorbs it.
 - Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `sump`, `scrub_nest`.
 - Ordinary ground stays **unsaturated**. Saturated paint on a walkable tile reads as a rule

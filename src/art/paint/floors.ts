@@ -1,6 +1,6 @@
 import type { SectorId } from '../../data/encounters';
 import { mix, shade } from '../../scenes/tex/color';
-import { BIOME_FLOOR_TINT, Material, Theme } from '../../scenes/theme';
+import { BIOME_FLOOR_TINT, FLOOR_VARIANT_COUNT, Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
 import type { Frame } from '../pack';
 import { Px, TILE } from '../px';
@@ -53,7 +53,7 @@ function wrap(n: number): number {
 }
 
 function setW(px: Px, x: number, y: number, color: number): void {
-  px.set(wrap(x | 0), wrap(y | 0), color);
+  px.set(x | 0, y | 0, color);
 }
 
 function fillDiscW(px: Px, cx: number, cy: number, r: number, color: number): void {
@@ -127,18 +127,14 @@ function fillTriangleW(
   y2: number,
   color: number,
 ): void {
-  for (const ox of [-TILE, 0, TILE]) {
-    for (const oy of [-TILE, 0, TILE]) {
-      px.fillTriangle(x0 + ox, y0 + oy, x1 + ox, y1 + oy, x2 + ox, y2 + oy, color);
-    }
-  }
+  px.fillTriangle(x0, y0, x1, y1, x2, y2, color);
 }
 
 function lcg(n: number): number {
   return (n * 1103515245 + 12345) | 0;
 }
 
-/** Wrapping blobs so a wash does not stamp a 48px triangle or ellipse. */
+/** Clipped blobs — wrapping a wash stamped the same 48px stain on every neighbour. */
 function wash(px: Px, color: number, seed: number, blobs: number, r0: number, r1: number): void {
   let n = seed | 0;
   for (let i = 0; i < blobs; i++) {
@@ -149,13 +145,18 @@ function wash(px: Px, color: number, seed: number, blobs: number, r0: number, r1
     n = lcg(n);
     const span = Math.max(1, r1 - r0 + 1);
     const r = r0 + (((n >>> 16) >>> 0) % span);
-    fillDiscW(px, cx, cy, r, color);
+    px.fillDisc(cx, cy, r, color);
   }
 }
 
 function hashAmp(i: number, seed: number, amp: number): number {
   const n = lcg(seed + i * 101);
   return (((n >>> 16) >>> 0) % (amp * 2 + 1)) - amp;
+}
+
+/** Shift the motif so adjacent variants do not stamp the same 48px grid. */
+function motifShift(variant: number): { ox: number; oy: number } {
+  return { ox: (variant * 13) % TILE, oy: (variant * 17) % TILE };
 }
 
 /** Horizontal lip whose jitter wraps, so a ledge continues across tiles. */
@@ -195,23 +196,23 @@ function paintBed(px: Px, sector: SectorId, variant: number): void {
   if (family === 'cliff') {
     const bed = mix(Material.rock, tint, 0.18);
     px.fillRect(0, 0, TILE, TILE, bed);
-    wash(px, mix(bed, Theme.groundDeep, 0.14), seed, 16, 2, 5);
-    wash(px, Material.rockLit, seed + 3, 12, 2, 4);
+    wash(px, mix(bed, Theme.groundDeep, 0.14), seed + variant * 19, 16, 2, 5);
+    wash(px, Material.rockLit, seed + 3 + variant * 23, 12, 2, 4);
     grit(px, Material.recess, 28, seed + variant);
     grit(px, Theme.inkMute, 10, seed + 9 + variant);
-    wanderH(px, 2 + (variant % 2), seed + 41, Theme.inkMute, Material.recess);
+    wanderH(px, wrap(2 + variant * 5), seed + 41 + variant * 7, Theme.inkMute, Material.recess);
   } else if (family === 'wet') {
     const wet = mix(Material.brine, tint, 0.35);
     px.fillRect(0, 0, TILE, TILE, wet);
-    wash(px, mix(Material.brine, accentOf(sector), 0.12), seed, 10, 4, 7);
-    wash(px, Material.brineLit, seed + 5, 8, 3, 5);
+    wash(px, mix(Material.brine, accentOf(sector), 0.12), seed + variant * 19, 10, 4, 7);
+    wash(px, Material.brineLit, seed + 5 + variant * 23, 8, 3, 5);
     grit(px, Theme.biolumDeep, 14, seed + variant);
     grit(px, Theme.inkBright, 6, seed + 19 + variant);
   } else {
     const deck = mix(Material.deck, tint, 0.16);
     px.fillRect(0, 0, TILE, TILE, deck);
-    wash(px, mix(deck, Theme.groundDeep, 0.14), seed, 10, 3, 6);
-    wash(px, Material.deckLit, seed + 7, 8, 2, 4);
+    wash(px, mix(deck, Theme.groundDeep, 0.14), seed + variant * 19, 10, 3, 6);
+    wash(px, Material.deckLit, seed + 7 + variant * 23, 8, 2, 4);
     grit(px, Theme.panelEdge, 12, seed + variant);
     grit(px, Theme.inkMute, 8, seed + 13 + variant);
   }
@@ -222,6 +223,7 @@ function motif(px: Px, sector: SectorId, variant: number): void {
   const accent = accentOf(sector);
   const seed = 90 + sector.charCodeAt(0) * 11;
   const garnish = seed + variant * 17;
+  const { ox, oy } = motifShift(variant);
   switch (sector) {
     case 'plains': {
       let n = garnish | 0;
@@ -239,9 +241,9 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'ridge':
-      wanderH(px, 13, seed, accent, Theme.groundDeep);
-      wanderH(px, 26, seed + 11, mix(Material.rock, accent, 0.35), Material.recess);
-      wanderH(px, 38, seed + 23, Theme.groundDeep, Material.recess);
+      wanderH(px, wrap(13 + oy), seed + variant * 7, accent, Theme.groundDeep);
+      wanderH(px, wrap(26 + oy), seed + 11 + variant * 7, mix(Material.rock, accent, 0.35), Material.recess);
+      wanderH(px, wrap(38 + oy), seed + 23 + variant * 7, Theme.groundDeep, Material.recess);
       grit(px, Theme.inkMute, 12, garnish);
       grit(px, Material.rockLit, 8, garnish + 3);
       break;
@@ -255,31 +257,31 @@ function motif(px: Px, sector: SectorId, variant: number): void {
         fillTriangleW(px, x, y + 3, x + 4, y, x + 7, y + 4, mix(Material.foliage, accent, 0.3));
         if (i % 3 === 0) fillDiscW(px, x + 2, y + 2, 1.4, Theme.safe);
       }
-      lineW(px, 2, 32, 22, 18, mix(Material.foliage, Theme.groundDeep, 0.35));
-      lineW(px, 22, 18, 50, 34, mix(Material.foliage, Theme.groundDeep, 0.35));
-      lineW(px, 8, 40, 28, 22, mix(Material.foliage, Material.recess, 0.4));
-      lineW(px, 3, 31, 22, 17, shade(accent, 0.65));
-      lineW(px, 22, 17, 50, 33, shade(accent, 0.65));
+      lineW(px, 2 + ox, 32 + oy, 22 + ox, 18 + oy, mix(Material.foliage, Theme.groundDeep, 0.35));
+      lineW(px, 22 + ox, 18 + oy, 50 + ox, 34 + oy, mix(Material.foliage, Theme.groundDeep, 0.35));
+      lineW(px, 8 + ox, 40 + oy, 28 + ox, 22 + oy, mix(Material.foliage, Material.recess, 0.4));
+      lineW(px, 3 + ox, 31 + oy, 22 + ox, 17 + oy, shade(accent, 0.65));
+      lineW(px, 22 + ox, 17 + oy, 50 + ox, 33 + oy, shade(accent, 0.65));
       grit(px, Material.foliage, 10, garnish);
       break;
     }
     case 'flood': {
-      strokeDiscW(px, 6, -8, 28, accent);
-      strokeDiscW(px, 6, -8, 34, mix(Material.brine, Theme.inkBright, 0.2));
-      strokeDiscW(px, 6, -8, 42, Material.brineLit);
-      strokeDiscW(px, 38, 40, 18, mix(Material.brine, Theme.inkMute, 0.25));
-      if (variant === 1) lineW(px, 4, 2, 14, 2, Theme.inkBright);
-      if (variant === 2) lineW(px, 22, 8, 34, 8, Theme.inkBright);
+      strokeDiscW(px, wrap(6 + ox), wrap(-8 + oy), 28, accent);
+      strokeDiscW(px, wrap(6 + ox), wrap(-8 + oy), 34, mix(Material.brine, Theme.inkBright, 0.2));
+      strokeDiscW(px, wrap(6 + ox), wrap(-8 + oy), 42, Material.brineLit);
+      strokeDiscW(px, wrap(38 + ox), wrap(40 + oy), 18, mix(Material.brine, Theme.inkMute, 0.25));
+      if (variant % 3 === 1) lineW(px, wrap(4 + ox), wrap(2 + oy), wrap(14 + ox), wrap(2 + oy), Theme.inkBright);
+      if (variant % 3 === 2) lineW(px, wrap(22 + ox), wrap(8 + oy), wrap(34 + ox), wrap(8 + oy), Theme.inkBright);
       break;
     }
     case 'brine':
-      strokeEllipseW(px, 4, 10, 10, 8, mix(accent, Theme.inkMute, 0.25));
-      strokeEllipseW(px, 38, 24, 11, 9, mix(accent, Theme.inkMute, 0.25));
-      strokeEllipseW(px, 20, -4, 9, 7, mix(accent, Theme.inkMute, 0.25));
-      fillDiscW(px, 4, 10, 4, Material.recess);
-      fillDiscW(px, 38, 24, 4, Material.recess);
-      fillDiscW(px, 8 + variant * 3, 12, 1.6, accent);
-      fillDiscW(px, 36, 22, 1.2, Theme.inkBright);
+      strokeEllipseW(px, wrap(4 + ox), wrap(10 + oy), 10, 8, mix(accent, Theme.inkMute, 0.25));
+      strokeEllipseW(px, wrap(38 + ox), wrap(24 + oy), 11, 9, mix(accent, Theme.inkMute, 0.25));
+      strokeEllipseW(px, wrap(20 + ox), wrap(-4 + oy), 9, 7, mix(accent, Theme.inkMute, 0.25));
+      fillDiscW(px, wrap(4 + ox), wrap(10 + oy), 4, Material.recess);
+      fillDiscW(px, wrap(38 + ox), wrap(24 + oy), 4, Material.recess);
+      fillDiscW(px, wrap(8 + ox + variant * 3), wrap(12 + oy), 1.6, accent);
+      fillDiscW(px, wrap(36 + ox), wrap(22 + oy), 1.2, Theme.inkBright);
       grit(px, Material.brineLit, 10, garnish);
       break;
     case 'reef': {
@@ -298,7 +300,7 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'ash': {
-      let n = seed | 0;
+      let n = garnish | 0;
       for (let i = 0; i < 5; i++) {
         n = lcg(n);
         const cx = ((n >>> 16) >>> 0) % TILE;
@@ -308,37 +310,37 @@ function motif(px: Px, sector: SectorId, variant: number): void {
         lineW(px, cx - 7, cy - 2, cx + 6, cy - 1, shade(tint, 0.7));
         lineW(px, cx - 5, cy, cx + 4, cy + 1, Theme.groundDeep);
       }
-      if (variant === 2) lineW(px, 12, 22, 34, 25, Theme.arc);
+      if (variant % 3 === 2) lineW(px, 12 + ox, 22 + oy, 34 + ox, 25 + oy, Theme.arc);
       grit(px, Material.debris, 12, garnish);
       grit(px, Theme.inkMute, 8, garnish + 5);
       break;
     }
     case 'fissure':
-      lineW(px, 2, 4, 18, 22, Theme.groundDeep);
-      lineW(px, 18, 22, 8, 50, Theme.groundDeep);
-      lineW(px, 18, 22, 40, 14, Theme.groundDeep);
-      lineW(px, 40, 14, 52, 38, Theme.groundDeep);
-      lineW(px, 19, 22, 30, 40, Theme.groundDeep);
-      lineW(px, 3, 5, 18, 22, accent);
-      lineW(px, 18, 22, 40, 15, accent);
-      lineW(px, 19, 23, 9, 48, Theme.arc);
-      fillDiscW(px, 18, 22, 2.2, Theme.arc);
-      fillDiscW(px, 40, 14, 1.6, Theme.arcWhite);
+      lineW(px, 2 + ox, 4 + oy, 18 + ox, 22 + oy, Theme.groundDeep);
+      lineW(px, 18 + ox, 22 + oy, 8 + ox, 50 + oy, Theme.groundDeep);
+      lineW(px, 18 + ox, 22 + oy, 40 + ox, 14 + oy, Theme.groundDeep);
+      lineW(px, 40 + ox, 14 + oy, 52 + ox, 38 + oy, Theme.groundDeep);
+      lineW(px, 19 + ox, 22 + oy, 30 + ox, 40 + oy, Theme.groundDeep);
+      lineW(px, 3 + ox, 5 + oy, 18 + ox, 22 + oy, accent);
+      lineW(px, 18 + ox, 22 + oy, 40 + ox, 15 + oy, accent);
+      lineW(px, 19 + ox, 23 + oy, 9 + ox, 48 + oy, Theme.arc);
+      fillDiscW(px, 18 + ox, 22 + oy, 2.2, Theme.arc);
+      fillDiscW(px, 40 + ox, 14 + oy, 1.6, Theme.arcWhite);
       grit(px, Theme.rust, 6, garnish);
       break;
     case 'approach':
-      wanderV(px, 11, seed, mix(Material.debris, tint, 0.4), Material.recess);
-      wanderV(px, 24, seed + 9, mix(Material.debris, tint, 0.35), Theme.inkMute);
-      wanderV(px, 37, seed + 17, mix(Material.debris, tint, 0.4), Material.recess);
-      wanderV(px, 18, seed + 21, Material.recess, Theme.groundDeep);
+      wanderV(px, wrap(11 + ox), seed + variant * 7, mix(Material.debris, tint, 0.4), Material.recess);
+      wanderV(px, wrap(24 + ox), seed + 9 + variant * 7, mix(Material.debris, tint, 0.35), Theme.inkMute);
+      wanderV(px, wrap(37 + ox), seed + 17 + variant * 7, mix(Material.debris, tint, 0.4), Material.recess);
+      wanderV(px, wrap(18 + ox), seed + 21 + variant * 7, Material.recess, Theme.groundDeep);
       grit(px, Theme.inkMute, 12, garnish);
       grit(px, Material.debris, 8, garnish + 7);
       break;
     case 'trench':
-      wanderH(px, 15, seed, Theme.inkMute, mix(Material.deck, tint, 0.28));
-      wanderH(px, 28, seed + 15, Theme.inkMute, Theme.groundDeep);
-      wanderH(px, 40, seed + 29, mix(Material.deck, tint, 0.35), Theme.groundDeep);
-      wanderH(px, 8, seed + 5, Theme.tape, Theme.groundDeep);
+      wanderH(px, wrap(15 + oy), seed + variant * 7, Theme.inkMute, mix(Material.deck, tint, 0.28));
+      wanderH(px, wrap(28 + oy), seed + 15 + variant * 7, Theme.inkMute, Theme.groundDeep);
+      wanderH(px, wrap(40 + oy), seed + 29 + variant * 7, mix(Material.deck, tint, 0.35), Theme.groundDeep);
+      wanderH(px, wrap(8 + oy), seed + 5 + variant * 7, Theme.tape, Theme.groundDeep);
       grit(px, Material.recess, 10, garnish);
       grit(px, Theme.panelEdge, 6, garnish + 2);
       break;
@@ -360,33 +362,39 @@ function motif(px: Px, sector: SectorId, variant: number): void {
           i % 2 === 0 ? Material.recess : mix(Material.debris, tint, 0.28),
         );
       }
-      lineW(px, 10, 8, 14, 40, Theme.rust);
-      lineW(px, 32, 12, 36, 44, Theme.rust);
-      lineW(px, 11, 8, 15, 40, Theme.inkMute);
+      lineW(px, 10 + ox, 8 + oy, 14 + ox, 40 + oy, Theme.rust);
+      lineW(px, 32 + ox, 12 + oy, 36 + ox, 44 + oy, Theme.rust);
+      lineW(px, 11 + ox, 8 + oy, 15 + ox, 40 + oy, Theme.inkMute);
       grit(px, Theme.rust, 8, garnish);
       grit(px, Material.debris, 8, garnish + 4);
       break;
     }
     case 'duct': {
-      const gaps = [9, 10, 8, 11];
-      let y = 6;
+      const gaps = [8 + (variant % 3), 10 + ((variant + 1) % 2), 9, 11 - (variant % 2)];
+      let y = wrap(6 + oy);
       for (const g of gaps) {
         for (let x = 0; x < TILE; x++) setW(px, x, y, mix(Material.conduit, tint, 0.28));
-        for (let x = 0; x < TILE; x++) setW(px, x, y + 1, Theme.groundDeep);
-        for (let x = 4; x < TILE; x += 8) {
+        if (y + 1 < TILE) {
+          for (let x = 0; x < TILE; x++) setW(px, x, y + 1, Theme.groundDeep);
+        }
+        const bolt = 6 + (variant % 3) * 2;
+        for (let x = wrap(4 + ox); x < TILE; x += bolt) {
           setW(px, x, y, Theme.panelEdge);
-          setW(px, x, y + 1, Material.recess);
+          if (y + 1 < TILE) setW(px, x, y + 1, Material.recess);
         }
         y += g;
+        if (y >= TILE - 1) y -= TILE;
       }
       grit(px, Theme.inkMute, 8, garnish);
       break;
     }
     case 'spire': {
-      for (let gy = 6; gy < TILE; gy += 8) {
-        for (let gx = 6; gx < TILE; gx += 8) {
-          const x = gx + ((variant + gy / 8) % 2);
-          const y = gy + (variant % 2);
+      const step = 7 + (variant % 3);
+      const cols = Math.ceil(TILE / step);
+      for (let row = 0; row < cols; row++) {
+        for (let col = 0; col < cols; col++) {
+          const x = wrap(6 + ox + col * step + ((variant + row) % 2));
+          const y = wrap(6 + oy + row * step + (variant % 2));
           fillDiscW(px, x, y, 1.6, Theme.panelEdge);
           setW(px, x, y, Theme.inkDim);
           setW(px, x - 1, y - 1, Theme.inkMute);
@@ -396,14 +404,17 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'vault': {
-      let n = seed | 0;
+      let n = garnish | 0;
+      const rowSpan = 11 + (variant % 3);
+      const chev = 14 + (variant % 3);
       for (let row = 0; row < 3; row++) {
-        const y = 10 + row * 12;
+        const y = wrap(10 + row * rowSpan + oy);
         for (let x = 0; x < TILE; x++) {
           n = lcg(n);
-          const rise = Math.abs((x % 16) - 8);
-          if (((n >>> 16) >>> 0) % 5 !== 0) setW(px, x, y + rise, Theme.panelEdge);
-          if (x % 16 === 8) setW(px, x, y + rise + 1, Material.recess);
+          const rise = Math.abs(((x + ox) % chev) - (chev >> 1));
+          const yy = wrap(y + rise);
+          if (((n >>> 16) >>> 0) % 5 !== 0) setW(px, x, yy, Theme.panelEdge);
+          if ((x + ox) % chev === chev >> 1) setW(px, x, wrap(yy + 1), Material.recess);
         }
       }
       grit(px, Theme.inkMute, 8, garnish);
@@ -411,11 +422,13 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'beacon':
-      wanderH(px, 16, seed, Theme.tape, Theme.groundDeep);
-      wanderH(px, 31, seed + 8, Theme.inkBright, Theme.inkMute);
-      wanderH(px, 8, seed + 3, Theme.panelEdge, Theme.groundDeep);
-      fillDiscW(px, 24, 24, 3, Theme.tape);
-      setW(px, 24, 24, Theme.inkBright);
+      wanderH(px, wrap(16 + oy), seed + variant * 7, Theme.tape, Theme.groundDeep);
+      wanderH(px, wrap(31 + oy), seed + 8 + variant * 7, Theme.inkBright, Theme.inkMute);
+      wanderH(px, wrap(8 + oy), seed + 3 + variant * 7, Theme.panelEdge, Theme.groundDeep);
+      if (variant % 3 === 0) {
+        fillDiscW(px, wrap(24 + ox), wrap(24 + oy), 3, Theme.tape);
+        setW(px, wrap(24 + ox), wrap(24 + oy), Theme.inkBright);
+      }
       grit(px, Theme.inkDim, 8, garnish);
       break;
   }
@@ -453,7 +466,7 @@ function paintCrack(urgent: boolean): Px {
 export function floorFrames(): Frame[] {
   const frames: Frame[] = [];
   for (const sector of SECTORS) {
-    for (let v = 0; v < 3; v++) {
+    for (let v = 0; v < FLOOR_VARIANT_COUNT; v++) {
       frames.push({ key: `t_floor_${sector}_${v}`, px: paintFloor(sector, v) });
     }
   }
