@@ -196,18 +196,24 @@ function paintBed(px: Px, sector: SectorId, variant: number): void {
     const bed = mix(Material.rock, tint, 0.18);
     px.fillRect(0, 0, TILE, TILE, bed);
     wash(px, mix(bed, Theme.groundDeep, 0.14), seed, 16, 2, 5);
-    wash(px, mix(bed, Theme.inkMute, 0.1), seed + 3, 10, 2, 4);
+    wash(px, Material.rockLit, seed + 3, 12, 2, 4);
     grit(px, Material.recess, 28, seed + variant);
+    grit(px, Theme.inkMute, 10, seed + 9 + variant);
+    wanderH(px, 2 + (variant % 2), seed + 41, Theme.inkMute, Material.recess);
   } else if (family === 'wet') {
     const wet = mix(Material.brine, tint, 0.35);
     px.fillRect(0, 0, TILE, TILE, wet);
     wash(px, mix(Material.brine, accentOf(sector), 0.12), seed, 10, 4, 7);
+    wash(px, Material.brineLit, seed + 5, 8, 3, 5);
     grit(px, Theme.biolumDeep, 14, seed + variant);
+    grit(px, Theme.inkBright, 6, seed + 19 + variant);
   } else {
     const deck = mix(Material.deck, tint, 0.16);
     px.fillRect(0, 0, TILE, TILE, deck);
     wash(px, mix(deck, Theme.groundDeep, 0.14), seed, 10, 3, 6);
+    wash(px, Material.deckLit, seed + 7, 8, 2, 4);
     grit(px, Theme.panelEdge, 12, seed + variant);
+    grit(px, Theme.inkMute, 8, seed + 13 + variant);
   }
 }
 
@@ -219,12 +225,14 @@ function motif(px: Px, sector: SectorId, variant: number): void {
   switch (sector) {
     case 'plains': {
       let n = garnish | 0;
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 7; i++) {
         n = lcg(n);
         const x = ((n >>> 16) >>> 0) % TILE;
         n = lcg(n);
         const y = ((n >>> 16) >>> 0) % TILE;
-        fillDiscW(px, x, y, i === 0 ? 2 : 1.2, shade(tint, 0.55));
+        const r = i === 0 ? 2.4 : i < 3 ? 1.6 : 1.2;
+        fillDiscW(px, x, y, r, shade(tint, 0.55));
+        setW(px, x - 1, y - 1, Theme.inkMute);
         setW(px, x, y + 1, Theme.groundDeep);
       }
       grit(px, mix(Material.rock, tint, 0.3), 16, garnish);
@@ -252,16 +260,23 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'flood': {
-      strokeDiscW(px, 6, -8, 34, accent);
-      strokeDiscW(px, 6, -8, 42, mix(Material.brine, Theme.inkBright, 0.2));
-      if (variant === 1) lineW(px, 4, 2, 10, 2, Theme.inkBright);
+      strokeDiscW(px, 6, -8, 28, accent);
+      strokeDiscW(px, 6, -8, 34, mix(Material.brine, Theme.inkBright, 0.2));
+      strokeDiscW(px, 6, -8, 42, Material.brineLit);
+      strokeDiscW(px, 38, 40, 18, mix(Material.brine, Theme.inkMute, 0.25));
+      if (variant === 1) lineW(px, 4, 2, 14, 2, Theme.inkBright);
+      if (variant === 2) lineW(px, 22, 8, 34, 8, Theme.inkBright);
       break;
     }
     case 'brine':
       strokeEllipseW(px, 4, 10, 10, 8, mix(accent, Theme.inkMute, 0.25));
       strokeEllipseW(px, 38, 24, 11, 9, mix(accent, Theme.inkMute, 0.25));
       strokeEllipseW(px, 20, -4, 9, 7, mix(accent, Theme.inkMute, 0.25));
-      fillDiscW(px, 8 + variant * 3, 12, 1.4, accent);
+      fillDiscW(px, 4, 10, 4, Material.recess);
+      fillDiscW(px, 38, 24, 4, Material.recess);
+      fillDiscW(px, 8 + variant * 3, 12, 1.6, accent);
+      fillDiscW(px, 36, 22, 1.2, Theme.inkBright);
+      grit(px, Material.brineLit, 10, garnish);
       break;
     case 'reef': {
       let n = garnish | 0;
@@ -346,14 +361,15 @@ function motif(px: Px, sector: SectorId, variant: number): void {
       break;
     }
     case 'spire': {
-      let n = garnish | 0;
-      for (let i = 0; i < 4; i++) {
-        n = lcg(n);
-        const x = ((n >>> 16) >>> 0) % TILE;
-        n = lcg(n);
-        const y = ((n >>> 16) >>> 0) % TILE;
-        fillDiscW(px, x, y, 1.5, Theme.panelEdge);
-        setW(px, x, y, Theme.inkDim);
+      for (let gy = 6; gy < TILE; gy += 8) {
+        for (let gx = 6; gx < TILE; gx += 8) {
+          const x = gx + ((variant + gy / 8) % 2);
+          const y = gy + (variant % 2);
+          fillDiscW(px, x, y, 1.6, Theme.panelEdge);
+          setW(px, x, y, Theme.inkDim);
+          setW(px, x - 1, y - 1, Theme.inkMute);
+          setW(px, x + 1, y + 1, Material.recess);
+        }
       }
       break;
     }

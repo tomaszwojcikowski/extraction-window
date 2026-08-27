@@ -65,12 +65,12 @@ Because `theme.ts` re-exports the sim table, **palette and gameplay lighting can
 ### Materials
 
 Roles say what a colour *means*; materials say what a surface *is*. Mineral
-slate (`rock`), painted expedition deck (`deck`), conduit lining (`conduit`),
-seam depth (`recess`), shelf scrub (`foliage`), fallen plate (`debris`), nest
-lining (`nest`), standing brine (`brine`), the surveyor's suit, and the field
-contacts each have a name. Kit reads as used, not salvage-rot. The two
-vocabularies stay disjoint — a material that duplicates a role gives the drawing
-code two ways to say one thing, and the test rejects it.
+slate (`rock`, `rockLit`), painted expedition deck (`deck`, `deckLit`), conduit
+lining (`conduit`), seam depth (`recess`), shelf scrub (`foliage`), fallen plate
+(`debris`), nest lining (`nest`), standing brine (`brine`, `brineLit`), the
+surveyor's suit, and the field contacts each have a name. Kit reads as used, not
+salvage-rot. The two vocabularies stay disjoint — a material that duplicates a
+role gives the drawing code two ways to say one thing, and the test rejects it.
 
 Wall faces are three family sheets (`t_wall_<cliff|bulkhead|conduit>_<role>_<wear>`)
 with a biome lift at light time — not 180 per-sector stamps. Role (0–3) is neighbor

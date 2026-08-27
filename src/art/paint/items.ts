@@ -1,57 +1,71 @@
-import { Theme } from '../../scenes/theme';
+import { Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
 import type { Frame } from '../pack';
 import { Px } from '../px';
-import { bevelRect, finishSprite } from '../shade';
+import { bevelRect, finishSprite, grit, volume } from '../shade';
 
 type Stamp = 'crate' | 'key' | 'core' | 'med' | 'energy' | 'flare' | 'tool' | 'wear';
 
 function paintItem(kind: Stamp): Px {
   const px = new Px();
   if (kind === 'crate') {
-    bevelRect(px, 10, 16, 28, 22, Theme.inkDim, Theme.inkMute, Theme.groundDeep);
+    bevelRect(px, 10, 16, 28, 22, Theme.inkDim, Theme.inkMute, Theme.groundDeep, Theme.panelEdge, Theme.ground);
+    volume(px, Theme.inkMute, Theme.inkDim, Theme.groundDeep, Theme.ground, Theme.panelEdge);
     px.fillRect(14, 20, 20, 14, Theme.groundDeep);
     bevelRect(px, 20, 14, 8, 8, Theme.inkBright, Theme.tape, Theme.groundDeep);
     px.fillRect(18, 26, 12, 4, Theme.tape);
+    grit(px, Theme.panelEdge, 6, 3);
   } else if (kind === 'key') {
     px.fillTriangle(24, 6, 12, 22, 36, 22, Theme.flag);
     px.fillTriangle(24, 42, 12, 22, 36, 22, Theme.flag);
+    volume(px, Theme.flag, Theme.inkBright, Theme.groundDeep, Theme.panel, Theme.ink);
     px.fillRect(22, 12, 4, 22, Theme.inkBright);
     px.fillRect(16, 20, 16, 4, Theme.inkBright);
     px.set(24, 10, Theme.inkBright);
   } else if (kind === 'core') {
     px.fillTriangle(24, 4, 8, 24, 24, 44, Theme.arcWhite);
     px.fillTriangle(24, 4, 40, 24, 24, 44, Theme.arcWhite);
+    volume(px, Theme.arcWhite, Theme.inkBright, Theme.inkDim, Theme.inkMute, Theme.ink);
     px.fillDisc(24, 24, 8, Theme.groundDeep);
     px.strokeDisc(24, 24, 8, Theme.inkDim);
     px.fillDisc(24, 24, 4, Theme.inkBright);
     px.set(24, 23, Theme.arcWhite);
   } else if (kind === 'med') {
-    bevelRect(px, 12, 14, 24, 22, Theme.inkBright, Theme.ink, Theme.groundDeep);
+    bevelRect(px, 12, 14, 24, 22, Theme.inkBright, Theme.ink, Theme.groundDeep, Theme.inkBright, Theme.inkMute);
+    volume(px, Theme.ink, Theme.inkBright, Theme.groundDeep, Theme.inkMute, Theme.inkBright);
     px.fillRect(21, 17, 6, 16, Theme.safe);
     px.fillRect(16, 22, 16, 6, Theme.safe);
     px.fillRect(14, 16, 4, 2, Theme.groundDeep);
+    grit(px, Theme.inkMute, 4, 11);
   } else if (kind === 'energy') {
-    bevelRect(px, 16, 10, 16, 28, Theme.inkMute, Theme.panelEdge, Theme.groundDeep);
+    bevelRect(px, 16, 10, 16, 28, Theme.inkMute, Theme.panelEdge, Theme.groundDeep, Theme.inkDim, Theme.ground);
+    volume(px, Theme.panelEdge, Theme.inkDim, Theme.groundDeep, Theme.ground, Theme.inkMute);
     px.fillRect(18, 14, 12, 16, Theme.tape);
     px.fillRect(20, 16, 8, 3, Theme.inkBright);
     px.fillRect(19, 32, 10, 3, Theme.groundDeep);
+    grit(px, Theme.inkMute, 4, 17);
   } else if (kind === 'flare') {
     bevelRect(px, 21, 12, 6, 26, Theme.inkMute, Theme.panelEdge, Theme.groundDeep);
+    volume(px, Theme.panelEdge, Theme.inkMute, Theme.groundDeep);
     px.fillRect(20, 8, 8, 8, Theme.arc);
     px.fillDisc(24, 9, 5, Theme.arcWhite);
     px.fillRect(20, 28, 8, 3, Theme.tape);
   } else if (kind === 'tool') {
     bevelRect(px, 21, 14, 6, 24, Theme.inkMute, Theme.panelEdge, Theme.groundDeep);
+    volume(px, Theme.panelEdge, Theme.inkMute, Theme.groundDeep);
     px.fillTriangle(24, 6, 11, 16, 37, 16, Theme.biolum);
+    volume(px, Theme.biolum, Theme.inkBright, Theme.biolumDeep, Theme.biolumDeep, Theme.ink);
     px.fillRect(22, 8, 4, 6, Theme.inkBright);
     px.fillRect(19, 32, 10, 4, Theme.inkBright);
   } else {
-    bevelRect(px, 11, 14, 26, 22, Theme.inkDim, Theme.inkMute, Theme.groundDeep);
+    bevelRect(px, 11, 14, 26, 22, Theme.inkDim, Theme.inkMute, Theme.groundDeep, Theme.panelEdge, Theme.ground);
+    volume(px, Theme.inkMute, Theme.inkDim, Theme.groundDeep, Theme.ground, Theme.panelEdge);
     px.fillRect(14, 17, 20, 16, Theme.panel);
+    volume(px, Theme.panel, Theme.inkMute, Theme.groundDeep, Theme.ground, Material.deckLit);
     px.fillRect(14, 17, 20, 3, Theme.tape);
     px.fillRect(16, 24, 12, 2, Theme.inkBright);
     px.fillRect(16, 28, 8, 2, Theme.inkMute);
+    grit(px, Theme.panelEdge, 5, 23);
   }
   finishSprite(px, envPalette());
   return px;

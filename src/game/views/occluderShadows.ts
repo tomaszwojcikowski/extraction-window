@@ -13,7 +13,7 @@ import { castReachFrom } from './castShadows';
 export const MAX_OCCLUDER_LIGHT_DIST = 10;
 export const MAX_OCCLUDER_EDGES = 56;
 /** Soft throw in tiles before wall clip. */
-export const MAX_OCCLUDER_THROW = 1.65;
+export const MAX_OCCLUDER_THROW = 2;
 
 const FACES = [
   { nx: 1, ny: 0 },

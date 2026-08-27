@@ -20,7 +20,7 @@ export function hostileExtraPalette(): number[] {
   const extras: number[] = [];
   for (const def of Object.values(ENEMIES)) {
     const s = bodyShades(def.color);
-    extras.push(def.color, s.deep, s.lit, s.rim, mix(Theme.arcWhite, def.color, 0.4));
+    extras.push(def.color, s.deep, s.lit, s.rim, s.lift, mix(Theme.arcWhite, def.color, 0.4));
   }
   return extras;
 }
@@ -37,5 +37,5 @@ export function actorPalette(body?: number): number[] {
   const base = [...namedWorldPalette(), ...NOT_A_COLOUR];
   if (body === undefined) return base;
   const s = bodyShades(body);
-  return [...base, body, s.deep, s.lit, s.rim, mix(Theme.arcWhite, body, 0.4)];
+  return [...base, body, s.deep, s.lit, s.rim, s.lift, mix(Theme.arcWhite, body, 0.4)];
 }

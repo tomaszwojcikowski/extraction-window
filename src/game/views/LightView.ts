@@ -115,7 +115,7 @@ function biomeBloomGain(sectorId: SectorId): number {
   }
   if (sectorId === 'brine' || sectorId === 'flood' || sectorId === 'reef') {
     // Standing water throws spill farther (cool reflection).
-    gain *= 1.08;
+    gain *= 1.16;
   }
   if (sectorId === 'ash' || sectorId === 'approach') {
     gain *= 0.8;
@@ -567,7 +567,7 @@ export class LightView {
       }
       const brightness = tileBrightness(st, sampleX, sampleY);
       const inShadowBand = brightness < SHADOW_THRESHOLD;
-      const alpha = Math.min(0.42, q.weight * (inShadowBand ? 0.1 : 0.26));
+      const alpha = Math.min(0.42, q.weight * (inShadowBand ? 0.1 : 0.34));
       if (alpha < 0.03) continue;
       g.fillStyle(Theme.groundDeep, alpha);
       g.fillPoints(

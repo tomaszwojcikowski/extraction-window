@@ -2,11 +2,22 @@ import { Theme } from '../scenes/theme';
 import { Px } from './px';
 
 /**
- * Classic pixel volume: NW light. Only retints pixels that still match `mid`
+ * Pixel volume: NW key light. Only retints pixels that still match `mid`
  * so plates, eyes, and tape painted on top stay put.
+ *
+ * Five-band when `rim` / `lift` are given: edge lit/deep, then a 1px inset
+ * skirt so bodies read as mass instead of a 3-shade sticker.
  */
-export function volume(px: Px, mid: number, lit: number, deep: number): void {
+export function volume(
+  px: Px,
+  mid: number,
+  lit: number,
+  deep: number,
+  rim = 0,
+  lift = 0,
+): void {
   const hits: Array<[number, number, number]> = [];
+  const inset = rim !== 0 || lift !== 0;
   for (let y = 0; y < px.h; y++) {
     for (let x = 0; x < px.w; x++) {
       const p = px.get(x, y);
@@ -17,12 +28,18 @@ export function volume(px: Px, mid: number, lit: number, deep: number): void {
       const right = !px.opaque(x + 1, y);
       if (up || left) hits.push([x, y, lit]);
       else if (down || right) hits.push([x, y, deep]);
+      else if (inset) {
+        const nw = !px.opaque(x, y - 2) || !px.opaque(x - 2, y) || !px.opaque(x - 1, y - 1);
+        const se = !px.opaque(x, y + 2) || !px.opaque(x + 2, y) || !px.opaque(x + 1, y + 1);
+        if (nw && lift) hits.push([x, y, lift]);
+        else if (se && rim) hits.push([x, y, rim]);
+      }
     }
   }
   for (const [x, y, c] of hits) px.set(x, y, c);
 }
 
-/** Machined slab: lit lip, mid face, deep floor. */
+/** Machined slab: lit lip, mid face, deep floor, optional inner bevel. */
 export function bevelRect(
   px: Px,
   x: number,
@@ -32,6 +49,8 @@ export function bevelRect(
   lit: number,
   mid: number,
   deep: number,
+  innerLit = 0,
+  innerDeep = 0,
 ): void {
   if (w <= 0 || h <= 0) return;
   px.fillRect(x, y, w, h, mid);
@@ -40,6 +59,14 @@ export function bevelRect(
   px.fillRect(x, y + h - 1, w, 1, deep);
   px.fillRect(x + w - 1, y, 1, h, deep);
   if (w > 2 && h > 2) px.set(x + w - 1, y, mid);
+  if (w > 4 && h > 4 && innerLit) {
+    px.fillRect(x + 1, y + 1, w - 2, 1, innerLit);
+    px.fillRect(x + 1, y + 1, 1, h - 2, innerLit);
+  }
+  if (w > 4 && h > 4 && innerDeep) {
+    px.fillRect(x + 1, y + h - 2, w - 2, 1, innerDeep);
+    px.fillRect(x + w - 2, y + 1, 1, h - 2, innerDeep);
+  }
 }
 
 /** Seed-stable 1px grit. Skips empty cells unless `onEmpty`. */

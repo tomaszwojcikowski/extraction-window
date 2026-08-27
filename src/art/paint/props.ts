@@ -3,7 +3,7 @@ import { Material, Theme } from '../../scenes/theme';
 import { envPalette } from '../palette';
 import type { Frame } from '../pack';
 import { Px } from '../px';
-import { bevelRect, finishSprite, grit, volume } from '../shade';
+import { bevelRect, finishSprite, grit, plantShadow, volume } from '../shade';
 
 type PropKind =
   | 'scrub'
@@ -26,16 +26,16 @@ function paintProp(kind: PropKind, frame = 0): Px {
   const pulse = frame % 4;
   switch (kind) {
     case 'scrub':
-      for (let i = 0; i < 10; i++) {
-        px.fillRect(6 + ((i * 11) % 34), 34 + (i % 3), 2, 2, mix(Material.foliage, Material.debris, 0.4));
-      }
-      for (let i = 0; i < 6; i++) {
-        const x = 8 + i * 6;
-        const h = 16 + ((i * 5) % 12);
-        px.fillRect(x, 38 - h, 3, h, Material.foliage);
-        px.fillRect(x, 38 - h, 1, h, mix(Material.foliage, Theme.groundDeep, 0.35));
-        px.fillTriangle(x - 4, 20 + (i % 3) * 3, x + 2, 10 + (i % 2) * 4, x + 6, 21 + (i % 3) * 3, Theme.safe);
-      }
+      px.fillEllipse(16, 36, 10, 6, mix(Material.foliage, Material.debris, 0.35));
+      px.fillEllipse(32, 37, 9, 5, mix(Material.foliage, Theme.groundDeep, 0.25));
+      px.fillEllipse(24, 32, 12, 8, Material.foliage);
+      px.fillEllipse(14, 28, 7, 6, Material.foliage);
+      px.fillEllipse(34, 27, 6, 6, mix(Material.foliage, Theme.safe, 0.2));
+      volume(px, Material.foliage, Theme.safe, Material.nest, Material.nest, Theme.inkMute);
+      px.fillRect(18, 30, 2, 10, mix(Material.foliage, Theme.groundDeep, 0.4));
+      px.fillRect(28, 31, 2, 9, mix(Material.foliage, Theme.groundDeep, 0.4));
+      px.fillTriangle(20, 22, 24, 12, 28, 22, Theme.safe);
+      px.fillTriangle(30, 20, 34, 11, 38, 21, Theme.safe);
       break;
     case 'scrub_nest':
       px.fillEllipse(24, 36, 18, 8, mix(Material.foliage, Material.debris, 0.3));
@@ -126,12 +126,14 @@ function paintProp(kind: PropKind, frame = 0): Px {
       break;
     }
     case 'sealed':
-      bevelRect(px, 8, 8, 32, 32, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 8, 8, 32, 32, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
       px.fillRect(12, 12, 24, 24, Material.recess);
-      bevelRect(px, 16, 16, 16, 16, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 16, 16, 16, 16, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillRect(22, 14, 4, 20, Theme.tape);
       px.fillRect(14, 22, 20, 4, Theme.tape);
       px.fillRect(22, 22, 4, 4, Theme.groundDeep);
+      grit(px, Theme.inkMute, 8, 21);
       break;
     case 'tripwire':
       bevelRect(px, 4, 28, 8, 10, Theme.inkMute, Material.debris, Theme.groundDeep);
@@ -142,58 +144,71 @@ function paintProp(kind: PropKind, frame = 0): Px {
       px.set(24, 29, Theme.inkBright);
       break;
     case 'exit':
-      bevelRect(px, 10, 8, 28, 32, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 10, 8, 28, 32, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
       px.fillRect(13, 11, 22, 26, Theme.groundDeep);
       px.fillRect(17, 14, 14, 18, mix(Material.deck, Theme.safe, 0.18));
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillRect(22, 18, 4, 12, Theme.safe);
       px.fillRect(22, 18, 4, 1, Theme.inkBright);
       px.fillRect(14, 36, 20, 3, Theme.tape);
+      grit(px, Theme.inkMute, 6, 33);
       break;
     case 'shuttle':
-      bevelRect(px, 8, 18, 32, 14, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 8, 18, 32, 14, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
       px.fillTriangle(8, 18, 8, 32, 1, 25, Material.deck);
       px.fillTriangle(40, 18, 40, 32, 47, 25, Material.deck);
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillRect(14, 20, 20, 7, Theme.groundDeep);
       px.fillRect(16, 22, 6, 3, Theme.arcWhite);
       px.fillRect(26, 22, 6, 3, Theme.arcWhite);
       px.fillRect(12, 32, 8, 4, Theme.panelEdge);
       px.fillRect(28, 32, 8, 4, Theme.panelEdge);
+      grit(px, Theme.inkMute, 7, 44);
       break;
     case 'beacon':
-      bevelRect(px, 20, 10, 8, 26, Theme.inkMute, Material.deck, Theme.groundDeep);
-      bevelRect(px, 16, 32, 16, 8, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 20, 10, 8, 26, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
+      bevelRect(px, 16, 32, 16, 8, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillDisc(24, 12, 6 + (pulse % 2), Theme.tape);
       px.fillDisc(24, 12, 3, Theme.inkBright);
       px.fillRect(22, 18, 4, 12, Theme.panelEdge);
+      grit(px, Theme.inkMute, 5, 51);
       break;
     case 'landmark':
-      bevelRect(px, 14, 12, 20, 26, Theme.inkMute, Material.rock, Theme.groundDeep);
+      bevelRect(px, 14, 12, 20, 26, Theme.inkMute, Material.rock, Theme.groundDeep, Material.rockLit, Material.recess);
+      volume(px, Material.rock, Material.rockLit, Theme.groundDeep, Material.recess, Theme.inkMute);
       px.fillRect(16, 14, 16, 8, mix(Material.rock, Theme.inkMute, 0.25));
       px.fillRect(18, 24, 12, 10, Material.recess);
       px.fillRect(22, 8 + (pulse % 2), 4, 8, Theme.flag);
       px.set(24, 8 + (pulse % 2), Theme.inkBright);
+      grit(px, Theme.inkMute, 6, 61);
       break;
     case 'quest':
-      bevelRect(px, 10, 16, 28, 22, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 10, 16, 28, 22, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
       px.fillRect(13, 19, 22, 16, Theme.groundDeep);
-      bevelRect(px, 16, 20, 16, 10, Theme.inkMute, Theme.panel, Theme.groundDeep);
+      bevelRect(px, 16, 20, 16, 10, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkMute, Theme.groundDeep);
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillTriangle(24, 6 + (pulse % 2), 17, 16, 31, 16, Theme.flag);
       px.fillRect(22, 16, 4, 8, Theme.flag);
+      grit(px, Theme.inkMute, 5, 71);
       break;
     case 'console':
-      bevelRect(px, 10, 14, 28, 26, Theme.inkMute, Material.deck, Theme.groundDeep);
+      bevelRect(px, 10, 14, 28, 26, Theme.inkMute, Material.deck, Theme.groundDeep, Material.deckLit, Material.recess);
       px.fillRect(13, 17, 22, 16, Theme.groundDeep);
-      bevelRect(px, 15, 19, 18, 11, Theme.inkMute, Theme.panel, Theme.groundDeep);
+      bevelRect(px, 15, 19, 18, 11, Theme.inkMute, Theme.panel, Theme.groundDeep, Theme.inkMute, Theme.groundDeep);
+      volume(px, Material.deck, Theme.inkMute, Theme.groundDeep, Material.recess, Material.deckLit);
       px.fillRect(17, 21, 14, 7, Theme.biolumDeep);
       px.fillRect(18, 22 + (pulse % 2), 5, 2, Theme.biolum);
       px.fillRect(24, 23, 6, 2, mix(Theme.tape, Theme.biolum, 0.4));
       px.fillRect(20, 8, 8, 6, Theme.panelEdge);
       px.fillRect(22, 6 + (pulse % 2), 4, 4, Theme.tape);
+      grit(px, Theme.inkMute, 6, 81);
       break;
   }
   if (kind !== 'tripwire') {
     finishSprite(px, envPalette());
   } else {
+    plantShadow(px);
     px.snap(envPalette());
   }
   return px;

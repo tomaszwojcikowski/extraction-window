@@ -42,7 +42,7 @@ function paintShape(
   kind: EnemyKind,
   ion: boolean,
 ): void {
-  const { deep, mid, lit, rim } = bodyShades(color);
+  const { deep, mid, lit, rim, lift } = bodyShades(color);
   const threat = ion ? Theme.biolum : Theme.rust;
 
   switch (shape) {
@@ -55,7 +55,7 @@ function paintShape(
         jointLeg(px, lx, 30 + bob + out, 42 + bob, kick, deep, rim);
       }
       px.fillEllipse(24, 32 + bob, 16, 8, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillRect(12, 28 + bob, 24, 2, lit);
       px.fillRect(10, 31 + bob, 4, 3, deep);
       px.fillRect(34, 31 + bob, 4, 3, deep);
@@ -72,7 +72,7 @@ function paintShape(
         jointLeg(px, lx, 28 + bob + out, 42 + bob - alt, 0, deep, rim);
       }
       px.fillEllipse(24, 30 + bob, 20, 10, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       bevelRect(px, 10, 24 + bob, 8, 4, lit, mid, deep);
       bevelRect(px, 20, 23 + bob, 8, 4, lit, mid, deep);
       bevelRect(px, 30, 24 + bob, 8, 4, lit, mid, deep);
@@ -84,7 +84,7 @@ function paintShape(
     case 'spore_body': {
       const sway = frame === 1 ? 1 : frame === 2 ? -1 : 0;
       px.fillEllipse(24, 39 + bob, 16, 6, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       for (let i = 0; i < 8; i++) {
         const ang = (i / 8) * Math.PI;
         px.set(24 + Math.round(Math.cos(ang) * 14), 39 + bob + Math.round(Math.sin(ang) * 3), threat);
@@ -94,7 +94,7 @@ function paintShape(
         px.fillRect(sx + lean, 16 + bob, 2, 22, rim);
         px.fillRect(sx + lean + 1, 16 + bob, 1, 22, mid);
         px.fillDisc(sx + lean + 1, 14 + bob, 5, mid);
-        volume(px, mid, lit, deep);
+        volume(px, mid, lit, deep, rim, lift);
         px.fillDisc(sx + lean + 1, 14 + bob, 3, threat);
         px.set(sx + lean + 1, 13 + bob, Theme.arcWhite);
       });
@@ -103,7 +103,7 @@ function paintShape(
     case 'bloom': {
       const r = 10 + frame * 3;
       px.fillDisc(24, 26 + bob, r + 3, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       for (let i = 0; i < 8; i++) {
         const ang = (i / 8) * Math.PI * 2 + frame * 0.25;
         const sx = Math.round(24 + Math.cos(ang) * (r + 4));
@@ -131,7 +131,7 @@ function paintShape(
       px.fillTriangle(20, 18 + bob, 20 - wing, 8 + bob, 22, 28 + bob, mid);
       px.fillTriangle(28, 18 + bob, 28 + wing, 8 + bob, 26, 28 + bob, mid);
       px.fillEllipse(24, 24 + bob, mastling ? 8 : 6, mastling ? 13 : 14, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillTriangle(20, 20 + bob, 20 - wing + 4, 12 + bob, 22, 26 + bob, lit);
       px.fillTriangle(28, 20 + bob, 28 + wing - 4, 12 + bob, 26, 26 + bob, lit);
       if (mastling) {
@@ -151,14 +151,14 @@ function paintShape(
           const kick = frame === 1 && i % 2 === 0 ? 2 : -1;
           jointLeg(px, lx, 34 + bob, 43 + bob, kick, deep, rim);
         }
-        volume(px, mid, lit, deep);
+        volume(px, mid, lit, deep, rim, lift);
         px.fillRect(17, 28 + bob, 14, 2, threat);
         eyes(px, 24, 27 + bob, 5, 2, ion);
       } else if (kind === 'reef_skitter') {
         px.fillEllipse(28, 30 + bob, 14, 9, mid);
         px.fillTriangle(18, 16 + bob, 28, 2 + bob, 36, 16 + bob, mid);
         px.fillRect(8, 26 + bob, 16, 10, mid);
-        volume(px, mid, lit, deep);
+        volume(px, mid, lit, deep, rim, lift);
         px.fillTriangle(22, 14 + bob, 28, 5 + bob, 33, 14 + bob, lit);
         jointLeg(px, 12, 36 + bob, 43 + bob, 0, deep, rim);
         jointLeg(px, 34, 36 + bob, 43 + bob, 0, deep, rim);
@@ -169,7 +169,7 @@ function paintShape(
         px.fillEllipse(32, 28 + bob, 13, 10, mid);
         px.fillRect(8, 24 + bob, 22, 12, mid);
         px.fillTriangle(2, 28 + bob, 14, 20 + bob, 14, 36 + bob, mid);
-        volume(px, mid, lit, deep);
+        volume(px, mid, lit, deep, rim, lift);
         jointLeg(px, 18, 34 + bob, 42 + bob - crouch, 0, deep, rim);
         jointLeg(px, 34, 34 + bob, 42 + bob - crouch, 0, deep, rim);
         px.fillRect(4, 27 + bob, 6, 3, threat);
@@ -183,9 +183,9 @@ function paintShape(
         const w = 11 - i * 1.4 + (i === frame ? 1 : 0);
         px.fillEllipse(24, 38 - i * 6 + bob + pulse, w, 5, mid);
       }
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillDisc(24, 10 + bob, 8, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillDisc(24, 10 + bob, 5, threat);
       px.fillDisc(24, 10 + bob, 2, Theme.groundDeep);
       px.set(24, 9 + bob, Theme.arcWhite);
@@ -195,7 +195,7 @@ function paintShape(
       px.fillTriangle(4, 42 + bob, 10, 10 + bob, 38, 10 + bob, mid);
       px.fillRect(8, 10 + bob, 32, 28, mid);
       px.fillTriangle(44, 42 + bob, 38, 10 + bob, 10, 10 + bob, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillRect(12, 22 + bob, 24, 2, deep);
       px.fillRect(12, 30 + bob, 24, 2, deep);
       px.fillRect(12, 16 + bob, 24, 3, Theme.tape);
@@ -252,7 +252,7 @@ function paintShape(
       px.fillEllipse(24, 34 + bob, 15, 8, mid);
       px.fillEllipse(24, 28 + bob, 11, 7, mid);
       px.fillRect(21 + lean, 10 + bob, 6, 16, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillTriangle(16 + lean, 12 + bob, 32 + lean, 12 + bob, 24 + lean, 2 + bob, rim);
       px.fillRect(20 + lean, 11 + bob, 3, 4, threat);
       px.fillRect(25 + lean, 11 + bob, 3, 4, threat);
@@ -265,7 +265,7 @@ function paintShape(
       px.fillTriangle(19, 12 + bob, 1, 22 + stretch + bob, 19, 24 + bob, mid);
       px.fillTriangle(29, 12 + bob, 47, 22 + stretch + bob, 29, 24 + bob, mid);
       px.fillTriangle(17, 28 + bob, 31, 28 + bob, 24, 44 + bob, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillRect(2, 20 + stretch + bob, 10, 2, lit);
       px.fillRect(36, 20 + stretch + bob, 10, 2, lit);
       px.set(2, 20 + stretch + bob, threat);
@@ -275,7 +275,7 @@ function paintShape(
     }
     case 'aperture': {
       px.fillDisc(24, 24 + bob, 18, mid);
-      volume(px, mid, lit, deep);
+      volume(px, mid, lit, deep, rim, lift);
       px.fillDisc(24, 24 + bob, 13, Theme.groundDeep);
       px.strokeDisc(24, 24 + bob, 16 - frame, color);
       px.strokeDisc(24, 24 + bob, 10 + frame, lit);
@@ -331,7 +331,7 @@ function paintPlayer(frame: number): Px {
   px.fillRect(30, 18 + bob, 6, 3, Theme.tape);
   // Helmet
   px.fillEllipse(23, 13 + bob, 10, 8, Material.suitMid);
-  volume(px, Material.suitMid, Material.suitLit, Material.suitDeep);
+  volume(px, Material.suitMid, Material.suitLit, Material.suitDeep, Material.suitDeep, Theme.ink);
   px.fillRect(16, 11 + bob, 14, 5, Material.visor);
   px.fillRect(18, 12 + bob, 10, 2, Theme.inkBright);
   px.fillRect(20 + frame, 12 + bob, 5, 1, Theme.biolum);
@@ -367,13 +367,13 @@ function paintContact(role: 'npc' | 'ally', kind: string, frame: number): Px {
   if (kind.includes('drone')) {
     bevelRect(px, 10, 14 + bob, 28, 20, Theme.inkMute, rim, Theme.groundDeep);
     px.fillRect(14, 18 + bob, 20, 12, body);
-    volume(px, body, Theme.inkBright, rim);
+    volume(px, body, Theme.inkBright, rim, rim, Theme.ink);
     px.fillRect(12 + stride, 12 + bob, 24, 2, Theme.biolum);
     px.fillDisc(24, 24 + bob, 3, Theme.inkBright);
   } else {
     bevelRect(px, 15 + stride, 8 + bob, 18, 28, body, rim, Theme.groundDeep);
     px.fillRect(17 + stride, 10 + bob, 14, 22, body);
-    volume(px, body, Theme.inkBright, rim);
+    volume(px, body, Theme.inkBright, rim, rim, Theme.ink);
     bevelRect(px, 10 + stride, 18 + bob, 7, 14, body, rim, Theme.groundDeep);
     bevelRect(px, 31 + stride, 18 + bob, 7, 14, body, rim, Theme.groundDeep);
     px.fillRect(16 + stride, 38, 7, 4, Theme.groundDeep);

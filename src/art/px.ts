@@ -284,11 +284,13 @@ export function bodyShades(color: number): {
   mid: number;
   lit: number;
   rim: number;
+  lift: number;
 } {
   return {
     deep: mix(color, Theme.groundDeep, 0.78),
     mid: color,
     lit: mix(color, Theme.inkBright, 0.32),
     rim: mix(color, Theme.groundDeep, 0.55),
+    lift: mix(color, Theme.inkBright, 0.16),
   };
 }

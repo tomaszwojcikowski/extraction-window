@@ -22,6 +22,14 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
   const insetL = leftOpen ? 5 : 1;
   const insetR = rightOpen ? 5 : 1;
   px.fillRect(insetL, 1, TILE - insetL - insetR, TILE - 2, face);
+  if (!leftOpen) {
+    px.fillRect(0, 1, 2, TILE - 2, mix(face, Theme.groundDeep, 0.45));
+    px.fillRect(0, 1, 1, TILE - 2, Theme.groundDeep);
+  }
+  if (!rightOpen) {
+    px.fillRect(TILE - 2, 1, 2, TILE - 2, mix(face, Theme.groundDeep, 0.45));
+    px.fillRect(TILE - 1, 1, 1, TILE - 2, Theme.groundDeep);
+  }
   if (leftOpen) {
     px.fillRect(1, 1, 4, TILE - 2, Material.recess);
     px.fillRect(4, 2, 2, TILE - 4, mix(face, Theme.groundDeep, 0.4));
@@ -40,6 +48,9 @@ function paintWall(style: WallStyle, role: number, wear: number): Px {
   px.fillRect(insetL, 1, TILE - insetL - insetR, 5, crown);
   px.fillRect(insetL + 1, 2, TILE - insetL - insetR - 2, 1, Theme.inkBright);
   px.fillRect(insetL, 6, TILE - insetL - insetR, 2, Theme.groundDeep);
+  for (let rx = insetL + 6; rx < TILE - insetR - 4; rx += 8) {
+    bevelRect(px, rx, 3, 2, 2, Theme.inkBright, Theme.panelEdge, Theme.groundDeep);
+  }
   if (role === 3) {
     px.fillRect(2, 1, 5, 4, crown);
     px.fillRect(TILE - 7, 1, 5, 4, crown);
@@ -93,7 +104,7 @@ function paintSconce(style: WallStyle): Px {
   const cool = style === 'conduit';
   const body = cool ? Material.conduit : Material.deck;
   const glow = cool ? Theme.biolum : Theme.tape;
-  bevelRect(px, 16, 10, 16, 24, Theme.inkMute, body, Theme.groundDeep);
+  bevelRect(px, 16, 10, 16, 24, Theme.inkMute, body, Theme.groundDeep, cool ? Theme.biolum : Theme.inkDim, Theme.groundDeep);
   px.fillRect(18, 12, 12, 8, Theme.groundDeep);
   px.fillRect(19, 13, 10, 6, glow);
   px.fillRect(21, 14, 6, 2, Theme.inkBright);
@@ -101,6 +112,7 @@ function paintSconce(style: WallStyle): Px {
   px.fillRect(21, 32, 6, 4, Theme.panelEdge);
   px.fillRect(18, 36, 12, 2, Theme.groundDeep);
   px.outline(Theme.groundDeep);
+  grit(px, Theme.inkMute, 5, 9);
   px.snap(envPalette());
   return px;
 }

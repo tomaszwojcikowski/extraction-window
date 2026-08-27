@@ -65,8 +65,12 @@ export const Theme = {
 export const Material = {
   /** Mineral slate cliff face. */
   rock: 0x354844,
+  /** NW lip on cliff bedding. */
+  rockLit: 0x42685a,
   /** Painted expedition deck in built sectors. */
   deck: 0x32444c,
+  /** NW lip on built deck. */
+  deckLit: 0x3e5560,
   /** Conduit lining. */
   conduit: 0x264048,
   /** Depth inside a wall recess or seam. */
@@ -80,6 +84,8 @@ export const Material = {
   nest: 0x3e1c28,
   /** Standing brine. */
   brine: 0x184056,
+  /** Catch-light on standing brine. */
+  brineLit: 0x22586c,
 
   /** Surveyor's suit: shadowed body, lit panels, mid webbing, sealed visor. */
   suitDeep: 0x09111e,
