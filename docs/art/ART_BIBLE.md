@@ -107,10 +107,11 @@ Monospace only. `FONT` is deprecated; import `FONT_DATA`.
   grating slats (duct), a bolt grid (spire), chevroned seals (vault), pad
   markings (beacon). Cross-checks worth keeping: plains must not drift into
   ridge's banding, and duct must stay bare parallel bars or it becomes brine.
-- **Floors do not wallpaper.** Six variants per sector (`FLOOR_VARIANT_COUNT`),
+- **Floors do not wallpaper.** Eight variants per sector (`FLOOR_VARIANT_COUNT`),
   hashed per cell (`floorVariantAt`) so rooms do not stripe `(x + 3y) % n`.
-  Motifs phase-shift with the variant. Washes clip and reseed per variant so a
-  48px stain does not stamp on every neighbour.
+  Continuous ledges and slats stay aligned across neighbours so they do not
+  seam into a 48px grid. Wash, grit, and interior marks vary; linear features
+  do not.
 - Light *behaves* per biome: scrub scatters (canopy/plains lift), brine reflects (cool and bright), ash holds it (dark warm-grey), duct absorbs it.
 - Terrain that changes rules must be silhouette-distinct before it is colour-distinct: `hazard`, `vent`, `scrub`, `rubble`, `sealed`, `tripwire`, `sump`, `scrub_nest`.
 - Ordinary ground stays **unsaturated**. Saturated paint on a walkable tile reads as a rule

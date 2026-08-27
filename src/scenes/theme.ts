@@ -180,7 +180,7 @@ export const BIOME_AMBIENT: Record<SectorId, BiomeAmbient> = {
   ridge: { ambient: 0.43, tint: 0xe8e0c8 },
 };
 
-export const FLOOR_VARIANT_COUNT = 6;
+export const FLOOR_VARIANT_COUNT = 8;
 
 export function floorTextureKey(sectorId: SectorId, variant: number): string {
   const v = ((variant % FLOOR_VARIANT_COUNT) + FLOOR_VARIANT_COUNT) % FLOOR_VARIANT_COUNT;

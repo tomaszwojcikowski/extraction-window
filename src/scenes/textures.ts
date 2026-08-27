@@ -17,7 +17,7 @@ function floorScatterHash(x: number, y: number, seed: number): number {
   return Math.abs((x * 19 + y * 47 + (seed & 0xffff) * 13) | 0);
 }
 
-/** 1px lattice break. Pad covers the worst neighbour offset so grout never opens. */
+/** 2px lattice break. Pad covers the worst neighbour offset so grout never opens. */
 export function floorScatter(
   x: number,
   y: number,
@@ -25,9 +25,9 @@ export function floorScatter(
 ): { dx: number; dy: number; pad: number } {
   const n = floorScatterHash(x, y, seed);
   return {
-    dx: (n % 3) - 1,
-    dy: ((n >> 3) % 3) - 1,
-    pad: 3 + ((n >> 5) % 2),
+    dx: (n % 5) - 2,
+    dy: ((n >> 3) % 5) - 2,
+    pad: 6 + ((n >> 5) % 3),
   };
 }
 

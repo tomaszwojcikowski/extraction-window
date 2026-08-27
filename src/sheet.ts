@@ -197,7 +197,7 @@ class SheetScene extends Phaser.Scene {
     const cell = document.createElement('div');
     cell.className = 'cell';
     for (const key of tiles) cell.appendChild(this.tile(key));
-    if (tiles.length > 3) cell.style.width = `${Math.min(tiles.length, 6) * 48 + 20}px`;
+    if (tiles.length > 3) cell.style.width = `${Math.min(tiles.length, 8) * 48 + 20}px`;
 
     const label = document.createElement('div');
     label.className = 'name';
