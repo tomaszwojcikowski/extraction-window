@@ -170,6 +170,11 @@ export class V2Field {
     this.bump = { dx, dy, started: performance.now() };
   }
 
+  /** True while the surveyor hop is in flight — field input queues one-deep. */
+  isAnimating(): boolean {
+    return this.hop !== null;
+  }
+
   /** Flattened look on XZ — WASD snaps this to a grid cardinal. */
   lookXZ(): { x: number; z: number } {
     this.lookScratch.copy(this.controls.target).sub(this.camera.position);

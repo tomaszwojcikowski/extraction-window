@@ -1,22 +1,23 @@
 /**
- * v2 slice 2 — orbit field plus combat tells (threat paints, floats, bump/death, lamp carry).
+ * v2 slice 3 — orbit field plus HTML HUD (bars, kit, PADD, help, log).
  */
 import { ThemeCss } from '../scenes/theme';
 import { SECTORS } from '../data/encounters';
 import { applyAction, createGame, loadSector, type Action, type GameState } from '../sim';
 import { flankPenalty } from '../sim/combat';
-import { actionFromKey } from '../game/input/Keymap';
 import { causalActionFloats } from '../game/presenters/actionFloats';
 import { loadFieldAtlas } from './atlas';
 import { playerLightReadout, V2Field } from './field';
-import { moveFromScreenIntent, screenIntentFromKey, stepToward } from './screenMove';
+import { bindHud, hudSnapshot, paintHud, type HudChrome } from './hud';
+import { fieldLocked, routeV2Key, type V2ChromeKind, type V2InputHost } from './input';
+import { stepToward } from './screenMove';
 
 const ACTION_FLOAT_MS = 1200;
 
 const canvas = document.querySelector('#field') as HTMLCanvasElement;
-const statusEl = document.querySelector('#status') as HTMLElement;
 const floatsEl = document.querySelector('#floats') as HTMLElement;
 const flashEl = document.querySelector('#flash') as HTMLElement;
+const hudEls = bindHud(document);
 
 paintCssVars();
 
@@ -28,6 +29,9 @@ const sectorParam = Number(params.get('sector'));
 if (Number.isFinite(sectorParam) && sectorParam > 0) {
   loadSector(state, Math.min(SECTORS.length - 1, Math.floor(sectorParam)));
 }
+
+const chrome: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false };
+let queued: Action | null = null;
 
 const atlas = await loadFieldAtlas();
 const field = new V2Field(canvas, atlas);
@@ -41,6 +45,11 @@ bindPointer(canvas);
 
 function tick(): void {
   field.render();
+  if (queued && !field.isAnimating()) {
+    const next = queued;
+    queued = null;
+    commit(next);
+  }
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
@@ -53,44 +62,71 @@ function resize(): void {
   field.resize(w, h);
 }
 
-function onKey(e: KeyboardEvent): void {
-  if (e.key === ']' || e.key === '}') {
-    loadSector(state, (state.sectorIndex + 1) % SECTORS.length);
-    field.rebuild(state);
-    writeUrl();
-    syncHud();
-    return;
-  }
-  if (e.key === '[' || e.key === '{') {
-    loadSector(state, (state.sectorIndex + SECTORS.length - 1) % SECTORS.length);
-    field.rebuild(state);
-    writeUrl();
-    syncHud();
-    return;
-  }
-  if (e.key === 'r' || e.key === 'R') {
-    seed = (Date.now() % 100000) + 1;
-    state = createGame(seed, { skipTutorial: true });
-    field.rebuild(state);
-    writeUrl();
-    syncHud();
-    return;
-  }
-  if ((e.key === 'q' || e.key === 'Q') && !e.repeat) {
-    e.preventDefault();
-    field.yawBy(-Math.PI / 2);
-    return;
-  }
-  if ((e.key === 'e' || e.key === 'E') && !e.repeat) {
-    e.preventDefault();
-    field.yawBy(Math.PI / 2);
-    return;
-  }
+function hostNow(): V2InputHost {
+  const look = field.lookXZ();
+  return {
+    helpOpen: chrome.helpOpen,
+    pagesOpen: chrome.pagesOpen,
+    logOpen: chrome.logOpen,
+    animating: field.isAnimating(),
+    lookX: look.x,
+    lookZ: look.z,
+  };
+}
 
-  const action = sliceAction(e);
-  if (!action) return;
+function onKey(e: KeyboardEvent): void {
+  const cmd = routeV2Key(e, state, hostNow());
+  if (cmd.type === 'noop') return;
   e.preventDefault();
-  commit(action);
+  switch (cmd.type) {
+    case 'debug_sector': {
+      const len = SECTORS.length;
+      loadSector(state, (state.sectorIndex + cmd.dir + len) % len);
+      field.rebuild(state);
+      writeUrl();
+      syncHud();
+      return;
+    }
+    case 'debug_reseed':
+      seed = (Date.now() % 100000) + 1;
+      state = createGame(seed, { skipTutorial: true });
+      chrome.helpOpen = false;
+      chrome.pagesOpen = false;
+      chrome.logOpen = false;
+      queued = null;
+      field.rebuild(state);
+      writeUrl();
+      syncHud();
+      return;
+    case 'yaw':
+      field.yawBy((cmd.dir * Math.PI) / 2);
+      return;
+    case 'chrome':
+      queued = null;
+      setChrome(cmd.key, cmd.force);
+      syncHud();
+      return;
+    case 'ui':
+      queued = null;
+      applyAction(state, cmd.action);
+      field.sync(state);
+      syncHud();
+      return;
+    case 'queue':
+      queued = cmd.action;
+      return;
+    case 'turn':
+      queued = null;
+      commit(cmd.action);
+      return;
+  }
+}
+
+function setChrome(key: V2ChromeKind, force?: boolean): void {
+  if (key === 'pages' && chrome.helpOpen) chrome.helpOpen = false;
+  const field = key === 'help' ? 'helpOpen' : key === 'pages' ? 'pagesOpen' : 'logOpen';
+  if (force === undefined) chrome[field] = !chrome[field];
+  else chrome[field] = force;
 }
 
 function commit(action: Action): void {
@@ -117,20 +153,6 @@ function commit(action: Action): void {
   syncHud();
 }
 
-/** Slice 1–2: camera-relative move / wait / hatch — kit and PADD land in the HUD slice. */
-function sliceAction(e: KeyboardEvent): Action | null {
-  const intent = screenIntentFromKey(e);
-  if (intent) {
-    const look = field.lookXZ();
-    const step = moveFromScreenIntent(intent, look.x, look.z);
-    return { type: 'move', dx: step.dx, dy: step.dy };
-  }
-  const action = actionFromKey(e);
-  if (!action) return null;
-  if (action.type === 'wait' || action.type === 'exit') return action;
-  return null;
-}
-
 function bindPointer(el: HTMLCanvasElement): void {
   let down: { x: number; y: number; button: number } | null = null;
   el.addEventListener('pointerdown', (e) => {
@@ -142,6 +164,7 @@ function bindPointer(el: HTMLCanvasElement): void {
     const start = down;
     down = null;
     if (!start || start.button !== 0 || e.button !== 0) return;
+    if (fieldLocked(state, hostNow())) return;
     const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
     if (dist > 6) return;
     const tile = field.pickTile(e.clientX, e.clientY);
@@ -193,13 +216,12 @@ function flashHurt(): void {
 function syncHud(): void {
   const light = playerLightReadout(state);
   const pct = Math.round(light.brightness * 100);
-  statusEl.textContent = [
-    `seed ${seed}`,
-    `${state.sectorId} ${state.sectorIndex + 1}/${SECTORS.length}`,
+  const debug = [
+    `v2`,
     `turn ${state.turn}`,
     `sim ${light.band} ${pct}%`,
-    'flood matches gameplay',
   ].join(' · ');
+  paintHud(hudEls, hudSnapshot(state, chrome), debug);
 }
 
 function writeUrl(): void {
@@ -214,9 +236,13 @@ function paintCssVars(): void {
   root.setProperty('--ground-deep', ThemeCss.groundDeep);
   root.setProperty('--panel', ThemeCss.panel);
   root.setProperty('--ink', ThemeCss.ink);
+  root.setProperty('--ink-bright', ThemeCss.inkBright);
   root.setProperty('--ink-dim', ThemeCss.inkDim);
   root.setProperty('--ink-mute', ThemeCss.inkMute);
   root.setProperty('--tape', ThemeCss.tape);
   root.setProperty('--safe', ThemeCss.safe);
   root.setProperty('--rust', ThemeCss.rust);
+  root.setProperty('--flag', ThemeCss.flag);
+  root.setProperty('--biolum', ThemeCss.biolum);
+  root.setProperty('--hint-bg', ThemeCss.hintBg);
 }

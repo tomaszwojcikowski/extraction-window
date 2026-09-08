@@ -22,7 +22,7 @@ Prior team’s field array never shut down cleanly; residual scan pressure keeps
 
 ```bash
 npm install
-npm run dev          # Phaser v1 at / · Three.js v2 slice 1 at /v2.html
+npm run dev          # Phaser v1 at / · Three.js v2 field at /v2.html
 npm run build        # production build
 npm run test         # Vitest: unit + autopilot + balance
 npm run test:unit    # sim / map / autopilot / data
@@ -49,13 +49,13 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
 | Title: `←` `→` mission ID, `R` random, `Enter` start |
-| v2 (`/v2.html`) | WASD follows the camera · `Q` `E` yaw · right-drag orbit · left-click step |
+| v2 (`/v2.html`) | Same kit / PADD / help / log keys · WASD follows the camera · `Q` `E` yaw · right-drag orbit · left-click step |
 
 ## Stack (v1)
 
 - **Rules:** headless TypeScript `src/sim/` (no Phaser, no Three.js)
 - **Presentation (v1):** Phaser **4.2.1** + Vite (see [docs/V1.md](./docs/V1.md))
-- **Presentation (v2 slice 2):** Three.js orbit field at [`v2.html`](./v2.html) — sim flood tint, combat tells, no bloom
+- **Presentation (v2 slice 3):** Three.js orbit field at [`v2.html`](./v2.html) — sim flood tint, combat tells, HTML HUD over the canvas, no bloom
 - Vite + Vitest; keyboard-only; seeded runs
 
 ## Deploy

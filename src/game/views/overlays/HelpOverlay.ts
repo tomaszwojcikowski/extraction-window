@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
-import { lore } from '../../../data/lore';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
 import { drawModalTapeHeader } from './modalChrome';
+import { formatHelpContent } from '../../presenters/OverlayCopy';
+
+export { formatHelpContent } from '../../presenters/OverlayCopy';
 
 /** Draw the field help modal into existing Phaser objects. */
 export function drawHelpOverlay(
@@ -20,18 +22,5 @@ export function drawHelpOverlay(
   drawModalTapeHeader(panel, x, y, w, Theme.biolum);
   text.setWordWrapWidth(w - 48);
   text.setPosition(x + 24, y + 28);
-  if (tutorialActive) {
-    text.setText(
-      `${lore('UI-HELP')}\n\n${lore('UI-HELP-TUT')}\nESC or ? — close`,
-    );
-  } else {
-    text.setText(
-      `${lore('UI-HELP')}\n\n` +
-        `${lore('UI-KIT-PURPOSE')}\n\n` +
-        `────────────────────────────────\n` +
-        `${lore('UI-HELP-BODY')}\n` +
-        `────────────────────────────────\n` +
-        `ESC or ? — close`,
-    );
-  }
+  text.setText(formatHelpContent(tutorialActive));
 }

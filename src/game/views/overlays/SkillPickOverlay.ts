@@ -1,9 +1,8 @@
 import Phaser from 'phaser';
-import { lore } from '../../../data/lore';
-import { SKILLS } from '../../../data/progression';
 import type { SkillId } from '../../../data/progression';
 import { Theme, ThemeCss, FONT_DATA } from '../../../scenes/theme';
 import { drawFieldPanel, drawStencilBadge } from '../../../scenes/atmosphere';
+import { formatSkillPickContent } from '../../presenters/OverlayCopy';
 
 const PANEL_W = 480;
 const PANEL_H = 220;
@@ -70,20 +69,9 @@ export function drawSkillPickOverlay(
   const headerW = 136;
   drawStencilBadge(badgeGfx, x + PANEL_W / 2 - headerW / 2, y - 10, headerW, 20, Theme.biolum);
 
-  const lines: string[] = [];
-  lines.push(lore('UI-SKILL-PICK').toUpperCase());
-  lines.push('');
-  for (let i = 0; i < skillPick.length; i++) {
-    const id = skillPick[i]!;
-    const def = SKILLS[id];
-    lines.push(`${i + 1}  ${lore(def.loreName).toUpperCase()}  —  ${lore(def.loreDesc)}`);
-  }
-  lines.push('');
-  lines.push(lore('UI-SKILL-CHOOSE'));
-
   text.setWordWrapWidth(PANEL_W - 48);
   text.setPosition(x + 24, y + 28);
-  text.setText(lines.join('\n'));
+  text.setText(formatSkillPickContent(skillPick));
 }
 
 /** Hide all skill pick objects. */
