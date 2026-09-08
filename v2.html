@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Share+Tech+Mono&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -189,6 +189,114 @@
         opacity: 0;
         z-index: 4;
       }
+      body[data-screen="title"] #hud,
+      body[data-screen="title"] #dock,
+      body[data-screen="title"] #hint,
+      body[data-screen="title"] #log,
+      body[data-screen="end"] #hud,
+      body[data-screen="end"] #dock,
+      body[data-screen="end"] #hint,
+      body[data-screen="end"] #log {
+        visibility: hidden;
+      }
+      body[data-screen="title"] #field { opacity: 0; }
+      body[data-screen="end"] #field { opacity: 0.28; }
+      #menu {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--ground-deep, #0c1214);
+        pointer-events: none;
+      }
+      body[data-screen="end"] #menu { background: rgba(12, 18, 20, 0.82); }
+      #menu[hidden] { display: none; }
+      #menu-window {
+        position: relative;
+        width: min(520px, calc(100vw - 96px));
+        min-height: 152px;
+        border: 1px solid rgba(147, 161, 150, 0.35);
+        background: var(--panel, #243438);
+        padding: 28px 24px 20px;
+        text-align: center;
+      }
+      #menu-window::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 14px;
+        width: 96px;
+        height: 5px;
+        background: var(--accent, var(--tape, #e8b93c));
+      }
+      #menu-kicker {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-mute, #647470);
+        margin-bottom: 10px;
+      }
+      #menu-title {
+        font-family: "Share Tech Mono", "IBM Plex Mono", monospace;
+        font-size: 36px;
+        font-weight: 400;
+        color: var(--ink-bright, #f6f4e6);
+        letter-spacing: 0.04em;
+      }
+      #menu[data-won="0"][data-kind="end"] #menu-title { color: var(--rust, #c0512f); }
+      #menu-tag {
+        margin-top: 18px;
+        font-size: 11px;
+        color: var(--ink-dim, #93a196);
+      }
+      #menu-body, #menu-summary, #menu-brief, #menu-controls {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--ink-dim, #93a196);
+        text-align: center;
+        max-width: 52ch;
+        white-space: pre-wrap;
+      }
+      #menu-body { margin-top: 18px; }
+      #menu-summary {
+        margin-top: 22px;
+        padding: 16px 20px;
+        width: min(336px, calc(100vw - 48px));
+        border: 1px solid rgba(147, 161, 150, 0.3);
+        background: rgba(30, 44, 48, 0.9);
+        font-size: 12px;
+        color: var(--ink-mute, #647470);
+      }
+      #menu-seed, #menu-cta {
+        margin-top: 14px;
+        padding: 8px 18px;
+        border: 1px solid rgba(147, 161, 150, 0.35);
+        background: var(--panel, #243438);
+        font-size: 13px;
+      }
+      #menu-seed { color: var(--ink, #dfe4d5); }
+      #menu-cta {
+        color: var(--ink-bright, #f6f4e6);
+        animation: menu-blink 1.4s step-end infinite;
+      }
+      #menu.is-modal #menu-cta { animation: none; opacity: 0.35; }
+      @keyframes menu-blink { 50% { opacity: 0; } }
+      #menu-brief { margin-top: 28px; font-size: 11px; }
+      #menu-controls { margin-top: 8px; font-size: 10px; color: var(--ink-mute, #647470); }
+      #menu-foot {
+        position: absolute;
+        left: 52px;
+        right: 52px;
+        bottom: 28px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--ink-mute, #647470);
+      }
+      #modal { z-index: 8; }
     </style>
   </head>
   <body>
@@ -216,6 +324,23 @@
     <div id="modal" hidden>
       <div id="modal-panel">
         <pre id="modal-body"></pre>
+      </div>
+    </div>
+    <div id="menu" hidden>
+      <div id="menu-window">
+        <p id="menu-kicker"></p>
+        <h1 id="menu-title"></h1>
+        <p id="menu-tag"></p>
+      </div>
+      <p id="menu-body"></p>
+      <p id="menu-summary"></p>
+      <p id="menu-seed"></p>
+      <p id="menu-cta"></p>
+      <p id="menu-brief"></p>
+      <p id="menu-controls"></p>
+      <div id="menu-foot">
+        <span id="menu-foot-l"></span>
+        <span id="menu-foot-r"></span>
       </div>
     </div>
     <div id="floats"></div>

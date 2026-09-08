@@ -1,4 +1,5 @@
 import { lore, type LoreId } from '../../data/lore';
+import { GAME_VERSION } from '../../data/version';
 import { SKILLS, type SkillId } from '../../data/progression';
 import { describeObjective } from '../../sim/objectives';
 import type { GameState, QuestOffer } from '../../sim/types';
@@ -82,4 +83,15 @@ export function formatQuestOfferContent(offer: QuestOffer): string {
   lines.push(lore('UI-QUEST-ACCEPT'));
   lines.push(lore('UI-QUEST-DECLINE'));
   return lines.join('\n');
+}
+
+/** Halcyon field bulletin — player-facing ship notes on the title screen. */
+export function formatChangelogContent(): string {
+  return (
+    `${lore('UI-CHANGELOG')}\n` +
+    `${GAME_VERSION}\n\n` +
+    `${lore('UI-CHANGELOG-BODY')}\n` +
+    `────────────────────────────────\n` +
+    `ESC or c — close`
+  );
 }

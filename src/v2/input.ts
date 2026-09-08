@@ -22,6 +22,7 @@ export type V2Command =
   | { type: 'debug_sector'; dir: 1 | -1 }
   | { type: 'debug_reseed' }
   | { type: 'yaw'; dir: 1 | -1 }
+  | { type: 'mute' }
   | { type: 'chrome'; key: V2ChromeKind; force?: boolean }
   | { type: 'ui'; action: Action }
   | { type: 'turn'; action: Action }
@@ -55,7 +56,8 @@ export function routeV2Key(e: KeyboardEvent, state: GameState, host: V2InputHost
   if (e.key === 'r' || e.key === 'R') return { type: 'debug_reseed' };
 
   const chrome = chromeFromKey(e);
-  if (chrome?.kind === 'mute' || chrome?.kind === 'toggle_minimap') return { type: 'noop' };
+  if (chrome?.kind === 'mute') return { type: 'mute' };
+  if (chrome?.kind === 'toggle_minimap') return { type: 'noop' };
 
   if (isHackOpen(state)) return routeHack(e, state);
 

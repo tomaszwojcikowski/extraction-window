@@ -43,6 +43,11 @@ describe('v2 HUD input routing', () => {
     expect(routeV2Key(key('?'), st, host())).toEqual({ type: 'chrome', key: 'help' });
   });
 
+  it('m mutes instead of no-op', () => {
+    const st = createGame(42, { skipTutorial: true });
+    expect(routeV2Key(key('m'), st, host())).toEqual({ type: 'mute' });
+  });
+
   it('help swallows field move', () => {
     const st = createGame(42, { skipTutorial: true });
     expect(routeV2Key(key('w'), st, host({ helpOpen: true }))).toEqual({ type: 'noop' });
