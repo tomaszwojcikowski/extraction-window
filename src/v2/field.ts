@@ -85,6 +85,11 @@ export class V2Field {
   private readonly lerpFrom = new THREE.Color();
   private readonly lerpTo = new THREE.Color();
   private readonly projectScratch = new THREE.Vector3();
+  private readonly lookScratch = new THREE.Vector3();
+  private readonly pickRay = new THREE.Raycaster();
+  private readonly pickNdc = new THREE.Vector2();
+  private readonly pickHit = new THREE.Vector3();
+  private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   constructor(canvas: HTMLCanvasElement, atlas: Map<string, THREE.Texture>) {
     this.atlas = atlas;
@@ -118,6 +123,9 @@ export class V2Field {
     this.controls.maxPolarAngle = Math.PI * 0.48;
     this.controls.minDistance = 6;
     this.controls.maxDistance = 22;
+    this.controls.mouseButtons.LEFT = -1 as unknown as typeof THREE.MOUSE.ROTATE;
+    this.controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE;
+    this.controls.mouseButtons.MIDDLE = THREE.MOUSE.DOLLY;
 
     this.planeGeo.rotateX(-Math.PI / 2);
     this.threatGeo.rotateX(-Math.PI / 2);
@@ -160,6 +168,40 @@ export class V2Field {
   /** Blocked move / melee — short yoyo along the attack axis. */
   bumpToward(dx: number, dy: number): void {
     this.bump = { dx, dy, started: performance.now() };
+  }
+
+  /** Flattened look on XZ — WASD snaps this to a grid cardinal. */
+  lookXZ(): { x: number; z: number } {
+    this.lookScratch.copy(this.controls.target).sub(this.camera.position);
+    return { x: this.lookScratch.x, z: this.lookScratch.z };
+  }
+
+  /** Snap-yaw the orbit camera around the surveyor (radians, +Y). */
+  yawBy(radians: number): void {
+    const t = this.controls.target;
+    const ox = this.camera.position.x - t.x;
+    const oy = this.camera.position.y - t.y;
+    const oz = this.camera.position.z - t.z;
+    const c = Math.cos(radians);
+    const s = Math.sin(radians);
+    this.camera.position.set(t.x + ox * c - oz * s, t.y + oy, t.z + ox * s + oz * c);
+    this.camera.lookAt(t.x, t.y, t.z);
+    this.controls.update();
+  }
+
+  /** Grid cell under a canvas pointer, or null if the ray misses the deck. */
+  pickTile(clientX: number, clientY: number): { x: number; y: number } | null {
+    const canvas = this.renderer.domElement;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    this.pickNdc.set(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    this.pickRay.setFromCamera(this.pickNdc, this.camera);
+    const hit = this.pickRay.ray.intersectPlane(this.groundPlane, this.pickHit);
+    if (!hit) return null;
+    return { x: Math.floor(hit.x), y: Math.floor(hit.z) };
   }
 
   /** Tile center in CSS pixels for HTML floats. */

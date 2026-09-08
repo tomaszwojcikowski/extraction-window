@@ -9,6 +9,7 @@ import { actionFromKey } from '../game/input/Keymap';
 import { causalActionFloats } from '../game/presenters/actionFloats';
 import { loadFieldAtlas } from './atlas';
 import { playerLightReadout, V2Field } from './field';
+import { moveFromScreenIntent, screenIntentFromKey, stepToward } from './screenMove';
 
 const ACTION_FLOAT_MS = 1200;
 
@@ -36,6 +37,7 @@ resize();
 
 window.addEventListener('resize', resize);
 window.addEventListener('keydown', onKey);
+bindPointer(canvas);
 
 function tick(): void {
   field.render();
@@ -74,6 +76,16 @@ function onKey(e: KeyboardEvent): void {
     syncHud();
     return;
   }
+  if ((e.key === 'q' || e.key === 'Q') && !e.repeat) {
+    e.preventDefault();
+    field.yawBy(-Math.PI / 2);
+    return;
+  }
+  if ((e.key === 'e' || e.key === 'E') && !e.repeat) {
+    e.preventDefault();
+    field.yawBy(Math.PI / 2);
+    return;
+  }
 
   const action = sliceAction(e);
   if (!action) return;
@@ -105,12 +117,44 @@ function commit(action: Action): void {
   syncHud();
 }
 
-/** Slice 1–2: move / wait / hatch — kit and PADD land in the HUD slice. */
+/** Slice 1–2: camera-relative move / wait / hatch — kit and PADD land in the HUD slice. */
 function sliceAction(e: KeyboardEvent): Action | null {
+  const intent = screenIntentFromKey(e);
+  if (intent) {
+    const look = field.lookXZ();
+    const step = moveFromScreenIntent(intent, look.x, look.z);
+    return { type: 'move', dx: step.dx, dy: step.dy };
+  }
   const action = actionFromKey(e);
   if (!action) return null;
-  if (action.type === 'move' || action.type === 'wait' || action.type === 'exit') return action;
+  if (action.type === 'wait' || action.type === 'exit') return action;
   return null;
+}
+
+function bindPointer(el: HTMLCanvasElement): void {
+  let down: { x: number; y: number; button: number } | null = null;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button === 2) el.style.cursor = 'grabbing';
+    down = { x: e.clientX, y: e.clientY, button: e.button };
+  });
+  el.addEventListener('pointerup', (e) => {
+    el.style.cursor = '';
+    const start = down;
+    down = null;
+    if (!start || start.button !== 0 || e.button !== 0) return;
+    const dist = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+    if (dist > 6) return;
+    const tile = field.pickTile(e.clientX, e.clientY);
+    if (!tile) return;
+    const step = stepToward(state.player.x, state.player.y, tile.x, tile.y);
+    if (!step) return;
+    commit({ type: 'move', dx: step.dx, dy: step.dy });
+  });
+  el.addEventListener('pointerleave', () => {
+    el.style.cursor = '';
+    down = null;
+  });
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function spawnFloats(

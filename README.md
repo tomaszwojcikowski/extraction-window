@@ -49,6 +49,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
 | Title: `←` `→` mission ID, `R` random, `Enter` start |
+| v2 (`/v2.html`) | WASD follows the camera · `Q` `E` yaw · right-drag orbit · left-click step |
 
 ## Stack (v1)
 
