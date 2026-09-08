@@ -62,14 +62,16 @@ document.body.dataset.screen = screen;
 const atlasReady = loadFieldAtlas();
 bindPointer(canvas);
 window.addEventListener('resize', resize);
+window.visualViewport?.addEventListener('resize', resize);
+new ResizeObserver(resize).observe(canvas);
 window.addEventListener('keydown', onKey);
-resize();
 requestAnimationFrame(tick);
 
 if (deepLink) {
   const atlas = await atlasReady;
   field = new V2Field(canvas, atlas);
   field.rebuild(state);
+  resize();
   enterPlay(false);
 } else {
   enterTitle();
@@ -87,11 +89,7 @@ function tick(): void {
 }
 
 function resize(): void {
-  const w = Math.max(320, window.innerWidth);
-  const h = Math.max(240, window.innerHeight);
-  canvas.width = w;
-  canvas.height = h;
-  field?.resize(w, h);
+  field?.fitToCanvas();
 }
 
 function hostNow(): V2InputHost {
@@ -308,6 +306,7 @@ async function bootPlay(nextSeed: number, skipTutorial: boolean): Promise<void> 
   const atlas = await atlasReady;
   if (!field) field = new V2Field(canvas, atlas);
   field.rebuild(state);
+  resize();
   writeUrl();
   enterPlay(true);
 }

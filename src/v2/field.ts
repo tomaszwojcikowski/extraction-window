@@ -90,6 +90,7 @@ export class V2Field {
   private readonly pickNdc = new THREE.Vector2();
   private readonly pickHit = new THREE.Vector3();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  private readonly sizeScratch = new THREE.Vector2();
 
   constructor(canvas: HTMLCanvasElement, atlas: Map<string, THREE.Texture>) {
     this.atlas = atlas;
@@ -113,6 +114,7 @@ export class V2Field {
     this.scene.fog = new THREE.Fog(Theme.groundDeep, 12, 28);
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+    this.fitToCanvas();
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
@@ -221,12 +223,28 @@ export class V2Field {
   }
 
   resize(width: number, height: number): void {
-    this.renderer.setSize(width, height, false);
-    this.camera.aspect = width / Math.max(1, height);
+    const w = Math.max(1, width);
+    const h = Math.max(1, height);
+    this.renderer.setSize(w, h, false);
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
 
+  /** Match the CSS box so a wide canvas is not a square frustum stretched by CSS. */
+  fitToCanvas(): void {
+    const { width, height } = canvasViewSize(this.renderer.domElement);
+    this.resize(width, height);
+  }
+
+  private fitIfCanvasChanged(): void {
+    const { width, height } = canvasViewSize(this.renderer.domElement);
+    const prev = this.renderer.getSize(this.sizeScratch);
+    if (prev.x === width && prev.y === height) return;
+    this.resize(width, height);
+  }
+
   render(): void {
+    this.fitIfCanvasChanged();
     const now = performance.now();
     this.tickMotion(now);
     this.tickLampCarry();
@@ -741,6 +759,17 @@ function applySimTint(color: THREE.Color, state: GameState, x: number, y: number
   const biome = new THREE.Color(BIOME_AMBIENT[state.sectorId].tint);
   if (visible) color.lerp(biome, 0.1);
   else color.lerp(new THREE.Color(Theme.memoryWash), 0.5);
+}
+
+/** CSS-pixel size the camera frustum must match, or a wide canvas stretches the orbit view. */
+export function canvasViewSize(el: { clientWidth: number; clientHeight: number }): {
+  width: number;
+  height: number;
+} {
+  return {
+    width: Math.max(1, el.clientWidth),
+    height: Math.max(1, el.clientHeight),
+  };
 }
 
 export function playerLightReadout(state: GameState): {
