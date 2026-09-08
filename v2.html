@@ -52,16 +52,39 @@
       }
       #note { margin: 8px 0 6px; color: var(--safe, #7cbc88); }
       .hint { color: var(--ink-mute, #647470); }
+      #floats {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .float {
+        position: absolute;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-shadow: 0 0 4px var(--ground-deep, #0c1214), 0 1px 0 var(--ground-deep, #0c1214);
+        white-space: nowrap;
+        transform: translate(-50%, 0);
+      }
+      #flash {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+      }
     </style>
   </head>
   <body>
     <canvas id="field"></canvas>
     <div id="hud">
-      <h1>v2 slice 1 — orbit field</h1>
-      <p id="note">Constrained 3/4 camera, sim flood tint, 3D surveyor. No bloom. Phaser stays on /.</p>
+      <h1>v2 slice 2 — orbit field</h1>
+      <p id="note">Constrained 3/4 camera, sim flood tint, threat paints, floats, lamp carry. No bloom.</p>
       <p id="status"></p>
       <p class="hint">WASD move · . wait · Enter hatch · [ ] sector · R new seed · drag to orbit</p>
     </div>
+    <div id="floats"></div>
+    <div id="flash"></div>
     <script type="module" src="/src/v2/main.ts"></script>
   </body>
 </html>

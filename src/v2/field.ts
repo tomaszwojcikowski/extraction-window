@@ -3,12 +3,19 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { enemyTextureKey, npcTextureKey, allyTextureKey } from '../scenes/textures';
 import { BIOME_AMBIENT, Material, Theme } from '../scenes/theme';
 import { itemTextureKey } from '../game/presenters/itemTexture';
+import { shroudRevealEase } from '../game/views/moveBlendDirty';
 import { inShadow, SHADOW_THRESHOLD, tileBrightness } from '../sim/light';
 import type { GameState, TileKind } from '../sim/types';
 import { tileTextureKey } from './tileKey';
 import { createSurveyor, disposeSurveyor, poseSurveyor, tintSurveyor, SURVEYOR_HOP_MS } from './surveyorMesh';
+import { collectThreatMarks } from './threat';
 
 const FALLBACK_KEY = '__v2_fallback';
+const ACTOR_HOP_MS = 160;
+const DEATH_MS = 220;
+const COMBAT_BUMP_MS = 65;
+const COMBAT_BUMP = 0.16;
+const HIT_FLASH_MS = 140;
 
 type TileHandle = {
   x: number;
@@ -17,19 +24,42 @@ type TileHandle = {
   mesh: THREE.Mesh;
 };
 
+type Wash = { r: number; g: number; b: number; a: number; shroud: boolean };
+
+type ActorKind = 'enemy' | 'npc' | 'ally';
+
+type ActorView = {
+  id: number;
+  kind: ActorKind;
+  sprite: THREE.Sprite;
+  tileX: number;
+  tileY: number;
+  hop: { fromX: number; fromZ: number; toX: number; toZ: number; started: number } | null;
+  dying: boolean;
+  dieAt: number;
+  hitUntil: number;
+};
+
+type LightBlend = {
+  from: Wash[];
+  to: Wash[];
+  dirty: number[];
+};
+
 /**
- * Slice 1 field: constrained 3/4 orbit, extruded tiles, hop stride.
- * Lighting is MeshBasicMaterial × sim flood — no PointLights, no bloom pass.
+ * Slice 2 field: orbit + flood tint, plus combat tells.
+ * Lighting stays MeshBasicMaterial × sim flood — no PointLights, no bloom pass.
  */
 export class V2Field {
   readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
   private readonly world = new THREE.Group();
+  private readonly threatRoot = new THREE.Group();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly controls: OrbitControls;
   private atlas: Map<string, THREE.Texture>;
   private tiles: TileHandle[] = [];
-  private actors: THREE.Sprite[] = [];
+  private actors = new Map<string, ActorView>();
   private items: THREE.Sprite[] = [];
   private playerRig: THREE.Group | null = null;
   private lastPlayer = { x: 0, y: 0 };
@@ -42,13 +72,19 @@ export class V2Field {
     started: number;
     strideSign: number;
   } | null = null;
+  private bump: { dx: number; dy: number; started: number } | null = null;
   private strideSign = 1;
   private follow = { x: 0.5, z: 0.5 };
+  private lightBlend: LightBlend | null = null;
   private planeGeo = new THREE.PlaneGeometry(1, 1);
   private wallGeo = new THREE.BoxGeometry(1, 1.15, 1);
   private propGeo = new THREE.BoxGeometry(0.92, 0.55, 0.92);
+  private threatGeo = new THREE.PlaneGeometry(0.92, 0.92);
   private state: GameState | null = null;
   private fallback: THREE.Texture;
+  private readonly lerpFrom = new THREE.Color();
+  private readonly lerpTo = new THREE.Color();
+  private readonly projectScratch = new THREE.Vector3();
 
   constructor(canvas: HTMLCanvasElement, atlas: Map<string, THREE.Texture>) {
     this.atlas = atlas;
@@ -67,6 +103,7 @@ export class V2Field {
     this.renderer.setClearColor(Theme.groundDeep, 1);
 
     this.scene.add(this.world);
+    this.world.add(this.threatRoot);
     this.scene.background = new THREE.Color(Theme.groundDeep);
     this.scene.fog = new THREE.Fog(Theme.groundDeep, 12, 28);
 
@@ -83,6 +120,7 @@ export class V2Field {
     this.controls.maxDistance = 22;
 
     this.planeGeo.rotateX(-Math.PI / 2);
+    this.threatGeo.rotateX(-Math.PI / 2);
   }
 
   rebuild(state: GameState): void {
@@ -101,18 +139,38 @@ export class V2Field {
     this.lastPlayer = { x: state.player.x, y: state.player.y };
     this.face = { dx: 0, dy: 1 };
     this.hop = null;
+    this.bump = null;
+    this.lightBlend = null;
     this.strideSign = 1;
-    this.syncActors(state);
+    this.syncActors(state, true);
     this.syncItems(state);
-    this.syncLighting(state);
+    this.applyLighting(state);
     this.followCamera(true);
   }
 
   sync(state: GameState): void {
     this.state = state;
-    this.syncActors(state);
+    const hopping = this.armSurveyorHop(state);
+    this.syncActors(state, false);
     this.syncItems(state);
-    this.syncLighting(state);
+    if (hopping) this.lockLampCarry(state);
+    else this.applyLighting(state);
+  }
+
+  /** Blocked move / melee — short yoyo along the attack axis. */
+  bumpToward(dx: number, dy: number): void {
+    this.bump = { dx, dy, started: performance.now() };
+  }
+
+  /** Tile center in CSS pixels for HTML floats. */
+  projectTile(gx: number, gy: number, lift = 1.15): { x: number; y: number } | null {
+    const canvas = this.renderer.domElement;
+    this.projectScratch.set(gx + 0.5, lift, gy + 0.5).project(this.camera);
+    if (this.projectScratch.z > 1) return null;
+    return {
+      x: (this.projectScratch.x * 0.5 + 0.5) * canvas.clientWidth,
+      y: (-this.projectScratch.y * 0.5 + 0.5) * canvas.clientHeight,
+    };
   }
 
   resize(width: number, height: number): void {
@@ -124,6 +182,8 @@ export class V2Field {
   render(): void {
     const now = performance.now();
     this.tickMotion(now);
+    this.tickLampCarry();
+    this.syncThreat(now);
     this.followCamera(false);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
@@ -136,6 +196,7 @@ export class V2Field {
     this.planeGeo.dispose();
     this.wallGeo.dispose();
     this.propGeo.dispose();
+    this.threatGeo.dispose();
   }
 
   private tex(key: string): THREE.Texture {
@@ -162,64 +223,215 @@ export class V2Field {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + 0.5, wall ? 0.575 : prop ? 0.275 : 0, y + 0.5);
     if (wall) mesh.scale.set(1.01, 1, 1.01);
-    mesh.userData = { x, y };
+    mesh.userData = { x, y, shroud: false };
     return mesh;
   }
 
-  private syncLighting(state: GameState): void {
+  private applyLighting(state: GameState): void {
+    this.lightBlend = null;
     for (const tile of this.tiles) {
+      this.paintTile(tile, tileLook(state, tile.kind, tile.x, tile.y));
+    }
+  }
+
+  private paintTile(tile: TileHandle, look: TileLook): void {
+    const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+    mat.map = this.tex(look.mapKey);
+    mat.color.copy(look.color);
+    mat.opacity = look.opacity;
+    tile.mesh.userData.shroud = look.shroud;
+  }
+
+  private lockLampCarry(state: GameState): void {
+    const from: Wash[] = [];
+    const to: Wash[] = [];
+    const dirty: number[] = [];
+    for (let i = 0; i < this.tiles.length; i++) {
+      const tile = this.tiles[i]!;
       const mat = tile.mesh.material as THREE.MeshBasicMaterial;
-      const explored = state.explored[tile.y]?.[tile.x] ?? false;
-      const visible = state.visible[tile.y]?.[tile.x] ?? false;
-      if (!explored) {
-        mat.map = this.tex('t_fog');
+      const prevShroud = tile.mesh.userData.shroud === true;
+      from.push({
+        r: mat.color.r,
+        g: mat.color.g,
+        b: mat.color.b,
+        a: mat.opacity,
+        shroud: prevShroud,
+      });
+      const look = tileLook(state, tile.kind, tile.x, tile.y);
+      to.push({
+        r: look.color.r,
+        g: look.color.g,
+        b: look.color.b,
+        a: look.opacity,
+        shroud: look.shroud,
+      });
+      mat.map = this.tex(look.mapKey);
+      if (prevShroud) {
         mat.color.setHex(0xffffff);
         mat.opacity = 1;
-        continue;
       }
-      mat.map = this.tex(tileTextureKey(state, tile.kind, tile.x, tile.y));
-      applySimTint(mat.color, state, tile.x, tile.y);
-      mat.opacity = visible ? 1 : 0.42;
+      tile.mesh.userData.shroud = look.shroud;
+      const f = from[i]!;
+      const d = to[i]!;
+      if (f.r !== d.r || f.g !== d.g || f.b !== d.b || f.a !== d.a || f.shroud !== d.shroud) {
+        dirty.push(i);
+      }
     }
+    this.lightBlend = { from, to, dirty };
+    this.tickLampCarry();
   }
 
-  private syncActors(state: GameState): void {
-    for (const spr of this.actors) {
-      this.world.remove(spr);
-      (spr.material as THREE.SpriteMaterial).dispose();
+  private tickLampCarry(): void {
+    const blend = this.lightBlend;
+    if (!blend) return;
+    const u = this.hop
+      ? Math.min(1, (performance.now() - this.hop.started) / SURVEYOR_HOP_MS)
+      : 1;
+    for (const i of blend.dirty) {
+      const tile = this.tiles[i];
+      const f = blend.from[i];
+      const d = blend.to[i];
+      if (!tile || !f || !d) continue;
+      const s = f.shroud ? shroudRevealEase(u) : u;
+      const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+      this.lerpFrom.setRGB(f.r, f.g, f.b);
+      this.lerpTo.setRGB(d.r, d.g, d.b);
+      mat.color.copy(this.lerpFrom).lerp(this.lerpTo, s);
+      mat.opacity = f.a + (d.a - f.a) * s;
     }
-    this.actors = [];
-    const spawn = (key: string, x: number, y: number, show: boolean): void => {
-      if (!show) return;
-      const spr = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: this.tex(key),
-          transparent: true,
-        }),
-      );
-      spr.scale.set(1, 1, 1);
-      spr.position.set(x + 0.5, 0.85, y + 0.5);
-      this.world.add(spr);
-      this.actors.push(spr);
-    };
+    if (u >= 1) this.lightBlend = null;
+  }
+
+  private actorKey(kind: ActorKind, id: number): string {
+    return `${kind}:${id}`;
+  }
+
+  private syncActors(state: GameState, snap: boolean): void {
+    const now = performance.now();
     const seen = (x: number, y: number): boolean =>
       (state.visible[y]?.[x] ?? false) || (state.explored[y]?.[x] ?? false);
+    const live = new Set<string>();
 
-    this.syncSurveyor(state);
+    this.syncSurveyorPose(state, snap);
+
+    const place = (
+      kind: ActorKind,
+      id: number,
+      x: number,
+      y: number,
+      tex: string,
+      show: boolean,
+      hpDropped: boolean,
+      died: boolean,
+    ): void => {
+      const key = this.actorKey(kind, id);
+      let view = this.actors.get(key);
+      if (died) {
+        if (view && !view.dying) {
+          view.dying = true;
+          view.dieAt = now;
+          view.hop = null;
+        }
+        if (view) live.add(key);
+        return;
+      }
+      if (!show) {
+        if (view && !view.dying) this.dropActor(key);
+        return;
+      }
+      live.add(key);
+      if (!view) {
+        const spr = new THREE.Sprite(
+          new THREE.SpriteMaterial({ map: this.tex(tex), transparent: true }),
+        );
+        spr.scale.set(1, 1, 1);
+        spr.position.set(x + 0.5, 0.85, y + 0.5);
+        this.world.add(spr);
+        view = {
+          id,
+          kind,
+          sprite: spr,
+          tileX: x,
+          tileY: y,
+          hop: null,
+          dying: false,
+          dieAt: 0,
+          hitUntil: 0,
+        };
+        this.actors.set(key, view);
+      }
+      const mat = view.sprite.material as THREE.SpriteMaterial;
+      mat.map = this.tex(tex);
+      if (hpDropped) view.hitUntil = now + HIT_FLASH_MS;
+      if (!snap && (view.tileX !== x || view.tileY !== y)) {
+        view.hop = {
+          fromX: view.sprite.position.x,
+          fromZ: view.sprite.position.z,
+          toX: x + 0.5,
+          toZ: y + 0.5,
+          started: now,
+        };
+      } else if (snap || !view.hop) {
+        view.sprite.position.set(x + 0.5, 0.85, y + 0.5);
+      }
+      view.tileX = x;
+      view.tileY = y;
+    };
+
     for (const en of state.enemies) {
-      if (!en.alive) continue;
-      spawn(enemyTextureKey(en.kind, 0), en.x, en.y, seen(en.x, en.y));
+      const key = this.actorKey('enemy', en.id);
+      const view = this.actors.get(key);
+      const wasAlive = Boolean(view && !view.dying);
+      const prevHp = typeof view?.sprite.userData.hp === 'number' ? view.sprite.userData.hp : en.hp;
+      const died = wasAlive && !en.alive;
+      const hpDropped = wasAlive && en.alive && en.hp < prevHp;
+      place(
+        'enemy',
+        en.id,
+        en.x,
+        en.y,
+        enemyTextureKey(en.kind, 0),
+        en.alive && seen(en.x, en.y),
+        hpDropped,
+        died,
+      );
+      const next = this.actors.get(key);
+      if (next && en.alive) next.sprite.userData.hp = en.hp;
     }
     for (const npc of state.npcs) {
-      spawn(npcTextureKey(npc.kind, 0), npc.x, npc.y, seen(npc.x, npc.y));
+      place('npc', npc.id, npc.x, npc.y, npcTextureKey(npc.kind, 0), seen(npc.x, npc.y), false, false);
     }
     for (const ally of state.allies) {
-      if (!ally.alive) continue;
-      spawn(allyTextureKey(ally.kind, 0), ally.x, ally.y, seen(ally.x, ally.y));
+      const key = this.actorKey('ally', ally.id);
+      const view = this.actors.get(key);
+      const wasAlive = view ? !view.dying : false;
+      place(
+        'ally',
+        ally.id,
+        ally.x,
+        ally.y,
+        allyTextureKey(ally.kind, 0),
+        ally.alive && seen(ally.x, ally.y),
+        false,
+        wasAlive && !ally.alive,
+      );
+    }
+
+    for (const key of [...this.actors.keys()]) {
+      if (!live.has(key) && !this.actors.get(key)?.dying) this.dropActor(key);
     }
   }
 
-  private syncSurveyor(state: GameState): void {
+  private dropActor(key: string): void {
+    const view = this.actors.get(key);
+    if (!view) return;
+    this.world.remove(view.sprite);
+    (view.sprite.material as THREE.SpriteMaterial).dispose();
+    this.actors.delete(key);
+  }
+
+  /** Returns true when a new hop started this sync. */
+  private armSurveyorHop(state: GameState): boolean {
     if (!this.playerRig) {
       this.playerRig = createSurveyor();
       this.world.add(this.playerRig);
@@ -227,6 +439,7 @@ export class V2Field {
     }
     const x = state.player.x;
     const y = state.player.y;
+    let hopping = false;
     if (x !== this.lastPlayer.x || y !== this.lastPlayer.y) {
       this.face.dx = x - this.lastPlayer.x;
       this.face.dy = y - this.lastPlayer.y;
@@ -241,11 +454,23 @@ export class V2Field {
         strideSign: this.strideSign,
       };
       this.lastPlayer = { x, y };
+      hopping = true;
     }
     this.playerRig.rotation.y = Math.atan2(this.face.dx, this.face.dy);
     const shade = new THREE.Color(0xffffff);
     applySimTint(shade, state, x, y);
     tintSurveyor(this.playerRig, shade);
+    return hopping;
+  }
+
+  private syncSurveyorPose(state: GameState, snap: boolean): void {
+    if (snap) {
+      if (!this.playerRig) {
+        this.playerRig = createSurveyor();
+        this.world.add(this.playerRig);
+      }
+      this.playerRig.position.set(state.player.x + 0.5, 0, state.player.y + 0.5);
+    }
   }
 
   private visualPos(): { x: number; z: number } {
@@ -258,25 +483,95 @@ export class V2Field {
   }
 
   private tickMotion(now: number): void {
-    if (!this.playerRig) return;
-    let hopT: number | null = null;
-    let sign = this.strideSign;
-    if (this.hop) {
-      const u = Math.min(1, (now - this.hop.started) / SURVEYOR_HOP_MS);
-      const e = 1 - (1 - u) ** 3;
-      this.playerRig.position.x = this.hop.fromX + (this.hop.toX - this.hop.fromX) * e;
-      this.playerRig.position.z = this.hop.fromZ + (this.hop.toZ - this.hop.fromZ) * e;
-      hopT = u;
-      sign = this.hop.strideSign;
-      if (u >= 1) this.hop = null;
+    if (this.playerRig) {
+      let hopT: number | null = null;
+      let sign = this.strideSign;
+      let ox = 0;
+      let oz = 0;
+      if (this.hop) {
+        const u = Math.min(1, (now - this.hop.started) / SURVEYOR_HOP_MS);
+        const e = 1 - (1 - u) ** 3;
+        this.playerRig.position.x = this.hop.fromX + (this.hop.toX - this.hop.fromX) * e;
+        this.playerRig.position.z = this.hop.fromZ + (this.hop.toZ - this.hop.fromZ) * e;
+        hopT = u;
+        sign = this.hop.strideSign;
+        if (u >= 1) this.hop = null;
+      } else if (this.bump) {
+        const u = Math.min(1, (now - this.bump.started) / COMBAT_BUMP_MS);
+        const mag = Math.sin(u * Math.PI) * COMBAT_BUMP;
+        ox = this.bump.dx * mag;
+        oz = this.bump.dy * mag;
+        const baseX = this.lastPlayer.x + 0.5;
+        const baseZ = this.lastPlayer.y + 0.5;
+        this.playerRig.position.x = baseX + ox;
+        this.playerRig.position.z = baseZ + oz;
+        if (u >= 1) {
+          this.playerRig.position.x = baseX;
+          this.playerRig.position.z = baseZ;
+          this.bump = null;
+        }
+      }
+      poseSurveyor(this.playerRig, now, hopT, sign);
     }
-    poseSurveyor(this.playerRig, now, hopT, sign);
+
+    for (const [key, view] of [...this.actors]) {
+      if (view.dying) {
+        const u = Math.min(1, (now - view.dieAt) / DEATH_MS);
+        const e = u * u;
+        view.sprite.scale.set(1 - 0.28 * e, 1 - 0.82 * e, 1);
+        view.sprite.position.y = 0.85 - 0.55 * e;
+        (view.sprite.material as THREE.SpriteMaterial).opacity = 1 - e;
+        (view.sprite.material as THREE.SpriteMaterial).color.setHex(Theme.rust);
+        if (u >= 1) this.dropActor(key);
+        continue;
+      }
+      if (view.hop) {
+        const u = Math.min(1, (now - view.hop.started) / ACTOR_HOP_MS);
+        const e = 1 - (1 - u) ** 3;
+        view.sprite.position.x = view.hop.fromX + (view.hop.toX - view.hop.fromX) * e;
+        view.sprite.position.z = view.hop.fromZ + (view.hop.toZ - view.hop.fromZ) * e;
+        if (u >= 1) view.hop = null;
+      }
+      const mat = view.sprite.material as THREE.SpriteMaterial;
+      if (now < view.hitUntil) {
+        const flash = (view.hitUntil - now) / HIT_FLASH_MS;
+        mat.color.setHex(0xffffff).lerp(new THREE.Color(Theme.rust), 0.45 * flash);
+      } else {
+        mat.color.setHex(0xffffff);
+      }
+    }
   }
 
-  /**
-   * Keep the orbit offset while the surveyor hops — translate camera and
-   * target together so a drag orbit is not reset every frame.
-   */
+  private syncThreat(now: number): void {
+    if (!this.state) return;
+    const marks = collectThreatMarks(this.state, Math.floor(now / 420));
+    while (this.threatRoot.children.length > marks.length) {
+      const mesh = this.threatRoot.children[this.threatRoot.children.length - 1] as THREE.Mesh;
+      this.threatRoot.remove(mesh);
+      (mesh.material as THREE.MeshBasicMaterial).dispose();
+    }
+    for (let i = 0; i < marks.length; i++) {
+      const mark = marks[i]!;
+      let mesh = this.threatRoot.children[i] as THREE.Mesh | undefined;
+      if (!mesh) {
+        mesh = new THREE.Mesh(
+          this.threatGeo,
+          new THREE.MeshBasicMaterial({
+            color: mark.color,
+            transparent: true,
+            depthWrite: false,
+          }),
+        );
+        this.threatRoot.add(mesh);
+      }
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      mat.color.setHex(mark.color);
+      mat.opacity = Math.min(1, Math.max(mark.fill, mark.stroke * 0.45, mark.spine * 0.35));
+      mesh.position.set(mark.x + 0.5, 0.04, mark.y + 0.5);
+      mesh.visible = mat.opacity > 0.02;
+    }
+  }
+
   private followCamera(snap: boolean): void {
     const vis = this.visualPos();
     if (snap) {
@@ -321,23 +616,58 @@ export class V2Field {
   }
 
   private clearWorld(): void {
+    this.lightBlend = null;
     for (const tile of this.tiles) {
       const mat = tile.mesh.material;
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
       else mat.dispose();
     }
     this.tiles = [];
-    for (const spr of this.actors) (spr.material as THREE.SpriteMaterial).dispose();
+    for (const key of [...this.actors.keys()]) this.dropActor(key);
     for (const spr of this.items) (spr.material as THREE.SpriteMaterial).dispose();
-    this.actors = [];
     this.items = [];
+    while (this.threatRoot.children.length) {
+      const mesh = this.threatRoot.children[0] as THREE.Mesh;
+      this.threatRoot.remove(mesh);
+      (mesh.material as THREE.MeshBasicMaterial).dispose();
+    }
     if (this.playerRig) {
       disposeSurveyor(this.playerRig);
       this.playerRig = null;
     }
     this.hop = null;
+    this.bump = null;
     this.world.clear();
+    this.world.add(this.threatRoot);
   }
+}
+
+type TileLook = {
+  mapKey: string;
+  color: THREE.Color;
+  opacity: number;
+  shroud: boolean;
+};
+
+function tileLook(state: GameState, kind: TileKind, x: number, y: number): TileLook {
+  const explored = state.explored[y]?.[x] ?? false;
+  const visible = state.visible[y]?.[x] ?? false;
+  if (!explored) {
+    return {
+      mapKey: 't_fog',
+      color: new THREE.Color(0xffffff),
+      opacity: 1,
+      shroud: true,
+    };
+  }
+  const color = new THREE.Color(0xffffff);
+  applySimTint(color, state, x, y);
+  return {
+    mapKey: tileTextureKey(state, kind, x, y),
+    color,
+    opacity: visible ? 1 : 0.42,
+    shroud: false,
+  };
 }
 
 function makeFallbackTexture(): THREE.CanvasTexture {
@@ -375,4 +705,10 @@ export function playerLightReadout(state: GameState): {
     brightness,
     band: inShadow(state, state.player.x, state.player.y) ? 'SHADOW' : 'LIT',
   };
+}
+
+/** Hop wash progress — linear, or quadratic when revealing FOW. */
+export function lampCarryT(u: number, fromShroud: boolean): number {
+  const t = Math.min(1, Math.max(0, u));
+  return fromShroud ? shroudRevealEase(t) : t;
 }
