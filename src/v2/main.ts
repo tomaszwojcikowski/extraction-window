@@ -249,8 +249,13 @@ function commit(action: Action): void {
   const enemies = snapEnemies(state);
   applyAction(state, action);
   const moved = prev.fromPlayer.x !== state.player.x || prev.fromPlayer.y !== state.player.y;
-  field?.sync(state);
-  if (action.type === 'move' && !moved) field?.bumpToward(action.dx, action.dy);
+  const reloaded = field?.sync(state) ?? false;
+  if (reloaded) {
+    queued = null;
+    writeUrl();
+  } else if (action.type === 'move' && !moved) {
+    field?.bumpToward(action.dx, action.dy);
+  }
   if (state.player.hp < prev.prevHp) flashTint(0xc0512f, 0.32);
   playActionSfx(state, prev, flashTint);
   playEnemyMotionSfx(

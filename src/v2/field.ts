@@ -52,6 +52,37 @@ type LightBlend = {
   dirty: number[];
 };
 
+export type FieldMapStamp = {
+  sectorIndex: number;
+  tutorialActive: boolean;
+  width: number;
+  height: number;
+};
+
+/** Phaser rebuilds the field when the hatch (or drill bay) swaps the whole map. */
+export function fieldMapStamp(
+  state: Pick<GameState, 'sectorIndex' | 'tutorialActive' | 'width' | 'height'>,
+): FieldMapStamp {
+  return {
+    sectorIndex: state.sectorIndex,
+    tutorialActive: state.tutorialActive,
+    width: state.width,
+    height: state.height,
+  };
+}
+
+export function fieldMapStale(
+  drawn: FieldMapStamp,
+  state: Pick<GameState, 'sectorIndex' | 'tutorialActive' | 'width' | 'height'>,
+): boolean {
+  return (
+    drawn.sectorIndex !== state.sectorIndex ||
+    drawn.tutorialActive !== state.tutorialActive ||
+    drawn.width !== state.width ||
+    drawn.height !== state.height
+  );
+}
+
 /**
  * Slice 2 field: orbit + flood tint, plus combat tells.
  * Lighting stays MeshBasicMaterial × sim flood — no PointLights, no bloom pass.
@@ -82,6 +113,12 @@ export class V2Field {
   private strideSign = 1;
   private follow = { x: 0.5, z: 0.5 };
   private lightBlend: LightBlend | null = null;
+  private drawnMap: FieldMapStamp = {
+    sectorIndex: -1,
+    tutorialActive: false,
+    width: 0,
+    height: 0,
+  };
   private planeGeo = new THREE.PlaneGeometry(1, 1);
   private wallGeo = new THREE.BoxGeometry(1, 1.15, 1);
   private propGeo = new THREE.BoxGeometry(0.92, 0.55, 0.92);
@@ -161,16 +198,23 @@ export class V2Field {
     this.syncActors(state, true);
     this.syncItems(state);
     this.applyLighting(state);
+    this.drawnMap = fieldMapStamp(state);
     this.followCamera(true);
   }
 
-  sync(state: GameState): void {
+  /** True when the map was rebuilt (hatch / drill bay) instead of a step hop. */
+  sync(state: GameState): boolean {
     this.state = state;
+    if (fieldMapStale(this.drawnMap, state)) {
+      this.rebuild(state);
+      return true;
+    }
     const hopping = this.armSurveyorHop(state);
     this.syncActors(state, false);
     this.syncItems(state);
     if (hopping) this.lockLampCarry(state);
     else this.applyLighting(state);
+    return false;
   }
 
   /** Blocked move / melee — short yoyo along the attack axis. */
