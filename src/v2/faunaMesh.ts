@@ -4,6 +4,7 @@ import type { EnemyTier } from '../sim/types';
 import { HOVER_SHAPES, silhouetteFor, type Silhouette } from '../art/silhouette';
 import { Material, Theme } from '../scenes/theme';
 import { hopLift, hopSquash, hopSwing } from './poseHumanoid';
+import { litPaint, tintLitMesh } from './litMaterial';
 
 const Geo = {
   body: new THREE.BoxGeometry(0.42, 0.22, 0.32),
@@ -58,8 +59,8 @@ const SCALE: Record<Silhouette, number> = {
 const HIP_NAMES = ['hipL', 'hipR', 'hip2', 'hip3', 'hip4', 'hip5'] as const;
 const SEG_NAMES = ['seg0', 'seg1', 'seg2', 'coil0', 'coil1', 'coil2'] as const;
 
-function paint(hex: number): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color: hex });
+function paint(hex: number): THREE.MeshLambertMaterial {
+  return litPaint(hex);
 }
 
 function part(
@@ -280,7 +281,7 @@ function buildShape(bob: THREE.Group, shape: Silhouette, kind: EnemyKind, ion: b
 
 /**
  * Blocky hostile — body plan from `silhouetteFor`, tint from `def.color`.
- * Local +Z is the face. Unlit MeshBasicMaterial so flood tint stays honest.
+ * Local +Z is the face. Lambert × sim flood; no PointLights.
  */
 export function createFauna(kind: EnemyKind, tier: EnemyTier = 'normal'): THREE.Group {
   const def = ENEMIES[kind];
@@ -398,13 +399,7 @@ export function poseFauna(
 }
 
 export function tintFauna(root: THREE.Group, multiply: THREE.Color): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const base = obj.userData.baseColor;
-    if (typeof base !== 'number') return;
-    const mat = obj.material as THREE.MeshBasicMaterial;
-    mat.color.setHex(base).multiply(multiply);
-  });
+  root.traverse((obj) => tintLitMesh(obj, multiply));
 }
 
 export function disposeFauna(root: THREE.Group): void {

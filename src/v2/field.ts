@@ -14,6 +14,8 @@ import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
 import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
+import { createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
+import { markMeshShadows } from './litMaterial';
 import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
@@ -97,7 +99,8 @@ export function fieldMapStale(
 
 /**
  * Slice 2 field: orbit + flood tint, plus combat tells.
- * Lighting stays MeshBasicMaterial × sim flood — no PointLights, no bloom pass.
+ * Sim flood still owns LIT/SHADOW. Form comes from a directional key light
+ * with shadows — no PointLights that would shine through walls.
  */
 export class V2Field {
   readonly renderer: THREE.WebGLRenderer;
@@ -106,6 +109,8 @@ export class V2Field {
   private readonly threatRoot = new THREE.Group();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly controls: OrbitControls;
+  private readonly hemi: THREE.HemisphereLight;
+  private readonly keyLight: THREE.DirectionalLight;
   private atlas: Map<string, THREE.Texture>;
   private tiles: TileHandle[] = [];
   private actors = new Map<string, ActorView>();
@@ -162,11 +167,19 @@ export class V2Field {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.setClearColor(Theme.groundDeep, 1);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene.add(this.world);
     this.world.add(this.threatRoot);
     this.scene.background = new THREE.Color(Theme.groundDeep);
     this.scene.fog = new THREE.Fog(Theme.groundDeep, 12, 28);
+
+    this.hemi = createFieldHemi();
+    this.keyLight = createFieldKeyLight();
+    this.scene.add(this.hemi);
+    this.scene.add(this.keyLight);
+    this.scene.add(this.keyLight.target);
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
     this.fitToCanvas();
@@ -338,13 +351,15 @@ export class V2Field {
     const wall = kind === 'wall' || kind === 'sealed';
     const overlay = isFieldProp(kind);
     const geo = wall ? this.wallGeo : this.planeGeo;
-    const mat = new THREE.MeshBasicMaterial({
+    const mat = new THREE.MeshLambertMaterial({
       map: this.tex(overlay ? floorKey(state, x, y) : tileTextureKey(state, kind, x, y)),
-      transparent: true,
+      transparent: false,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
     if (wall) mesh.scale.set(1.01, 1, 1.01);
+    mesh.castShadow = wall;
+    mesh.receiveShadow = true;
     mesh.userData = { x, y, shroud: false, litOpacity: 1, ghost: 0 };
     return mesh;
   }
@@ -358,10 +373,12 @@ export class V2Field {
   }
 
   private paintTile(tile: TileHandle, look: TileLook): void {
-    const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+    const mat = tile.mesh.material as THREE.MeshLambertMaterial;
     mat.map = this.tex(look.mapKey);
     mat.color.copy(look.color);
     mat.opacity = look.opacity;
+    mat.transparent = look.opacity < 1;
+    mat.depthWrite = look.opacity >= 1;
     tile.mesh.userData.litOpacity = look.opacity;
     tile.mesh.userData.shroud = look.shroud;
   }
@@ -372,7 +389,7 @@ export class V2Field {
     const dirty: number[] = [];
     for (let i = 0; i < this.tiles.length; i++) {
       const tile = this.tiles[i]!;
-      const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+      const mat = tile.mesh.material as THREE.MeshLambertMaterial;
       const prevShroud = tile.mesh.userData.shroud === true;
       const prevLit =
         typeof tile.mesh.userData.litOpacity === 'number' ? tile.mesh.userData.litOpacity : mat.opacity;
@@ -419,7 +436,7 @@ export class V2Field {
       const d = blend.to[i];
       if (!tile || !f || !d) continue;
       const s = f.shroud ? shroudRevealEase(u) : u;
-      const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+      const mat = tile.mesh.material as THREE.MeshLambertMaterial;
       this.lerpFrom.setRGB(f.r, f.g, f.b);
       this.lerpTo.setRGB(d.r, d.g, d.b);
       mat.color.copy(this.lerpFrom).lerp(this.lerpTo, s);
@@ -476,6 +493,7 @@ export class V2Field {
           : createContact(contact ?? 'survey_contact');
         root.position.set(x + 0.5, 0, y + 0.5);
         setRenderOrder(root, 3);
+        markMeshShadows(root, true, true);
         this.world.add(root);
         view = {
           id,
@@ -616,6 +634,7 @@ export class V2Field {
       if (!this.playerRig) {
         this.playerRig = createSurveyor();
         setRenderOrder(this.playerRig, 3);
+        markMeshShadows(this.playerRig, true, true);
         this.world.add(this.playerRig);
       }
       this.playerRig.position.set(state.player.x + 0.5, 0, state.player.y + 0.5);
@@ -707,7 +726,7 @@ export class V2Field {
     while (this.threatRoot.children.length > marks.length) {
       const mesh = this.threatRoot.children[this.threatRoot.children.length - 1] as THREE.Mesh;
       this.threatRoot.remove(mesh);
-      (mesh.material as THREE.MeshBasicMaterial).dispose();
+      (mesh.material as THREE.MeshLambertMaterial).dispose();
     }
     for (let i = 0; i < marks.length; i++) {
       const mark = marks[i]!;
@@ -715,15 +734,16 @@ export class V2Field {
       if (!mesh) {
         mesh = new THREE.Mesh(
           this.threatGeo,
-          new THREE.MeshBasicMaterial({
+          new THREE.MeshLambertMaterial({
             color: mark.color,
             transparent: true,
             depthWrite: false,
           }),
         );
+        mesh.receiveShadow = true;
         this.threatRoot.add(mesh);
       }
-      const mat = mesh.material as THREE.MeshBasicMaterial;
+      const mat = mesh.material as THREE.MeshLambertMaterial;
       mat.color.setHex(mark.color);
       mat.opacity = Math.min(1, Math.max(mark.fill, mark.stroke * 0.45, mark.spine * 0.35));
       mesh.position.set(mark.x + 0.5, 0.04, mark.y + 0.5);
@@ -744,9 +764,10 @@ export class V2Field {
       tile.mesh.userData.ghost = ghost;
       const lit =
         typeof tile.mesh.userData.litOpacity === 'number' ? tile.mesh.userData.litOpacity : 1;
-      const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+      const mat = tile.mesh.material as THREE.MeshLambertMaterial;
       mat.opacity = wallGhostOpacity(lit, ghost);
-      mat.depthWrite = ghost < 0.08;
+      mat.transparent = mat.opacity < 0.999 || ghost > 0.08;
+      mat.depthWrite = ghost < 0.08 && mat.opacity >= 0.999;
       tile.mesh.renderOrder = ghost > 0.08 ? 2 : 0;
     }
   }
@@ -760,17 +781,22 @@ export class V2Field {
       this.camera.position.set(vis.x + 9.5, 11, vis.z + 10.5);
       this.camera.updateProjectionMatrix();
       this.controls.update();
+      placeFieldKeyLight(this.keyLight, vis.x, vis.z);
       return;
     }
     const dx = vis.x - this.follow.x;
     const dz = vis.z - this.follow.z;
-    if (dx === 0 && dz === 0) return;
+    if (dx === 0 && dz === 0) {
+      placeFieldKeyLight(this.keyLight, vis.x, vis.z);
+      return;
+    }
     this.follow.x = vis.x;
     this.follow.z = vis.z;
     this.controls.target.x += dx;
     this.controls.target.z += dz;
     this.camera.position.x += dx;
     this.camera.position.z += dz;
+    placeFieldKeyLight(this.keyLight, vis.x, vis.z);
   }
 
   private syncItems(state: GameState): void {
@@ -784,6 +810,7 @@ export class V2Field {
       const root = createLoot(item.kind);
       root.position.set(item.x + 0.5, 0, item.y + 0.5);
       setRenderOrder(root, 2);
+      markMeshShadows(root, true, true);
       root.userData.tileX = item.x;
       root.userData.tileY = item.y;
       this.world.add(root);
@@ -807,6 +834,7 @@ export class V2Field {
           if (!root) continue;
           root.position.set(x + 0.5, 0, y + 0.5);
           setRenderOrder(root, 2);
+          markMeshShadows(root, true, true);
           this.world.add(root);
           view = { x, y, kind, root };
           this.props.set(key, view);
@@ -863,7 +891,7 @@ export class V2Field {
     while (this.threatRoot.children.length) {
       const mesh = this.threatRoot.children[0] as THREE.Mesh;
       this.threatRoot.remove(mesh);
-      (mesh.material as THREE.MeshBasicMaterial).dispose();
+      (mesh.material as THREE.MeshLambertMaterial).dispose();
     }
     if (this.playerRig) {
       disposeSurveyor(this.playerRig);

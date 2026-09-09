@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
 import type { TileKind } from '../sim/types';
+import { litPaint, tintLitMesh } from './litMaterial';
 
 const Geo = {
   bush: new THREE.SphereGeometry(0.18, 7, 5),
@@ -57,8 +58,8 @@ export function isFieldProp(kind: TileKind): boolean {
   return FIELD_PROPS.has(kind);
 }
 
-function paint(hex: number): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color: hex });
+function paint(hex: number): THREE.MeshLambertMaterial {
+  return litPaint(hex);
 }
 
 function part(
@@ -224,12 +225,7 @@ export function poseProp(rig: THREE.Group, now: number): void {
 }
 
 export function tintProp(root: THREE.Group, multiply: THREE.Color): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const base = obj.userData.baseColor;
-    if (typeof base !== 'number') return;
-    (obj.material as THREE.MeshBasicMaterial).color.setHex(base).multiply(multiply);
-  });
+  root.traverse((obj) => tintLitMesh(obj, multiply));
 }
 
 export function disposeProp(root: THREE.Group): void {

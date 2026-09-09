@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { ItemKind } from '../data/items';
 import { lootStampFor, type LootStamp } from '../game/presenters/itemTexture';
 import { Theme } from '../scenes/theme';
+import { litPaint, tintLitMesh } from './litMaterial';
 
 const Geo = {
   crate: new THREE.BoxGeometry(0.38, 0.3, 0.32),
@@ -32,8 +33,8 @@ const Geo = {
   buckle: new THREE.BoxGeometry(0.1, 0.06, 0.08),
 };
 
-function paint(hex: number): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color: hex });
+function paint(hex: number): THREE.MeshLambertMaterial {
+  return litPaint(hex);
 }
 
 function part(
@@ -141,12 +142,7 @@ export function poseLoot(rig: THREE.Group, now: number): void {
 }
 
 export function tintLoot(root: THREE.Group, multiply: THREE.Color): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const base = obj.userData.baseColor;
-    if (typeof base !== 'number') return;
-    (obj.material as THREE.MeshBasicMaterial).color.setHex(base).multiply(multiply);
-  });
+  root.traverse((obj) => tintLitMesh(obj, multiply));
 }
 
 export function disposeLoot(root: THREE.Group): void {

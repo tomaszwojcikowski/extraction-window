@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
 import { poseHumanoid } from './poseHumanoid';
+import { litPaint, tintLitMesh } from './litMaterial';
 
 /** Longer than Phaser MOVE_MS so a 3D stride can read. */
 export const SURVEYOR_HOP_MS = 220;
@@ -31,8 +32,8 @@ const Geo = {
   antenna: new THREE.BoxGeometry(0.03, 0.18, 0.03),
 };
 
-function paint(hex: number, glow?: number): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({ color: glow ?? hex });
+function paint(hex: number, glow?: number): THREE.MeshLambertMaterial {
+  return litPaint(hex, { glow });
 }
 
 function part(
@@ -85,7 +86,7 @@ function buildArm(bob: THREE.Group, side: 'L' | 'R'): void {
 /**
  * Blocky Halcyon surveyor — helmet, visor glass, tape harness, field pack lamp.
  * Local +Z is the face (south / toward the 3/4 camera at rest).
- * Unlit MeshBasicMaterial so flood tint matches the sim, not mesh lamps.
+ * Lambert × sim flood tint; form comes from the field key light, not PointLights.
  */
 export function createSurveyor(): THREE.Group {
   const root = new THREE.Group();
@@ -184,13 +185,7 @@ export function disposeSurveyor(root: THREE.Group): void {
 }
 
 export function tintSurveyor(root: THREE.Group, multiply: THREE.Color): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const base = obj.userData.baseColor;
-    if (typeof base !== 'number') return;
-    const mat = obj.material as THREE.MeshBasicMaterial;
-    mat.color.setHex(base).multiply(multiply);
-  });
+  root.traverse((obj) => tintLitMesh(obj, multiply));
 }
 
 export const SURVEYOR_PARTS = [

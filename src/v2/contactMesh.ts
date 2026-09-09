@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ALLIES, NPCS, type AllyKind, type NpcKind } from '../data/npcs';
 import { Material, Theme } from '../scenes/theme';
 import { hopLift, hopSwing, poseHumanoid } from './poseHumanoid';
+import { litPaint, tintLitMesh } from './litMaterial';
 
 const Geo = {
   boot: new THREE.BoxGeometry(0.12, 0.06, 0.16),
@@ -28,13 +29,8 @@ const Geo = {
   pack: new THREE.BoxGeometry(0.18, 0.16, 0.1),
 };
 
-function paint(hex: number, opacity = 1): THREE.MeshBasicMaterial {
-  return new THREE.MeshBasicMaterial({
-    color: hex,
-    transparent: opacity < 1,
-    opacity,
-    depthWrite: opacity >= 1,
-  });
+function paint(hex: number, opacity = 1): THREE.MeshLambertMaterial {
+  return litPaint(hex, { opacity });
 }
 
 function part(
@@ -145,7 +141,7 @@ function buildDrone(bob: THREE.Group, body: number, rim: number): void {
 
 /**
  * Field contacts — crew, archive holo, probe drone.
- * MeshBasicMaterial × flood tint; no PointLights.
+ * Lambert × flood tint; no PointLights.
  */
 export function createContact(kind: NpcKind | AllyKind): THREE.Group {
   const root = new THREE.Group();
@@ -231,12 +227,7 @@ export function poseContact(
 }
 
 export function tintContact(root: THREE.Group, multiply: THREE.Color): void {
-  root.traverse((obj) => {
-    if (!(obj instanceof THREE.Mesh)) return;
-    const base = obj.userData.baseColor;
-    if (typeof base !== 'number') return;
-    (obj.material as THREE.MeshBasicMaterial).color.setHex(base).multiply(multiply);
-  });
+  root.traverse((obj) => tintLitMesh(obj, multiply));
 }
 
 export function disposeContact(root: THREE.Group): void {
