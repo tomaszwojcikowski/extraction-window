@@ -4,11 +4,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { floorVariantAt } from '../scenes/textures';
 import { BIOME_AMBIENT, Material, Theme, floorTextureKey } from '../scenes/theme';
 import { shroudRevealEase } from '../game/views/moveBlendDirty';
+import { PHASER_BEAM_MS, phaserTrackMarks } from '../game/presenters/phaserTells';
 import { inShadow, SHADOW_THRESHOLD, tileBrightness } from '../sim/light';
+import { hasPhaserEquipped } from '../sim/phaser';
 import type { EnemyTier, GameState, TileKind } from '../sim/types';
 import type { NpcKind, AllyKind } from '../data/npcs';
 import { tileTextureKey } from './tileKey';
-import { createSurveyor, disposeSurveyor, poseSurveyor, tintSurveyor, SURVEYOR_HOP_MS } from './surveyorMesh';
+import { createSurveyor, disposeSurveyor, poseSurveyor, setSurveyorArmed, tintSurveyor, SURVEYOR_HOP_MS } from './surveyorMesh';
 import { createFauna, disposeFauna, poseFauna, tintFauna } from './faunaMesh';
 import { createContact, disposeContact, poseContact, tintContact } from './contactMesh';
 import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
@@ -130,6 +132,8 @@ export class V2Field {
   private readonly scene = new THREE.Scene();
   private readonly world = new THREE.Group();
   private readonly threatRoot = new THREE.Group();
+  private readonly phaserTrackRoot = new THREE.Group();
+  private readonly beamRoot = new THREE.Group();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly controls: OrbitControls;
   private readonly hemi: THREE.HemisphereLight;
@@ -155,6 +159,13 @@ export class V2Field {
     strideSign: number;
   } | null = null;
   private bump: { dx: number; dy: number; started: number } | null = null;
+  private beam: {
+    fromX: number;
+    fromY: number;
+    toX: number;
+    toY: number;
+    started: number;
+  } | null = null;
   private strideSign = 1;
   private follow = { x: 0.5, z: 0.5 };
   private lightBlend: LightBlend | null = null;
@@ -167,6 +178,14 @@ export class V2Field {
   private planeGeo = new THREE.PlaneGeometry(1, 1);
   private wallGeo = new RoundedBoxGeometry(1, 1.15, 1, 3, 0.08);
   private threatGeo = new THREE.PlaneGeometry(0.92, 0.92);
+  private phaserTrackGeo = new THREE.PlaneGeometry(0.42, 0.42);
+  private beamCoreGeo = new THREE.CylinderGeometry(0.028, 0.028, 1, 8);
+  private beamGlowGeo = new THREE.CylinderGeometry(0.075, 0.075, 1, 8);
+  private beamImpactGeo = new THREE.SphereGeometry(0.18, 10, 8);
+  private readonly beamFrom = new THREE.Vector3();
+  private readonly beamTip = new THREE.Vector3();
+  private readonly beamDir = new THREE.Vector3();
+  private readonly beamY = new THREE.Vector3(0, 1, 0);
   private state: GameState | null = null;
   private fallback: THREE.Texture;
   private readonly lerpFrom = new THREE.Color();
@@ -199,6 +218,8 @@ export class V2Field {
 
     this.scene.add(this.world);
     this.world.add(this.threatRoot);
+    this.world.add(this.phaserTrackRoot);
+    this.world.add(this.beamRoot);
     this.scene.background = new THREE.Color(Theme.groundDeep);
     this.scene.fog = createFieldFog();
 
@@ -242,6 +263,7 @@ export class V2Field {
 
     this.planeGeo.rotateX(-Math.PI / 2);
     this.threatGeo.rotateX(-Math.PI / 2);
+    this.phaserTrackGeo.rotateX(-Math.PI / 2);
   }
 
   rebuild(state: GameState): void {
@@ -261,6 +283,7 @@ export class V2Field {
     this.face = { dx: 0, dy: 1 };
     this.hop = null;
     this.bump = null;
+    this.beam = null;
     this.lightBlend = null;
     this.strideSign = 1;
     this.syncActors(state, true);
@@ -297,9 +320,25 @@ export class V2Field {
     this.bump = { dx, dy, started: performance.now() };
   }
 
-  /** True while the surveyor hop is in flight — field input queues one-deep. */
+  /** Cardinal lance from the surveyor tile to the impact tile. */
+  playPhaserBeam(from: { x: number; y: number }, to: { x: number; y: number }): void {
+    this.face.dx = Math.sign(to.x - from.x);
+    this.face.dy = Math.sign(to.y - from.y);
+    if (this.playerRig) {
+      this.playerRig.rotation.y = Math.atan2(this.face.dx, this.face.dy);
+    }
+    this.beam = {
+      fromX: from.x,
+      fromY: from.y,
+      toX: to.x,
+      toY: to.y,
+      started: performance.now(),
+    };
+  }
+
+  /** True while a hop or phaser beam is in flight — field input queues one-deep. */
   isAnimating(): boolean {
-    return this.hop !== null;
+    return this.hop !== null || this.beam !== null;
   }
 
   /** Flattened look on XZ — WASD snaps this to a grid cardinal. */
@@ -374,6 +413,8 @@ export class V2Field {
     this.tickMotion(now);
     this.tickLampCarry();
     this.syncThreat(now);
+    this.syncPhaserTracks();
+    this.tickBeam(now);
     this.poseOverlays(now);
     this.followCamera(false);
     this.controls.update();
@@ -390,6 +431,10 @@ export class V2Field {
     this.planeGeo.dispose();
     this.wallGeo.dispose();
     this.threatGeo.dispose();
+    this.phaserTrackGeo.dispose();
+    this.beamCoreGeo.dispose();
+    this.beamGlowGeo.dispose();
+    this.beamImpactGeo.dispose();
   }
 
   private tex(key: string): THREE.Texture {
@@ -683,6 +728,7 @@ export class V2Field {
       hopping = true;
     }
     this.playerRig.rotation.y = Math.atan2(this.face.dx, this.face.dy);
+    setSurveyorArmed(this.playerRig, hasPhaserEquipped(state));
     const shade = new THREE.Color(0xffffff);
     applySimTint(shade, state, x, y);
     tintSurveyor(this.playerRig, shade);
@@ -699,6 +745,11 @@ export class V2Field {
       }
       this.playerRig.position.set(state.player.x + 0.5, 0, state.player.y + 0.5);
     }
+    if (this.playerRig) setSurveyorArmed(this.playerRig, hasPhaserEquipped(state));
+  }
+
+  private surveyorArmed(): boolean {
+    return this.state ? hasPhaserEquipped(this.state) : false;
   }
 
   private visualPos(): { x: number; z: number } {
@@ -739,7 +790,7 @@ export class V2Field {
           this.bump = null;
         }
       }
-      poseSurveyor(this.playerRig, now, hopT, sign);
+      poseSurveyor(this.playerRig, now, hopT, sign, this.surveyorArmed());
     }
 
     for (const [key, view] of [...this.actors]) {
@@ -809,6 +860,131 @@ export class V2Field {
       mesh.position.set(mark.x + 0.5, 0.04, mark.y + 0.5);
       mesh.visible = mat.opacity > 0.02;
     }
+  }
+
+  private syncPhaserTracks(): void {
+    if (!this.state) return;
+    const marks = phaserTrackMarks(this.state);
+    while (this.phaserTrackRoot.children.length > marks.length) {
+      const mesh = this.phaserTrackRoot.children[this.phaserTrackRoot.children.length - 1] as THREE.Mesh;
+      this.phaserTrackRoot.remove(mesh);
+      (mesh.material as THREE.MeshBasicMaterial).dispose();
+    }
+    for (let i = 0; i < marks.length; i++) {
+      const mark = marks[i]!;
+      let mesh = this.phaserTrackRoot.children[i] as THREE.Mesh | undefined;
+      if (!mesh) {
+        mesh = new THREE.Mesh(
+          this.phaserTrackGeo,
+          new THREE.MeshBasicMaterial({
+            color: Theme.scanWash,
+            transparent: true,
+            depthWrite: false,
+          }),
+        );
+        this.phaserTrackRoot.add(mesh);
+      }
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      if (mark.role === 'target') {
+        mat.color.setHex(Theme.arcWhite);
+        mat.opacity = mark.live ? 0.55 : 0.18;
+      } else {
+        mat.color.setHex(mark.live ? Theme.scanWash : Theme.inkMute);
+        mat.opacity = mark.live ? 0.28 : 0.12;
+      }
+      mesh.position.set(mark.x + 0.5, 0.05, mark.y + 0.5);
+      mesh.visible = mat.opacity > 0.02;
+    }
+  }
+
+  private tickBeam(now: number): void {
+    if (!this.beam) {
+      this.beamRoot.visible = false;
+      return;
+    }
+    this.ensureBeamMeshes();
+    const u = Math.min(1, (now - this.beam.started) / PHASER_BEAM_MS);
+    const grow = 0.58;
+    const progress = u < grow ? 1 - (1 - u / grow) ** 3 : 1;
+    const fade = u < grow ? 1 : 1 - (u - grow) / (1 - grow);
+    this.beamRoot.visible = fade > 0.02;
+
+    this.beamFrom.set(this.beam.fromX + 0.5, 0.55, this.beam.fromY + 0.5);
+    this.beamTip.set(this.beam.toX + 0.5, 0.55, this.beam.toY + 0.5);
+    this.beamTip.lerp(this.beamFrom, 1 - progress);
+    this.beamDir.subVectors(this.beamTip, this.beamFrom);
+    const len = Math.max(0.08, this.beamDir.length());
+    if (this.beamDir.lengthSq() < 1e-8) this.beamDir.set(0, 0, 1);
+    else this.beamDir.normalize();
+
+    const glow = this.beamRoot.getObjectByName('beamGlow') as THREE.Mesh;
+    const core = this.beamRoot.getObjectByName('beamCore') as THREE.Mesh;
+    const impact = this.beamRoot.getObjectByName('beamImpact') as THREE.Mesh;
+    this.placeBeamSpan(glow, len, fade * 0.4);
+    this.placeBeamSpan(core, len, fade * 0.95);
+    impact.position.set(this.beam.toX + 0.5, 0.55, this.beam.toY + 0.5);
+    const pulse = 0.7 + progress * 0.55;
+    impact.scale.setScalar(pulse);
+    (impact.material as THREE.MeshBasicMaterial).opacity = fade * 0.7;
+
+    const path = cardinalBeamTiles(this.beam);
+    const washCount = Math.max(1, Math.ceil(path.length * progress));
+    while (this.beamRoot.children.length > 3 + washCount) {
+      const mesh = this.beamRoot.children[this.beamRoot.children.length - 1] as THREE.Mesh;
+      this.beamRoot.remove(mesh);
+      (mesh.material as THREE.MeshBasicMaterial).dispose();
+    }
+    for (let i = 0; i < washCount; i++) {
+      const tile = path[i]!;
+      let mesh = this.beamRoot.children[3 + i] as THREE.Mesh | undefined;
+      if (!mesh) {
+        mesh = new THREE.Mesh(
+          this.phaserTrackGeo,
+          new THREE.MeshBasicMaterial({
+            color: Theme.scanWash,
+            transparent: true,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          }),
+        );
+        mesh.name = 'beamWash';
+        this.beamRoot.add(mesh);
+      }
+      (mesh.material as THREE.MeshBasicMaterial).opacity = (0.18 + progress * 0.16) * fade;
+      mesh.position.set(tile.x + 0.5, 0.06, tile.y + 0.5);
+    }
+
+    if (u >= 1) {
+      this.beam = null;
+      this.beamRoot.visible = false;
+    }
+  }
+
+  private ensureBeamMeshes(): void {
+    if (this.beamRoot.getObjectByName('beamCore')) return;
+    const glow = new THREE.Mesh(
+      this.beamGlowGeo,
+      additiveBeamMat(Theme.scanWash, 0.4),
+    );
+    glow.name = 'beamGlow';
+    const core = new THREE.Mesh(
+      this.beamCoreGeo,
+      additiveBeamMat(Theme.arcWhite, 0.95),
+    );
+    core.name = 'beamCore';
+    const impact = new THREE.Mesh(
+      this.beamImpactGeo,
+      additiveBeamMat(Theme.arcWhite, 0.7),
+    );
+    impact.name = 'beamImpact';
+    this.beamRoot.add(glow, core, impact);
+  }
+
+  private placeBeamSpan(mesh: THREE.Mesh, len: number, opacity: number): void {
+    mesh.position.copy(this.beamFrom).add(this.beamTip).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(this.beamY, this.beamDir);
+    mesh.scale.set(1, len, 1);
+    (mesh.material as THREE.MeshBasicMaterial).opacity = opacity;
   }
 
   private tickWallGhost(): void {
@@ -1009,14 +1185,29 @@ export class V2Field {
       this.threatRoot.remove(mesh);
       (mesh.material as THREE.MeshLambertMaterial).dispose();
     }
+    while (this.phaserTrackRoot.children.length) {
+      const mesh = this.phaserTrackRoot.children[0] as THREE.Mesh;
+      this.phaserTrackRoot.remove(mesh);
+      (mesh.material as THREE.MeshBasicMaterial).dispose();
+    }
+    while (this.beamRoot.children.length) {
+      const mesh = this.beamRoot.children[0] as THREE.Mesh;
+      this.beamRoot.remove(mesh);
+      const mat = mesh.material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else mat.dispose();
+    }
     if (this.playerRig) {
       disposeSurveyor(this.playerRig);
       this.playerRig = null;
     }
     this.hop = null;
     this.bump = null;
+    this.beam = null;
     this.world.clear();
     this.world.add(this.threatRoot);
+    this.world.add(this.phaserTrackRoot);
+    this.world.add(this.beamRoot);
   }
 }
 
@@ -1024,6 +1215,36 @@ function setRenderOrder(root: THREE.Object3D, order: number): void {
   root.traverse((obj) => {
     obj.renderOrder = order;
   });
+}
+
+function additiveBeamMat(hex: number, opacity: number): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color: hex,
+    transparent: true,
+    opacity,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+}
+
+function cardinalBeamTiles(beam: {
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+}): { x: number; y: number }[] {
+  const sx = Math.sign(beam.toX - beam.fromX);
+  const sy = Math.sign(beam.toY - beam.fromY);
+  const tiles: { x: number; y: number }[] = [];
+  let x = beam.fromX + sx;
+  let y = beam.fromY + sy;
+  while (x !== beam.toX || y !== beam.toY) {
+    tiles.push({ x, y });
+    x += sx;
+    y += sy;
+  }
+  tiles.push({ x: beam.toX, y: beam.toY });
+  return tiles;
 }
 
 type TileLook = {

@@ -41,11 +41,12 @@ export function poseHumanoid(
   now: number,
   hopT: number | null,
   strideSign: number,
-  opts?: { idleBob?: number; hopBob?: number; swingAmp?: number },
+  opts?: { idleBob?: number; hopBob?: number; swingAmp?: number; armed?: boolean },
 ): void {
   const idleBob = opts?.idleBob ?? 0.02;
   const hopBob = opts?.hopBob ?? 0.07;
   const swingAmp = opts?.swingAmp ?? 0.78;
+  const armed = opts?.armed ?? false;
   const { bob, hipL, hipR, kneeL, kneeR, shoulderL, shoulderR, elbowL, elbowR, torso, head, pack, antenna } =
     parts;
 
@@ -60,9 +61,14 @@ export function poseHumanoid(
     if (kneeL) kneeL.rotation.x = 0.1 + breathe * 0.04;
     if (kneeR) kneeR.rotation.x = 0.1 - breathe * 0.04;
     shoulderL.rotation.x = -shift * 0.04;
-    shoulderR.rotation.x = shift * 0.04;
     if (elbowL) elbowL.rotation.x = 0.18;
-    if (elbowR) elbowR.rotation.x = 0.18;
+    if (armed) {
+      shoulderR.rotation.x = -0.68;
+      if (elbowR) elbowR.rotation.x = 0.42;
+    } else {
+      shoulderR.rotation.x = shift * 0.04;
+      if (elbowR) elbowR.rotation.x = 0.18;
+    }
     if (torso) {
       torso.rotation.x = breathe * 0.02;
       torso.rotation.z = 0;
@@ -87,9 +93,14 @@ export function poseHumanoid(
   if (kneeL) kneeL.rotation.x = 0.12 + lift * 0.7;
   if (kneeR) kneeR.rotation.x = 0.12 + lift * 0.7;
   shoulderL.rotation.x = -swing * 0.9;
-  shoulderR.rotation.x = swing * 0.9;
   if (elbowL) elbowL.rotation.x = 0.2 + lift * 0.35;
-  if (elbowR) elbowR.rotation.x = 0.2 + lift * 0.35;
+  if (armed) {
+    shoulderR.rotation.x = -0.62 + swing * 0.1;
+    if (elbowR) elbowR.rotation.x = 0.4 + lift * 0.08;
+  } else {
+    shoulderR.rotation.x = swing * 0.9;
+    if (elbowR) elbowR.rotation.x = 0.2 + lift * 0.35;
+  }
   if (torso) {
     torso.rotation.x = 0.08 + lift * 0.1;
     torso.rotation.z = -swing * 0.12;

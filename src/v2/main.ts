@@ -10,6 +10,7 @@ import { flankPenalty } from '../sim/combat';
 import { ambient, music, sfx } from '../audio';
 import { causalActionFloats } from '../game/presenters/actionFloats';
 import { playActionSfx, playEnemyMotionSfx, type EnemySnap } from '../game/presenters/actionSfx';
+import { phaserBeamTargetTile } from '../game/presenters/phaserTells';
 import { computeShearPressure } from '../game/presenters/ShearPressure';
 import { loadFieldAtlas } from './atlas';
 import { playerLightReadout, V2Field } from './field';
@@ -251,9 +252,19 @@ function commit(action: Action): void {
   applyAction(state, action);
   const moved = prev.fromPlayer.x !== state.player.x || prev.fromPlayer.y !== state.player.y;
   const reloaded = field?.sync(state) ?? false;
+  const newLogs = state.log.slice(prev.prevLogLen).map((l) => l.loreId);
+  const beamTo = phaserBeamTargetTile(
+    newLogs,
+    prev.fromPlayer,
+    hitTilesFromSnap(state, enemies),
+    action,
+    state,
+  );
   if (reloaded) {
     queued = null;
     writeUrl();
+  } else if (beamTo) {
+    field?.playPhaserBeam(prev.fromPlayer, beamTo);
   } else if (action.type === 'move' && !moved) {
     field?.bumpToward(action.dx, action.dy);
   }
@@ -301,6 +312,18 @@ function snapEnemies(st: GameState): EnemySnap[] {
     alive: en.alive,
     kind: en.kind,
   }));
+}
+
+function hitTilesFromSnap(state: GameState, prev: EnemySnap[]): { x: number; y: number }[] {
+  const tiles: { x: number; y: number }[] = [];
+  for (const snap of prev) {
+    const cur = state.enemies.find((e) => e.id === snap.id);
+    if (!snap.alive || !cur) continue;
+    if (cur.hp < snap.hp || (!cur.alive && snap.alive)) {
+      tiles.push({ x: cur.x, y: cur.y });
+    }
+  }
+  return tiles;
 }
 
 async function bootPlay(nextSeed: number, skipTutorial: boolean): Promise<void> {

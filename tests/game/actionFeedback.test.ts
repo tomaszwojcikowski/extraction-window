@@ -16,6 +16,7 @@ import {
   type EnemySnap,
 } from '../../src/game/presenters/ActionFeedback';
 import { MOVE_MS } from '../../src/game/GameHost';
+import { makeEnemy } from '../sim/fixtures';
 
 describe('ActionFeedback', () => {
   it('turns causal log events into short floating labels', () => {
@@ -270,6 +271,17 @@ describe('ActionFeedback', () => {
     expect(
       phaserBeamTargetTile(['LOG-USE-PHASER'], from, [{ x: 5, y: 1 }], { type: 'wait' }, createGame(42)),
     ).toBeUndefined();
+  });
+
+  it('falls back to a dead body on the fire cardinal after a kill', () => {
+    const st = createGame(42);
+    const from = { x: 3, y: 3 };
+    st.player.x = 3;
+    st.player.y = 3;
+    st.enemies = [makeEnemy({ kind: 'mite', x: 5, y: 3, alive: false, hp: 0 })];
+    expect(
+      phaserBeamTargetTile(['LOG-USE-PHASER'], from, [], { type: 'move', dx: 1, dy: 0 }, st),
+    ).toEqual({ x: 5, y: 3 });
   });
 
   it('plays sector sfx on sector change without flashing', async () => {

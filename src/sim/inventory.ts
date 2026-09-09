@@ -467,6 +467,15 @@ export function syncObjectiveFlags(state: GameState): void {
   state.objectives.hasNavCore = hasItem(state, 'nav_core');
 }
 
+/** Walk-on wear — only if a matching slot is empty. Never swaps a worn piece. */
+function tryWearOnPickup(state: GameState, kind: ItemKind): void {
+  const slots = equipSlotsFor(kind);
+  if (slots.length === 0) return;
+  if (findWornSlot(state, kind)) return;
+  if (!slots.some((s) => !state.player.equip[s])) return;
+  tryEquipItem(state, kind);
+}
+
 /** @returns true when something was recovered (costs a turn). */
 export function tryPickup(state: GameState): boolean {
   const item = state.items.find(
@@ -484,6 +493,7 @@ export function tryPickup(state: GameState): boolean {
   const cacheRoom = roomAt(state, state.player.x, state.player.y);
   if (cacheRoom?.role === 'cache') markCacheRoomLooted(state, cacheRoom);
   pushLog(state, 'LOG-PICKUP', lore(ITEMS[item.kind].loreName));
+  tryWearOnPickup(state, item.kind);
   if (item.kind === 'relay_key') {
     pushLog(state, 'LOG-GOT-KEY');
     recordLoreEvent(state, 'LOG-GOT-KEY');

@@ -31,6 +31,11 @@ const Geo = {
   stripe: roundBox(0.28, 0.045, 0.22, 0.01),
   lamp: roundBox(0.09, 0.09, 0.07, 0.02),
   antenna: cap(0.012, 0.14),
+  phaserGrip: roundBox(0.06, 0.1, 0.06, 0.015),
+  phaserBody: roundBox(0.08, 0.07, 0.16, 0.02),
+  phaserBarrel: cap(0.018, 0.12),
+  phaserTape: roundBox(0.09, 0.03, 0.05, 0.008),
+  phaserMuzzle: roundBox(0.045, 0.045, 0.045, 0.012),
 };
 
 function paint(hex: number, glow?: number): THREE.MeshLambertMaterial {
@@ -81,7 +86,24 @@ function buildArm(bob: THREE.Group, side: 'L' | 'R'): void {
   part(shoulder, Geo.upperArm, Material.suitLit, 0, -0.08, 0, `upperArm${side}`);
   const elbow = pivot(shoulder, `elbow${side}`, 0, -0.16, 0);
   part(elbow, Geo.forearm, Material.suitMid, 0, -0.07, 0.02, `forearm${side}`);
-  part(elbow, Geo.glove, Material.suitLit, 0, -0.16, 0.02, `glove${side}`);
+  const glove = part(elbow, Geo.glove, Material.suitLit, 0, -0.16, 0.02, `glove${side}`);
+  if (side === 'R') buildPhaser(glove);
+}
+
+/** Survey Phaser — hidden until worn. Local +Z is the barrel. */
+function buildPhaser(glove: THREE.Object3D): void {
+  const gun = new THREE.Group();
+  gun.name = 'phaser';
+  gun.visible = false;
+  gun.position.set(0.03, -0.02, 0.1);
+  gun.rotation.x = -0.18;
+  glove.add(gun);
+  part(gun, Geo.phaserGrip, Material.suitDeep, 0, 0.02, -0.02, 'phaserGrip');
+  part(gun, Geo.phaserBody, Material.visor, 0, 0.04, 0.08, 'phaserBody');
+  const barrel = part(gun, Geo.phaserBarrel, Theme.panelEdge, 0, 0.05, 0.2, 'phaserBarrel');
+  barrel.rotation.x = Math.PI / 2;
+  part(gun, Geo.phaserTape, Theme.tape, 0, 0.07, 0.04, 'phaserTape');
+  part(gun, Geo.phaserMuzzle, Theme.scanWash, 0, 0.05, 0.3, 'phaserMuzzle', Theme.arcWhite);
 }
 
 /**
@@ -145,6 +167,7 @@ export function poseSurveyor(
   now: number,
   hopT: number | null,
   strideSign: number,
+  armed = false,
 ): void {
   const bob = rig.getObjectByName('bob');
   const hipL = rig.getObjectByName('hipL');
@@ -172,8 +195,13 @@ export function poseSurveyor(
     now,
     hopT,
     strideSign,
-    { idleBob: 0.02, hopBob: 0.075, swingAmp: 0.78 },
+    { idleBob: 0.02, hopBob: 0.075, swingAmp: 0.78, armed },
   );
+}
+
+export function setSurveyorArmed(rig: THREE.Group, armed: boolean): void {
+  const gun = rig.getObjectByName('phaser');
+  if (gun) gun.visible = armed;
 }
 
 export function disposeSurveyor(root: THREE.Group): void {
@@ -206,4 +234,5 @@ export const SURVEYOR_PARTS = [
   'elbowL',
   'elbowR',
   'head',
+  'phaser',
 ] as const;

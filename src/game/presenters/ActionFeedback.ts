@@ -1,12 +1,8 @@
 import Phaser from 'phaser';
 import type { LoreId } from '../../data/lore';
 import type { Action, GameState } from '../../sim';
-import {
-  findPhaserTarget,
-  PHASER_RANGE_MAX,
-  PHASER_RANGE_MIN,
-} from '../../sim/phaser';
 import { LightTemp, Theme } from '../../scenes/theme';
+import { PHASER_BEAM_MS } from './phaserTells';
 import { TILE_DRAW, allyTextureKey, enemyTextureKey, npcTextureKey, playerTextureKey, walkPoseAt } from '../../scenes/textures';
 import { MOVE_MS } from '../GameHost';
 import type { LightView } from '../views/LightView';
@@ -344,8 +340,7 @@ export const ENEMY_STAGGER_MS = 22;
 export const ENEMY_LIFT_PX = 2;
 export const COMBAT_BUMP_MS = 65;
 export const COMBAT_BUMP_PX = 7;
-/** Short cardinal lance — long enough to read, short enough for corridor cadence. */
-export const PHASER_BEAM_MS = 240;
+export { PHASER_BEAM_MS, phaserBeamTargetTile } from './phaserTells';
 /** Hostile / surveyor collapse — readable, still shorter than a corridor beat. */
 export const DEATH_MS = 220;
 
@@ -438,28 +433,6 @@ const BLEND_ADD = 1;
 
 /** Above `LightView.lightsGfx` (depth 1) so bloom does not paint over the beam. */
 const PHASER_BEAM_DEPTH = 2;
-
-/** Impact tile for phaser VFX — prefers combat hit tiles, then sim target lookup. */
-export function phaserBeamTargetTile(
-  newLogs: LoreId[],
-  fromPlayer: { x: number; y: number },
-  hitTiles: { x: number; y: number }[],
-  action: Action,
-  state: GameState,
-): { x: number; y: number } | undefined {
-  if (!newLogs.includes('LOG-USE-PHASER')) return undefined;
-  const inRange = (t: { x: number; y: number }) => {
-    const d = Math.abs(t.x - fromPlayer.x) + Math.abs(t.y - fromPlayer.y);
-    return d >= PHASER_RANGE_MIN && d <= PHASER_RANGE_MAX;
-  };
-  const hit = hitTiles.find(inRange);
-  if (hit) return hit;
-  if (action.type === 'move') {
-    const foe = findPhaserTarget(state, action.dx, action.dy);
-    if (foe) return { x: foe.x, y: foe.y };
-  }
-  return undefined;
-}
 
 /**
  * Single frame of the survey phaser beam — contact sheet and tween updates.

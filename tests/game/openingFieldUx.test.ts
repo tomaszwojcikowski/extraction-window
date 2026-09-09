@@ -128,11 +128,7 @@ describe('drill bay field interaction', () => {
     for (let i = 0; i < 8 && !st.inventory.some((s) => s.kind === 'phaser'); i++) {
       applyAction(st, { type: 'move', dx: 1, dy: 0 });
     }
-    const phaserIdx = st.inventory.findIndex((s) => s.kind === 'phaser');
-    expect(phaserIdx).toBeGreaterThanOrEqual(0);
-    expect(st.player.equip.tool).toBeNull();
-    st.ui.selectedSlot = phaserIdx;
-    applyAction(st, { type: 'use' });
+    expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(true);
     expect(st.player.equip.tool).toBe('phaser');
     expect(formatFieldKitDock(st, 120)).toContain('◆phaser');
   });

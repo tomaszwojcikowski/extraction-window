@@ -339,14 +339,10 @@ describe('drill bay tutorial', () => {
     applyAction(st, { type: 'move', dx: 1, dy: 0 });
     expect(contextHint(st)).toBe('UI-TUT-PHASER-PICKUP');
     applyAction(st, { type: 'move', dx: 1, dy: 0 });
-    expect(contextHint(st)).toMatch(/UI-(TUT|HINT)-PHASER-EQUIP/);
-
-    const phaserIdx = st.inventory.findIndex((s) => s.kind === 'phaser');
-    expect(phaserIdx).toBeGreaterThanOrEqual(0);
-    st.ui.selectedSlot = phaserIdx;
-    applyAction(st, { type: 'use' });
     expect(st.player.equip.tool).toBe('phaser');
     expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(true);
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER-EQUIP')).toBe(true);
+    expect(contextHint(st)).toMatch(/UI-(TUT|HINT)-PHASER/);
 
     st.player.x = 20;
     st.player.y = 7;

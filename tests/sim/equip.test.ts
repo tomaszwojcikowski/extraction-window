@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, createGame, emptyEquipSlots, isItemWorn, tryEquipItem } from '../../src/sim';
 import { armorDefBonus, toolAtkBonus } from '../../src/sim/combat';
+import { tryPickup } from '../../src/sim/inventory';
 import { addPlayerStatus } from '../../src/sim/status';
 
 describe('loadout paper doll', () => {
@@ -69,5 +70,43 @@ describe('loadout item effects', () => {
     tryEquipItem(st, 'survey_visor');
     addPlayerStatus(st, 'jam', 3);
     expect(st.player.statuses.jam).toBe(2);
+  });
+});
+
+describe('walk-on wear', () => {
+  it('wears a ground phaser when the tool slot is empty', () => {
+    const st = createGame(42);
+    st.items.push({
+      id: st.nextEntityId++,
+      kind: 'phaser',
+      x: st.player.x,
+      y: st.player.y,
+    });
+    expect(tryPickup(st)).toBe(true);
+    expect(st.player.equip.tool).toBe('phaser');
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER-EQUIP')).toBe(true);
+  });
+
+  it('bags a ground phaser when the tool slot is already worn', () => {
+    const st = createGame(42);
+    st.inventory.push({ kind: 'blade', count: 1 });
+    tryEquipItem(st, 'blade');
+    expect(st.player.equip.tool).toBe('blade');
+    st.items.push({
+      id: st.nextEntityId++,
+      kind: 'phaser',
+      x: st.player.x,
+      y: st.player.y,
+    });
+    expect(tryPickup(st)).toBe(true);
+    expect(st.player.equip.tool).toBe('blade');
+    expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(true);
+    expect(st.log.some((l) => l.loreId === 'LOG-USE-PHASER-EQUIP')).toBe(false);
+  });
+
+  it('leaves skip-tutorial packed phaser unworn until u', () => {
+    const st = createGame(42);
+    expect(st.inventory.some((s) => s.kind === 'phaser')).toBe(true);
+    expect(st.player.equip.tool).toBeNull();
   });
 });
