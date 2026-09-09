@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { enemyTextureKey, npcTextureKey, allyTextureKey } from '../scenes/textures';
-import { BIOME_AMBIENT, Material, Theme } from '../scenes/theme';
-import { itemTextureKey } from '../game/presenters/itemTexture';
+import { floorVariantAt } from '../scenes/textures';
+import { BIOME_AMBIENT, Material, Theme, floorTextureKey } from '../scenes/theme';
 import { shroudRevealEase } from '../game/views/moveBlendDirty';
 import { inShadow, SHADOW_THRESHOLD, tileBrightness } from '../sim/light';
 import type { EnemyTier, GameState, TileKind } from '../sim/types';
+import type { NpcKind, AllyKind } from '../data/npcs';
 import { tileTextureKey } from './tileKey';
 import { createSurveyor, disposeSurveyor, poseSurveyor, tintSurveyor, SURVEYOR_HOP_MS } from './surveyorMesh';
 import { createFauna, disposeFauna, poseFauna, tintFauna } from './faunaMesh';
+import { createContact, disposeContact, poseContact, tintContact } from './contactMesh';
+import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
+import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
 import type { EnemyKind } from '../data/enemies';
 
@@ -29,12 +32,13 @@ type TileHandle = {
 type Wash = { r: number; g: number; b: number; a: number; shroud: boolean };
 
 type ActorKind = 'enemy' | 'npc' | 'ally';
+type ActorRig = 'fauna' | 'contact';
 
 type ActorView = {
   id: number;
   kind: ActorKind;
   root: THREE.Object3D;
-  fauna: boolean;
+  rig: ActorRig;
   tileX: number;
   tileY: number;
   hop: { fromX: number; fromZ: number; toX: number; toZ: number; started: number } | null;
@@ -44,6 +48,13 @@ type ActorView = {
   hp: number;
   strideSign: number;
   windup: boolean;
+};
+
+type PropView = {
+  x: number;
+  y: number;
+  kind: TileKind;
+  root: THREE.Group;
 };
 
 type LightBlend = {
@@ -97,7 +108,8 @@ export class V2Field {
   private atlas: Map<string, THREE.Texture>;
   private tiles: TileHandle[] = [];
   private actors = new Map<string, ActorView>();
-  private items: THREE.Sprite[] = [];
+  private items: THREE.Group[] = [];
+  private props = new Map<string, PropView>();
   private playerRig: THREE.Group | null = null;
   private lastPlayer = { x: 0, y: 0 };
   private face = { dx: 0, dy: 1 };
@@ -121,7 +133,6 @@ export class V2Field {
   };
   private planeGeo = new THREE.PlaneGeometry(1, 1);
   private wallGeo = new THREE.BoxGeometry(1, 1.15, 1);
-  private propGeo = new THREE.BoxGeometry(0.92, 0.55, 0.92);
   private threatGeo = new THREE.PlaneGeometry(0.92, 0.92);
   private state: GameState | null = null;
   private fallback: THREE.Texture;
@@ -197,6 +208,7 @@ export class V2Field {
     this.strideSign = 1;
     this.syncActors(state, true);
     this.syncItems(state);
+    this.syncProps(state);
     this.applyLighting(state);
     this.drawnMap = fieldMapStamp(state);
     this.followCamera(true);
@@ -212,8 +224,10 @@ export class V2Field {
     const hopping = this.armSurveyorHop(state);
     this.syncActors(state, false);
     this.syncItems(state);
+    this.syncProps(state);
     if (hopping) this.lockLampCarry(state);
     else this.applyLighting(state);
+    if (hopping) this.tintOverlays(state);
     return false;
   }
 
@@ -299,6 +313,7 @@ export class V2Field {
     this.tickMotion(now);
     this.tickLampCarry();
     this.syncThreat(now);
+    this.poseOverlays(now);
     this.followCamera(false);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
@@ -310,7 +325,6 @@ export class V2Field {
     this.renderer.dispose();
     this.planeGeo.dispose();
     this.wallGeo.dispose();
-    this.propGeo.dispose();
     this.threatGeo.dispose();
   }
 
@@ -320,23 +334,14 @@ export class V2Field {
 
   private makeTileMesh(kind: TileKind, x: number, y: number, state: GameState): THREE.Mesh {
     const wall = kind === 'wall' || kind === 'sealed';
-    const prop =
-      kind === 'beacon' ||
-      kind === 'exit' ||
-      kind === 'shuttle' ||
-      kind === 'landmark' ||
-      kind === 'quest' ||
-      kind === 'console' ||
-      kind === 'rubble' ||
-      kind === 'scrub' ||
-      kind === 'scrub_nest';
-    const geo = wall ? this.wallGeo : prop ? this.propGeo : this.planeGeo;
+    const overlay = isFieldProp(kind);
+    const geo = wall ? this.wallGeo : this.planeGeo;
     const mat = new THREE.MeshBasicMaterial({
-      map: this.tex(tileTextureKey(state, kind, x, y)),
+      map: this.tex(overlay ? floorKey(state, x, y) : tileTextureKey(state, kind, x, y)),
       transparent: true,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(x + 0.5, wall ? 0.575 : prop ? 0.275 : 0, y + 0.5);
+    mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
     if (wall) mesh.scale.set(1.01, 1, 1.01);
     mesh.userData = { x, y, shroud: false };
     return mesh;
@@ -347,6 +352,7 @@ export class V2Field {
     for (const tile of this.tiles) {
       this.paintTile(tile, tileLook(state, tile.kind, tile.x, tile.y));
     }
+    this.tintOverlays(state);
   }
 
   private paintTile(tile: TileHandle, look: TileLook): void {
@@ -434,11 +440,11 @@ export class V2Field {
       id: number,
       x: number,
       y: number,
-      tex: string,
       show: boolean,
       hpDropped: boolean,
       died: boolean,
       fauna: { enemyKind: EnemyKind; tier: EnemyTier; windup: boolean; hp: number } | null,
+      contact: NpcKind | AllyKind | null,
     ): void => {
       const key = this.actorKey(kind, id);
       let view = this.actors.get(key);
@@ -457,17 +463,17 @@ export class V2Field {
       }
       live.add(key);
       if (!view) {
+        const rig: ActorRig = fauna ? 'fauna' : 'contact';
         const root = fauna
           ? createFauna(fauna.enemyKind, fauna.tier)
-          : new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex(tex), transparent: true }));
-        if (!fauna) (root as THREE.Sprite).scale.set(1, 1, 1);
-        root.position.set(x + 0.5, fauna ? 0 : 0.85, y + 0.5);
+          : createContact(contact ?? 'survey_contact');
+        root.position.set(x + 0.5, 0, y + 0.5);
         this.world.add(root);
         view = {
           id,
           kind,
           root,
-          fauna: Boolean(fauna),
+          rig,
           tileX: x,
           tileY: y,
           hop: null,
@@ -480,15 +486,11 @@ export class V2Field {
         };
         this.actors.set(key, view);
       }
-      if (!view.fauna) {
-        const mat = (view.root as THREE.Sprite).material as THREE.SpriteMaterial;
-        mat.map = this.tex(tex);
-      }
       if (fauna) {
         view.hp = fauna.hp;
         view.windup = fauna.windup;
-        this.tintActor(view, state, x, y);
       }
+      this.tintActor(view, state, x, y);
       if (hpDropped) view.hitUntil = now + HIT_FLASH_MS;
       if (!snap && (view.tileX !== x || view.tileY !== y)) {
         view.strideSign *= -1;
@@ -501,7 +503,7 @@ export class V2Field {
           started: now,
         };
       } else if (snap || !view.hop) {
-        view.root.position.set(x + 0.5, view.fauna ? 0 : 0.85, y + 0.5);
+        view.root.position.set(x + 0.5, 0, y + 0.5);
       }
       view.tileX = x;
       view.tileY = y;
@@ -519,15 +521,15 @@ export class V2Field {
         en.id,
         en.x,
         en.y,
-        enemyTextureKey(en.kind, 0),
         en.alive && seen(en.x, en.y),
         hpDropped,
         died,
         { enemyKind: en.kind, tier: en.tier, windup: en.windup > 0, hp: en.hp },
+        null,
       );
     }
     for (const npc of state.npcs) {
-      place('npc', npc.id, npc.x, npc.y, npcTextureKey(npc.kind, 0), seen(npc.x, npc.y), false, false, null);
+      place('npc', npc.id, npc.x, npc.y, seen(npc.x, npc.y), false, false, null, npc.kind);
     }
     for (const ally of state.allies) {
       const key = this.actorKey('ally', ally.id);
@@ -538,11 +540,11 @@ export class V2Field {
         ally.id,
         ally.x,
         ally.y,
-        allyTextureKey(ally.kind, 0),
         ally.alive && seen(ally.x, ally.y),
         false,
         wasAlive && !ally.alive,
         null,
+        ally.kind,
       );
     }
 
@@ -552,18 +554,18 @@ export class V2Field {
   }
 
   private tintActor(view: ActorView, state: GameState, x: number, y: number): void {
-    if (!view.fauna) return;
     const shade = new THREE.Color(0xffffff);
     applySimTint(shade, state, x, y);
-    tintFauna(view.root as THREE.Group, shade);
+    if (view.rig === 'fauna') tintFauna(view.root as THREE.Group, shade);
+    else tintContact(view.root as THREE.Group, shade);
   }
 
   private dropActor(key: string): void {
     const view = this.actors.get(key);
     if (!view) return;
     this.world.remove(view.root);
-    if (view.fauna) disposeFauna(view.root as THREE.Group);
-    else (view.root as THREE.Sprite).material.dispose();
+    if (view.rig === 'fauna') disposeFauna(view.root as THREE.Group);
+    else disposeContact(view.root as THREE.Group);
     this.actors.delete(key);
   }
 
@@ -655,19 +657,12 @@ export class V2Field {
       if (view.dying) {
         const u = Math.min(1, (now - view.dieAt) / DEATH_MS);
         const e = u * u;
-        const baseY = view.fauna ? 0 : 0.85;
-        view.root.position.y = baseY - 0.45 * e;
-        if (view.fauna) {
-          const base = (view.root.userData.baseScale as number) || 1;
-          view.root.scale.setScalar(base * (1 - 0.55 * e));
-          const rust = new THREE.Color(Theme.rust);
-          tintFauna(view.root as THREE.Group, rust);
-        } else {
-          const spr = view.root as THREE.Sprite;
-          spr.scale.set(1 - 0.28 * e, 1 - 0.82 * e, 1);
-          (spr.material as THREE.SpriteMaterial).opacity = 1 - e;
-          (spr.material as THREE.SpriteMaterial).color.setHex(Theme.rust);
-        }
+        view.root.position.y = -0.45 * e;
+        const base = (view.root.userData.baseScale as number) || 1;
+        view.root.scale.setScalar(base * (1 - 0.55 * e));
+        const rust = new THREE.Color(Theme.rust);
+        if (view.rig === 'fauna') tintFauna(view.root as THREE.Group, rust);
+        else tintContact(view.root as THREE.Group, rust);
         if (u >= 1) this.dropActor(key);
         continue;
       }
@@ -680,23 +675,18 @@ export class V2Field {
         view.root.position.z = view.hop.fromZ + (view.hop.toZ - view.hop.fromZ) * e;
         if (u >= 1) view.hop = null;
       }
-      if (view.fauna) {
+      if (view.rig === 'fauna') {
         poseFauna(view.root as THREE.Group, now, hopT, view.strideSign, view.windup);
-        if (this.state && now < view.hitUntil) {
-          const flash = (view.hitUntil - now) / HIT_FLASH_MS;
-          const shade = new THREE.Color(0xffffff);
-          applySimTint(shade, this.state, view.tileX, view.tileY);
-          shade.lerp(new THREE.Color(Theme.rust), 0.45 * flash);
-          tintFauna(view.root as THREE.Group, shade);
-        }
       } else {
-        const mat = (view.root as THREE.Sprite).material as THREE.SpriteMaterial;
-        if (now < view.hitUntil) {
-          const flash = (view.hitUntil - now) / HIT_FLASH_MS;
-          mat.color.setHex(0xffffff).lerp(new THREE.Color(Theme.rust), 0.45 * flash);
-        } else {
-          mat.color.setHex(0xffffff);
-        }
+        poseContact(view.root as THREE.Group, now, hopT, view.strideSign);
+      }
+      if (this.state && now < view.hitUntil) {
+        const flash = (view.hitUntil - now) / HIT_FLASH_MS;
+        const shade = new THREE.Color(0xffffff);
+        applySimTint(shade, this.state, view.tileX, view.tileY);
+        shade.lerp(new THREE.Color(Theme.rust), 0.45 * flash);
+        if (view.rig === 'fauna') tintFauna(view.root as THREE.Group, shade);
+        else tintContact(view.root as THREE.Group, shade);
       }
     }
   }
@@ -754,24 +744,76 @@ export class V2Field {
   }
 
   private syncItems(state: GameState): void {
-    for (const spr of this.items) {
-      this.world.remove(spr);
-      (spr.material as THREE.SpriteMaterial).dispose();
+    for (const root of this.items) {
+      this.world.remove(root);
+      disposeLoot(root);
     }
     this.items = [];
     for (const item of state.items) {
       if (!(state.visible[item.y]?.[item.x] || state.explored[item.y]?.[item.x])) continue;
-      const spr = new THREE.Sprite(
-        new THREE.SpriteMaterial({
-          map: this.tex(itemTextureKey(item.kind)),
-          transparent: true,
-        }),
-      );
-      spr.scale.set(0.72, 0.72, 0.72);
-      spr.position.set(item.x + 0.5, 0.42, item.y + 0.5);
-      this.world.add(spr);
-      this.items.push(spr);
+      const root = createLoot(item.kind);
+      root.position.set(item.x + 0.5, 0, item.y + 0.5);
+      root.userData.tileX = item.x;
+      root.userData.tileY = item.y;
+      this.world.add(root);
+      this.items.push(root);
     }
+  }
+
+  private syncProps(state: GameState): void {
+    const live = new Set<string>();
+    for (let y = 0; y < state.height; y++) {
+      for (let x = 0; x < state.width; x++) {
+        const kind = state.tiles[y]![x]!.kind;
+        if (!isFieldProp(kind)) continue;
+        if (!(state.visible[y]?.[x] || state.explored[y]?.[x])) continue;
+        const key = `${x},${y}`;
+        live.add(key);
+        let view = this.props.get(key);
+        if (!view || view.kind !== kind) {
+          if (view) this.dropProp(key);
+          const root = createProp(kind);
+          if (!root) continue;
+          root.position.set(x + 0.5, 0, y + 0.5);
+          this.world.add(root);
+          view = { x, y, kind, root };
+          this.props.set(key, view);
+        }
+      }
+    }
+    for (const key of [...this.props.keys()]) {
+      if (!live.has(key)) this.dropProp(key);
+    }
+  }
+
+  private dropProp(key: string): void {
+    const view = this.props.get(key);
+    if (!view) return;
+    this.world.remove(view.root);
+    disposeProp(view.root);
+    this.props.delete(key);
+  }
+
+  private tintOverlays(state: GameState): void {
+    for (const view of this.actors.values()) {
+      if (view.dying) continue;
+      this.tintActor(view, state, view.tileX, view.tileY);
+    }
+    for (const root of this.items) {
+      const shade = new THREE.Color(0xffffff);
+      applySimTint(shade, state, root.userData.tileX, root.userData.tileY);
+      tintLoot(root, shade);
+    }
+    for (const view of this.props.values()) {
+      const shade = new THREE.Color(0xffffff);
+      applySimTint(shade, state, view.x, view.y);
+      tintProp(view.root, shade);
+    }
+  }
+
+  private poseOverlays(now: number): void {
+    for (const root of this.items) poseLoot(root, now);
+    for (const view of this.props.values()) poseProp(view.root, now);
   }
 
   private clearWorld(): void {
@@ -783,8 +825,9 @@ export class V2Field {
     }
     this.tiles = [];
     for (const key of [...this.actors.keys()]) this.dropActor(key);
-    for (const spr of this.items) (spr.material as THREE.SpriteMaterial).dispose();
+    for (const root of this.items) disposeLoot(root);
     this.items = [];
+    for (const key of [...this.props.keys()]) this.dropProp(key);
     while (this.threatRoot.children.length) {
       const mesh = this.threatRoot.children[0] as THREE.Mesh;
       this.threatRoot.remove(mesh);
@@ -808,6 +851,10 @@ type TileLook = {
   shroud: boolean;
 };
 
+function floorKey(state: GameState, x: number, y: number): string {
+  return floorTextureKey(state.sectorId, floorVariantAt(x, y, state.seed));
+}
+
 function tileLook(state: GameState, kind: TileKind, x: number, y: number): TileLook {
   const explored = state.explored[y]?.[x] ?? false;
   const visible = state.visible[y]?.[x] ?? false;
@@ -822,7 +869,7 @@ function tileLook(state: GameState, kind: TileKind, x: number, y: number): TileL
   const color = new THREE.Color(0xffffff);
   applySimTint(color, state, x, y);
   return {
-    mapKey: tileTextureKey(state, kind, x, y),
+    mapKey: isFieldProp(kind) ? floorKey(state, x, y) : tileTextureKey(state, kind, x, y),
     color,
     opacity: visible ? 1 : 0.42,
     shroud: false,
