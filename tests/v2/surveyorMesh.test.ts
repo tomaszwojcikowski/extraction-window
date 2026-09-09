@@ -20,4 +20,13 @@ describe('v2 surveyor rig', () => {
     poseSurveyor(rig, 0, null, 1);
     expect(rig.getObjectByName('hipL')!.rotation.x).toBe(0);
   });
+
+  it('bends both knees at mid-hop', () => {
+    const rig = createSurveyor();
+    poseSurveyor(rig, 0, 0.5, 1);
+    expect(rig.getObjectByName('kneeL')!.rotation.x).toBeGreaterThan(0.5);
+    expect(rig.getObjectByName('kneeR')!.rotation.x).toBe(
+      rig.getObjectByName('kneeL')!.rotation.x,
+    );
+  });
 });

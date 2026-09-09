@@ -17,7 +17,7 @@ import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
 import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
-const ACTOR_HOP_MS = 160;
+const ACTOR_HOP_MS = 190;
 const DEATH_MS = 220;
 const COMBAT_BUMP_MS = 65;
 const COMBAT_BUMP = 0.16;

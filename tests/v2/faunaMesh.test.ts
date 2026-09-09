@@ -25,6 +25,15 @@ describe('v2 fauna rigs', () => {
     expect(rig.getObjectByName('hipL')!.rotation.x).toBe(0);
   });
 
+  it('swings extra scuttler legs out of phase with the lead pair', () => {
+    const rig = createFauna('mite', 'normal');
+    poseFauna(rig, 0, 0.5, 1, false);
+    const hip2 = rig.getObjectByName('hip2')!.rotation.x;
+    const hipL = rig.getObjectByName('hipL')!.rotation.x;
+    expect(hip2).toBeLessThan(0);
+    expect(Math.abs(hip2)).toBeLessThan(hipL);
+  });
+
   it('crowns branded elites without changing the body plan', () => {
     const normal = createFauna('wasp', 'normal');
     const elite = createFauna('elite_skirmisher', 'elite');

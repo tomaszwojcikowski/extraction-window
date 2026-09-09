@@ -1,24 +1,34 @@
 import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
+import { poseHumanoid } from './poseHumanoid';
 
 /** Longer than Phaser MOVE_MS so a 3D stride can read. */
 export const SURVEYOR_HOP_MS = 220;
 
 /** Shared geos — v2 field only; do not dispose with the rig. */
 const Geo = {
-  boot: new THREE.BoxGeometry(0.13, 0.07, 0.18),
-  leg: new THREE.BoxGeometry(0.11, 0.22, 0.13),
-  torso: new THREE.BoxGeometry(0.3, 0.34, 0.2),
+  boot: new THREE.BoxGeometry(0.14, 0.07, 0.2),
+  thigh: new THREE.BoxGeometry(0.12, 0.16, 0.14),
+  shin: new THREE.BoxGeometry(0.11, 0.14, 0.13),
+  pad: new THREE.BoxGeometry(0.13, 0.06, 0.08),
+  torso: new THREE.BoxGeometry(0.32, 0.34, 0.22),
   plate: new THREE.BoxGeometry(0.16, 0.12, 0.06),
-  pack: new THREE.BoxGeometry(0.24, 0.26, 0.14),
+  collar: new THREE.BoxGeometry(0.28, 0.06, 0.18),
+  belt: new THREE.BoxGeometry(0.34, 0.05, 0.24),
+  pouch: new THREE.BoxGeometry(0.08, 0.1, 0.07),
+  pack: new THREE.BoxGeometry(0.26, 0.28, 0.16),
+  packCan: new THREE.BoxGeometry(0.08, 0.18, 0.08),
   helmet: new THREE.SphereGeometry(0.15, 8, 6),
+  cheek: new THREE.BoxGeometry(0.08, 0.1, 0.1),
   visor: new THREE.BoxGeometry(0.2, 0.09, 0.05),
+  visorRim: new THREE.BoxGeometry(0.22, 0.11, 0.03),
   seam: new THREE.BoxGeometry(0.08, 0.05, 0.06),
-  arm: new THREE.BoxGeometry(0.09, 0.28, 0.09),
-  glove: new THREE.BoxGeometry(0.1, 0.07, 0.1),
+  upperArm: new THREE.BoxGeometry(0.1, 0.16, 0.1),
+  forearm: new THREE.BoxGeometry(0.09, 0.15, 0.09),
+  glove: new THREE.BoxGeometry(0.11, 0.07, 0.11),
   stripe: new THREE.BoxGeometry(0.28, 0.045, 0.22),
   lamp: new THREE.BoxGeometry(0.09, 0.09, 0.07),
-  antenna: new THREE.BoxGeometry(0.03, 0.16, 0.03),
+  antenna: new THREE.BoxGeometry(0.03, 0.18, 0.03),
 };
 
 function paint(hex: number, glow?: number): THREE.MeshBasicMaterial {
@@ -51,6 +61,27 @@ function pivot(parent: THREE.Object3D, name: string, x: number, y: number, z: nu
   return g;
 }
 
+function buildLeg(bob: THREE.Group, side: 'L' | 'R'): void {
+  const x = side === 'L' ? -0.11 : 0.11;
+  const hip = pivot(bob, `hip${side}`, x, 0.3, 0.01);
+  part(hip, Geo.thigh, Material.suitMid, 0, -0.08, 0, `thigh${side}`);
+  const knee = pivot(hip, `knee${side}`, 0, -0.16, 0);
+  part(knee, Geo.shin, Material.suitDeep, 0, -0.07, 0, `shin${side}`);
+  part(knee, Geo.pad, Theme.tape, 0, -0.02, 0.06, `kneePad${side}`);
+  part(knee, Geo.boot, Material.visor, 0, -0.16, 0.03, `boot${side}`);
+  const tape = part(knee, Geo.stripe, Theme.tape, 0, -0.12, 0.03, `bootTape${side}`);
+  tape.scale.set(0.38, 0.4, 0.5);
+}
+
+function buildArm(bob: THREE.Group, side: 'L' | 'R'): void {
+  const x = side === 'L' ? -0.24 : 0.24;
+  const shoulder = pivot(bob, `shoulder${side}`, x, 0.54, 0.02);
+  part(shoulder, Geo.upperArm, Material.suitLit, 0, -0.08, 0, `upperArm${side}`);
+  const elbow = pivot(shoulder, `elbow${side}`, 0, -0.16, 0);
+  part(elbow, Geo.forearm, Material.suitMid, 0, -0.07, 0.02, `forearm${side}`);
+  part(elbow, Geo.glove, Material.suitLit, 0, -0.16, 0.02, `glove${side}`);
+}
+
 /**
  * Blocky Halcyon surveyor — helmet, visor glass, tape harness, field pack lamp.
  * Local +Z is the face (south / toward the 3/4 camera at rest).
@@ -64,43 +95,41 @@ export function createSurveyor(): THREE.Group {
   bob.name = 'bob';
   root.add(bob);
 
-  const hipL = pivot(bob, 'hipL', -0.08, 0.29, 0.01);
-  part(hipL, Geo.leg, Material.suitMid, 0, -0.11, 0, 'legL');
-  part(hipL, Geo.boot, Material.visor, 0, -0.255, 0.02, 'bootL');
-  const tapeL = part(hipL, Geo.stripe, Theme.tape, 0, -0.21, 0.02, 'bootTapeL');
-  tapeL.scale.set(0.4, 0.45, 0.55);
+  buildLeg(bob, 'L');
+  buildLeg(bob, 'R');
 
-  const hipR = pivot(bob, 'hipR', 0.08, 0.29, 0.01);
-  part(hipR, Geo.leg, Material.suitMid, 0, -0.11, 0, 'legR');
-  part(hipR, Geo.boot, Material.visor, 0, -0.255, 0.02, 'bootR');
-  const tapeR = part(hipR, Geo.stripe, Theme.tape, 0, -0.21, 0.02, 'bootTapeR');
-  tapeR.scale.set(0.4, 0.45, 0.55);
+  const torso = pivot(bob, 'torso', 0, 0.44, 0);
+  part(torso, Geo.torso, Material.suitLit, 0, 0, 0, 'torsoMesh');
+  part(torso, Geo.stripe, Theme.tape, 0, 0.1, 0, 'harness');
+  part(torso, Geo.collar, Material.suitMid, 0, 0.18, 0.02, 'collar');
+  part(torso, Geo.belt, Material.suitDeep, 0, -0.14, 0, 'belt');
+  part(torso, Geo.plate, Theme.ink, 0, -0.02, 0.13, 'chest');
+  part(torso, Geo.lamp, Theme.biolum, 0, -0.02, 0.17, 'chestLamp', Theme.biolum);
+  part(torso, Geo.pouch, Material.suitDeep, -0.16, -0.12, 0.08, 'pouchL');
+  part(torso, Geo.pouch, Material.suitDeep, 0.16, -0.12, 0.08, 'pouchR');
 
-  part(bob, Geo.torso, Material.suitLit, 0, 0.42, 0, 'torso');
-  part(bob, Geo.stripe, Theme.tape, 0, 0.52, 0, 'harness');
-  part(bob, Geo.plate, Theme.ink, 0, 0.4, 0.12, 'chest');
-  part(bob, Geo.lamp, Theme.biolum, 0, 0.4, 0.16, 'chestLamp', Theme.biolum);
+  buildArm(bob, 'L');
+  buildArm(bob, 'R');
 
-  const shoulderL = pivot(bob, 'shoulderL', -0.2, 0.52, 0);
-  part(shoulderL, Geo.arm, Material.suitLit, 0, -0.14, 0, 'armL');
-  part(shoulderL, Geo.glove, Material.suitLit, 0, -0.3, 0.01, 'gloveL');
+  const pack = pivot(bob, 'packPivot', 0, 0.48, -0.18);
+  part(pack, Geo.pack, Material.suitDeep, 0, 0, 0, 'pack');
+  const packRail = part(pack, Geo.stripe, Theme.tape, 0, 0.08, 0, 'packRail');
+  packRail.scale.set(0.72, 0.7, 0.55);
+  part(pack, Geo.packCan, Material.suitMid, -0.1, 0.02, -0.04, 'packCanL');
+  part(pack, Geo.packCan, Material.suitMid, 0.1, 0.02, -0.04, 'packCanR');
+  part(pack, Geo.lamp, Theme.biolum, 0, -0.02, -0.1, 'packLamp', Theme.arcWhite);
 
-  const shoulderR = pivot(bob, 'shoulderR', 0.2, 0.52, 0);
-  part(shoulderR, Geo.arm, Material.suitLit, 0, -0.14, 0, 'armR');
-  part(shoulderR, Geo.glove, Material.suitLit, 0, -0.3, 0.01, 'gloveR');
+  const antenna = pivot(pack, 'antenna', 0.09, 0.16, 0);
+  part(antenna, Geo.antenna, Theme.panelEdge, 0, 0.09, 0, 'antennaRod');
+  part(antenna, Geo.seam, Theme.tape, 0, 0.2, 0, 'antennaTip', Theme.tape);
 
-  part(bob, Geo.pack, Material.suitDeep, 0, 0.46, -0.16, 'pack');
-  const packRail = part(bob, Geo.stripe, Theme.tape, 0, 0.54, -0.16, 'packRail');
-  packRail.scale.set(0.7, 0.7, 0.7);
-  part(bob, Geo.lamp, Theme.biolum, 0, 0.44, -0.24, 'packLamp', Theme.arcWhite);
-  part(bob, Geo.antenna, Theme.panelEdge, 0.08, 0.64, -0.16, 'antenna');
-  part(bob, Geo.seam, Theme.tape, 0.08, 0.73, -0.16, 'antennaTip', Theme.tape);
-
-  part(bob, Geo.helmet, Material.suitMid, 0, 0.68, 0.04, 'helmet');
-  part(bob, Geo.visor, Theme.biolum, 0, 0.67, 0.16, 'visor', Theme.biolum);
-  part(bob, Geo.seam, Theme.arcWhite, 0, 0.69, 0.19, 'visorGlint', Theme.arcWhite);
-  part(bob, Geo.seam, Material.suitLit, -0.14, 0.7, 0.04, 'sealL');
-  part(bob, Geo.seam, Material.suitLit, 0.14, 0.7, 0.04, 'sealR');
+  const head = pivot(bob, 'head', 0, 0.7, 0.04);
+  part(head, Geo.helmet, Material.suitMid, 0, 0, 0, 'helmet');
+  part(head, Geo.cheek, Material.suitDeep, -0.12, -0.02, 0.02, 'sealL');
+  part(head, Geo.cheek, Material.suitDeep, 0.12, -0.02, 0.02, 'sealR');
+  part(head, Geo.visorRim, Material.suitDeep, 0, -0.01, 0.11, 'visorRim');
+  part(head, Geo.visor, Theme.biolum, 0, -0.01, 0.14, 'visor', Theme.biolum);
+  part(head, Geo.seam, Theme.arcWhite, 0, 0.01, 0.17, 'visorGlint', Theme.arcWhite);
 
   root.scale.setScalar(1.15);
   return root;
@@ -120,26 +149,29 @@ export function poseSurveyor(
   const hipR = rig.getObjectByName('hipR');
   const shoulderL = rig.getObjectByName('shoulderL');
   const shoulderR = rig.getObjectByName('shoulderR');
-  const torso = rig.getObjectByName('torso');
   if (!bob || !hipL || !hipR || !shoulderL || !shoulderR) return;
 
-  if (hopT === null) {
-    bob.position.y = Math.sin(now / 420) * 0.018;
-    hipL.rotation.x = 0;
-    hipR.rotation.x = 0;
-    shoulderL.rotation.x = 0;
-    shoulderR.rotation.x = 0;
-    if (torso) torso.rotation.x = 0;
-    return;
-  }
-
-  const swing = Math.sin(hopT * Math.PI) * 0.78 * strideSign;
-  bob.position.y = Math.sin(hopT * Math.PI) * 0.055;
-  hipL.rotation.x = swing;
-  hipR.rotation.x = -swing;
-  shoulderL.rotation.x = -swing * 0.85;
-  shoulderR.rotation.x = swing * 0.85;
-  if (torso) torso.rotation.x = 0.1;
+  poseHumanoid(
+    {
+      bob,
+      hipL,
+      hipR,
+      kneeL: rig.getObjectByName('kneeL') ?? undefined,
+      kneeR: rig.getObjectByName('kneeR') ?? undefined,
+      shoulderL,
+      shoulderR,
+      elbowL: rig.getObjectByName('elbowL') ?? undefined,
+      elbowR: rig.getObjectByName('elbowR') ?? undefined,
+      torso: rig.getObjectByName('torso') ?? undefined,
+      head: rig.getObjectByName('head') ?? undefined,
+      pack: rig.getObjectByName('packPivot') ?? undefined,
+      antenna: rig.getObjectByName('antenna') ?? undefined,
+    },
+    now,
+    hopT,
+    strideSign,
+    { idleBob: 0.02, hopBob: 0.075, swingAmp: 0.78 },
+  );
 }
 
 export function disposeSurveyor(root: THREE.Group): void {
@@ -171,6 +203,11 @@ export const SURVEYOR_PARTS = [
   'bob',
   'hipL',
   'hipR',
+  'kneeL',
+  'kneeR',
   'shoulderL',
   'shoulderR',
+  'elbowL',
+  'elbowR',
+  'head',
 ] as const;

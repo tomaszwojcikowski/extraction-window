@@ -27,5 +27,6 @@ describe('v2 contact rigs', () => {
     expect(hipL).toBeGreaterThan(0.3);
     expect(hipR).toBe(-hipL);
     expect(rig.getObjectByName('tool')).toBeTruthy();
+    expect(rig.getObjectByName('kneeL')).toBeTruthy();
   });
 });
