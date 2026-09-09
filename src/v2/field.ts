@@ -13,6 +13,7 @@ import { createContact, disposeContact, poseContact, tintContact } from './conta
 import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
+import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
 import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
@@ -316,6 +317,7 @@ export class V2Field {
     this.poseOverlays(now);
     this.followCamera(false);
     this.controls.update();
+    this.tickWallGhost();
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -343,7 +345,7 @@ export class V2Field {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
     if (wall) mesh.scale.set(1.01, 1, 1.01);
-    mesh.userData = { x, y, shroud: false };
+    mesh.userData = { x, y, shroud: false, litOpacity: 1, ghost: 0 };
     return mesh;
   }
 
@@ -360,6 +362,7 @@ export class V2Field {
     mat.map = this.tex(look.mapKey);
     mat.color.copy(look.color);
     mat.opacity = look.opacity;
+    tile.mesh.userData.litOpacity = look.opacity;
     tile.mesh.userData.shroud = look.shroud;
   }
 
@@ -371,11 +374,13 @@ export class V2Field {
       const tile = this.tiles[i]!;
       const mat = tile.mesh.material as THREE.MeshBasicMaterial;
       const prevShroud = tile.mesh.userData.shroud === true;
+      const prevLit =
+        typeof tile.mesh.userData.litOpacity === 'number' ? tile.mesh.userData.litOpacity : mat.opacity;
       from.push({
         r: mat.color.r,
         g: mat.color.g,
         b: mat.color.b,
-        a: mat.opacity,
+        a: prevLit,
         shroud: prevShroud,
       });
       const look = tileLook(state, tile.kind, tile.x, tile.y);
@@ -418,7 +423,9 @@ export class V2Field {
       this.lerpFrom.setRGB(f.r, f.g, f.b);
       this.lerpTo.setRGB(d.r, d.g, d.b);
       mat.color.copy(this.lerpFrom).lerp(this.lerpTo, s);
-      mat.opacity = f.a + (d.a - f.a) * s;
+      const lit = f.a + (d.a - f.a) * s;
+      tile.mesh.userData.litOpacity = lit;
+      mat.opacity = lit;
     }
     if (u >= 1) this.lightBlend = null;
   }
@@ -468,6 +475,7 @@ export class V2Field {
           ? createFauna(fauna.enemyKind, fauna.tier)
           : createContact(contact ?? 'survey_contact');
         root.position.set(x + 0.5, 0, y + 0.5);
+        setRenderOrder(root, 3);
         this.world.add(root);
         view = {
           id,
@@ -573,6 +581,7 @@ export class V2Field {
   private armSurveyorHop(state: GameState): boolean {
     if (!this.playerRig) {
       this.playerRig = createSurveyor();
+      setRenderOrder(this.playerRig, 3);
       this.world.add(this.playerRig);
       this.playerRig.position.set(state.player.x + 0.5, 0, state.player.y + 0.5);
     }
@@ -606,6 +615,7 @@ export class V2Field {
     if (snap) {
       if (!this.playerRig) {
         this.playerRig = createSurveyor();
+        setRenderOrder(this.playerRig, 3);
         this.world.add(this.playerRig);
       }
       this.playerRig.position.set(state.player.x + 0.5, 0, state.player.y + 0.5);
@@ -721,6 +731,26 @@ export class V2Field {
     }
   }
 
+  private tickWallGhost(): void {
+    const vis = this.visualPos();
+    const cam = this.camera.position;
+    for (const tile of this.tiles) {
+      const wall = tile.kind === 'wall' || tile.kind === 'sealed';
+      const target = wall
+        ? wallGhostAmount(tile.x + 0.5, tile.y + 0.5, vis.x, vis.z, cam.x, cam.z)
+        : 0;
+      const prev = typeof tile.mesh.userData.ghost === 'number' ? tile.mesh.userData.ghost : 0;
+      const ghost = prev + (target - prev) * 0.55;
+      tile.mesh.userData.ghost = ghost;
+      const lit =
+        typeof tile.mesh.userData.litOpacity === 'number' ? tile.mesh.userData.litOpacity : 1;
+      const mat = tile.mesh.material as THREE.MeshBasicMaterial;
+      mat.opacity = wallGhostOpacity(lit, ghost);
+      mat.depthWrite = ghost < 0.08;
+      tile.mesh.renderOrder = ghost > 0.08 ? 2 : 0;
+    }
+  }
+
   private followCamera(snap: boolean): void {
     const vis = this.visualPos();
     if (snap) {
@@ -753,6 +783,7 @@ export class V2Field {
       if (!(state.visible[item.y]?.[item.x] || state.explored[item.y]?.[item.x])) continue;
       const root = createLoot(item.kind);
       root.position.set(item.x + 0.5, 0, item.y + 0.5);
+      setRenderOrder(root, 2);
       root.userData.tileX = item.x;
       root.userData.tileY = item.y;
       this.world.add(root);
@@ -775,6 +806,7 @@ export class V2Field {
           const root = createProp(kind);
           if (!root) continue;
           root.position.set(x + 0.5, 0, y + 0.5);
+          setRenderOrder(root, 2);
           this.world.add(root);
           view = { x, y, kind, root };
           this.props.set(key, view);
@@ -842,6 +874,12 @@ export class V2Field {
     this.world.clear();
     this.world.add(this.threatRoot);
   }
+}
+
+function setRenderOrder(root: THREE.Object3D, order: number): void {
+  root.traverse((obj) => {
+    obj.renderOrder = order;
+  });
 }
 
 type TileLook = {
