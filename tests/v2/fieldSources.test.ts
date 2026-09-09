@@ -5,6 +5,7 @@ import {
   localLightPoses,
   MAX_POINT_LIGHTS,
   MAX_SCONCE_SPOTS,
+  PLAYER_LAMP_INTENSITY,
   sconceWorldPose,
 } from '../../src/v2/fieldSources';
 import { createSconce } from '../../src/v2/sconceMesh';
@@ -49,6 +50,8 @@ describe('v2 local light poses', () => {
     state.visible[sconce!.y]![sconce!.x] = true;
     const poses = localLightPoses(state, sconce!.x + 0.5, sconce!.y + 0.5);
     expect(poses.points[0]?.color).toBe(LIGHT_TEMP.lamp);
+    expect(poses.points[0]?.intensity).toBe(PLAYER_LAMP_INTENSITY);
+    expect(PLAYER_LAMP_INTENSITY).toBeGreaterThanOrEqual(8);
     expect(poses.points.length).toBeLessThanOrEqual(MAX_POINT_LIGHTS);
     expect(poses.spots.length).toBeGreaterThan(0);
     expect(poses.spots.length).toBeLessThanOrEqual(MAX_SCONCE_SPOTS);

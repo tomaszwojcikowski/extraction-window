@@ -4,13 +4,20 @@ import { Theme } from '../scenes/theme';
 /** Key light sits SE of the surveyor, matching the rest 3/4 camera. */
 export const FIELD_KEY_OFFSET = { x: 7.5, y: 14, z: 8.5 };
 export const FIELD_SHADOW_EXTENT = 14;
+export const FIELD_HEMI_INTENSITY = 1.05;
+export const FIELD_KEY_INTENSITY = 1.55;
+/** Hemi ground — not Theme.groundDeep, or camera-facing crate sides crush to black. */
+export const FIELD_HEMI_GROUND = 0x3d484e;
+export const FIELD_FOG_NEAR = 16;
+export const FIELD_FOG_FAR = 40;
+export const FIELD_FOG_COLOR = 0x1a2226;
 
 export function createFieldHemi(): THREE.HemisphereLight {
-  return new THREE.HemisphereLight(0x8ea8ba, Theme.groundDeep, 0.32);
+  return new THREE.HemisphereLight(0xb7c8d4, FIELD_HEMI_GROUND, FIELD_HEMI_INTENSITY);
 }
 
 export function createFieldKeyLight(): THREE.DirectionalLight {
-  const light = new THREE.DirectionalLight(0xf0ebe0, 0.62);
+  const light = new THREE.DirectionalLight(0xf4efe4, FIELD_KEY_INTENSITY);
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
   light.shadow.bias = -0.0009;
@@ -31,4 +38,8 @@ export function placeFieldKeyLight(light: THREE.DirectionalLight, x: number, z: 
   light.target.position.set(x, 0, z);
   light.target.updateMatrixWorld();
   light.shadow.camera.updateProjectionMatrix();
+}
+
+export function createFieldFog(): THREE.Fog {
+  return new THREE.Fog(FIELD_FOG_COLOR, FIELD_FOG_NEAR, FIELD_FOG_FAR);
 }

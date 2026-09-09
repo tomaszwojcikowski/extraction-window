@@ -4,6 +4,9 @@ import type { FieldLightSource, GameState } from '../sim/types';
 
 export const MAX_SCONCE_SPOTS = 8;
 export const MAX_POINT_LIGHTS = 6;
+/** Physically-correct candela — 1.0 reads as a candle and leaves the field black. */
+export const PLAYER_LAMP_INTENSITY = 10;
+export const PLAYER_LAMP_DISTANCE = 5.6;
 
 export type LocalLightPose = {
   color: number;
@@ -73,14 +76,13 @@ function dist2(ax: number, az: number, bx: number, bz: number): number {
 }
 
 function threeIntensity(src: SimLightSource, band: 'lit' | 'memory'): number {
-  const base = 0.45 + src.intensity * 0.85;
-  return band === 'memory' ? base * 0.28 : base;
+  const base = 4.2 + src.intensity * 5.5;
+  return band === 'memory' ? base * 0.32 : base;
 }
 
 function pointDistance(src: SimLightSource): number {
-  // Keep floor emitters short so a PointLight does not read through the next room.
-  if (src.fixture === 'sconce') return src.radius;
-  return Math.min(src.radius, 2.3);
+  if (src.fixture === 'sconce') return Math.max(3.4, src.radius);
+  return Math.min(Math.max(src.radius, 2.8), 3.6);
 }
 
 /**
@@ -115,24 +117,24 @@ export function localLightPoses(
     const pose = sconceWorldPose(src);
     return {
       color: src.color ?? LIGHT_TEMP.sconce,
-      intensity: threeIntensity(src, band) * 1.15,
-      distance: Math.max(2.2, src.radius),
+      intensity: threeIntensity(src, band) * 1.25,
+      distance: Math.max(3.4, src.radius),
       x: pose.x,
       y: pose.y,
       z: pose.z,
       tx: pose.tx,
       ty: pose.ty,
       tz: pose.tz,
-      angle: 0.92,
+      angle: 1.05,
     };
   });
 
   const player: LocalLightPose = {
     color: LIGHT_TEMP.lamp,
-    intensity: 1.15,
-    distance: 3.8,
+    intensity: PLAYER_LAMP_INTENSITY,
+    distance: PLAYER_LAMP_DISTANCE,
     x: focusX,
-    y: 0.62,
+    y: 0.7,
     z: focusZ,
   };
 
@@ -164,12 +166,12 @@ export function applyLocalLight(light: THREE.Light, pose: LocalLightPose | null)
   if (light instanceof THREE.SpotLight) {
     light.distance = pose.distance;
     light.angle = pose.angle ?? 0.9;
-    light.penumbra = 0.48;
-    light.decay = 2;
+    light.penumbra = 0.55;
+    light.decay = 1.4;
     light.target.position.set(pose.tx ?? pose.x, pose.ty ?? 0, pose.tz ?? pose.z);
     light.target.updateMatrixWorld();
   } else if (light instanceof THREE.PointLight) {
     light.distance = pose.distance;
-    light.decay = 2;
+    light.decay = 1.4;
   }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { createFieldKeyLight, FIELD_KEY_OFFSET, FIELD_SHADOW_EXTENT, placeFieldKeyLight } from '../../src/v2/fieldLight';
+import { createFieldHemi, createFieldKeyLight, FIELD_HEMI_INTENSITY, FIELD_KEY_INTENSITY, FIELD_KEY_OFFSET, FIELD_SHADOW_EXTENT, placeFieldKeyLight } from '../../src/v2/fieldLight';
 import { litPaint } from '../../src/v2/litMaterial';
 
 describe('v2 field key light', () => {
@@ -15,6 +15,13 @@ describe('v2 field key light', () => {
     expect(light.target.position.z).toBe(4);
     expect(light.shadow.camera.right).toBe(FIELD_SHADOW_EXTENT);
     expect(light.shadow.camera.left).toBe(-FIELD_SHADOW_EXTENT);
+  });
+
+  it('keeps the key and hemi bright enough that Lambert fill is not crushed', () => {
+    expect(FIELD_KEY_INTENSITY).toBeGreaterThan(1.2);
+    expect(FIELD_HEMI_INTENSITY).toBeGreaterThan(0.8);
+    expect(createFieldHemi().intensity).toBe(FIELD_HEMI_INTENSITY);
+    expect(createFieldKeyLight().intensity).toBe(FIELD_KEY_INTENSITY);
   });
 });
 

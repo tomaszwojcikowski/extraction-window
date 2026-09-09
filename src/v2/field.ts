@@ -14,7 +14,7 @@ import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
 import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
-import { createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
+import { createFieldFog, createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
 import { markMeshShadows } from './litMaterial';
 import { createSconce, disposeSconce, poseSconce, tintSconce } from './sconceMesh';
 import {
@@ -190,7 +190,7 @@ export class V2Field {
     this.scene.add(this.world);
     this.world.add(this.threatRoot);
     this.scene.background = new THREE.Color(Theme.groundDeep);
-    this.scene.fog = new THREE.Fog(Theme.groundDeep, 12, 28);
+    this.scene.fog = createFieldFog();
 
     this.hemi = createFieldHemi();
     this.keyLight = createFieldKeyLight();
@@ -198,14 +198,14 @@ export class V2Field {
     this.scene.add(this.keyLight);
     this.scene.add(this.keyLight.target);
     for (let i = 0; i < MAX_SCONCE_SPOTS; i++) {
-      const spot = new THREE.SpotLight(0xffffff, 0, 2.5, 0.92, 0.48, 2);
+      const spot = new THREE.SpotLight(0xffffff, 0, 3.4, 1.05, 0.55, 1.4);
       spot.castShadow = false;
       this.scene.add(spot);
       this.scene.add(spot.target);
       this.sconceSpots.push(spot);
     }
     for (let i = 0; i < MAX_POINT_LIGHTS; i++) {
-      const point = new THREE.PointLight(0xffffff, 0, 3, 2);
+      const point = new THREE.PointLight(0xffffff, 0, 5.6, 1.4);
       point.castShadow = false;
       this.scene.add(point);
       this.poolPoints.push(point);
@@ -1049,7 +1049,8 @@ function makeFallbackTexture(): THREE.CanvasTexture {
 function applySimTint(color: THREE.Color, state: GameState, x: number, y: number): void {
   const visible = state.visible[y]?.[x] ?? false;
   const b = tileBrightness(state, x, y);
-  const lift = 0.1 + b * 0.9;
+  // Albedo stays high — Lambert + the key/hemi do the dimming. Flood still grades LIT vs SHADOW.
+  const lift = 0.42 + b * 0.58;
   color.setScalar(lift);
   if (b < SHADOW_THRESHOLD) color.lerp(new THREE.Color(Theme.shadowWash), 0.32);
   const biome = new THREE.Color(BIOME_AMBIENT[state.sectorId].tint);

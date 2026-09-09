@@ -9,7 +9,7 @@ export function litPaint(
   return new THREE.MeshLambertMaterial({
     color: glow ?? hex,
     emissive: glow ?? 0x000000,
-    emissiveIntensity: glow ? 0.5 : 0,
+    emissiveIntensity: glow ? 0.85 : 0,
     transparent: opacity < 1,
     opacity,
     depthWrite: opacity >= 1,
