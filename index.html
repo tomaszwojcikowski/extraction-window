@@ -15,28 +15,461 @@
       html, body {
         width: 100%;
         height: 100%;
-        background: #0c1214;
+        background: var(--ground-deep, #0c1214);
         overflow: hidden;
         font-family: "IBM Plex Mono", "Courier New", monospace;
-        color: #dfe4d5;
+        color: var(--ink, #dfe4d5);
       }
-      #game {
+      #field {
+        display: block;
         width: 100%;
         height: 100%;
+        image-rendering: pixelated;
+        cursor: default;
+      }
+      #hud {
+        position: absolute;
+        left: 16px;
+        top: 12px;
+        right: 16px;
+        max-width: 720px;
+        pointer-events: none;
+        z-index: 2;
+      }
+      #bars {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 14px;
+      }
+      .meter { width: 130px; }
+      .meter[data-bar="shd"] { width: 110px; }
+      .meter[data-bar="eps"] { width: 180px; }
+      .meter[data-bar="xp"] { width: 120px; }
+      .cap, .val {
+        display: block;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #93a196);
+      }
+      .val { color: var(--ink, #dfe4d5); margin-top: 2px; }
+      .track {
+        height: 10px;
+        margin: 3px 0 0;
+        background: rgba(12, 18, 20, 0.85);
+        border: 1px solid rgba(147, 161, 150, 0.35);
+      }
+      .fill {
+        height: 100%;
+        width: 0%;
+        background: var(--safe, #7cbc88);
+        transition: width 140ms ease-out;
+      }
+      #chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 10px 0 8px;
+      }
+      .chip {
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        border: 1px solid currentColor;
+        background: rgba(12, 18, 20, 0.72);
+      }
+      #meta, #sector, #obj-campaign, #quest, #urgency, #milestone, #debug {
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--ink-dim, #93a196);
+        white-space: pre-wrap;
+      }
+      #obj-local {
+        font-size: 12px;
+        color: var(--ink-bright, #f6f4e6);
+        margin-top: 6px;
+      }
+      #quest { color: var(--tape, #e8b93c); }
+      #milestone { color: var(--flag, #e0578f); }
+      #debug { margin-top: 6px; color: var(--ink-mute, #647470); }
+      #dock {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 14px;
+        font-size: 11px;
+        color: var(--ink, #dfe4d5);
+        pointer-events: none;
+        z-index: 2;
+        text-shadow: 0 1px 0 var(--ground-deep, #0c1214);
+      }
+      #hint {
+        position: absolute;
+        left: 16px;
+        bottom: 38px;
+        max-width: 52ch;
+        font-size: 12px;
+        line-height: 1.4;
+        color: var(--ink, #dfe4d5);
+        background: var(--hint-bg, #0c1214ee);
+        padding: 7px 10px;
+        pointer-events: none;
+        z-index: 2;
+      }
+      #log {
+        position: absolute;
+        right: 16px;
+        bottom: 56px;
+        max-width: 42ch;
+        font-size: 11px;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        color: var(--ink, #dfe4d5);
+        background: rgba(12, 18, 20, 0.88);
+        padding: 8px 10px;
+        pointer-events: none;
+        z-index: 2;
+      }
+      #modal {
+        position: absolute;
+        inset: 0;
         display: flex;
         align-items: center;
         justify-content: center;
+        background: rgba(12, 18, 20, 0.55);
+        z-index: 5;
       }
-      #game canvas {
-        box-shadow:
-          0 0 0 2px #e8b93c55,
-          0 8px 32px rgba(0, 0, 0, 0.75);
-        image-rendering: pixelated;
+      #modal[hidden] { display: none; }
+      #modal-panel {
+        position: relative;
+        width: min(560px, calc(100vw - 32px));
+        max-height: 80vh;
+        overflow: auto;
+        background: var(--panel, #243438);
+        border: 1px solid rgba(147, 161, 150, 0.35);
+        padding: 22px 20px 16px;
       }
+      #modal-panel::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 14px;
+        width: 96px;
+        height: 5px;
+        background: var(--accent, var(--tape, #e8b93c));
+      }
+      #modal[data-kind="kit"] #modal-panel { width: min(548px, calc(100vw - 32px)); }
+      #modal[data-kind="hack"] {
+        background: rgba(12, 18, 20, 0.82);
+      }
+      #modal[data-kind="hack"] #modal-panel { width: min(560px, calc(100vw - 32px)); }
+      #modal[data-short="1"] { --accent: var(--rust, #c0512f); }
+      #modal-body {
+        font-size: 13px;
+        line-height: 17px;
+        white-space: pre-wrap;
+        color: var(--ink, #dfe4d5);
+      }
+      #hack-board[hidden] { display: none; }
+      #hack-board { color: var(--ink, #dfe4d5); }
+      .hack-badge {
+        font-family: "Share Tech Mono", "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-align: center;
+        color: var(--ink-bright, #f6f4e6);
+        margin-bottom: 14px;
+      }
+      .hack-title {
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        margin-bottom: 12px;
+      }
+      .hack-pay { font-size: 13px; line-height: 1.45; color: var(--ink, #dfe4d5); }
+      .hack-seq {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      .hack-seq-col { display: flex; flex-direction: column; gap: 6px; }
+      .hack-seq-label {
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #93a196);
+      }
+      .hack-chips { display: flex; gap: 8px; }
+      .hack-chip {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        background: var(--ground, #1e2c30);
+        border: 1px solid rgba(74, 94, 98, 0.7);
+        box-shadow: inset 3px 0 0 var(--chip, var(--ink, #dfe4d5));
+      }
+      .hack-chip.is-empty {
+        color: var(--ink-mute, #647470);
+        box-shadow: inset 3px 0 0 rgba(100, 116, 112, 0.35);
+      }
+      .hack-chip.is-live { border-color: var(--tape, #e8b93c); border-width: 2px; }
+      .hack-chip.is-miss { box-shadow: inset 3px 0 0 var(--rust, #c0512f); }
+      .hack-pips {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 18px;
+      }
+      .hack-pip {
+        width: 10px;
+        height: 8px;
+        background: rgba(74, 94, 98, 0.4);
+      }
+      .hack-pip.is-on { background: var(--tape, #e8b93c); }
+      .hack-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--hack-size, 5), 46px);
+        gap: 8px;
+        justify-content: center;
+        padding: 8px;
+        margin: 0 auto 14px;
+        background: rgba(12, 18, 20, 0.65);
+        border: 1px solid rgba(74, 94, 98, 0.7);
+        width: max-content;
+      }
+      .hack-cell {
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        background: var(--panel, #243438);
+        border: 1px solid rgba(74, 94, 98, 0.45);
+        position: relative;
+      }
+      .hack-cell.is-legal {
+        border-color: rgba(232, 185, 60, 0.85);
+        background: #2a3c40;
+      }
+      .hack-cell.is-used { opacity: 0.35; }
+      .hack-cell.is-axis { box-shadow: inset 2px 0 0 var(--tape, #e8b93c); }
+      .hack-grid[data-axis="row"] .hack-cell.is-axis {
+        box-shadow: inset 0 2px 0 var(--tape, #e8b93c);
+      }
+      .hack-cell.is-cursor {
+        border: 2px solid var(--tape, #e8b93c);
+        animation: hack-cursor 0.7s step-end infinite;
+      }
+      .hack-cell.is-blocked { border-color: var(--rust, #c0512f); }
+      .hack-cell.is-picked::before {
+        content: attr(data-order);
+        position: absolute;
+        top: 3px;
+        left: 4px;
+        font-size: 9px;
+        color: var(--ground-deep, #0c1214);
+        background: var(--tape, #e8b93c);
+        padding: 0 3px;
+        line-height: 1.2;
+      }
+      .hack-hint {
+        font-size: 13px;
+        color: var(--tape, #e8b93c);
+        margin-bottom: 8px;
+      }
+      .hack-hint.is-fail { color: var(--flag, #e0578f); }
+      .hack-keys {
+        font-size: 12px;
+        color: var(--ink-dim, #93a196);
+        margin-top: 6px;
+      }
+      @keyframes hack-cursor {
+        50% { border-color: var(--ink-bright, #f6f4e6); }
+      }
+      #floats {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 3;
+      }
+      .float {
+        position: absolute;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-shadow: 0 0 4px var(--ground-deep, #0c1214), 0 1px 0 var(--ground-deep, #0c1214);
+        white-space: nowrap;
+        transform: translate(-50%, 0);
+      }
+      #flash {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        z-index: 4;
+      }
+      body[data-screen="title"] #hud,
+      body[data-screen="title"] #dock,
+      body[data-screen="title"] #hint,
+      body[data-screen="title"] #log,
+      body[data-screen="end"] #hud,
+      body[data-screen="end"] #dock,
+      body[data-screen="end"] #hint,
+      body[data-screen="end"] #log {
+        visibility: hidden;
+      }
+      body[data-screen="title"] #field { opacity: 0; }
+      body[data-screen="end"] #field { opacity: 0.28; }
+      #menu {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: var(--ground-deep, #0c1214);
+        pointer-events: none;
+      }
+      body[data-screen="end"] #menu { background: rgba(12, 18, 20, 0.82); }
+      #menu[hidden] { display: none; }
+      #menu-window {
+        position: relative;
+        width: min(520px, calc(100vw - 96px));
+        min-height: 152px;
+        border: 1px solid rgba(147, 161, 150, 0.35);
+        background: var(--panel, #243438);
+        padding: 28px 24px 20px;
+        text-align: center;
+      }
+      #menu-window::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        left: 14px;
+        width: 96px;
+        height: 5px;
+        background: var(--accent, var(--tape, #e8b93c));
+      }
+      #menu-kicker {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-mute, #647470);
+        margin-bottom: 10px;
+      }
+      #menu-title {
+        font-family: "Share Tech Mono", "IBM Plex Mono", monospace;
+        font-size: 36px;
+        font-weight: 400;
+        color: var(--ink-bright, #f6f4e6);
+        letter-spacing: 0.04em;
+      }
+      #menu[data-won="0"][data-kind="end"] #menu-title { color: var(--rust, #c0512f); }
+      #menu-tag {
+        margin-top: 18px;
+        font-size: 11px;
+        color: var(--ink-dim, #93a196);
+      }
+      #menu-body, #menu-summary, #menu-brief, #menu-controls {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--ink-dim, #93a196);
+        text-align: center;
+        max-width: 52ch;
+        white-space: pre-wrap;
+      }
+      #menu-body { margin-top: 18px; }
+      #menu-summary {
+        margin-top: 22px;
+        padding: 16px 20px;
+        width: min(336px, calc(100vw - 48px));
+        border: 1px solid rgba(147, 161, 150, 0.3);
+        background: rgba(30, 44, 48, 0.9);
+        font-size: 12px;
+        color: var(--ink-mute, #647470);
+      }
+      #menu-seed, #menu-cta {
+        margin-top: 14px;
+        padding: 8px 18px;
+        border: 1px solid rgba(147, 161, 150, 0.35);
+        background: var(--panel, #243438);
+        font-size: 13px;
+      }
+      #menu-seed { color: var(--ink, #dfe4d5); }
+      #menu-cta {
+        color: var(--ink-bright, #f6f4e6);
+        animation: menu-blink 1.4s step-end infinite;
+      }
+      #menu.is-modal #menu-cta { animation: none; opacity: 0.35; }
+      @keyframes menu-blink { 50% { opacity: 0; } }
+      #menu-brief { margin-top: 28px; font-size: 11px; }
+      #menu-controls { margin-top: 8px; font-size: 10px; color: var(--ink-mute, #647470); }
+      #menu-foot {
+        position: absolute;
+        left: 52px;
+        right: 52px;
+        bottom: 28px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: var(--ink-mute, #647470);
+      }
+      #modal { z-index: 8; }
     </style>
   </head>
   <body>
-    <div id="game"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <canvas id="field"></canvas>
+    <div id="hud">
+      <div id="bars">
+        <div class="meter" data-bar="hp"><span class="cap"></span><div class="track"><div class="fill"></div></div><span class="val"></span></div>
+        <div class="meter" data-bar="shd"><span class="cap"></span><div class="track"><div class="fill"></div></div><span class="val"></span></div>
+        <div class="meter" data-bar="eps"><span class="cap"></span><div class="track"><div class="fill"></div></div><span class="val"></span></div>
+        <div class="meter" data-bar="xp"><span class="cap"></span><div class="track"><div class="fill"></div></div><span class="val"></span></div>
+      </div>
+      <div id="chips"></div>
+      <p id="meta"></p>
+      <p id="sector"></p>
+      <p id="obj-local"></p>
+      <p id="obj-campaign"></p>
+      <p id="quest"></p>
+      <p id="urgency"></p>
+      <p id="milestone"></p>
+      <p id="debug"></p>
+    </div>
+    <p id="hint" hidden></p>
+    <p id="dock"></p>
+    <pre id="log" hidden></pre>
+    <div id="modal" hidden>
+      <div id="modal-panel">
+        <pre id="modal-body"></pre>
+        <div id="hack-board" hidden></div>
+      </div>
+    </div>
+    <div id="menu" hidden>
+      <div id="menu-window">
+        <p id="menu-kicker"></p>
+        <h1 id="menu-title"></h1>
+        <p id="menu-tag"></p>
+      </div>
+      <p id="menu-body"></p>
+      <p id="menu-summary"></p>
+      <p id="menu-seed"></p>
+      <p id="menu-cta"></p>
+      <p id="menu-brief"></p>
+      <p id="menu-controls"></p>
+      <div id="menu-foot">
+        <span id="menu-foot-l"></span>
+        <span id="menu-foot-r"></span>
+      </div>
+    </div>
+    <div id="floats"></div>
+    <div id="flash"></div>
+    <script type="module" src="/src/v2/main.ts"></script>
   </body>
 </html>

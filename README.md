@@ -22,7 +22,7 @@ Prior team’s field array never shut down cleanly; residual scan pressure keeps
 
 ```bash
 npm install
-npm run dev          # Phaser v1 at / · Three.js v2 field at /v2.html
+npm run dev          # Three.js field at / · Phaser v1 at /v1.html
 npm run build        # production build
 npm run test         # Vitest: unit + autopilot + balance
 npm run test:unit    # sim / map / autopilot / data
@@ -37,7 +37,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 
 | Key | Action |
 |-----|--------|
-| WASD / arrows | Move (or navigate kit) — stepping onto kit picks it up |
+| WASD / arrows | Move (follows camera yaw on the orbit field) — stepping onto kit picks it up |
 | `.` | Wait |
 | `i` | Open field kit |
 | `u` | Use or equip selected item |
@@ -49,13 +49,15 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | `m` | Mute / unmute |
 | `Esc` | Close panel / open help |
 | Title: `←` `→` mission ID, `R` random, `Enter` start |
-| v2 (`/v2.html`) | Same kit / PADD / help / log keys · WASD follows the camera · `Q` `E` yaw · right-drag orbit · left-click step |
+| `Q` `E` | Yaw the orbit camera (Three.js field) |
+| Right-drag / left-click | Orbit inspect / step toward the pointer |
+| v1 (`/v1.html`) | Phaser field — keyboard only |
 
-## Stack (v1)
+## Stack
 
 - **Rules:** headless TypeScript `src/sim/` (no Phaser, no Three.js)
-- **Presentation (v1):** Phaser **4.2.1** + Vite (see [docs/V1.md](./docs/V1.md))
-- **Presentation (v2):** Three.js orbit field at [`v2.html`](./v2.html) — sim flood tint, 3D surveyor and fauna, combat tells, HTML HUD, title/end, shared audio, lattice-lock overlay, no bloom
+- **Presentation (default):** Three.js orbit field at `/` — sim flood tint, 3D surveyor and fauna, combat tells, HTML HUD, title/end, shared audio, lattice-lock overlay, no bloom. [`v2.html`](./v2.html) redirects here.
+- **Presentation (v1):** Phaser **4.2.1** at [`v1.html`](./v1.html) (see [docs/V1.md](./docs/V1.md))
 - Vite + Vitest; keyboard-only; seeded runs
 
 ## Deploy
