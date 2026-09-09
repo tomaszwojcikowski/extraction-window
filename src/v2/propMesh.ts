@@ -2,40 +2,41 @@ import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
 import type { TileKind } from '../sim/types';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, cap, roundBox, tube } from './softGeo';
 
 const Geo = {
-  bush: new THREE.SphereGeometry(0.18, 7, 5),
-  stem: new THREE.BoxGeometry(0.04, 0.16, 0.04),
-  nest: new THREE.CylinderGeometry(0.2, 0.24, 0.1, 8),
-  twig: new THREE.BoxGeometry(0.18, 0.03, 0.03),
-  brick: new THREE.BoxGeometry(0.28, 0.14, 0.2),
-  slab: new THREE.BoxGeometry(0.36, 0.12, 0.28),
-  grate: new THREE.BoxGeometry(0.42, 0.16, 0.42),
-  slat: new THREE.BoxGeometry(0.32, 0.03, 0.05),
-  pool: new THREE.CylinderGeometry(0.22, 0.26, 0.08, 8),
-  rim: new THREE.BoxGeometry(0.5, 0.08, 0.08),
-  peg: new THREE.BoxGeometry(0.08, 0.12, 0.08),
-  wire: new THREE.BoxGeometry(0.7, 0.02, 0.02),
-  hatch: new THREE.BoxGeometry(0.42, 0.08, 0.42),
-  rail: new THREE.BoxGeometry(0.08, 0.28, 0.42),
-  stripe: new THREE.BoxGeometry(0.06, 0.2, 0.06),
-  chevron: new THREE.BoxGeometry(0.18, 0.04, 0.08),
-  hull: new THREE.BoxGeometry(0.7, 0.16, 0.32),
-  fin: new THREE.BoxGeometry(0.08, 0.1, 0.22),
-  nose: new THREE.ConeGeometry(0.12, 0.22, 5),
-  post: new THREE.BoxGeometry(0.1, 0.42, 0.1),
-  disc: new THREE.CylinderGeometry(0.12, 0.12, 0.05, 8),
-  cage: new THREE.BoxGeometry(0.16, 0.08, 0.16),
-  rock: new THREE.BoxGeometry(0.28, 0.32, 0.24),
-  chip: new THREE.BoxGeometry(0.14, 0.12, 0.12),
-  flag: new THREE.BoxGeometry(0.04, 0.28, 0.04),
-  pennant: new THREE.BoxGeometry(0.16, 0.1, 0.02),
-  desk: new THREE.BoxGeometry(0.4, 0.18, 0.28),
-  screen: new THREE.BoxGeometry(0.28, 0.16, 0.04),
-  knob: new THREE.BoxGeometry(0.05, 0.05, 0.05),
-  lamp: new THREE.BoxGeometry(0.06, 0.06, 0.06),
-  crack: new THREE.BoxGeometry(0.36, 0.04, 0.08),
-  tape: new THREE.BoxGeometry(0.16, 0.03, 0.1),
+  bush: ball(0.2, 14, 10),
+  stem: cap(0.02, 0.12),
+  nest: tube(0.2, 0.24, 0.1, 14),
+  twig: roundBox(0.18, 0.03, 0.03, 0.01),
+  brick: roundBox(0.28, 0.14, 0.2, 0.04),
+  slab: roundBox(0.36, 0.12, 0.28, 0.04),
+  grate: roundBox(0.42, 0.16, 0.42, 0.04),
+  slat: roundBox(0.32, 0.03, 0.05, 0.01),
+  pool: tube(0.22, 0.26, 0.08, 14),
+  rim: roundBox(0.5, 0.08, 0.08, 0.02),
+  peg: cap(0.04, 0.06),
+  wire: roundBox(0.7, 0.02, 0.02, 0.008),
+  hatch: roundBox(0.42, 0.08, 0.42, 0.03),
+  rail: roundBox(0.08, 0.28, 0.42, 0.02),
+  stripe: roundBox(0.06, 0.2, 0.06, 0.015),
+  chevron: roundBox(0.18, 0.04, 0.08, 0.012),
+  hull: roundBox(0.7, 0.16, 0.32, 0.05),
+  fin: roundBox(0.08, 0.1, 0.22, 0.02),
+  nose: new THREE.ConeGeometry(0.12, 0.22, 8),
+  post: cap(0.05, 0.32),
+  disc: tube(0.12, 0.12, 0.05, 12),
+  cage: roundBox(0.16, 0.08, 0.16, 0.03),
+  rock: roundBox(0.28, 0.32, 0.24, 0.08),
+  chip: roundBox(0.14, 0.12, 0.12, 0.04),
+  flag: cap(0.015, 0.24),
+  pennant: roundBox(0.16, 0.1, 0.02, 0.008),
+  desk: roundBox(0.4, 0.18, 0.28, 0.04),
+  screen: roundBox(0.28, 0.16, 0.04, 0.01),
+  knob: ball(0.03, 8, 6),
+  lamp: ball(0.04, 8, 6),
+  crack: roundBox(0.36, 0.04, 0.08, 0.015),
+  tape: roundBox(0.16, 0.03, 0.1, 0.01),
 };
 
 const FIELD_PROPS = new Set<TileKind>([
@@ -198,13 +199,13 @@ export function poseProp(rig: THREE.Group, now: number): void {
   const portL = rig.getObjectByName('portL');
   const t = (now / 420) % 1;
   if (kind === 'beacon' && lamp) {
-    const s = 1 + Math.sin(now / 180) * 0.16;
+    const s = 1 + Math.sin(now / 280) * 0.16;
     lamp.scale.set(s, 1, s);
   }
-  if (spark) spark.position.y = 0.16 + Math.abs(Math.sin(now / 90)) * 0.08;
+  if (spark) spark.position.y = 0.16 + Math.abs(Math.sin(now / 160)) * 0.08;
   if (pennant) {
-    pennant.position.y = (kind === 'landmark' ? 0.5 : 0.36) + Math.sin(now / 260) * 0.03;
-    pennant.rotation.y = Math.sin(now / 220) * 0.25;
+    pennant.position.y = (kind === 'landmark' ? 0.5 : 0.36) + Math.sin(now / 380) * 0.03;
+    pennant.rotation.y = Math.sin(now / 340) * 0.25;
   }
   if (sheen) sheen.position.y = 0.08 + (t > 0.5 ? 0.02 : 0);
   if (slat) slat.position.y = 0.16 + Math.sin(now / 200) * 0.025;
@@ -214,8 +215,8 @@ export function poseProp(rig: THREE.Group, now: number): void {
     const pulse = 1 + Math.sin(now / 240) * 0.04;
     screen.scale.set(pulse, pulse, 1);
   }
-  if (bushL) bushL.rotation.z = Math.sin(now / 480) * 0.08;
-  if (bushR) bushR.rotation.z = Math.sin(now / 520 + 1) * -0.08;
+  if (bushL) bushL.rotation.z = Math.sin(now / 720) * 0.08;
+  if (bushR) bushR.rotation.z = Math.sin(now / 780 + 1) * -0.08;
   if (portL) {
     const blink = Math.sin(now / 160) > 0 ? 1 : 0.55;
     portL.scale.setScalar(blink);

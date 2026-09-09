@@ -1,5 +1,11 @@
 import type { Object3D } from 'three';
 
+/** Smoothstep the hop so plant and land are not linear pops. */
+export function hopEase(u: number): number {
+  const t = Math.min(1, Math.max(0, u));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
 export function hopLift(u: number): number {
   return 4 * u * (1 - u);
 }
@@ -44,8 +50,8 @@ export function poseHumanoid(
     parts;
 
   if (hopT === null) {
-    const breathe = Math.sin(now / 420);
-    const shift = Math.sin(now / 640);
+    const breathe = Math.sin(now / 640);
+    const shift = Math.sin(now / 920);
     bob.position.y = breathe * idleBob;
     bob.rotation.z = shift * 0.03;
     bob.scale.set(1, 1, 1);
@@ -63,10 +69,10 @@ export function poseHumanoid(
     }
     if (head) {
       head.rotation.x = breathe * 0.03;
-      head.rotation.y = Math.sin(now / 1100) * 0.08;
+      head.rotation.y = Math.sin(now / 1600) * 0.08;
     }
     if (pack) pack.rotation.x = breathe * 0.04;
-    if (antenna) antenna.rotation.z = Math.sin(now / 280) * 0.18;
+    if (antenna) antenna.rotation.z = Math.sin(now / 480) * 0.18;
     return;
   }
 

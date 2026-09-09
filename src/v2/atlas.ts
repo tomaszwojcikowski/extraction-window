@@ -8,11 +8,12 @@ type AtlasJson = {
 
 const SHEETS: AtlasSheets[] = ['floors', 'walls', 'props', 'items', 'actors'];
 
-function pixelTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
+function fieldTexture(canvas: HTMLCanvasElement): THREE.CanvasTexture {
   const tex = new THREE.CanvasTexture(canvas);
-  tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
-  tex.generateMipmaps = false;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.anisotropy = 4;
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
@@ -29,7 +30,7 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
   return img;
 }
 
-/** Phaser atlas frames → nearest-neighbor Three textures. */
+/** Phaser atlas frames → linearly sampled Three textures on the orbit field. */
 export async function loadFieldAtlas(): Promise<Map<string, THREE.Texture>> {
   const out = new Map<string, THREE.Texture>();
   await Promise.all(
@@ -45,9 +46,9 @@ export async function loadFieldAtlas(): Promise<Map<string, THREE.Texture>> {
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (!ctx) continue;
-        ctx.imageSmoothingEnabled = false;
+        ctx.imageSmoothingEnabled = true;
         ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
-        out.set(key, pixelTexture(canvas));
+        out.set(key, fieldTexture(canvas));
       }
     }),
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSurveyor, poseSurveyor, SURVEYOR_PARTS } from '../../src/v2/surveyorMesh';
+import { createSurveyor, poseSurveyor, SURVEYOR_HOP_MS, SURVEYOR_PARTS } from '../../src/v2/surveyorMesh';
 
 describe('v2 surveyor rig', () => {
   it('builds the named field-kit parts', () => {
@@ -28,5 +28,9 @@ describe('v2 surveyor rig', () => {
     expect(rig.getObjectByName('kneeR')!.rotation.x).toBe(
       rig.getObjectByName('kneeL')!.rotation.x,
     );
+  });
+
+  it('gives the 3D stride enough time to read as a step', () => {
+    expect(SURVEYOR_HOP_MS).toBeGreaterThanOrEqual(260);
   });
 });

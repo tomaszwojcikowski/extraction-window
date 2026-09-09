@@ -3,30 +3,31 @@ import { ALLIES, NPCS, type AllyKind, type NpcKind } from '../data/npcs';
 import { Material, Theme } from '../scenes/theme';
 import { hopLift, hopSwing, poseHumanoid } from './poseHumanoid';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, cap, roundBox, tube } from './softGeo';
 
 const Geo = {
-  boot: new THREE.BoxGeometry(0.12, 0.06, 0.16),
-  thigh: new THREE.BoxGeometry(0.1, 0.14, 0.12),
-  shin: new THREE.BoxGeometry(0.09, 0.12, 0.11),
-  torso: new THREE.BoxGeometry(0.28, 0.32, 0.18),
-  collar: new THREE.BoxGeometry(0.24, 0.05, 0.16),
-  belt: new THREE.BoxGeometry(0.3, 0.04, 0.2),
-  helmet: new THREE.SphereGeometry(0.14, 8, 6),
-  visor: new THREE.BoxGeometry(0.18, 0.07, 0.04),
-  cheek: new THREE.BoxGeometry(0.07, 0.08, 0.08),
-  upperArm: new THREE.BoxGeometry(0.09, 0.14, 0.09),
-  forearm: new THREE.BoxGeometry(0.08, 0.13, 0.08),
-  glove: new THREE.BoxGeometry(0.1, 0.06, 0.1),
-  stripe: new THREE.BoxGeometry(0.24, 0.04, 0.2),
-  lamp: new THREE.BoxGeometry(0.08, 0.08, 0.06),
-  disc: new THREE.CylinderGeometry(0.22, 0.22, 0.08, 8),
-  lens: new THREE.CylinderGeometry(0.08, 0.08, 0.05, 8),
-  skid: new THREE.BoxGeometry(0.08, 0.05, 0.18),
-  ring: new THREE.BoxGeometry(0.4, 0.03, 0.06),
-  blade: new THREE.BoxGeometry(0.46, 0.02, 0.05),
-  bar: new THREE.BoxGeometry(0.32, 0.02, 0.02),
-  tool: new THREE.BoxGeometry(0.05, 0.22, 0.05),
-  pack: new THREE.BoxGeometry(0.18, 0.16, 0.1),
+  boot: roundBox(0.12, 0.06, 0.16, 0.02),
+  thigh: cap(0.05, 0.07),
+  shin: cap(0.045, 0.06),
+  torso: roundBox(0.28, 0.32, 0.18, 0.05),
+  collar: roundBox(0.24, 0.05, 0.16, 0.015),
+  belt: roundBox(0.3, 0.04, 0.2, 0.012),
+  helmet: ball(0.14, 12, 10),
+  visor: roundBox(0.18, 0.07, 0.04, 0.012),
+  cheek: roundBox(0.07, 0.08, 0.08, 0.02),
+  upperArm: cap(0.045, 0.07),
+  forearm: cap(0.04, 0.065),
+  glove: roundBox(0.1, 0.06, 0.1, 0.025),
+  stripe: roundBox(0.24, 0.04, 0.2, 0.01),
+  lamp: roundBox(0.08, 0.08, 0.06, 0.02),
+  disc: tube(0.22, 0.22, 0.08, 12),
+  lens: tube(0.08, 0.08, 0.05, 12),
+  skid: roundBox(0.08, 0.05, 0.18, 0.02),
+  ring: roundBox(0.4, 0.03, 0.06, 0.01),
+  blade: roundBox(0.46, 0.02, 0.05, 0.008),
+  bar: roundBox(0.32, 0.02, 0.02, 0.008),
+  tool: cap(0.025, 0.17),
+  pack: roundBox(0.18, 0.16, 0.1, 0.03),
 };
 
 function paint(hex: number, opacity = 1): THREE.MeshLambertMaterial {
@@ -182,13 +183,13 @@ export function poseContact(
   if (hover) {
     const lift = hopT === null ? 0 : hopLift(hopT);
     const swing = hopT === null ? 0 : hopSwing(hopT, strideSign, 0.2);
-    bob.position.y = (hopT === null ? Math.sin(now / 320) * 0.05 : lift * 0.08);
+    bob.position.y = (hopT === null ? Math.sin(now / 480) * 0.05 : lift * 0.08);
     bob.rotation.z = swing;
     bob.rotation.x = lift * 0.08;
     const ring = rig.getObjectByName('ring');
     if (ring) ring.rotation.y = now / 360;
     const rotor = rig.getObjectByName('rotor');
-    if (rotor) rotor.rotation.y = now / 28;
+    if (rotor) rotor.rotation.y = now / 48;
     const scanTop = rig.getObjectByName('scanTop');
     if (scanTop) scanTop.position.y = 0.62 + Math.sin(now / 260) * 0.05;
     const scanMid = rig.getObjectByName('scanMid');

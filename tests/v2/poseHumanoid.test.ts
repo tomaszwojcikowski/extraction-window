@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hopLift, hopSquash, hopSwing } from '../../src/v2/poseHumanoid';
+import { hopEase, hopLift, hopSquash, hopSwing } from '../../src/v2/poseHumanoid';
 
 describe('v2 humanoid hop curves', () => {
   it('peaks the lift at mid-stride', () => {
@@ -18,5 +18,13 @@ describe('v2 humanoid hop curves', () => {
     expect(hopSquash(0)).toBe(1);
     expect(hopSquash(0.5)).toBe(0);
     expect(hopSquash(1)).toBe(1);
+  });
+
+  it('eases hops slow at plant and land', () => {
+    expect(hopEase(0)).toBe(0);
+    expect(hopEase(1)).toBe(1);
+    expect(hopEase(0.5)).toBeCloseTo(0.5);
+    expect(hopEase(0.25)).toBeLessThan(0.25);
+    expect(hopEase(0.75)).toBeGreaterThan(0.75);
   });
 });

@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, roundBox } from './softGeo';
 
 const Geo = {
-  plate: new THREE.BoxGeometry(0.16, 0.22, 0.05),
-  hood: new THREE.BoxGeometry(0.18, 0.08, 0.12),
-  bulb: new THREE.BoxGeometry(0.1, 0.08, 0.08),
-  cage: new THREE.BoxGeometry(0.14, 0.02, 0.1),
-  tape: new THREE.BoxGeometry(0.06, 0.04, 0.06),
+  plate: roundBox(0.16, 0.22, 0.05, 0.02),
+  hood: roundBox(0.18, 0.08, 0.12, 0.03),
+  bulb: ball(0.055, 10, 8),
+  cage: roundBox(0.14, 0.02, 0.1, 0.008),
+  tape: roundBox(0.06, 0.04, 0.06, 0.012),
 };
 
 function part(

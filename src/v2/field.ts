@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { floorVariantAt } from '../scenes/textures';
 import { BIOME_AMBIENT, Material, Theme, floorTextureKey } from '../scenes/theme';
@@ -12,6 +13,7 @@ import { createFauna, disposeFauna, poseFauna, tintFauna } from './faunaMesh';
 import { createContact, disposeContact, poseContact, tintContact } from './contactMesh';
 import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
+import { hopEase } from './poseHumanoid';
 import { collectThreatMarks } from './threat';
 import { wallGhostAmount, applyWallGhostMaterial, wallGhostCastsShadow } from './wallGhost';
 import {
@@ -34,7 +36,7 @@ import {
 import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
-const ACTOR_HOP_MS = 190;
+const ACTOR_HOP_MS = 250;
 const DEATH_MS = 220;
 const COMBAT_BUMP_MS = 65;
 const COMBAT_BUMP = 0.16;
@@ -163,7 +165,7 @@ export class V2Field {
     height: 0,
   };
   private planeGeo = new THREE.PlaneGeometry(1, 1);
-  private wallGeo = new THREE.BoxGeometry(1, 1.15, 1);
+  private wallGeo = new RoundedBoxGeometry(1, 1.15, 1, 3, 0.08);
   private threatGeo = new THREE.PlaneGeometry(0.92, 0.92);
   private state: GameState | null = null;
   private fallback: THREE.Texture;
@@ -184,7 +186,7 @@ export class V2Field {
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: false,
+      antialias: true,
       alpha: false,
       powerPreference: 'high-performance',
     });
@@ -227,7 +229,7 @@ export class V2Field {
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
+    this.controls.dampingFactor = 0.14;
     this.controls.enablePan = false;
     this.controls.autoRotate = false;
     this.controls.minPolarAngle = Math.PI * 0.22;
@@ -406,7 +408,7 @@ export class V2Field {
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
-    if (wall) mesh.scale.set(1.01, 1, 1.01);
+    if (wall) mesh.scale.set(1.12, 1, 1.12);
     mesh.castShadow = wall;
     // Walls in their own key shadow read as black cubes; floors still take form shadows.
     mesh.receiveShadow = !wall;
@@ -493,7 +495,7 @@ export class V2Field {
       const f = blend.from[i];
       const d = blend.to[i];
       if (!tile || !f || !d) continue;
-      const s = f.shroud ? shroudRevealEase(u) : u;
+      const s = lampCarryT(u, f.shroud);
       const mat = tile.mesh.material as THREE.MeshLambertMaterial;
       this.lerpFrom.setRGB(f.r, f.g, f.b);
       this.lerpTo.setRGB(d.r, d.g, d.b);
@@ -716,10 +718,10 @@ export class V2Field {
       let oz = 0;
       if (this.hop) {
         const u = Math.min(1, (now - this.hop.started) / SURVEYOR_HOP_MS);
-        const e = 1 - (1 - u) ** 3;
+        const e = hopEase(u);
         this.playerRig.position.x = this.hop.fromX + (this.hop.toX - this.hop.fromX) * e;
         this.playerRig.position.z = this.hop.fromZ + (this.hop.toZ - this.hop.fromZ) * e;
-        hopT = u;
+        hopT = e;
         sign = this.hop.strideSign;
         if (u >= 1) this.hop = null;
       } else if (this.bump) {
@@ -756,8 +758,8 @@ export class V2Field {
       let hopT: number | null = null;
       if (view.hop) {
         const u = Math.min(1, (now - view.hop.started) / ACTOR_HOP_MS);
-        const e = 1 - (1 - u) ** 3;
-        hopT = u;
+        const e = hopEase(u);
+        hopT = e;
         view.root.position.x = view.hop.fromX + (view.hop.toX - view.hop.fromX) * e;
         view.root.position.z = view.hop.fromZ + (view.hop.toZ - view.hop.fromZ) * e;
         if (u >= 1) view.hop = null;
@@ -1064,9 +1066,9 @@ function makeFallbackTexture(): THREE.CanvasTexture {
   ctx.fillStyle = `#${Material.rock.toString(16).padStart(6, '0')}`;
   ctx.fillRect(0, 0, 8, 8);
   const tex = new THREE.CanvasTexture(canvas);
-  tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
-  tex.generateMipmaps = false;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
@@ -1112,5 +1114,5 @@ export function playerLightReadout(state: GameState): {
 /** Hop wash progress — linear, or quadratic when revealing FOW. */
 export function lampCarryT(u: number, fromShroud: boolean): number {
   const t = Math.min(1, Math.max(0, u));
-  return fromShroud ? shroudRevealEase(t) : t;
+  return fromShroud ? shroudRevealEase(t) : hopEase(t);
 }

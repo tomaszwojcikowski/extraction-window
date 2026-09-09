@@ -2,34 +2,35 @@ import * as THREE from 'three';
 import { Material, Theme } from '../scenes/theme';
 import { poseHumanoid } from './poseHumanoid';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, cap, roundBox } from './softGeo';
 
 /** Longer than Phaser MOVE_MS so a 3D stride can read. */
-export const SURVEYOR_HOP_MS = 220;
+export const SURVEYOR_HOP_MS = 280;
 
 /** Shared geos — v2 field only; do not dispose with the rig. */
 const Geo = {
-  boot: new THREE.BoxGeometry(0.14, 0.07, 0.2),
-  thigh: new THREE.BoxGeometry(0.12, 0.16, 0.14),
-  shin: new THREE.BoxGeometry(0.11, 0.14, 0.13),
-  pad: new THREE.BoxGeometry(0.13, 0.06, 0.08),
-  torso: new THREE.BoxGeometry(0.32, 0.34, 0.22),
-  plate: new THREE.BoxGeometry(0.16, 0.12, 0.06),
-  collar: new THREE.BoxGeometry(0.28, 0.06, 0.18),
-  belt: new THREE.BoxGeometry(0.34, 0.05, 0.24),
-  pouch: new THREE.BoxGeometry(0.08, 0.1, 0.07),
-  pack: new THREE.BoxGeometry(0.26, 0.28, 0.16),
-  packCan: new THREE.BoxGeometry(0.08, 0.18, 0.08),
-  helmet: new THREE.SphereGeometry(0.15, 8, 6),
-  cheek: new THREE.BoxGeometry(0.08, 0.1, 0.1),
-  visor: new THREE.BoxGeometry(0.2, 0.09, 0.05),
-  visorRim: new THREE.BoxGeometry(0.22, 0.11, 0.03),
-  seam: new THREE.BoxGeometry(0.08, 0.05, 0.06),
-  upperArm: new THREE.BoxGeometry(0.1, 0.16, 0.1),
-  forearm: new THREE.BoxGeometry(0.09, 0.15, 0.09),
-  glove: new THREE.BoxGeometry(0.11, 0.07, 0.11),
-  stripe: new THREE.BoxGeometry(0.28, 0.045, 0.22),
-  lamp: new THREE.BoxGeometry(0.09, 0.09, 0.07),
-  antenna: new THREE.BoxGeometry(0.03, 0.18, 0.03),
+  boot: roundBox(0.14, 0.07, 0.2, 0.02),
+  thigh: cap(0.055, 0.08),
+  shin: cap(0.05, 0.07),
+  pad: roundBox(0.13, 0.06, 0.08, 0.02),
+  torso: roundBox(0.32, 0.34, 0.22, 0.05),
+  plate: roundBox(0.16, 0.12, 0.06, 0.02),
+  collar: roundBox(0.28, 0.06, 0.18, 0.02),
+  belt: roundBox(0.34, 0.05, 0.24, 0.015),
+  pouch: roundBox(0.08, 0.1, 0.07, 0.02),
+  pack: roundBox(0.26, 0.28, 0.16, 0.04),
+  packCan: cap(0.04, 0.1),
+  helmet: ball(0.15, 12, 10),
+  cheek: roundBox(0.08, 0.1, 0.1, 0.02),
+  visor: roundBox(0.2, 0.09, 0.05, 0.015),
+  visorRim: roundBox(0.22, 0.11, 0.03, 0.01),
+  seam: roundBox(0.08, 0.05, 0.06, 0.015),
+  upperArm: cap(0.05, 0.08),
+  forearm: cap(0.045, 0.075),
+  glove: roundBox(0.11, 0.07, 0.11, 0.025),
+  stripe: roundBox(0.28, 0.045, 0.22, 0.01),
+  lamp: roundBox(0.09, 0.09, 0.07, 0.02),
+  antenna: cap(0.012, 0.14),
 };
 
 function paint(hex: number, glow?: number): THREE.MeshLambertMaterial {

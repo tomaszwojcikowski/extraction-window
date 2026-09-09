@@ -5,38 +5,39 @@ import { HOVER_SHAPES, silhouetteFor, type Silhouette } from '../art/silhouette'
 import { Material, Theme } from '../scenes/theme';
 import { hopLift, hopSquash, hopSwing } from './poseHumanoid';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, cap, roundBox, tube } from './softGeo';
 
 const Geo = {
-  body: new THREE.BoxGeometry(0.42, 0.22, 0.32),
-  long: new THREE.BoxGeometry(0.55, 0.2, 0.28),
-  hunk: new THREE.BoxGeometry(0.48, 0.38, 0.34),
-  plate: new THREE.BoxGeometry(0.52, 0.42, 0.3),
-  plateSmall: new THREE.BoxGeometry(0.22, 0.1, 0.2),
-  leg: new THREE.BoxGeometry(0.07, 0.16, 0.07),
-  shin: new THREE.BoxGeometry(0.06, 0.1, 0.06),
-  boot: new THREE.BoxGeometry(0.09, 0.05, 0.12),
-  stub: new THREE.BoxGeometry(0.06, 0.12, 0.06),
-  mandible: new THREE.BoxGeometry(0.05, 0.04, 0.14),
-  claw: new THREE.BoxGeometry(0.05, 0.05, 0.1),
-  head: new THREE.BoxGeometry(0.28, 0.22, 0.26),
-  snout: new THREE.BoxGeometry(0.14, 0.1, 0.22),
-  eye: new THREE.BoxGeometry(0.06, 0.06, 0.04),
-  sphere: new THREE.SphereGeometry(0.18, 8, 6),
-  puff: new THREE.SphereGeometry(0.14, 7, 5),
-  spore: new THREE.SphereGeometry(0.07, 6, 5),
-  wing: new THREE.BoxGeometry(0.42, 0.03, 0.22),
-  vein: new THREE.BoxGeometry(0.3, 0.02, 0.04),
-  sting: new THREE.BoxGeometry(0.06, 0.06, 0.18),
-  seg: new THREE.BoxGeometry(0.2, 0.16, 0.2),
-  ridge: new THREE.BoxGeometry(0.16, 0.06, 0.1),
-  disc: new THREE.CylinderGeometry(0.22, 0.22, 0.08, 8),
-  lens: new THREE.CylinderGeometry(0.1, 0.1, 0.06, 8),
-  ring: new THREE.CylinderGeometry(0.16, 0.16, 0.04, 8),
-  post: new THREE.BoxGeometry(0.16, 0.28, 0.16),
-  crown: new THREE.BoxGeometry(0.08, 0.16, 0.08),
-  bar: new THREE.BoxGeometry(0.36, 0.05, 0.08),
-  tendril: new THREE.BoxGeometry(0.04, 0.18, 0.04),
-  bolt: new THREE.BoxGeometry(0.06, 0.04, 0.06),
+  body: roundBox(0.42, 0.22, 0.32),
+  long: roundBox(0.55, 0.2, 0.28),
+  hunk: roundBox(0.48, 0.38, 0.34, 0.08),
+  plate: roundBox(0.52, 0.42, 0.3, 0.06),
+  plateSmall: roundBox(0.22, 0.1, 0.2, 0.03),
+  leg: cap(0.035, 0.09),
+  shin: cap(0.03, 0.05),
+  boot: roundBox(0.09, 0.05, 0.12, 0.02),
+  stub: cap(0.03, 0.06),
+  mandible: roundBox(0.05, 0.04, 0.14, 0.015),
+  claw: roundBox(0.05, 0.05, 0.1, 0.015),
+  head: roundBox(0.28, 0.22, 0.26, 0.06),
+  snout: roundBox(0.14, 0.1, 0.22, 0.03),
+  eye: ball(0.035, 8, 6),
+  sphere: ball(0.18, 12, 9),
+  puff: ball(0.14, 11, 8),
+  spore: ball(0.07, 10, 8),
+  wing: roundBox(0.42, 0.03, 0.22, 0.01),
+  vein: roundBox(0.3, 0.02, 0.04, 0.008),
+  sting: cap(0.03, 0.12),
+  seg: roundBox(0.2, 0.16, 0.2, 0.05),
+  ridge: roundBox(0.16, 0.06, 0.1, 0.02),
+  disc: tube(0.22, 0.22, 0.08, 12),
+  lens: tube(0.1, 0.1, 0.06, 12),
+  ring: tube(0.16, 0.16, 0.04, 12),
+  post: cap(0.08, 0.12),
+  crown: roundBox(0.08, 0.16, 0.08, 0.02),
+  bar: roundBox(0.36, 0.05, 0.08, 0.015),
+  tendril: cap(0.02, 0.14),
+  bolt: ball(0.03, 8, 6),
 };
 
 const SCALE: Record<Silhouette, number> = {
@@ -280,7 +281,7 @@ function buildShape(bob: THREE.Group, shape: Silhouette, kind: EnemyKind, ion: b
 }
 
 /**
- * Blocky hostile — body plan from `silhouetteFor`, tint from `def.color`.
+ * Silhouette hostile — body plan from `silhouetteFor`, tint from `def.color`.
  * Local +Z is the face. Lambert × sim flood; no PointLights.
  */
 export function createFauna(kind: EnemyKind, tier: EnemyTier = 'normal'): THREE.Group {
@@ -318,7 +319,7 @@ export function poseFauna(
   const swing = hopT === null ? 0 : hopSwing(hopT, strideSign, 0.55);
 
   if (hopT === null) {
-    bob.position.y = Math.sin(now / (hover ? 320 : 480)) * (hover ? 0.055 : 0.016);
+    bob.position.y = Math.sin(now / (hover ? 480 : 720)) * (hover ? 0.055 : 0.016);
     bob.position.z = windup ? 0.07 : 0;
     bob.rotation.x = windup ? 0.16 : Math.sin(now / 980) * (hover ? 0.05 : 0);
     bob.rotation.z = 0;
@@ -351,7 +352,7 @@ export function poseFauna(
   const wingL = rig.getObjectByName('wingL');
   const wingR = rig.getObjectByName('wingR');
   if (wingL && wingR) {
-    const flap = hopT === null ? Math.sin(now / 80) * (windup ? 0.45 : 0.24) : hopSwing(hopT, 1, 0.38);
+    const flap = hopT === null ? Math.sin(now / 160) * (windup ? 0.45 : 0.24) : hopSwing(hopT, 1, 0.38);
     wingL.rotation.z = flap;
     wingR.rotation.z = -flap;
     wingL.rotation.y = windup ? -0.18 : 0;
@@ -367,7 +368,7 @@ export function poseFauna(
   for (let i = 0; i < SEG_NAMES.length; i++) {
     const seg = rig.getObjectByName(SEG_NAMES[i]!);
     if (!seg) continue;
-    const wave = hopT === null ? Math.sin(now / 280 + i * 0.9) : Math.sin(hopT * Math.PI + i * 0.7);
+    const wave = hopT === null ? Math.sin(now / 420 + i * 0.9) : Math.sin(hopT * Math.PI + i * 0.7);
     seg.rotation.y = wave * 0.16;
     seg.position.x = wave * 0.025;
   }
@@ -375,14 +376,14 @@ export function poseFauna(
   for (const name of ['lobeL', 'lobeR', 'lobeF', 'spore0', 'spore1', 'halo'] as const) {
     const lobe = rig.getObjectByName(name);
     if (!lobe) continue;
-    const pulse = 1 + Math.sin(now / 170 + name.length) * (windup ? 0.22 : 0.1);
+    const pulse = 1 + Math.sin(now / 280 + name.length) * (windup ? 0.22 : 0.1);
     lobe.scale.setScalar(pulse);
   }
 
   for (const name of ['finL', 'finR', 'finF', 'spoke0', 'spoke1', 'spoke2', 'spoke3'] as const) {
     const fin = rig.getObjectByName(name);
     if (!fin) continue;
-    const wobble = hopT === null ? Math.sin(now / 240 + fin.position.x) * 0.12 : lift * 0.18;
+    const wobble = hopT === null ? Math.sin(now / 380 + fin.position.x) * 0.12 : lift * 0.18;
     fin.rotation.z = wobble;
   }
 

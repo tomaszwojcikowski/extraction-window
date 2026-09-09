@@ -3,34 +3,35 @@ import type { ItemKind } from '../data/items';
 import { lootStampFor, type LootStamp } from '../game/presenters/itemTexture';
 import { Theme } from '../scenes/theme';
 import { litPaint, tintLitMesh } from './litMaterial';
+import { ball, cap, roundBox } from './softGeo';
 
 const Geo = {
-  crate: new THREE.BoxGeometry(0.38, 0.3, 0.32),
-  lid: new THREE.BoxGeometry(0.4, 0.06, 0.34),
-  corner: new THREE.BoxGeometry(0.08, 0.08, 0.08),
-  tape: new THREE.BoxGeometry(0.22, 0.05, 0.08),
-  lock: new THREE.BoxGeometry(0.08, 0.08, 0.06),
-  keyBlade: new THREE.BoxGeometry(0.07, 0.34, 0.07),
-  keyBit: new THREE.BoxGeometry(0.18, 0.06, 0.06),
-  keyRing: new THREE.BoxGeometry(0.12, 0.12, 0.03),
-  core: new THREE.OctahedronGeometry(0.2, 0),
-  lens: new THREE.SphereGeometry(0.08, 8, 6),
-  halo: new THREE.BoxGeometry(0.36, 0.03, 0.03),
-  pack: new THREE.BoxGeometry(0.26, 0.2, 0.18),
-  crossV: new THREE.BoxGeometry(0.06, 0.16, 0.06),
-  crossH: new THREE.BoxGeometry(0.16, 0.06, 0.06),
-  clasp: new THREE.BoxGeometry(0.08, 0.04, 0.04),
-  cell: new THREE.BoxGeometry(0.16, 0.28, 0.14),
-  terminal: new THREE.BoxGeometry(0.04, 0.08, 0.04),
-  stick: new THREE.BoxGeometry(0.06, 0.26, 0.06),
-  cap: new THREE.SphereGeometry(0.08, 7, 5),
-  spark: new THREE.BoxGeometry(0.04, 0.08, 0.04),
-  shaft: new THREE.BoxGeometry(0.06, 0.24, 0.06),
-  head: new THREE.ConeGeometry(0.11, 0.16, 5),
-  grip: new THREE.BoxGeometry(0.08, 0.08, 0.08),
-  fold: new THREE.BoxGeometry(0.32, 0.16, 0.24),
-  stripe: new THREE.BoxGeometry(0.32, 0.04, 0.24),
-  buckle: new THREE.BoxGeometry(0.1, 0.06, 0.08),
+  crate: roundBox(0.38, 0.3, 0.32, 0.05),
+  lid: roundBox(0.4, 0.06, 0.34, 0.02),
+  corner: roundBox(0.08, 0.08, 0.08, 0.02),
+  tape: roundBox(0.22, 0.05, 0.08, 0.015),
+  lock: roundBox(0.08, 0.08, 0.06, 0.02),
+  keyBlade: cap(0.03, 0.26),
+  keyBit: roundBox(0.18, 0.06, 0.06, 0.02),
+  keyRing: roundBox(0.12, 0.12, 0.03, 0.015),
+  core: new THREE.OctahedronGeometry(0.2, 1),
+  lens: ball(0.08, 12, 9),
+  halo: roundBox(0.36, 0.03, 0.03, 0.01),
+  pack: roundBox(0.26, 0.2, 0.18, 0.04),
+  crossV: roundBox(0.06, 0.16, 0.06, 0.015),
+  crossH: roundBox(0.16, 0.06, 0.06, 0.015),
+  clasp: roundBox(0.08, 0.04, 0.04, 0.012),
+  cell: roundBox(0.16, 0.28, 0.14, 0.04),
+  terminal: cap(0.02, 0.04),
+  stick: cap(0.03, 0.2),
+  cap: ball(0.08, 12, 9),
+  spark: ball(0.03, 8, 6),
+  shaft: cap(0.03, 0.18),
+  head: new THREE.ConeGeometry(0.11, 0.16, 8),
+  grip: roundBox(0.08, 0.08, 0.08, 0.02),
+  fold: roundBox(0.32, 0.16, 0.24, 0.04),
+  stripe: roundBox(0.32, 0.04, 0.24, 0.012),
+  buckle: roundBox(0.1, 0.06, 0.08, 0.02),
 };
 
 function paint(hex: number): THREE.MeshLambertMaterial {
@@ -134,11 +135,11 @@ export function poseLoot(rig: THREE.Group, now: number): void {
   if (halo) halo.rotation.y = now / 320;
   const cap = rig.getObjectByName('cap');
   if (cap) {
-    const pulse = 1 + Math.sin(now / 140) * 0.14;
+    const pulse = 1 + Math.sin(now / 240) * 0.14;
     cap.scale.setScalar(pulse);
   }
   const spark = rig.getObjectByName('spark');
-  if (spark) spark.position.y = 0.42 + Math.abs(Math.sin(now / 90)) * 0.05;
+  if (spark) spark.position.y = 0.42 + Math.abs(Math.sin(now / 160)) * 0.05;
 }
 
 export function tintLoot(root: THREE.Group, multiply: THREE.Color): void {
