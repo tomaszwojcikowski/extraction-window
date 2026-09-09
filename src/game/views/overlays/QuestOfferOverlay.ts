@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { lore } from '../../../data/lore';
 import type { QuestOffer } from '../../../sim/types';
 import { Theme, ThemeCss, FONT_DATA } from '../../../scenes/theme';
 import { drawFieldPanel, drawStencilBadge } from '../../../scenes/atmosphere';
 import { drawModalTapeHeader } from './modalChrome';
+import { formatQuestOfferContent } from '../../presenters/OverlayCopy';
 
 const PANEL_W = 520;
 const PANEL_H = 260;
@@ -60,25 +60,9 @@ export function drawQuestOfferOverlay(
   const headerW = 148;
   drawStencilBadge(badgeGfx, x + PANEL_W / 2 - headerW / 2, y - 10, headerW, 20, accent);
 
-  const lines: string[] = [];
-  lines.push(lore('UI-QUEST-OFFER').toUpperCase());
-  lines.push('');
-  lines.push(lore(offer.title).toUpperCase());
-  lines.push(lore(offer.body));
-  lines.push('');
-  if (offer.costLine) {
-    lines.push(`${lore('UI-QUEST-BILLS')} ${lore(offer.costLine)}`);
-  }
-  if (offer.payoffLine) {
-    lines.push(`${lore('UI-QUEST-PAYS')} ${lore(offer.payoffLine)}`);
-  }
-  lines.push('');
-  lines.push(lore('UI-QUEST-ACCEPT'));
-  lines.push(lore('UI-QUEST-DECLINE'));
-
   text.setWordWrapWidth(PANEL_W - 48);
   text.setPosition(x + 24, y + 32);
-  text.setText(lines.join('\n'));
+  text.setText(formatQuestOfferContent(offer));
 }
 
 export function hideQuestOfferOverlay(

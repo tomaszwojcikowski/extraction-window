@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { lore } from '../../../data/lore';
-import { GAME_VERSION } from '../../../data/version';
+import { formatChangelogContent } from '../../presenters/OverlayCopy';
 import { Theme } from '../../../scenes/theme';
 import { drawFieldPanel } from '../../../scenes/atmosphere';
 import { drawModalTapeHeader } from './modalChrome';
@@ -20,11 +19,5 @@ export function drawChangelogOverlay(
   drawModalTapeHeader(panel, x, y, w, Theme.tape);
   text.setWordWrapWidth(w - 48);
   text.setPosition(x + 24, y + 28);
-  text.setText(
-    `${lore('UI-CHANGELOG')}\n` +
-      `${GAME_VERSION}\n\n` +
-      `${lore('UI-CHANGELOG-BODY')}\n` +
-      `────────────────────────────────\n` +
-      `ESC or c — close`,
-  );
+  text.setText(formatChangelogContent());
 }

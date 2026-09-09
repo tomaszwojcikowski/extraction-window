@@ -43,7 +43,7 @@ flowchart TB
 
 ### Hard rules
 
-1. **`sim/**` never imports Phaser, `game/`, `scenes/`, `audio/`, or `ai/`.**
+1. **`sim/**` never imports Phaser, Three.js, `game/`, `scenes/`, `audio/`, `v2/`, or `ai/`.**
 2. **`data/` does not import `sim/`.**
 3. **`ai/` imports only `sim` (+ `data` tables).**
 4. **`game/` is the Phaser bridge** — `applyAction` + GameObjects live here (Boot texture bake excepted).
@@ -65,6 +65,7 @@ flowchart TB
 | `ai/` | Headless policy over `GameState` |
 | `game/` | Input, HUD/map/overlays, feedback presenters |
 | `scenes/` | Boot (PNG atlas load) / Title / End + theme/atmosphere |
+| `v2/` | Three.js field + HTML HUD / title / end (shared `audio/` buses) |
 | `audio/` | Web Audio buses |
 
 ## Mechanic contract
@@ -87,7 +88,9 @@ export interface Mechanic {
 
 ## Presentation split
 
-L4 shell runs **Phaser 4** (`phaser@^4.2.1`). Field light is sim illumination → `LightView` (tint / bloom graphics), not Phaser Light2D / Filters.
+L4 v1 shell runs **Phaser 4** (`phaser@^4.2.1`) at `v1.html`. Field light is sim illumination → `LightView` (tint / bloom graphics), not Phaser Light2D / Filters.
+
+L4 v2 is the default Three.js field at `/` over the same `sim/`. Constrained orbit camera, extruded tiles, flood tint plus local emitters that do not punch through walls, 3D surveyor and fauna (silhouette families), threat paints, hop lamp carry, HTML HUD, field sketch (`n`), title/end, shared audio, lattice-lock overlay. No bloom pass. HUD is HTML/CSS over the canvas — not a Phaser overlay. Keymap + presenters are shared; overlays issue `Action`s. `v2.html` redirects to `/` so old links keep working.
 
 `scenes/GameScene.ts` is the Phaser `Scene` host. It should shrink toward an orchestrator; logic lives in:
 

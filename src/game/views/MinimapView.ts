@@ -3,32 +3,22 @@ import type { GameState } from '../../sim';
 import { Theme } from '../../scenes/theme';
 import { drawBolt, drawMenuPlate, drawTapeStrip } from '../../scenes/atmosphere';
 import { HUD_TOP } from '../GameHost';
-import { describeObjective } from '../../sim/objectives';
-import { activeQuestStep } from '../../sim/roomQuest';
-import { cacheRoomList } from '../../sim/cacheSurvey';
+import {
+  MINIMAP_MAP,
+  minimapCellMetrics,
+  minimapGoalPos,
+  minimapSketch,
+} from '../presenters/MinimapContent';
 
-/** Map cell size in pixels on the minimap. */
-const CELL = 2;
-/** Inner map canvas size. Supports maps up to 64×64. */
-const MAP_W = 128;
-const MAP_H = 128;
+export { minimapGoalPos };
+
 /** Inner map canvas padding; tape strip sits above. */
 const PAD = 10;
-
-/** Local next-step cell for the minimap ring — seen, or revealed by Nav Ping. */
-export function minimapGoalPos(state: GameState): { x: number; y: number } | null {
-  const pos = describeObjective(state).pos;
-  if (!pos) return null;
-  if (state.player.mapperTurns > 0) return pos;
-  if (state.explored[pos.y]?.[pos.x] || state.visible[pos.y]?.[pos.x]) return pos;
-  return null;
-}
-
 /** Extra top for kit tape. */
 const TAPE_H = 8;
 /** Total panel size including padding and bolt clearance. */
-const PANEL_W = MAP_W + PAD * 2;
-const PANEL_H = MAP_H + PAD * 2 + TAPE_H;
+const PANEL_W = MINIMAP_MAP + PAD * 2;
+const PANEL_H = MINIMAP_MAP + PAD * 2 + TAPE_H;
 
 /**
  * Field-sketch minimap overlay — toggle with `n`.
@@ -67,115 +57,40 @@ export class MinimapView {
   redraw(state: GameState): void {
     if (!this.visible) return;
 
-    const { tiles, explored, visible, width, height, enemies, player } = state;
-
-    // Scale cells to fit the 128×128 canvas, capped at CELL px per tile.
-    const cellW = Math.min(CELL, Math.floor(MAP_W / width));
-    const cellH = Math.min(CELL, Math.floor(MAP_H / height));
-    const offX = Math.floor((MAP_W - width * cellW) / 2);
-    const offY = Math.floor((MAP_H - height * cellH) / 2);
-
-    this.mapGfx.clear();
+    const sketch = minimapSketch(state);
+    const { cellW, cellH, offX, offY } = minimapCellMetrics(sketch.width, sketch.height);
     const mapX = this.panelX + PAD;
     const mapY = this.panelY + PAD + TAPE_H;
+
+    this.mapGfx.clear();
     this.mapGfx.fillStyle(Theme.fog, 0.72);
-    this.mapGfx.fillRect(mapX, mapY, MAP_W, MAP_H);
+    this.mapGfx.fillRect(mapX, mapY, MINIMAP_MAP, MINIMAP_MAP);
 
-    // Tile layer — explored cells.
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (!explored[y]![x]) continue;
-        const kind = tiles[y]![x]!.kind;
-        const isVisible = visible[y]![x];
-        let color: number;
-
-        if (kind === 'wall' || kind === 'sealed') {
-          color = isVisible ? Theme.panelEdge : Theme.memory;
-        } else if (kind === 'exit' || kind === 'beacon' || kind === 'shuttle') {
-          color = Theme.tape;
-        } else if (kind === 'quest' || kind === 'console') {
-          color = Theme.flag;
-        } else if (kind === 'sump' || kind === 'vent' || kind === 'hazard') {
-          color = isVisible ? Theme.arc : Theme.memory;
-        } else {
-          color = isVisible ? Theme.inkDim : Theme.memory;
-        }
-
-        this.mapGfx.fillStyle(color, isVisible ? 1 : 0.6);
-        this.mapGfx.fillRect(mapX + offX + x * cellW, mapY + offY + y * cellH, cellW, cellH);
-      }
-    }
-
-    // Optional quest step — flag pink pip.
-    const rq = state.roomQuest;
-    if (rq && !rq.done) {
-      const step = activeQuestStep(rq);
-      if (step && explored[step.pos.y]?.[step.pos.x]) {
-        this.mapGfx.fillStyle(Theme.flag, 1);
-        this.mapGfx.fillRect(
-          mapX + offX + step.pos.x * cellW,
-          mapY + offY + step.pos.y * cellH,
-          Math.max(2, cellW),
-          Math.max(2, cellH),
-        );
-      }
-    }
-
-    // Unlooted explored caches — tape pips (calm sectors stay quiet via no Arcing cue).
-    for (const room of cacheRoomList(state)) {
-      if (room.cacheLooted) continue;
-      if (!explored[room.cy]?.[room.cx]) continue;
-      this.mapGfx.fillStyle(Theme.tape, 0.95);
+    for (const cell of sketch.cells) {
+      this.mapGfx.fillStyle(cell.color, cell.alpha);
       this.mapGfx.fillRect(
-        mapX + offX + room.cx * cellW,
-        mapY + offY + room.cy * cellH,
+        mapX + offX + cell.x * cellW,
+        mapY + offY + cell.y * cellH,
+        cellW,
+        cellH,
+      );
+    }
+
+    for (const pip of sketch.pips) {
+      this.mapGfx.fillStyle(pip.color, pip.alpha);
+      this.mapGfx.fillRect(
+        mapX + offX + pip.x * cellW,
+        mapY + offY + pip.y * cellH,
         Math.max(2, cellW),
         Math.max(2, cellH),
       );
     }
 
-    // Player.
-    this.mapGfx.fillStyle(Theme.flag, 1);
-    this.mapGfx.fillRect(
-      mapX + offX + player.x * cellW,
-      mapY + offY + player.y * cellH,
-      Math.max(2, cellW),
-      Math.max(2, cellH),
-    );
-
-    // Visible enemies — elite brands read hotter.
-    for (const enemy of enemies) {
-      if (!enemy.alive) continue;
-      if (!explored[enemy.y]?.[enemy.x]) continue;
-      const onScreen = visible[enemy.y]![enemy.x];
-      const elite = enemy.tier === 'elite' || enemy.tier === 'boss';
-      if (!onScreen && !elite) continue;
-      this.mapGfx.fillStyle(elite ? Theme.arcWhite : Theme.rust, onScreen ? 1 : 0.7);
-      this.mapGfx.fillRect(
-        mapX + offX + enemy.x * cellW,
-        mapY + offY + enemy.y * cellH,
-        Math.max(2, cellW),
-        Math.max(2, cellH),
-      );
-    }
-
-    if (state.mapperPing) {
-      const { x, y } = state.mapperPing;
-      if (explored[y]?.[x]) {
-        this.mapGfx.lineStyle(1, Theme.tape, 1);
-        const px = mapX + offX + x * cellW;
-        const py = mapY + offY + y * cellH;
-        this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
-      }
-    }
-
-    // Local next step — ring so it does not collide with the player pip.
-    const goal = minimapGoalPos(state);
-    if (goal) {
-      this.mapGfx.lineStyle(1, Theme.flag, 1);
-      const gx = mapX + offX + goal.x * cellW;
-      const gy = mapY + offY + goal.y * cellH;
-      this.mapGfx.strokeRect(gx - 1, gy - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
+    for (const ring of sketch.rings) {
+      this.mapGfx.lineStyle(1, ring.color, 1);
+      const px = mapX + offX + ring.x * cellW;
+      const py = mapY + offY + ring.y * cellH;
+      this.mapGfx.strokeRect(px - 1, py - 1, Math.max(3, cellW + 2), Math.max(3, cellH + 2));
     }
   }
 

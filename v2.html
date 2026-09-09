@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extraction Window</title>
+    <script>
+      location.replace('./' + location.search + location.hash);
+    </script>
+  </head>
+  <body>
+    <p><a id="go" href="./">Open field</a></p>
+    <script>
+      document.getElementById('go').setAttribute('href', './' + location.search + location.hash);
+    </script>
+  </body>
+</html>

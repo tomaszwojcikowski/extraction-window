@@ -9,6 +9,7 @@ import {
   hackConstraintHint,
   hackLaneCells,
 } from '../../../sim/mechanics/consoleHack';
+import { HACK_GLYPH_COLOR } from '../../presenters/HackOverlayContent';
 import { Theme, ThemeCss, FONT_DATA, FONT_DISPLAY } from '../../../scenes/theme';
 import { drawFieldPanel, drawStencilBadge } from '../../../scenes/atmosphere';
 import { drawModalTapeHeader } from './modalChrome';
@@ -20,8 +21,6 @@ const GAP = 8;
 const GRID = HACK_SIZE * CELL + (HACK_SIZE - 1) * GAP;
 const CHIP = 36;
 const CHIP_GAP = 8;
-
-export const HACK_GLYPH_COLOR = [Theme.ink, Theme.biolum, Theme.tape, Theme.flag, Theme.safe] as const;
 
 export type HackOverlayObjects = {
   bg: Phaser.GameObjects.Rectangle;

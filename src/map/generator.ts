@@ -31,6 +31,7 @@ import {
 } from '../sim/roomQuest';
 import { layoutForSector, placeLayout } from './layout';
 import { carveRoomStructure } from './interior';
+import { clearCorridorDressing, isCorridorCell, roomAt } from './corridors';
 import {
   assignRoomRoles,
   dressRoomRoles,
@@ -168,6 +169,84 @@ function occupiedSet(
   for (const i of items) s.add(`${i.x},${i.y}`);
   for (const n of npcs) s.add(`${n.x},${n.y}`);
   return s;
+}
+
+function chebyshev(a: Pos, b: Pos): number {
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+}
+
+/** First free interior tile, preferring the same room as `from`. */
+function nearestInteriorSpot(
+  tiles: Tile[][],
+  rooms: Room[],
+  from: Pos,
+  occupied: Set<string>,
+): Pos | null {
+  const here = roomAt(rooms, from.x, from.y);
+  const order = here ? [here, ...rooms.filter((r) => r !== here)] : rooms;
+  for (const room of order) {
+    const spots: Pos[] = [];
+    for (let y = room.y; y < room.y + room.h; y++) {
+      for (let x = room.x; x < room.x + room.w; x++) {
+        if (!tiles[y]?.[x]?.walkable) continue;
+        if (isCorridorCell(tiles, rooms, x, y)) continue;
+        if (occupied.has(`${x},${y}`)) continue;
+        spots.push({ x, y });
+      }
+    }
+    if (!spots.length) continue;
+    spots.sort((a, b) => chebyshev(a, from) - chebyshev(b, from));
+    return spots[0]!;
+  }
+  return null;
+}
+
+function retargetSpecial(specials: Pos[], from: Pos, to: Pos): void {
+  const hit = specials.find((p) => p.x === from.x && p.y === from.y);
+  if (hit) {
+    hit.x = to.x;
+    hit.y = to.y;
+  }
+}
+
+function evictCorridorOccupants(
+  tiles: Tile[][],
+  rooms: Room[],
+  enemies: Enemy[],
+  items: GroundItem[],
+  npcs: FieldNpc[],
+  start: Pos,
+  specials: Pos[],
+): void {
+  const bump = (p: Pos): boolean => {
+    if (!isCorridorCell(tiles, rooms, p.x, p.y)) return false;
+    const occ = occupiedSet(enemies, items, start, specials, npcs);
+    occ.delete(`${p.x},${p.y}`);
+    const next = nearestInteriorSpot(tiles, rooms, p, occ);
+    if (!next) return true;
+    retargetSpecial(specials, p, next);
+    p.x = next.x;
+    p.y = next.y;
+    return false;
+  };
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i]!;
+    const drop = bump(e);
+    if (drop) enemies.splice(i, 1);
+    else {
+      e.homeX = e.x;
+      e.homeY = e.y;
+    }
+  }
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i]!;
+    if (bump(it)) items.splice(i, 1);
+  }
+  for (let i = npcs.length - 1; i >= 0; i--) {
+    const n = npcs[i]!;
+    if (bump(n)) npcs.splice(i, 1);
+  }
 }
 
 function carveRoom(tiles: Tile[][], room: Room): void {
@@ -391,7 +470,7 @@ function dressBiomeTerrain(
 
   const blockScrub = id === 'canopy' || id === 'spire' || id === 'reef';
 
-  // Base sparse dressing
+  // Sparse dressing. Halls are stripped back to floor after the last connect.
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
       if (tiles[y]![x]!.kind !== 'floor') continue;
@@ -426,9 +505,13 @@ function dressBiomeTerrain(
     // Longer scrub sight-blockers along room edges
     for (const room of rooms) {
       for (let x = room.x; x < room.x + room.w; x++) {
-        if (tiles[room.y]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[room.y]![x] = scrub(true);
+        if (tiles[room.y]?.[x]?.kind === 'floor' && rng() < 0.45) {
+          tiles[room.y]![x] = scrub(true);
+        }
         const by = room.y + room.h - 1;
-        if (tiles[by]?.[x]?.kind === 'floor' && rng() < 0.45) tiles[by]![x] = scrub(true);
+        if (tiles[by]?.[x]?.kind === 'floor' && rng() < 0.45) {
+          tiles[by]![x] = scrub(true);
+        }
       }
     }
   }
@@ -456,7 +539,8 @@ function dressBiomeTerrain(
       const x0 = Math.min(a.cx, b.cx);
       const x1 = Math.max(a.cx, b.cx);
       for (let x = x0; x <= x1; x++) {
-        if (tiles[y]?.[x]?.walkable && rng() < 0.55) tiles[y]![x] = vent();
+        if (!tiles[y]?.[x]?.walkable) continue;
+        if (rng() < 0.55) tiles[y]![x] = vent();
       }
     }
   }
@@ -508,6 +592,7 @@ function dressSealedHatches(
         if (x === start.x && y === start.y) continue;
         if (x === exit.x && y === exit.y) continue;
         if (x === room.cx && y === room.cy) continue;
+        if (isCorridorCell(tiles, rooms, x, y)) continue;
         candidates.push({ x, y });
       }
     }
@@ -684,6 +769,7 @@ export function generateSectorMap(
     for (const p of floors) {
       if (p.x === start.x && p.y === start.y) continue;
       if (p.x === exit.x && p.y === exit.y) continue;
+      if (isCorridorCell(tiles, rooms, p.x, p.y)) continue;
       if (!canReach(tiles, start, p)) continue;
       items.push({ id: nextEntityId++, kind, x: p.x, y: p.y });
       specials.push(p);
@@ -732,7 +818,7 @@ export function generateSectorMap(
         let vented: Pos | null = null;
         for (let y = aRoom.y; y < aRoom.y + aRoom.h && !vented; y++) {
           for (let x = aRoom.x; x < aRoom.x + aRoom.w; x++) {
-            if (tiles[y]?.[x]?.kind === 'vent') {
+            if (tiles[y]?.[x]?.kind === 'vent' && !isCorridorCell(tiles, rooms, x, y)) {
               vented = { x, y };
               break;
             }
@@ -782,6 +868,7 @@ export function generateSectorMap(
   const openIn = (room: Room, minStartDist = 0): Pos[] =>
     fillOrder(room, tiles, rng).filter((p) => {
       if (occ().has(`${p.x},${p.y}`)) return false;
+      if (isCorridorCell(tiles, rooms, p.x, p.y)) return false;
       if (Math.abs(p.x - start.x) + Math.abs(p.y - start.y) < minStartDist) return false;
       if (roomQuest?.steps.some((s) => s.pos.x === p.x && s.pos.y === p.y)) return false;
       return canReach(tiles, start, p);
@@ -851,6 +938,7 @@ export function generateSectorMap(
         { x: room.cx, y: room.cy - 1 },
       ].filter((p) => {
         if (!tiles[p.y]?.[p.x]?.walkable) return false;
+        if (isCorridorCell(tiles, rooms, p.x, p.y)) return false;
         if (occ().has(`${p.x},${p.y}`)) return false;
         if (p.x === exit.x && p.y === exit.y) return false;
         if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) return false;
@@ -894,6 +982,7 @@ export function generateSectorMap(
     }
     for (const p of tries) {
       if (!tiles[p.y]?.[p.x]?.walkable) continue;
+      if (isCorridorCell(tiles, rooms, p.x, p.y)) continue;
       if (occ().has(`${p.x},${p.y}`)) continue;
       if (p.x === exit.x && p.y === exit.y) continue;
       if (p.x === start.x && p.y === start.y) continue;
@@ -934,6 +1023,7 @@ export function generateSectorMap(
           { x: room.cx, y: room.cy - 1 },
         ].filter((p) => {
           if (!tiles[p.y]?.[p.x]?.walkable) return false;
+          if (isCorridorCell(tiles, rooms, p.x, p.y)) return false;
           if (occ().has(`${p.x},${p.y}`)) return false;
           if (p.x === exit.x && p.y === exit.y) return false;
           if (beaconPos && p.x === beaconPos.x && p.y === beaconPos.y) return false;
@@ -965,6 +1055,7 @@ export function generateSectorMap(
     for (const room of midRooms) {
       const p = { x: room.cx, y: room.cy };
       if (!tiles[p.y]?.[p.x]?.walkable) continue;
+      if (isCorridorCell(tiles, rooms, p.x, p.y)) continue;
       if (occ().has(`${p.x},${p.y}`)) continue;
       if (p.x === exit.x && p.y === exit.y) continue;
       if (!canReach(tiles, start, p)) continue;
@@ -998,6 +1089,9 @@ export function generateSectorMap(
       connect(tiles, startRoom, makeRoom(it.x, it.y, 1, 1), rng);
     }
   }
+
+  clearCorridorDressing(tiles, rooms, [start, exit, ...specials]);
+  evictCorridorOccupants(tiles, rooms, enemies, items, npcs, start, specials);
 
   const wallLights = placeWallLights(tiles, rooms, sector.id, rng, [
     start,

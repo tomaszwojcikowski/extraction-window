@@ -1,7 +1,10 @@
 import Phaser from 'phaser';
-import { HANDSHAKE_TURNS } from '../../sim/mechanics/beaconHandshake';
-import { LightTemp, Theme } from '../../scenes/theme';
+import { LightTemp } from '../../scenes/theme';
 import type { GameState } from '../../sim/types';
+import { handshakePadView } from './handshakeTells';
+
+export { handshakePadView } from './handshakeTells';
+export type { HandshakePadView, HandshakeStage } from './handshakeTells';
 
 /**
  * Beacon pad sync ticks — spatial handshake progress (Wave 57).
@@ -13,30 +16,22 @@ export function drawHandshakePad(
   animFrame: number,
   tileDraw: number,
 ): void {
-  if (!st.handshake?.active) return;
-  const pos = st.beaconPos ?? { x: st.player.x, y: st.player.y };
-  if (!(st.visible[pos.y]?.[pos.x] ?? false) && !(st.explored[pos.y]?.[pos.x] ?? false)) {
-    return;
-  }
+  const view = handshakePadView(st, animFrame);
+  if (!view) return;
 
-  const cx = pos.x * tileDraw + tileDraw / 2;
-  const cy = pos.y * tileDraw + tileDraw / 2;
-  const progress = Math.max(0, Math.min(HANDSHAKE_TURNS, st.handshake.progress));
-  const pulse = 0.55 + (animFrame % 4) * 0.1;
+  const cx = view.x * tileDraw + tileDraw / 2;
+  const cy = view.y * tileDraw + tileDraw / 2;
   const r = tileDraw * 0.42;
 
-  g.lineStyle(1, LightTemp.beacon, 0.35 * pulse);
+  g.lineStyle(1, LightTemp.beacon, 0.35 * view.pulse);
   g.strokeCircle(cx, cy, r);
 
-  const stages = HANDSHAKE_TURNS;
+  const stages = view.stages.length;
   for (let i = 0; i < stages; i++) {
+    const stage = view.stages[i]!;
     const a0 = -Math.PI / 2 + (i / stages) * Math.PI * 2;
     const a1 = -Math.PI / 2 + ((i + 0.72) / stages) * Math.PI * 2;
-    const filled = i < progress;
-    const hot = i === progress && st.handshake.active;
-    const color = filled ? Theme.safe : hot ? LightTemp.beacon : Theme.inkDim;
-    const alpha = filled ? 0.9 * pulse : hot ? 0.75 * pulse : 0.35;
-    g.lineStyle(filled || hot ? 2 : 1, color, alpha);
+    g.lineStyle(stage.filled || stage.hot ? 2 : 1, stage.color, stage.alpha);
     g.beginPath();
     g.arc(cx, cy, r + 4, a0, a1, false);
     g.strokePath();

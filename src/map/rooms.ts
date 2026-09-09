@@ -3,6 +3,7 @@ import { ENEMIES, type EnemyKind } from '../data/enemies';
 import { pick, randInt, shuffle, type Rng } from '../sim/rng';
 import type { Pos, RoomRole, Tile } from '../sim/types';
 import { layoutForSector, type LayoutKind } from './layoutKind';
+import { isCorridorCell } from './corridors';
 
 /**
  * Room identity.
@@ -209,6 +210,7 @@ export function dressRoomRoles(
   const paint = (p: Pos, tile: Tile): void => {
     if (isReserved(p)) return;
     if (tiles[p.y]?.[p.x]?.kind !== 'floor') return;
+    if (isCorridorCell(tiles, rooms, p.x, p.y)) return;
     tiles[p.y]![p.x] = tile;
   };
   const wet = sector.id === 'flood' || sector.id === 'brine' || sector.id === 'reef';
