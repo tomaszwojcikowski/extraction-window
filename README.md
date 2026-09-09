@@ -57,7 +57,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 ## Stack
 
 - **Rules:** headless TypeScript `src/sim/` (no Phaser, no Three.js)
-- **Presentation (default):** Three.js orbit field at `/` — sim flood tint, 3D surveyor and fauna, combat tells, HTML HUD, field sketch, title/end, shared audio, lattice-lock overlay, no bloom. [`v2.html`](./v2.html) redirects here.
+- **Presentation (default):** Three.js orbit field at `/` — sim flood tint, 3D surveyor and fauna, combat tells, wake/handshake marks, HTML HUD, field sketch, title/end, shared audio, lattice-lock overlay, no bloom. [`v2.html`](./v2.html) redirects here.
 - **Presentation (v1):** Phaser **4.2.1** at [`v1.html`](./v1.html) (see [docs/V1.md](./docs/V1.md))
 - Vite + Vitest; keyboard-only; seeded runs
 

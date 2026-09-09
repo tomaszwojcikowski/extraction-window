@@ -5,7 +5,11 @@ import { floorVariantAt } from '../scenes/textures';
 import { BIOME_AMBIENT, Material, Theme, floorTextureKey } from '../scenes/theme';
 import { shroudRevealEase } from '../game/views/moveBlendDirty';
 import { PHASER_BEAM_MS, phaserTrackMarks } from '../game/presenters/phaserTells';
-import { inShadow, SHADOW_THRESHOLD, tileBrightness } from '../sim/light';
+import { handshakePadView } from '../game/presenters/handshakeTells';
+import { collectWakeTells, wakeTellColor, wakeTellPulse } from '../game/presenters/wakeTellMarks';
+import { computeShearPressure } from '../game/presenters/ShearPressure';
+import { inShadow, SHADOW_THRESHOLD, tileBrightness, LIGHT_TEMP } from '../sim/light';
+import { HANDSHAKE_TURNS } from '../sim/mechanics/beaconHandshake';
 import { hasPhaserEquipped } from '../sim/phaser';
 import type { EnemyTier, GameState, TileKind } from '../sim/types';
 import type { NpcKind, AllyKind } from '../data/npcs';
@@ -134,6 +138,8 @@ export class V2Field {
   private readonly threatRoot = new THREE.Group();
   private readonly phaserTrackRoot = new THREE.Group();
   private readonly beamRoot = new THREE.Group();
+  private readonly wakeRoot = new THREE.Group();
+  private readonly handshakeRoot = new THREE.Group();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly controls: OrbitControls;
   private readonly hemi: THREE.HemisphereLight;
@@ -182,6 +188,13 @@ export class V2Field {
   private beamCoreGeo = new THREE.CylinderGeometry(0.028, 0.028, 1, 8);
   private beamGlowGeo = new THREE.CylinderGeometry(0.075, 0.075, 1, 8);
   private beamImpactGeo = new THREE.SphereGeometry(0.18, 10, 8);
+  private wakeLineGeo = new THREE.CylinderGeometry(0.012, 0.012, 1, 6);
+  private wakeRingGeo = floorRing(0.3, 0.36);
+  private wakeHaloGeo = floorRing(0.38, 0.42);
+  private handshakeBaseGeo = floorRing(0.38, 0.44);
+  private handshakeArcGeos = handshakeArcGeos(HANDSHAKE_TURNS);
+  private readonly wakeFrom = new THREE.Vector3();
+  private readonly wakeTo = new THREE.Vector3();
   private readonly beamFrom = new THREE.Vector3();
   private readonly beamTip = new THREE.Vector3();
   private readonly beamDir = new THREE.Vector3();
@@ -220,6 +233,8 @@ export class V2Field {
     this.world.add(this.threatRoot);
     this.world.add(this.phaserTrackRoot);
     this.world.add(this.beamRoot);
+    this.world.add(this.wakeRoot);
+    this.world.add(this.handshakeRoot);
     this.scene.background = new THREE.Color(Theme.groundDeep);
     this.scene.fog = createFieldFog();
 
@@ -414,6 +429,8 @@ export class V2Field {
     this.tickLampCarry();
     this.syncThreat(now);
     this.syncPhaserTracks();
+    this.syncWake(now);
+    this.syncHandshake(now);
     this.tickBeam(now);
     this.poseOverlays(now);
     this.followCamera(false);
@@ -435,6 +452,11 @@ export class V2Field {
     this.beamCoreGeo.dispose();
     this.beamGlowGeo.dispose();
     this.beamImpactGeo.dispose();
+    this.wakeLineGeo.dispose();
+    this.wakeRingGeo.dispose();
+    this.wakeHaloGeo.dispose();
+    this.handshakeBaseGeo.dispose();
+    for (const geo of this.handshakeArcGeos) geo.dispose();
   }
 
   private tex(key: string): THREE.Texture {
@@ -987,6 +1009,120 @@ export class V2Field {
     (mesh.material as THREE.MeshBasicMaterial).opacity = opacity;
   }
 
+  private syncWake(now: number): void {
+    if (!this.state) {
+      this.wakeRoot.visible = false;
+      return;
+    }
+    const px = this.state.player.x;
+    const py = this.state.player.y;
+    const shear = computeShearPressure(this.state);
+    const { pulse } = wakeTellPulse(Math.floor(now / 420), shear);
+    const tells = collectWakeTells(this.state, px, py);
+    this.wakeRoot.visible = tells.length > 0;
+    while (this.wakeRoot.children.length > tells.length) {
+      const group = this.wakeRoot.children[this.wakeRoot.children.length - 1] as THREE.Group;
+      this.dropOverlayGroup(this.wakeRoot, group);
+    }
+    this.wakeFrom.set(px + 0.5, 0.08, py + 0.5);
+    for (let i = 0; i < tells.length; i++) {
+      const tell = tells[i]!;
+      let group = this.wakeRoot.children[i] as THREE.Group | undefined;
+      if (!group) {
+        group = this.makeWakeGroup();
+        this.wakeRoot.add(group);
+      }
+      const color = wakeTellColor(tell.kind);
+      const onFeet = tell.ex === px && tell.ey === py;
+      this.wakeTo.set(tell.ex + 0.5, 0.08, tell.ey + 0.5);
+      const line = group.getObjectByName('wakeLine') as THREE.Mesh;
+      const ring = group.getObjectByName('wakeRing') as THREE.Mesh;
+      const halo = group.getObjectByName('wakeHalo') as THREE.Mesh;
+      this.beamDir.subVectors(this.wakeTo, this.wakeFrom);
+      const len = this.beamDir.length();
+      if (len < 0.08) {
+        line.visible = false;
+      } else {
+        line.visible = true;
+        this.beamDir.normalize();
+        line.position.copy(this.wakeFrom).add(this.wakeTo).multiplyScalar(0.5);
+        line.quaternion.setFromUnitVectors(this.beamY, this.beamDir);
+        line.scale.set(1, len, 1);
+        const lineMat = line.material as THREE.MeshBasicMaterial;
+        lineMat.color.setHex(color);
+        lineMat.opacity = Math.min(1, 0.42 * pulse);
+      }
+      const ringScale = 0.34 + 0.06 * Math.min(1.2, pulse);
+      ring.position.set(tell.ex + 0.5, 0.08, tell.ey + 0.5);
+      ring.scale.setScalar(ringScale / 0.33);
+      halo.position.copy(ring.position);
+      halo.scale.setScalar((ringScale + 0.06) / 0.4);
+      const ringMat = ring.material as THREE.MeshBasicMaterial;
+      const haloMat = halo.material as THREE.MeshBasicMaterial;
+      ringMat.color.setHex(color);
+      haloMat.color.setHex(color);
+      ringMat.opacity = Math.min(1, (onFeet ? 0.95 : 0.72) * pulse);
+      haloMat.opacity = Math.min(1, 0.35 * pulse);
+    }
+  }
+
+  private makeWakeGroup(): THREE.Group {
+    const group = new THREE.Group();
+    const line = new THREE.Mesh(this.wakeLineGeo, overlayMat(Theme.scanWash, 0.4));
+    line.name = 'wakeLine';
+    const ring = new THREE.Mesh(this.wakeRingGeo, overlayMat(Theme.scanWash, 0.7));
+    ring.name = 'wakeRing';
+    const halo = new THREE.Mesh(this.wakeHaloGeo, overlayMat(Theme.scanWash, 0.35));
+    halo.name = 'wakeHalo';
+    group.add(line, ring, halo);
+    return group;
+  }
+
+  private syncHandshake(now: number): void {
+    const view = this.state ? handshakePadView(this.state, Math.floor(now / 420)) : null;
+    if (!view) {
+      this.handshakeRoot.visible = false;
+      return;
+    }
+    this.ensureHandshakeMeshes(view.stages.length);
+    this.handshakeRoot.visible = true;
+    this.handshakeRoot.position.set(view.x + 0.5, 0.06, view.y + 0.5);
+    const base = this.handshakeRoot.getObjectByName('hsBase') as THREE.Mesh;
+    const baseMat = base.material as THREE.MeshBasicMaterial;
+    baseMat.color.setHex(LIGHT_TEMP.beacon);
+    baseMat.opacity = 0.35 * view.pulse;
+    for (let i = 0; i < view.stages.length; i++) {
+      const stage = view.stages[i]!;
+      const mesh = this.handshakeRoot.getObjectByName(`hsArc${i}`) as THREE.Mesh;
+      const mat = mesh.material as THREE.MeshBasicMaterial;
+      mat.color.setHex(stage.color);
+      mat.opacity = stage.alpha;
+    }
+  }
+
+  private ensureHandshakeMeshes(stageCount: number): void {
+    if (this.handshakeRoot.getObjectByName('hsBase')) return;
+    const base = new THREE.Mesh(this.handshakeBaseGeo, overlayMat(LIGHT_TEMP.beacon, 0.35));
+    base.name = 'hsBase';
+    this.handshakeRoot.add(base);
+    for (let i = 0; i < stageCount; i++) {
+      const geo = this.handshakeArcGeos[i] ?? this.handshakeBaseGeo;
+      const arc = new THREE.Mesh(geo, overlayMat(Theme.inkDim, 0.35));
+      arc.name = `hsArc${i}`;
+      this.handshakeRoot.add(arc);
+    }
+  }
+
+  private dropOverlayGroup(parent: THREE.Group, group: THREE.Group): void {
+    parent.remove(group);
+    group.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      const mat = obj.material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else mat.dispose();
+    });
+  }
+
   private tickWallGhost(): void {
     const vis = this.visualPos();
     const cam = this.camera.position;
@@ -1197,6 +1333,16 @@ export class V2Field {
       if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
       else mat.dispose();
     }
+    while (this.wakeRoot.children.length) {
+      this.dropOverlayGroup(this.wakeRoot, this.wakeRoot.children[0] as THREE.Group);
+    }
+    while (this.handshakeRoot.children.length) {
+      const mesh = this.handshakeRoot.children[0] as THREE.Mesh;
+      this.handshakeRoot.remove(mesh);
+      const mat = mesh.material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else mat.dispose();
+    }
     if (this.playerRig) {
       disposeSurveyor(this.playerRig);
       this.playerRig = null;
@@ -1208,6 +1354,8 @@ export class V2Field {
     this.world.add(this.threatRoot);
     this.world.add(this.phaserTrackRoot);
     this.world.add(this.beamRoot);
+    this.world.add(this.wakeRoot);
+    this.world.add(this.handshakeRoot);
   }
 }
 
@@ -1225,6 +1373,37 @@ function additiveBeamMat(hex: number, opacity: number): THREE.MeshBasicMaterial 
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
+}
+
+function overlayMat(hex: number, opacity: number): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color: hex,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+}
+
+function floorRing(
+  inner: number,
+  outer: number,
+  thetaStart = 0,
+  thetaLength = Math.PI * 2,
+): THREE.RingGeometry {
+  const geo = new THREE.RingGeometry(inner, outer, 24, 1, thetaStart, thetaLength);
+  geo.rotateX(-Math.PI / 2);
+  return geo;
+}
+
+function handshakeArcGeos(stages: number): THREE.RingGeometry[] {
+  const geos: THREE.RingGeometry[] = [];
+  for (let i = 0; i < stages; i++) {
+    const a0 = -Math.PI / 2 + (i / stages) * Math.PI * 2;
+    const span = (0.72 / stages) * Math.PI * 2;
+    geos.push(floorRing(0.46, 0.54, a0, span));
+  }
+  return geos;
 }
 
 function cardinalBeamTiles(beam: {
