@@ -16,6 +16,14 @@ import { collectThreatMarks } from './threat';
 import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
 import { createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
 import { markMeshShadows } from './litMaterial';
+import { createSconce, disposeSconce, poseSconce, tintSconce } from './sconceMesh';
+import {
+  applyLocalLight,
+  localLightPoses,
+  MAX_POINT_LIGHTS,
+  MAX_SCONCE_SPOTS,
+  sconceWorldPose,
+} from './fieldSources';
 import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
@@ -57,6 +65,12 @@ type PropView = {
   x: number;
   y: number;
   kind: TileKind;
+  root: THREE.Group;
+};
+
+type SconceView = {
+  mountX: number;
+  mountY: number;
   root: THREE.Group;
 };
 
@@ -111,11 +125,14 @@ export class V2Field {
   private readonly controls: OrbitControls;
   private readonly hemi: THREE.HemisphereLight;
   private readonly keyLight: THREE.DirectionalLight;
+  private readonly sconceSpots: THREE.SpotLight[] = [];
+  private readonly poolPoints: THREE.PointLight[] = [];
   private atlas: Map<string, THREE.Texture>;
   private tiles: TileHandle[] = [];
   private actors = new Map<string, ActorView>();
   private items: THREE.Group[] = [];
   private props = new Map<string, PropView>();
+  private sconces: SconceView[] = [];
   private playerRig: THREE.Group | null = null;
   private lastPlayer = { x: 0, y: 0 };
   private face = { dx: 0, dy: 1 };
@@ -180,6 +197,19 @@ export class V2Field {
     this.scene.add(this.hemi);
     this.scene.add(this.keyLight);
     this.scene.add(this.keyLight.target);
+    for (let i = 0; i < MAX_SCONCE_SPOTS; i++) {
+      const spot = new THREE.SpotLight(0xffffff, 0, 2.5, 0.92, 0.48, 2);
+      spot.castShadow = false;
+      this.scene.add(spot);
+      this.scene.add(spot.target);
+      this.sconceSpots.push(spot);
+    }
+    for (let i = 0; i < MAX_POINT_LIGHTS; i++) {
+      const point = new THREE.PointLight(0xffffff, 0, 3, 2);
+      point.castShadow = false;
+      this.scene.add(point);
+      this.poolPoints.push(point);
+    }
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
     this.fitToCanvas();
@@ -223,6 +253,7 @@ export class V2Field {
     this.syncActors(state, true);
     this.syncItems(state);
     this.syncProps(state);
+    this.rebuildSconces(state);
     this.applyLighting(state);
     this.drawnMap = fieldMapStamp(state);
     this.followCamera(true);
@@ -241,7 +272,10 @@ export class V2Field {
     this.syncProps(state);
     if (hopping) this.lockLampCarry(state);
     else this.applyLighting(state);
-    if (hopping) this.tintOverlays(state);
+    if (hopping) {
+      this.tintOverlays(state);
+      this.syncSconceVisibility(state);
+    }
     return false;
   }
 
@@ -331,6 +365,7 @@ export class V2Field {
     this.followCamera(false);
     this.controls.update();
     this.tickWallGhost();
+    this.tickLocalLights();
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -370,6 +405,7 @@ export class V2Field {
       this.paintTile(tile, tileLook(state, tile.kind, tile.x, tile.y));
     }
     this.tintOverlays(state);
+    this.syncSconceVisibility(state);
   }
 
   private paintTile(tile: TileHandle, look: TileLook): void {
@@ -799,6 +835,57 @@ export class V2Field {
     placeFieldKeyLight(this.keyLight, vis.x, vis.z);
   }
 
+  private rebuildSconces(state: GameState): void {
+    this.dropSconces();
+    for (const src of state.lightSources) {
+      if (src.fixture !== 'sconce') continue;
+      const mx = src.mountX ?? src.x;
+      const my = src.mountY ?? src.y;
+      if (state.tiles[my]?.[mx]?.kind !== 'wall') continue;
+      const root = createSconce(src.color ?? 0xffc48a);
+      const pose = sconceWorldPose(src);
+      root.position.set(pose.x, pose.y, pose.z);
+      root.rotation.y = pose.rotY;
+      markMeshShadows(root, true, true);
+      setRenderOrder(root, 2);
+      this.world.add(root);
+      this.sconces.push({ mountX: mx, mountY: my, root });
+    }
+    this.syncSconceVisibility(state);
+  }
+
+  private syncSconceVisibility(state: GameState): void {
+    for (const view of this.sconces) {
+      const explored = state.explored[view.mountY]?.[view.mountX] ?? false;
+      const visible = state.visible[view.mountY]?.[view.mountX] ?? false;
+      view.root.visible = explored;
+      if (!explored) continue;
+      const shade = new THREE.Color(visible ? 0xffffff : Theme.memoryWash);
+      if (!visible) shade.multiplyScalar(0.45);
+      tintSconce(view.root, shade);
+    }
+  }
+
+  private tickLocalLights(): void {
+    if (!this.state) return;
+    const vis = this.visualPos();
+    const { spots, points } = localLightPoses(this.state, vis.x, vis.z);
+    for (let i = 0; i < this.sconceSpots.length; i++) {
+      applyLocalLight(this.sconceSpots[i]!, spots[i] ?? null);
+    }
+    for (let i = 0; i < this.poolPoints.length; i++) {
+      applyLocalLight(this.poolPoints[i]!, points[i] ?? null);
+    }
+  }
+
+  private dropSconces(): void {
+    for (const view of this.sconces) {
+      this.world.remove(view.root);
+      disposeSconce(view.root);
+    }
+    this.sconces = [];
+  }
+
   private syncItems(state: GameState): void {
     for (const root of this.items) {
       this.world.remove(root);
@@ -874,6 +961,7 @@ export class V2Field {
   private poseOverlays(now: number): void {
     for (const root of this.items) poseLoot(root, now);
     for (const view of this.props.values()) poseProp(view.root, now);
+    for (const view of this.sconces) poseSconce(view.root, now);
   }
 
   private clearWorld(): void {
@@ -888,6 +976,7 @@ export class V2Field {
     for (const root of this.items) disposeLoot(root);
     this.items = [];
     for (const key of [...this.props.keys()]) this.dropProp(key);
+    this.dropSconces();
     while (this.threatRoot.children.length) {
       const mesh = this.threatRoot.children[0] as THREE.Mesh;
       this.threatRoot.remove(mesh);

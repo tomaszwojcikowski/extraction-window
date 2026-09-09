@@ -6,11 +6,11 @@ export const FIELD_KEY_OFFSET = { x: 7.5, y: 14, z: 8.5 };
 export const FIELD_SHADOW_EXTENT = 14;
 
 export function createFieldHemi(): THREE.HemisphereLight {
-  return new THREE.HemisphereLight(0x8ea8ba, Theme.groundDeep, 0.38);
+  return new THREE.HemisphereLight(0x8ea8ba, Theme.groundDeep, 0.32);
 }
 
 export function createFieldKeyLight(): THREE.DirectionalLight {
-  const light = new THREE.DirectionalLight(0xf0ebe0, 0.95);
+  const light = new THREE.DirectionalLight(0xf0ebe0, 0.62);
   light.castShadow = true;
   light.shadow.mapSize.set(2048, 2048);
   light.shadow.bias = -0.0009;
