@@ -5,10 +5,12 @@ import { BIOME_AMBIENT, Material, Theme } from '../scenes/theme';
 import { itemTextureKey } from '../game/presenters/itemTexture';
 import { shroudRevealEase } from '../game/views/moveBlendDirty';
 import { inShadow, SHADOW_THRESHOLD, tileBrightness } from '../sim/light';
-import type { GameState, TileKind } from '../sim/types';
+import type { EnemyTier, GameState, TileKind } from '../sim/types';
 import { tileTextureKey } from './tileKey';
 import { createSurveyor, disposeSurveyor, poseSurveyor, tintSurveyor, SURVEYOR_HOP_MS } from './surveyorMesh';
+import { createFauna, disposeFauna, poseFauna, tintFauna } from './faunaMesh';
 import { collectThreatMarks } from './threat';
+import type { EnemyKind } from '../data/enemies';
 
 const FALLBACK_KEY = '__v2_fallback';
 const ACTOR_HOP_MS = 160;
@@ -31,13 +33,17 @@ type ActorKind = 'enemy' | 'npc' | 'ally';
 type ActorView = {
   id: number;
   kind: ActorKind;
-  sprite: THREE.Sprite;
+  root: THREE.Object3D;
+  fauna: boolean;
   tileX: number;
   tileY: number;
   hop: { fromX: number; fromZ: number; toX: number; toZ: number; started: number } | null;
   dying: boolean;
   dieAt: number;
   hitUntil: number;
+  hp: number;
+  strideSign: number;
+  windup: boolean;
 };
 
 type LightBlend = {
@@ -388,6 +394,7 @@ export class V2Field {
       show: boolean,
       hpDropped: boolean,
       died: boolean,
+      fauna: { enemyKind: EnemyKind; tier: EnemyTier; windup: boolean; hp: number } | null,
     ): void => {
       const key = this.actorKey(kind, id);
       let view = this.actors.get(key);
@@ -406,38 +413,51 @@ export class V2Field {
       }
       live.add(key);
       if (!view) {
-        const spr = new THREE.Sprite(
-          new THREE.SpriteMaterial({ map: this.tex(tex), transparent: true }),
-        );
-        spr.scale.set(1, 1, 1);
-        spr.position.set(x + 0.5, 0.85, y + 0.5);
-        this.world.add(spr);
+        const root = fauna
+          ? createFauna(fauna.enemyKind, fauna.tier)
+          : new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex(tex), transparent: true }));
+        if (!fauna) (root as THREE.Sprite).scale.set(1, 1, 1);
+        root.position.set(x + 0.5, fauna ? 0 : 0.85, y + 0.5);
+        this.world.add(root);
         view = {
           id,
           kind,
-          sprite: spr,
+          root,
+          fauna: Boolean(fauna),
           tileX: x,
           tileY: y,
           hop: null,
           dying: false,
           dieAt: 0,
           hitUntil: 0,
+          hp: fauna?.hp ?? 0,
+          strideSign: 1,
+          windup: fauna?.windup ?? false,
         };
         this.actors.set(key, view);
       }
-      const mat = view.sprite.material as THREE.SpriteMaterial;
-      mat.map = this.tex(tex);
+      if (!view.fauna) {
+        const mat = (view.root as THREE.Sprite).material as THREE.SpriteMaterial;
+        mat.map = this.tex(tex);
+      }
+      if (fauna) {
+        view.hp = fauna.hp;
+        view.windup = fauna.windup;
+        this.tintActor(view, state, x, y);
+      }
       if (hpDropped) view.hitUntil = now + HIT_FLASH_MS;
       if (!snap && (view.tileX !== x || view.tileY !== y)) {
+        view.strideSign *= -1;
+        view.root.rotation.y = Math.atan2(x - view.tileX, y - view.tileY);
         view.hop = {
-          fromX: view.sprite.position.x,
-          fromZ: view.sprite.position.z,
+          fromX: view.root.position.x,
+          fromZ: view.root.position.z,
           toX: x + 0.5,
           toZ: y + 0.5,
           started: now,
         };
       } else if (snap || !view.hop) {
-        view.sprite.position.set(x + 0.5, 0.85, y + 0.5);
+        view.root.position.set(x + 0.5, view.fauna ? 0 : 0.85, y + 0.5);
       }
       view.tileX = x;
       view.tileY = y;
@@ -447,7 +467,7 @@ export class V2Field {
       const key = this.actorKey('enemy', en.id);
       const view = this.actors.get(key);
       const wasAlive = Boolean(view && !view.dying);
-      const prevHp = typeof view?.sprite.userData.hp === 'number' ? view.sprite.userData.hp : en.hp;
+      const prevHp = view?.hp ?? en.hp;
       const died = wasAlive && !en.alive;
       const hpDropped = wasAlive && en.alive && en.hp < prevHp;
       place(
@@ -459,12 +479,11 @@ export class V2Field {
         en.alive && seen(en.x, en.y),
         hpDropped,
         died,
+        { enemyKind: en.kind, tier: en.tier, windup: en.windup > 0, hp: en.hp },
       );
-      const next = this.actors.get(key);
-      if (next && en.alive) next.sprite.userData.hp = en.hp;
     }
     for (const npc of state.npcs) {
-      place('npc', npc.id, npc.x, npc.y, npcTextureKey(npc.kind, 0), seen(npc.x, npc.y), false, false);
+      place('npc', npc.id, npc.x, npc.y, npcTextureKey(npc.kind, 0), seen(npc.x, npc.y), false, false, null);
     }
     for (const ally of state.allies) {
       const key = this.actorKey('ally', ally.id);
@@ -479,6 +498,7 @@ export class V2Field {
         ally.alive && seen(ally.x, ally.y),
         false,
         wasAlive && !ally.alive,
+        null,
       );
     }
 
@@ -487,11 +507,19 @@ export class V2Field {
     }
   }
 
+  private tintActor(view: ActorView, state: GameState, x: number, y: number): void {
+    if (!view.fauna) return;
+    const shade = new THREE.Color(0xffffff);
+    applySimTint(shade, state, x, y);
+    tintFauna(view.root as THREE.Group, shade);
+  }
+
   private dropActor(key: string): void {
     const view = this.actors.get(key);
     if (!view) return;
-    this.world.remove(view.sprite);
-    (view.sprite.material as THREE.SpriteMaterial).dispose();
+    this.world.remove(view.root);
+    if (view.fauna) disposeFauna(view.root as THREE.Group);
+    else (view.root as THREE.Sprite).material.dispose();
     this.actors.delete(key);
   }
 
@@ -583,26 +611,48 @@ export class V2Field {
       if (view.dying) {
         const u = Math.min(1, (now - view.dieAt) / DEATH_MS);
         const e = u * u;
-        view.sprite.scale.set(1 - 0.28 * e, 1 - 0.82 * e, 1);
-        view.sprite.position.y = 0.85 - 0.55 * e;
-        (view.sprite.material as THREE.SpriteMaterial).opacity = 1 - e;
-        (view.sprite.material as THREE.SpriteMaterial).color.setHex(Theme.rust);
+        const baseY = view.fauna ? 0 : 0.85;
+        view.root.position.y = baseY - 0.45 * e;
+        if (view.fauna) {
+          const base = (view.root.userData.baseScale as number) || 1;
+          view.root.scale.setScalar(base * (1 - 0.55 * e));
+          const rust = new THREE.Color(Theme.rust);
+          tintFauna(view.root as THREE.Group, rust);
+        } else {
+          const spr = view.root as THREE.Sprite;
+          spr.scale.set(1 - 0.28 * e, 1 - 0.82 * e, 1);
+          (spr.material as THREE.SpriteMaterial).opacity = 1 - e;
+          (spr.material as THREE.SpriteMaterial).color.setHex(Theme.rust);
+        }
         if (u >= 1) this.dropActor(key);
         continue;
       }
+      let hopT: number | null = null;
       if (view.hop) {
         const u = Math.min(1, (now - view.hop.started) / ACTOR_HOP_MS);
         const e = 1 - (1 - u) ** 3;
-        view.sprite.position.x = view.hop.fromX + (view.hop.toX - view.hop.fromX) * e;
-        view.sprite.position.z = view.hop.fromZ + (view.hop.toZ - view.hop.fromZ) * e;
+        hopT = u;
+        view.root.position.x = view.hop.fromX + (view.hop.toX - view.hop.fromX) * e;
+        view.root.position.z = view.hop.fromZ + (view.hop.toZ - view.hop.fromZ) * e;
         if (u >= 1) view.hop = null;
       }
-      const mat = view.sprite.material as THREE.SpriteMaterial;
-      if (now < view.hitUntil) {
-        const flash = (view.hitUntil - now) / HIT_FLASH_MS;
-        mat.color.setHex(0xffffff).lerp(new THREE.Color(Theme.rust), 0.45 * flash);
+      if (view.fauna) {
+        poseFauna(view.root as THREE.Group, now, hopT, view.strideSign, view.windup);
+        if (this.state && now < view.hitUntil) {
+          const flash = (view.hitUntil - now) / HIT_FLASH_MS;
+          const shade = new THREE.Color(0xffffff);
+          applySimTint(shade, this.state, view.tileX, view.tileY);
+          shade.lerp(new THREE.Color(Theme.rust), 0.45 * flash);
+          tintFauna(view.root as THREE.Group, shade);
+        }
       } else {
-        mat.color.setHex(0xffffff);
+        const mat = (view.root as THREE.Sprite).material as THREE.SpriteMaterial;
+        if (now < view.hitUntil) {
+          const flash = (view.hitUntil - now) / HIT_FLASH_MS;
+          mat.color.setHex(0xffffff).lerp(new THREE.Color(Theme.rust), 0.45 * flash);
+        } else {
+          mat.color.setHex(0xffffff);
+        }
       }
     }
   }
