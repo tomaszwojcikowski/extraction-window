@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { wallGhostAmount, wallGhostOpacity, WALL_GHOST_KEEP, applyWallGhostMaterial } from '../../src/v2/wallGhost';
+import { wallGhostAmount, wallGhostOpacity, WALL_GHOST_KEEP, applyWallGhostMaterial, wallGhostCastsShadow } from '../../src/v2/wallGhost';
 
 describe('v2 wall ghost', () => {
   const focus = { x: 5.5, z: 5.5 };
@@ -33,5 +33,12 @@ describe('v2 wall ghost', () => {
     expect(mat.needsUpdate).toBe(true);
     expect(mat.depthWrite).toBe(false);
     expect(mat.opacity).toBeCloseTo(WALL_GHOST_KEEP);
+  });
+
+  it('stops camera-side walls from casting a shadow wedge over the surveyor', () => {
+    expect(wallGhostCastsShadow(0)).toBe(true);
+    expect(wallGhostCastsShadow(0.08)).toBe(true);
+    expect(wallGhostCastsShadow(0.5)).toBe(false);
+    expect(wallGhostCastsShadow(1)).toBe(false);
   });
 });

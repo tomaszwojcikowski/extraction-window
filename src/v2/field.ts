@@ -13,8 +13,15 @@ import { createContact, disposeContact, poseContact, tintContact } from './conta
 import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
-import { wallGhostAmount, applyWallGhostMaterial } from './wallGhost';
-import { createFieldFog, createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
+import { wallGhostAmount, applyWallGhostMaterial, wallGhostCastsShadow } from './wallGhost';
+import {
+  createFieldFillLight,
+  createFieldFog,
+  createFieldHemi,
+  createFieldKeyLight,
+  placeFieldFillLight,
+  placeFieldKeyLight,
+} from './fieldLight';
 import { markMeshShadows } from './litMaterial';
 import { createSconce, disposeSconce, poseSconce, tintSconce } from './sconceMesh';
 import {
@@ -125,6 +132,7 @@ export class V2Field {
   private readonly controls: OrbitControls;
   private readonly hemi: THREE.HemisphereLight;
   private readonly keyLight: THREE.DirectionalLight;
+  private readonly fillLight: THREE.DirectionalLight;
   private readonly sconceSpots: THREE.SpotLight[] = [];
   private readonly poolPoints: THREE.PointLight[] = [];
   private atlas: Map<string, THREE.Texture>;
@@ -194,9 +202,12 @@ export class V2Field {
 
     this.hemi = createFieldHemi();
     this.keyLight = createFieldKeyLight();
+    this.fillLight = createFieldFillLight();
     this.scene.add(this.hemi);
     this.scene.add(this.keyLight);
     this.scene.add(this.keyLight.target);
+    this.scene.add(this.fillLight);
+    this.scene.add(this.fillLight.target);
     for (let i = 0; i < MAX_SCONCE_SPOTS; i++) {
       const spot = new THREE.SpotLight(0xffffff, 0, 3.4, 1.05, 0.55, 1.4);
       spot.castShadow = false;
@@ -364,6 +375,7 @@ export class V2Field {
     this.poseOverlays(now);
     this.followCamera(false);
     this.controls.update();
+    placeFieldFillLight(this.fillLight, this.camera, this.controls.target);
     this.tickWallGhost();
     this.tickLocalLights();
     this.renderer.render(this.scene, this.camera);
@@ -396,7 +408,8 @@ export class V2Field {
     mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
     if (wall) mesh.scale.set(1.01, 1, 1.01);
     mesh.castShadow = wall;
-    mesh.receiveShadow = true;
+    // Walls in their own key shadow read as black cubes; floors still take form shadows.
+    mesh.receiveShadow = !wall;
     mesh.userData = { x, y, shroud: false, litOpacity: 1, ghost: 0 };
     return mesh;
   }
@@ -812,6 +825,7 @@ export class V2Field {
       const mat = tile.mesh.material as THREE.MeshLambertMaterial;
       if (wall) {
         applyWallGhostMaterial(mat, lit, ghost);
+        tile.mesh.castShadow = wallGhostCastsShadow(ghost);
         tile.mesh.renderOrder = ghost > 0.08 ? 2 : 0;
       } else {
         mat.opacity = lit;
@@ -1057,13 +1071,17 @@ function makeFallbackTexture(): THREE.CanvasTexture {
   return tex;
 }
 
+/** Floor albedo so Lambert lighting still grades flood without crushing the playfield. */
+export const SIM_ALBEDO_FLOOR = 0.62;
+export const SIM_ALBEDO_SPAN = 0.38;
+
 function applySimTint(color: THREE.Color, state: GameState, x: number, y: number): void {
   const visible = state.visible[y]?.[x] ?? false;
   const b = tileBrightness(state, x, y);
   // Albedo stays high — Lambert + the key/hemi do the dimming. Flood still grades LIT vs SHADOW.
-  const lift = 0.42 + b * 0.58;
+  const lift = SIM_ALBEDO_FLOOR + b * SIM_ALBEDO_SPAN;
   color.setScalar(lift);
-  if (b < SHADOW_THRESHOLD) color.lerp(new THREE.Color(Theme.shadowWash), 0.32);
+  if (b < SHADOW_THRESHOLD) color.lerp(new THREE.Color(Theme.shadowWash), 0.16);
   const biome = new THREE.Color(BIOME_AMBIENT[state.sectorId].tint);
   if (visible) color.lerp(biome, 0.1);
   else color.lerp(new THREE.Color(Theme.memoryWash), 0.5);

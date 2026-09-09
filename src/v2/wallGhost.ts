@@ -68,3 +68,8 @@ export function applyWallGhostMaterial(
   mat.transparent = transparent;
   mat.depthWrite = depthWrite;
 }
+
+/** Ghosted camera-side crates must not throw a shadow wedge over the surveyor. */
+export function wallGhostCastsShadow(ghost: number): boolean {
+  return ghost < 0.12;
+}

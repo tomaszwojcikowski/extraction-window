@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, finishTutorial, loadSector } from '../../src/sim';
-import { canvasViewSize, fieldMapStamp, fieldMapStale, playerLightReadout } from '../../src/v2/field';
+import {
+  canvasViewSize,
+  fieldMapStamp,
+  fieldMapStale,
+  playerLightReadout,
+  SIM_ALBEDO_FLOOR,
+  SIM_ALBEDO_SPAN,
+} from '../../src/v2/field';
 
 describe('v2 flood readout', () => {
+  it('keeps flood albedo high enough that Lambert tiles stay readable', () => {
+    expect(SIM_ALBEDO_FLOOR).toBeGreaterThan(0.55);
+    expect(SIM_ALBEDO_FLOOR + SIM_ALBEDO_SPAN).toBeCloseTo(1);
+    expect(SIM_ALBEDO_SPAN).toBeGreaterThan(0.2);
+  });
+
   it('reports LIT or SHADOW from the sim flood grid', () => {
     const state = createGame(42, { skipTutorial: true });
     const light = playerLightReadout(state);
