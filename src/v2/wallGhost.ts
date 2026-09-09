@@ -48,3 +48,23 @@ export function wallGhostOpacity(litOpacity: number, ghost: number): number {
   const keep = 1 - ghost * (1 - WALL_GHOST_KEEP);
   return litOpacity * keep;
 }
+
+/** Lambert ignores opacity unless the material is compiled as transparent. */
+export function applyWallGhostMaterial(
+  mat: {
+    opacity: number;
+    transparent: boolean;
+    depthWrite: boolean;
+    needsUpdate: boolean;
+  },
+  litOpacity: number,
+  ghost: number,
+): void {
+  const opacity = wallGhostOpacity(litOpacity, ghost);
+  const transparent = true;
+  const depthWrite = ghost < 0.08 && opacity >= 0.999;
+  if (mat.transparent !== transparent) mat.needsUpdate = true;
+  mat.opacity = opacity;
+  mat.transparent = transparent;
+  mat.depthWrite = depthWrite;
+}

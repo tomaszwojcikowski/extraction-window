@@ -13,7 +13,7 @@ import { createContact, disposeContact, poseContact, tintContact } from './conta
 import { createLoot, disposeLoot, poseLoot, tintLoot } from './lootMesh';
 import { createProp, disposeProp, isFieldProp, poseProp, tintProp } from './propMesh';
 import { collectThreatMarks } from './threat';
-import { wallGhostAmount, wallGhostOpacity } from './wallGhost';
+import { wallGhostAmount, applyWallGhostMaterial } from './wallGhost';
 import { createFieldFog, createFieldHemi, createFieldKeyLight, placeFieldKeyLight } from './fieldLight';
 import { markMeshShadows } from './litMaterial';
 import { createSconce, disposeSconce, poseSconce, tintSconce } from './sconceMesh';
@@ -388,7 +388,9 @@ export class V2Field {
     const geo = wall ? this.wallGeo : this.planeGeo;
     const mat = new THREE.MeshLambertMaterial({
       map: this.tex(overlay ? floorKey(state, x, y) : tileTextureKey(state, kind, x, y)),
-      transparent: false,
+      // Walls stay on the transparent shader so orbit cutaway opacity is not ignored.
+      transparent: wall,
+      depthWrite: !wall,
     });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x + 0.5, wall ? 0.575 : 0, y + 0.5);
@@ -412,11 +414,18 @@ export class V2Field {
     const mat = tile.mesh.material as THREE.MeshLambertMaterial;
     mat.map = this.tex(look.mapKey);
     mat.color.copy(look.color);
-    mat.opacity = look.opacity;
-    mat.transparent = look.opacity < 1;
-    mat.depthWrite = look.opacity >= 1;
     tile.mesh.userData.litOpacity = look.opacity;
     tile.mesh.userData.shroud = look.shroud;
+    const wall = tile.kind === 'wall' || tile.kind === 'sealed';
+    if (wall) {
+      applyWallGhostMaterial(mat, look.opacity, tile.mesh.userData.ghost ?? 0);
+    } else {
+      const transparent = look.opacity < 1;
+      if (mat.transparent !== transparent) mat.needsUpdate = true;
+      mat.opacity = look.opacity;
+      mat.transparent = transparent;
+      mat.depthWrite = look.opacity >= 1;
+    }
   }
 
   private lockLampCarry(state: GameState): void {
@@ -478,7 +487,7 @@ export class V2Field {
       mat.color.copy(this.lerpFrom).lerp(this.lerpTo, s);
       const lit = f.a + (d.a - f.a) * s;
       tile.mesh.userData.litOpacity = lit;
-      mat.opacity = lit;
+      if (tile.kind !== 'wall' && tile.kind !== 'sealed') mat.opacity = lit;
     }
     if (u >= 1) this.lightBlend = null;
   }
@@ -801,10 +810,12 @@ export class V2Field {
       const lit =
         typeof tile.mesh.userData.litOpacity === 'number' ? tile.mesh.userData.litOpacity : 1;
       const mat = tile.mesh.material as THREE.MeshLambertMaterial;
-      mat.opacity = wallGhostOpacity(lit, ghost);
-      mat.transparent = mat.opacity < 0.999 || ghost > 0.08;
-      mat.depthWrite = ghost < 0.08 && mat.opacity >= 0.999;
-      tile.mesh.renderOrder = ghost > 0.08 ? 2 : 0;
+      if (wall) {
+        applyWallGhostMaterial(mat, lit, ghost);
+        tile.mesh.renderOrder = ghost > 0.08 ? 2 : 0;
+      } else {
+        mat.opacity = lit;
+      }
     }
   }
 

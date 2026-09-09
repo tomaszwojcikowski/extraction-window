@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { wallGhostAmount, wallGhostOpacity, WALL_GHOST_KEEP } from '../../src/v2/wallGhost';
+import { wallGhostAmount, wallGhostOpacity, WALL_GHOST_KEEP, applyWallGhostMaterial } from '../../src/v2/wallGhost';
 
 describe('v2 wall ghost', () => {
   const focus = { x: 5.5, z: 5.5 };
@@ -24,5 +24,14 @@ describe('v2 wall ghost', () => {
     const nw = { x: -4, z: -5 };
     expect(wallGhostAmount(4.5, 4.5, focus.x, focus.z, nw.x, nw.z)).toBeGreaterThan(0.85);
     expect(wallGhostAmount(6.5, 6.5, focus.x, focus.z, nw.x, nw.z)).toBe(0);
+  });
+
+  it('keeps Lambert walls on the transparent shader so opacity is not ignored', () => {
+    const mat = { opacity: 1, transparent: false, depthWrite: true, needsUpdate: false };
+    applyWallGhostMaterial(mat, 1, 1);
+    expect(mat.transparent).toBe(true);
+    expect(mat.needsUpdate).toBe(true);
+    expect(mat.depthWrite).toBe(false);
+    expect(mat.opacity).toBeCloseTo(WALL_GHOST_KEEP);
   });
 });
