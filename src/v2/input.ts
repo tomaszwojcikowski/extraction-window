@@ -1,5 +1,5 @@
 /**
- * v2 field key switchboard — same priority as InputController, minus SFX/minimap.
+ * v2 field key switchboard — same priority as InputController.
  * Overlays only return Actions; chrome flags stay in the host.
  */
 import type { Action, GameState } from '../sim';
@@ -15,7 +15,7 @@ import {
 } from '../game/input/Keymap';
 import { moveFromScreenIntent, screenIntentFromKey } from './screenMove';
 
-export type V2ChromeKind = 'help' | 'pages' | 'log';
+export type V2ChromeKind = 'help' | 'pages' | 'log' | 'minimap';
 
 export type V2Command =
   | { type: 'noop' }
@@ -57,7 +57,6 @@ export function routeV2Key(e: KeyboardEvent, state: GameState, host: V2InputHost
 
   const chrome = chromeFromKey(e);
   if (chrome?.kind === 'mute') return { type: 'mute' };
-  if (chrome?.kind === 'toggle_minimap') return { type: 'noop' };
 
   if (isHackOpen(state)) return routeHack(e, state);
 
@@ -114,6 +113,7 @@ export function routeV2Key(e: KeyboardEvent, state: GameState, host: V2InputHost
   if (chrome?.kind === 'toggle_help') return { type: 'chrome', key: 'help' };
   if (chrome?.kind === 'toggle_pages') return { type: 'chrome', key: 'pages' };
   if (chrome?.kind === 'toggle_log') return { type: 'chrome', key: 'log' };
+  if (chrome?.kind === 'toggle_minimap') return { type: 'chrome', key: 'minimap' };
 
   const slotIdx = slotIndexFromKey(e);
   if (slotIdx !== null) return { type: 'ui', action: { type: 'select_slot', index: slotIdx } };

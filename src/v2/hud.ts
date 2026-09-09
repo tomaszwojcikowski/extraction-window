@@ -1,5 +1,5 @@
 /**
- * v2 slice 5 — orbit field, HTML HUD, title / end, and splice overlay.
+ * v2 HUD snapshot + paint — bars, overlays, splice board, field sketch.
  */
 import { lore } from '../data/lore';
 import { getSector } from '../data/encounters';
@@ -26,6 +26,12 @@ import {
   type HackSessionView,
 } from '../game/presenters/HackOverlayContent';
 import { buildKitOverlayContent } from '../game/presenters/KitOverlayContent';
+import {
+  MINIMAP_MAP,
+  minimapCellMetrics,
+  minimapSketch,
+  type MinimapSketch,
+} from '../game/presenters/MinimapContent';
 import { formatPaddContent, formatHelpContent, formatSkillPickContent, formatQuestOfferContent } from '../game/presenters/OverlayCopy';
 
 export { formatHackContent } from '../game/presenters/HackOverlayContent';
@@ -39,6 +45,7 @@ export type HudChrome = {
   helpOpen: boolean;
   pagesOpen: boolean;
   logOpen: boolean;
+  minimapOpen: boolean;
 };
 
 export type HudModalKind =
@@ -81,6 +88,8 @@ export type HudSnapshot = {
   modalAccent: string;
   powerShort: boolean;
   hack: HackBoardView | null;
+  minimapOpen: boolean;
+  minimap: MinimapSketch;
 };
 
 export type HudEls = {
@@ -100,6 +109,8 @@ export type HudEls = {
   modal: HTMLElement;
   modalBody: HTMLElement;
   hackBoard: HTMLElement;
+  minimap: HTMLElement;
+  minimapMap: HTMLCanvasElement;
 };
 
 export function tintCss(color: number): string {
@@ -129,6 +140,8 @@ export function bindHud(root: Document | HTMLElement): HudEls {
     modal: q('#modal'),
     modalBody: q('#modal-body'),
     hackBoard: q('#hack-board'),
+    minimap: q('#minimap'),
+    minimapMap: q('#minimap-map') as HTMLCanvasElement,
   };
 }
 
@@ -235,6 +248,8 @@ export function hudSnapshot(state: GameState, chrome: HudChrome): HudSnapshot {
     modalAccent: accent,
     powerShort,
     hack: modal === 'hack' ? hackOverlayContent(state) : null,
+    minimapOpen: chrome.minimapOpen,
+    minimap: minimapSketch(state),
   };
 }
 
@@ -297,6 +312,8 @@ export function paintHud(els: HudEls, snap: HudSnapshot, debug = ''): void {
     els.hackBoard.replaceChildren();
     els.modalBody.textContent = snap.modalBody;
   }
+
+  paintMinimap(els, snap);
 }
 
 function meter(
@@ -320,6 +337,40 @@ function meter(
 function setLine(el: HTMLElement, text: string): void {
   el.textContent = text;
   el.hidden = text.length === 0;
+}
+
+function paintMinimap(els: HudEls, snap: HudSnapshot): void {
+  els.minimap.hidden = !snap.minimapOpen;
+  if (!snap.minimapOpen) return;
+  const ctx = els.minimapMap.getContext('2d');
+  if (!ctx) return;
+  const { width, height, cells, pips, rings } = snap.minimap;
+  const { cellW, cellH, offX, offY } = minimapCellMetrics(width, height);
+  ctx.clearRect(0, 0, MINIMAP_MAP, MINIMAP_MAP);
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = tintCss(Theme.fog);
+  ctx.fillRect(0, 0, MINIMAP_MAP, MINIMAP_MAP);
+  ctx.globalAlpha = 1;
+  for (const cell of cells) {
+    ctx.globalAlpha = cell.alpha;
+    ctx.fillStyle = tintCss(cell.color);
+    ctx.fillRect(offX + cell.x * cellW, offY + cell.y * cellH, cellW, cellH);
+  }
+  for (const pip of pips) {
+    ctx.globalAlpha = pip.alpha;
+    ctx.fillStyle = tintCss(pip.color);
+    const w = Math.max(2, cellW);
+    const h = Math.max(2, cellH);
+    ctx.fillRect(offX + pip.x * cellW, offY + pip.y * cellH, w, h);
+  }
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1;
+  for (const ring of rings) {
+    ctx.strokeStyle = tintCss(ring.color);
+    const w = Math.max(3, cellW + 2);
+    const h = Math.max(3, cellH + 2);
+    ctx.strokeRect(offX + ring.x * cellW - 1, offY + ring.y * cellH - 1, w, h);
+  }
 }
 
 function resolveModal(state: GameState, chrome: HudChrome): HudModalKind {

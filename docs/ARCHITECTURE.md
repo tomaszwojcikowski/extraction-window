@@ -90,7 +90,7 @@ export interface Mechanic {
 
 L4 v1 shell runs **Phaser 4** (`phaser@^4.2.1`) at `v1.html`. Field light is sim illumination → `LightView` (tint / bloom graphics), not Phaser Light2D / Filters.
 
-L4 v2 is the default Three.js field at `/` over the same `sim/`. Constrained orbit camera, extruded tiles, flood tint plus local emitters that do not punch through walls, 3D surveyor and fauna (silhouette families), threat paints, hop lamp carry, HTML HUD, title/end, shared audio, lattice-lock overlay. No bloom pass. HUD is HTML/CSS over the canvas — not a Phaser overlay. Keymap + presenters are shared; overlays issue `Action`s. `v2.html` redirects to `/` so old links keep working.
+L4 v2 is the default Three.js field at `/` over the same `sim/`. Constrained orbit camera, extruded tiles, flood tint plus local emitters that do not punch through walls, 3D surveyor and fauna (silhouette families), threat paints, hop lamp carry, HTML HUD, field sketch (`n`), title/end, shared audio, lattice-lock overlay. No bloom pass. HUD is HTML/CSS over the canvas — not a Phaser overlay. Keymap + presenters are shared; overlays issue `Action`s. `v2.html` redirects to `/` so old links keep working.
 
 `scenes/GameScene.ts` is the Phaser `Scene` host. It should shrink toward an orchestrator; logic lives in:
 

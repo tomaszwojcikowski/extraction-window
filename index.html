@@ -130,6 +130,34 @@
         pointer-events: none;
         z-index: 2;
       }
+      #minimap {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        z-index: 2;
+        pointer-events: none;
+        width: 148px;
+        padding: 18px 10px 10px;
+        background: var(--panel, #243438);
+        border: 1px solid rgba(147, 161, 150, 0.35);
+      }
+      #minimap[hidden] { display: none; }
+      #minimap::before {
+        content: "";
+        position: absolute;
+        top: 6px;
+        left: 10px;
+        width: 56px;
+        height: 5px;
+        background: var(--tape, #e8b93c);
+      }
+      #minimap-map {
+        display: block;
+        width: 128px;
+        height: 128px;
+        image-rendering: pixelated;
+        opacity: 0.82;
+      }
       #modal {
         position: absolute;
         inset: 0;
@@ -317,10 +345,12 @@
       body[data-screen="title"] #dock,
       body[data-screen="title"] #hint,
       body[data-screen="title"] #log,
+      body[data-screen="title"] #minimap,
       body[data-screen="end"] #hud,
       body[data-screen="end"] #dock,
       body[data-screen="end"] #hint,
-      body[data-screen="end"] #log {
+      body[data-screen="end"] #log,
+      body[data-screen="end"] #minimap {
         visibility: hidden;
       }
       body[data-screen="title"] #field { opacity: 0; }
@@ -445,6 +475,9 @@
     <p id="hint" hidden></p>
     <p id="dock"></p>
     <pre id="log" hidden></pre>
+    <div id="minimap" hidden>
+      <canvas id="minimap-map" width="128" height="128"></canvas>
+    </div>
     <div id="modal" hidden>
       <div id="modal-panel">
         <pre id="modal-body"></pre>

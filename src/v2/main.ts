@@ -1,5 +1,5 @@
 /**
- * v2 slice 5 — orbit field, HTML HUD, title / end / audio, and splice overlay.
+ * v2 orbit field — HTML HUD, title / end / audio, splice overlay, field sketch.
  */
 import { ThemeCss } from '../scenes/theme';
 import { SECTORS } from '../data/encounters';
@@ -52,7 +52,7 @@ if (deepLink && Number.isFinite(sectorParam) && sectorParam > 0) {
 }
 if (hackLab) forceOpenHackLab(state);
 
-const chrome: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false };
+const chrome: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false, minimapOpen: false };
 const titleChrome: TitleChrome = { helpOpen: false, changelogOpen: false };
 let queued: Action | null = null;
 let screen: Screen = deepLink ? 'play' : 'title';
@@ -224,7 +224,8 @@ function handleEndKey(e: KeyboardEvent): void {
 
 function setChrome(key: V2ChromeKind, force?: boolean): void {
   if (key === 'pages' && chrome.helpOpen) chrome.helpOpen = false;
-  const fieldKey = key === 'help' ? 'helpOpen' : key === 'pages' ? 'pagesOpen' : 'logOpen';
+  const fieldKey =
+    key === 'help' ? 'helpOpen' : key === 'pages' ? 'pagesOpen' : key === 'log' ? 'logOpen' : 'minimapOpen';
   if (force === undefined) chrome[fieldKey] = !chrome[fieldKey];
   else chrome[fieldKey] = force;
 }
@@ -309,6 +310,7 @@ async function bootPlay(nextSeed: number, skipTutorial: boolean): Promise<void> 
   chrome.helpOpen = false;
   chrome.pagesOpen = false;
   chrome.logOpen = false;
+  chrome.minimapOpen = false;
   titleChrome.helpOpen = false;
   titleChrome.changelogOpen = false;
   queued = null;
@@ -352,6 +354,7 @@ function enterEnd(): void {
   chrome.helpOpen = false;
   chrome.pagesOpen = false;
   chrome.logOpen = false;
+  chrome.minimapOpen = false;
   hideHudModal();
   ambient.stop();
   const won = state.status === 'won';

@@ -6,7 +6,7 @@ import { buildKitOverlayContent } from '../../src/game/presenters/KitOverlayCont
 import { formatPaddContent, formatHelpContent } from '../../src/game/presenters/OverlayCopy';
 import { formatHackContent, HUD_BAR_SLOTS, hudSnapshot, type HudChrome } from '../../src/v2/hud';
 
-const chromeOff: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false };
+const chromeOff: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false, minimapOpen: false };
 
 describe('v2 HUD snapshot', () => {
   it('paints four bars and field copy from createGame', () => {
@@ -35,12 +35,12 @@ describe('v2 HUD snapshot', () => {
   it('help / PADD chrome does not mutate kit or pages state', () => {
     const st = createGame(42, { skipTutorial: true });
     const open = st.ui.inventoryOpen;
-    const help = hudSnapshot(st, { helpOpen: true, pagesOpen: false, logOpen: false });
+    const help = hudSnapshot(st, { helpOpen: true, pagesOpen: false, logOpen: false, minimapOpen: false });
     expect(help.modal).toBe('help');
     expect(help.modalBody).toContain(formatHelpContent(false));
     expect(st.ui.inventoryOpen).toBe(open);
 
-    const padd = hudSnapshot(st, { helpOpen: false, pagesOpen: true, logOpen: false });
+    const padd = hudSnapshot(st, { helpOpen: false, pagesOpen: true, logOpen: false, minimapOpen: false });
     expect(padd.modal).toBe('padd');
     expect(padd.modalBody).toBe(formatPaddContent(st));
     expect(st.ui.inventoryOpen).toBe(open);

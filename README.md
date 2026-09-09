@@ -42,6 +42,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 | `i` | Open field kit |
 | `u` | Use or equip selected item |
 | `1`–`9` | Select kit slot |
+| `n` | Field sketch (minimap) |
 | `p` | Mission PADD pages |
 | `l` | Mission log (hidden by default; field chips carry recent beats) |
 | Enter / Space / `>` / `=` | Hatch, beacon, pad, optional site, hail |
@@ -56,7 +57,7 @@ npx tsx scripts/playtest.ts --personas   # persona sweep: which channel kills ea
 ## Stack
 
 - **Rules:** headless TypeScript `src/sim/` (no Phaser, no Three.js)
-- **Presentation (default):** Three.js orbit field at `/` — sim flood tint, 3D surveyor and fauna, combat tells, HTML HUD, title/end, shared audio, lattice-lock overlay, no bloom. [`v2.html`](./v2.html) redirects here.
+- **Presentation (default):** Three.js orbit field at `/` — sim flood tint, 3D surveyor and fauna, combat tells, HTML HUD, field sketch, title/end, shared audio, lattice-lock overlay, no bloom. [`v2.html`](./v2.html) redirects here.
 - **Presentation (v1):** Phaser **4.2.1** at [`v1.html`](./v1.html) (see [docs/V1.md](./docs/V1.md))
 - Vite + Vitest; keyboard-only; seeded runs
 
