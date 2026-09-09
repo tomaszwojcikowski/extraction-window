@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { lore } from '../../src/data/lore';
 import { applyAction, createGame } from '../../src/sim';
+import { forceOpenHackLab } from '../../src/sim/mechanics/consoleHack';
 import { buildKitOverlayContent } from '../../src/game/presenters/KitOverlayContent';
 import { formatPaddContent, formatHelpContent } from '../../src/game/presenters/OverlayCopy';
-import { HUD_BAR_SLOTS, hudSnapshot, type HudChrome } from '../../src/v2/hud';
+import { formatHackContent, HUD_BAR_SLOTS, hudSnapshot, type HudChrome } from '../../src/v2/hud';
 
 const chromeOff: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false };
 
@@ -43,5 +44,16 @@ describe('v2 HUD snapshot', () => {
     expect(padd.modal).toBe('padd');
     expect(padd.modalBody).toBe(formatPaddContent(st));
     expect(st.ui.inventoryOpen).toBe(open);
+  });
+
+  it('splice overlay uses the presenter board and does not splice', () => {
+    const st = createGame(42, { skipTutorial: true });
+    forceOpenHackLab(st);
+    const buffer = st.consoleHack!.session!.buffer.length;
+    const snap = hudSnapshot(st, chromeOff);
+    expect(snap.modal).toBe('hack');
+    expect(snap.hack?.kind).toBe('session');
+    expect(snap.modalBody).toBe(formatHackContent(st));
+    expect(st.consoleHack!.session!.buffer.length).toBe(buffer);
   });
 });

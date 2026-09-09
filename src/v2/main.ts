@@ -1,10 +1,11 @@
 /**
- * v2 slice 4 — orbit field, HTML HUD, title / end screens, and shared audio.
+ * v2 slice 5 — orbit field, HTML HUD, title / end / audio, and splice overlay.
  */
 import { ThemeCss } from '../scenes/theme';
 import { SECTORS } from '../data/encounters';
 import { lore } from '../data/lore';
 import { applyAction, createGame, loadSector, type Action, type GameState } from '../sim';
+import { forceOpenHackLab } from '../sim/mechanics/consoleHack';
 import { flankPenalty } from '../sim/combat';
 import { ambient, music, sfx } from '../audio';
 import { causalActionFloats } from '../game/presenters/actionFloats';
@@ -42,12 +43,14 @@ paintCssVars();
 const params = new URLSearchParams(window.location.search);
 const seedParam = Number(params.get('seed'));
 const deepLink = Number.isFinite(seedParam) && seedParam > 0;
+const hackLab = params.get('hack') === '1';
 let seed = deepLink ? seedParam : (Date.now() % 90000) + 1000;
 let state: GameState = createGame(seed, { skipTutorial: true });
 const sectorParam = Number(params.get('sector'));
 if (deepLink && Number.isFinite(sectorParam) && sectorParam > 0) {
   loadSector(state, Math.min(SECTORS.length - 1, Math.floor(sectorParam)));
 }
+if (hackLab) forceOpenHackLab(state);
 
 const chrome: HudChrome = { helpOpen: false, pagesOpen: false, logOpen: false };
 const titleChrome: TitleChrome = { helpOpen: false, changelogOpen: false };
@@ -297,6 +300,7 @@ function snapEnemies(st: GameState): EnemySnap[] {
 async function bootPlay(nextSeed: number, skipTutorial: boolean): Promise<void> {
   seed = nextSeed;
   state = createGame(seed, { skipTutorial });
+  if (hackLab) forceOpenHackLab(state);
   chrome.helpOpen = false;
   chrome.pagesOpen = false;
   chrome.logOpen = false;
@@ -364,18 +368,24 @@ function paintEnd(): void {
 
 function hideHudModal(): void {
   hudEls.modal.hidden = true;
+  hudEls.modalBody.hidden = false;
+  hudEls.hackBoard.hidden = true;
+  hudEls.hackBoard.replaceChildren();
 }
 
 function paintOverlayModal(
   spec: { kind: string; body: string; accent: string } | null,
 ): void {
   if (!spec) {
-    hudEls.modal.hidden = true;
+    hideHudModal();
     return;
   }
   hudEls.modal.hidden = false;
   hudEls.modal.dataset.kind = spec.kind;
   hudEls.modal.style.setProperty('--accent', spec.accent);
+  hudEls.modalBody.hidden = false;
+  hudEls.hackBoard.hidden = true;
+  hudEls.hackBoard.replaceChildren();
   hudEls.modalBody.textContent = spec.body;
 }
 

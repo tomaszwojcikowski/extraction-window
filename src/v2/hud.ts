@@ -1,6 +1,5 @@
 /**
- * v2 slice 3 — HTML HUD snapshot + paint.
- * Copy comes from Phaser-free presenters; this module does not mutate GameState.
+ * v2 slice 5 — orbit field, HTML HUD, title / end, and splice overlay.
  */
 import { lore } from '../data/lore';
 import { getSector } from '../data/encounters';
@@ -13,13 +12,23 @@ import {
 } from '../sim';
 import { EM_HIGH, EM_WARN } from '../sim/emStress';
 import { formatRoomQuestHudLine } from '../sim/mechanics/roomQuestMechanic';
-import { HACK_MARKS, isHackOpen } from '../sim/mechanics/consoleHack';
+import { isHackOpen } from '../sim/mechanics/consoleHack';
 import { Theme, ThemeCss } from '../scenes/theme';
 import { contextHint } from '../game/presenters/ContextHints';
 import { fieldHudChips, fitHudChips, formatHudMeta } from '../game/presenters/FieldHud';
 import { formatFieldKitDock } from '../game/presenters/FieldKitDock';
+import {
+  formatHackContent,
+  hackOverlayContent,
+  type HackBoardView,
+  type HackCellView,
+  type HackChipView,
+  type HackSessionView,
+} from '../game/presenters/HackOverlayContent';
 import { buildKitOverlayContent } from '../game/presenters/KitOverlayContent';
 import { formatPaddContent, formatHelpContent, formatSkillPickContent, formatQuestOfferContent } from '../game/presenters/OverlayCopy';
+
+export { formatHackContent } from '../game/presenters/HackOverlayContent';
 
 export const HUD_BAR_SLOTS = 4;
 export const HUD_BADGE_SLOTS = 8;
@@ -71,6 +80,7 @@ export type HudSnapshot = {
   modalBody: string;
   modalAccent: string;
   powerShort: boolean;
+  hack: HackBoardView | null;
 };
 
 export type HudEls = {
@@ -89,6 +99,7 @@ export type HudEls = {
   log: HTMLElement;
   modal: HTMLElement;
   modalBody: HTMLElement;
+  hackBoard: HTMLElement;
 };
 
 export function tintCss(color: number): string {
@@ -117,6 +128,7 @@ export function bindHud(root: Document | HTMLElement): HudEls {
     log: q('#log'),
     modal: q('#modal'),
     modalBody: q('#modal-body'),
+    hackBoard: q('#hack-board'),
   };
 }
 
@@ -182,7 +194,8 @@ export function hudSnapshot(state: GameState, chrome: HudChrome): HudSnapshot {
     chrome.pagesOpen ||
     state.ui.inventoryOpen ||
     skillLock ||
-    Boolean(state.questOffer);
+    Boolean(state.questOffer) ||
+    isHackOpen(state);
   const hintId = overlayUp ? null : contextHint(state);
   const hint = hintId ? lore(hintId) : '';
 
@@ -221,6 +234,7 @@ export function hudSnapshot(state: GameState, chrome: HudChrome): HudSnapshot {
     modalBody: body,
     modalAccent: accent,
     powerShort,
+    hack: modal === 'hack' ? hackOverlayContent(state) : null,
   };
 }
 
@@ -273,7 +287,16 @@ export function paintHud(els: HudEls, snap: HudSnapshot, debug = ''): void {
   els.modal.style.setProperty('--accent', snap.modalAccent);
   if (snap.powerShort) els.modal.dataset.short = '1';
   else delete els.modal.dataset.short;
-  els.modalBody.textContent = snap.modalBody;
+  if (snap.hack) {
+    els.modalBody.hidden = true;
+    els.hackBoard.hidden = false;
+    paintHackBoard(els.hackBoard, snap.hack);
+  } else {
+    els.modalBody.hidden = false;
+    els.hackBoard.hidden = true;
+    els.hackBoard.replaceChildren();
+    els.modalBody.textContent = snap.modalBody;
+  }
 }
 
 function meter(
@@ -370,41 +393,92 @@ export function formatEndContent(state: GameState): string {
   return `${lore('UI-MISSION-STATUS')}\n\n${lore(title)}\n\n${lore(body)}\n\nR — new seed`;
 }
 
-/** Compact splice board so a terminal does not freeze the run without the Phaser overlay. */
-export function formatHackContent(state: GameState): string {
-  const hack = state.consoleHack;
-  if (!hack) return '';
-  if (hack.payout && !hack.session) {
-    const items = hack.payout.items.length ? hack.payout.items.join(', ') : '—';
-    const boosts = hack.payout.boosts.map((id) => lore(id)).join('\n');
-    return [lore('UI-HACK-PAY-BADGE'), lore('UI-HACK-PAY'), items, boosts, lore('UI-HACK-PAY-KEYS')]
-      .filter(Boolean)
-      .join('\n');
+function paintHackBoard(root: HTMLElement, board: HackBoardView): void {
+  root.replaceChildren();
+  const badge = el('p', 'hack-badge', board.badge);
+  root.append(badge);
+  if (board.kind === 'payout') {
+    root.append(el('p', 'hack-title', board.title));
+    for (const line of board.items) root.append(el('p', 'hack-pay', line));
+    for (const line of board.boosts) root.append(el('p', 'hack-pay', line));
+    root.append(el('p', 'hack-keys', board.keys));
+    return;
   }
-  const session = hack.session;
-  if (!session) return `${lore('UI-HACK-TITLE')}\n${lore('UI-HACK-KEYS')}`;
-  const target = session.target.map((g) => HACK_MARKS[g]).join(' ');
-  const buffer = session.target
-    .map((_, i) => (session.buffer[i] !== undefined ? HACK_MARKS[session.buffer[i]!] : '·'))
-    .join(' ');
-  const rows = session.grid.map((row, y) =>
-    row
-      .map((g, x) => {
-        const mark = HACK_MARKS[g]!;
-        if (session.used[y]![x]) return ' · ';
-        if (session.cursor.x === x && session.cursor.y === y) return `[${mark}]`;
-        return ` ${mark} `;
-      })
-      .join(''),
-  );
-  return [
-    lore('UI-HACK-TITLE'),
-    `${lore('UI-HACK-TARGET')} ${target}`,
-    `${lore('UI-HACK-BUFFER')} ${buffer}`,
-    `${lore('UI-HACK-TRIES')} ${session.attempts}`,
-    '',
-    ...rows,
-    '',
-    lore('UI-HACK-KEYS'),
-  ].join('\n');
+  if (board.kind === 'idle') {
+    root.append(el('p', 'hack-keys', board.keys));
+    return;
+  }
+  paintHackSession(root, board);
+}
+
+function paintHackSession(root: HTMLElement, board: HackSessionView): void {
+  const row = el('div', 'hack-seq');
+  row.append(seqCol(board.targetLabel, board.target));
+  row.append(seqCol(board.bufferLabel, board.buffer));
+  const pips = el('div', 'hack-pips');
+  pips.setAttribute('aria-label', `${board.tries}/${board.triesMax}`);
+  for (let i = 0; i < board.triesMax; i++) {
+    const pip = el('span', i < board.tries ? 'hack-pip is-on' : 'hack-pip');
+    pips.append(pip);
+  }
+  row.append(pips);
+  root.append(row);
+
+  const grid = el('div', 'hack-grid');
+  grid.style.setProperty('--hack-size', String(board.size));
+  if (board.axis) grid.dataset.axis = board.axis;
+  if (board.last) {
+    grid.dataset.lastX = String(board.last.x);
+    grid.dataset.lastY = String(board.last.y);
+  }
+  for (const cell of board.cells) grid.append(paintHackCell(cell, board));
+  root.append(grid);
+
+  const hint = el('p', board.hintFail ? 'hack-hint is-fail' : 'hack-hint', board.hint);
+  root.append(hint);
+  root.append(el('p', 'hack-keys', board.keys));
+}
+
+function seqCol(label: string, chips: HackChipView[]): HTMLElement {
+  const col = el('div', 'hack-seq-col');
+  col.append(el('span', 'hack-seq-label', label));
+  const strip = el('div', 'hack-chips');
+  for (const chip of chips) strip.append(paintHackChip(chip));
+  col.append(strip);
+  return col;
+}
+
+function paintHackChip(chip: HackChipView): HTMLElement {
+  const node = el('span', 'hack-chip', chip.mark);
+  node.style.color = chip.color;
+  node.style.setProperty('--chip', chip.color);
+  if (chip.empty) node.classList.add('is-empty');
+  if (chip.live) node.classList.add('is-live');
+  if (chip.miss) node.classList.add('is-miss');
+  return node;
+}
+
+function paintHackCell(cell: HackCellView, board: HackSessionView): HTMLElement {
+  const node = el('span', 'hack-cell', cell.mark);
+  node.style.color = cell.color;
+  if (cell.used) node.classList.add('is-used');
+  if (cell.legal) node.classList.add('is-legal');
+  if (cell.cursor) node.classList.add('is-cursor');
+  if (cell.blocked) node.classList.add('is-blocked');
+  if (cell.pickOrder >= 0) {
+    node.classList.add('is-picked');
+    node.dataset.order = String(cell.pickOrder + 1);
+  }
+  if (board.axis && board.last) {
+    if (board.axis === 'col' && cell.x === board.last.x) node.classList.add('is-axis');
+    if (board.axis === 'row' && cell.y === board.last.y) node.classList.add('is-axis');
+  }
+  return node;
+}
+
+function el(tag: string, className: string, text?: string): HTMLElement {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 }

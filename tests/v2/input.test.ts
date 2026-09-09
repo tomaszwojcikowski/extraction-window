@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyAction, createGame } from '../../src/sim';
+import { forceOpenHackLab } from '../../src/sim/mechanics/consoleHack';
 import { fieldLocked, routeV2Key, type V2InputHost } from '../../src/v2/input';
 
 function key(k: string, extra: Partial<KeyboardEvent> = {}): KeyboardEvent {
@@ -55,6 +56,24 @@ describe('v2 HUD input routing', () => {
       type: 'chrome',
       key: 'help',
       force: false,
+    });
+  });
+
+  it('WASD on a live splice is cursor move, not a field step', () => {
+    const st = createGame(42, { skipTutorial: true });
+    forceOpenHackLab(st);
+    expect(fieldLocked(st, host())).toBe(true);
+    expect(routeV2Key(key('w'), st, host())).toEqual({
+      type: 'ui',
+      action: { type: 'hack_move', dx: 0, dy: -1 },
+    });
+    expect(routeV2Key(key('Enter'), st, host())).toEqual({
+      type: 'ui',
+      action: { type: 'hack_pick' },
+    });
+    expect(routeV2Key(key('Escape'), st, host())).toEqual({
+      type: 'ui',
+      action: { type: 'hack_abort' },
     });
   });
 });
